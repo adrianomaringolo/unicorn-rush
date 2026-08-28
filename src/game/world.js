@@ -131,7 +131,8 @@ export class World {
   }
 
   buildDecorations() {
-    for (let i = 0; i < 40; i++) {
+    const quantos = this.track.decorationCount || 40;
+    for (let i = 0; i < quantos; i++) {
       const deco = createDecoration(this.track);
       this.placeDecoration(deco, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
       this.group.add(deco);

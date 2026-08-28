@@ -316,46 +316,56 @@ function chocolate() {
 function strawberry() {
   const g = new THREE.Group();
 
-  const fruta = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.0, 8), mat(0xff4d5e));
-  fruta.rotation.x = Math.PI;
-  fruta.position.y = 0.5;
-  fruta.castShadow = true;
-  g.add(fruta);
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 8), mat(0xff4d5e));
+  corpo.position.y = 0.78;
+  corpo.castShadow = true;
+  g.add(corpo);
 
-  // sementinhas
-  for (let i = 0; i < 8; i++) {
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.8, 10), mat(0xff4d5e));
+  ponta.rotation.x = Math.PI;
+  ponta.position.y = 0.4;
+  ponta.castShadow = true;
+  g.add(ponta);
+
+  // Sementinhas em fileira, dando a volta.
+  for (let i = 0; i < 6; i++) {
     const semente = new THREE.Mesh(new THREE.SphereGeometry(0.05, 5, 4), mat(0xfff0c9));
-    const a = (i / 8) * Math.PI * 2;
-    semente.position.set(Math.cos(a) * 0.36, 0.45 + (i % 3) * 0.2, Math.sin(a) * 0.36);
+    const a = (i / 6) * Math.PI * 2;
+    semente.position.set(Math.cos(a) * 0.55, 0.6 + (i % 2) * 0.35, Math.sin(a) * 0.55);
     g.add(semente);
   }
 
-  for (let i = 0; i < 5; i++) {
-    const folha = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 4), mat(0x5aa86a));
-    const a = (i / 5) * Math.PI * 2;
-    folha.position.set(Math.cos(a) * 0.26, 1.02, Math.sin(a) * 0.26);
-    folha.rotation.set(Math.cos(a) * 0.6, 0, -Math.sin(a) * 0.6);
-    g.add(folha);
-  }
+  // Coroa de folhas numa peça só + cabinho.
+  const coroa = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.3, 6), mat(0x4f9e5c));
+  coroa.rotation.x = Math.PI;
+  coroa.position.y = 1.3;
+  coroa.castShadow = true;
+  g.add(coroa);
+
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.3, 5), mat(0x4f9e5c));
+  cabo.position.y = 1.5;
+  g.add(cabo);
   return g;
 }
 
 function orangeTree() {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 1.5, 6), mat(0xa9744f));
-  trunk.position.y = 0.75;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.6, 7), mat(0xa9744f));
+  trunk.position.y = 0.8;
   trunk.castShadow = true;
   g.add(trunk);
 
-  const copa = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0, 0), mat(0x5aa86a));
-  copa.position.y = 2.1;
-  copa.castShadow = true;
-  g.add(copa);
+  for (const [x, y, z, r] of [[0, 2.2, 0, 1.05], [-0.6, 1.95, 0.25, 0.7], [0.62, 2.05, -0.2, 0.64]]) {
+    const copa = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(0x4f9e5c));
+    copa.position.set(x, y, z);
+    copa.castShadow = true;
+    g.add(copa);
+  }
 
   for (let i = 0; i < 4; i++) {
-    const laranja = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 6), mat(0xffa02e));
+    const laranja = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 7), mat(0xffa02e));
     const a = (i / 4) * Math.PI * 2;
-    laranja.position.set(Math.cos(a) * 0.75, 1.95 + Math.sin(a * 2) * 0.35, Math.sin(a) * 0.75);
+    laranja.position.set(Math.cos(a) * 0.85, 1.9 + Math.sin(a * 2) * 0.35, Math.sin(a) * 0.8);
     laranja.castShadow = true;
     g.add(laranja);
   }
@@ -364,64 +374,168 @@ function orangeTree() {
 
 function bananaBunch() {
   const g = new THREE.Group();
-  const caule = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 1.1, 5), mat(0x7a8f4a));
-  caule.position.y = 0.55;
+
+  const caule = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.2, 6), mat(0x7a8f4a));
+  caule.position.y = 0.6;
+  caule.castShadow = true;
   g.add(caule);
 
+  // Penca: bananas viradas para o mesmo lado, em leque.
   for (let i = 0; i < 5; i++) {
-    const banana = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.11, 5, 8, Math.PI * 0.8), mat(0xffd93d));
-    const a = (i / 5) * Math.PI * 2;
-    banana.position.set(Math.cos(a) * 0.18, 1.05, Math.sin(a) * 0.18);
-    banana.rotation.set(Math.PI / 2 + 0.4, a, 0);
+    const banana = new THREE.Mesh(
+      new THREE.TorusGeometry(0.42, 0.12, 6, 10, Math.PI * 0.75),
+      mat(0xffd93d)
+    );
+    banana.rotation.set(Math.PI / 2, (i - 2) * 0.22, 0);
+    banana.position.set((i - 2) * 0.14, 1.2 - Math.abs(i - 2) * 0.06, 0.1);
     banana.castShadow = true;
     g.add(banana);
+  }
+
+  const capuz = new THREE.Mesh(new THREE.SphereGeometry(0.26, 7, 6), mat(0x7a8f4a));
+  capuz.scale.y = 0.6;
+  capuz.position.y = 1.34;
+  g.add(capuz);
+  return g;
+}
+
+// --- Frutas caídas no chão, para encher o pomar ----------------------------
+
+function watermelonPatch() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 2; i++) {
+    const melancia = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), mat(0x3f8f4a));
+    melancia.scale.set(1.15, 0.85, 1);
+    melancia.position.set((i - 0.5) * 1.2, 0.42, (Math.random() - 0.5) * 0.8);
+    melancia.rotation.y = Math.random();
+    melancia.castShadow = true;
+    g.add(melancia);
+
+    const listra = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 4, 10, Math.PI), mat(0x2b6b34));
+    listra.position.copy(melancia.position);
+    listra.rotation.set(Math.PI / 2, melancia.rotation.y, 0);
+    listra.scale.set(1.15, 0.85, 1);
+    g.add(listra);
   }
   return g;
 }
 
-function watermelon() {
+function orangePile() {
   const g = new THREE.Group();
-  const casca = new THREE.Mesh(new THREE.SphereGeometry(0.72, 10, 8), mat(0x3f8f4a));
-  casca.scale.y = 0.85;
-  casca.position.y = 0.62;
+  for (let i = 0; i < 4; i++) {
+    const laranja = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 7), mat(0xffa02e));
+    laranja.position.set((i % 2 - 0.5) * 0.6, i < 2 ? 0.3 : 0.72, (Math.floor(i / 2) - 0.5) * 0.5);
+    laranja.castShadow = true;
+    g.add(laranja);
+  }
+  const folha = new THREE.Mesh(new THREE.SphereGeometry(0.16, 5, 4), mat(0x3f7d4d));
+  folha.scale.set(1, 0.25, 1.7);
+  folha.position.set(0.1, 0.95, 0);
+  g.add(folha);
+  return g;
+}
+
+function grapes() {
+  const g = new THREE.Group();
+  const cor = pick([0x8b5fbf, 0x6b4bb0, 0x9c6fd6]);
+  // Cacho: bolinhas em fileiras que vão diminuindo.
+  const fileiras = [[3, 0.62, 0.3], [2, 0.95, 0.2], [1, 1.2, 0]];
+  for (const [quantas, alt, raio] of fileiras) {
+    for (let i = 0; i < quantas; i++) {
+      const uva = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 6), mat(cor));
+      const a = quantas > 1 ? (i / quantas) * Math.PI * 2 : 0;
+      uva.position.set(Math.cos(a) * raio, alt, Math.sin(a) * raio);
+      uva.castShadow = true;
+      g.add(uva);
+    }
+  }
+  const folha = new THREE.Mesh(new THREE.SphereGeometry(0.26, 6, 5), mat(0x4f9e5c));
+  folha.scale.set(1, 0.2, 1.2);
+  folha.position.set(0.16, 1.42, 0);
+  g.add(folha);
+  return g;
+}
+
+function kiwi() {
+  const g = new THREE.Group();
+
+  // Metade cortada, mostrando o miolo verde.
+  const casca = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12), mat(0x8f6b3f));
+  casca.position.y = 0.16;
   casca.castShadow = true;
   g.add(casca);
 
-  for (let i = 0; i < 5; i++) {
-    const listra = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.07, 4, 12, Math.PI), mat(0x2b6b34));
-    listra.position.y = 0.62;
-    listra.rotation.set(Math.PI / 2, 0, (i / 5) * Math.PI);
-    listra.scale.y = 0.85;
-    g.add(listra);
+  const polpa = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.32, 12), mat(0x8fcf5a));
+  polpa.position.y = 0.17;
+  g.add(polpa);
+
+  const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 8), mat(0xf6ffe8));
+  miolo.position.y = 0.18;
+  g.add(miolo);
+
+  // Uma fruta inteira do lado.
+  const inteiro = new THREE.Mesh(new THREE.SphereGeometry(0.36, 8, 7), mat(0x8f6b3f));
+  inteiro.scale.set(1.25, 1, 1);
+  inteiro.position.set(0.85, 0.34, 0.2);
+  inteiro.castShadow = true;
+  g.add(inteiro);
+  return g;
+}
+
+// Fatia de melancia em pé: casca verde, entrecasca branca e polpa vermelha.
+function watermelon() {
+  const g = new THREE.Group();
+
+  const fatia = (raio, cor, z) => {
+    const m = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio, raio, 0.42, 14, 1, false, 0, Math.PI),
+      mat(cor)
+    );
+    m.rotation.set(Math.PI / 2, 0, 0);
+    m.position.set(0, 0.1, z);
+    m.castShadow = true;
+    return m;
+  };
+
+  g.add(fatia(1.0, 0x3f8f4a, 0));         // casca
+  g.add(fatia(0.9, 0xf2fff0, 0.02));      // entrecasca
+  g.add(fatia(0.8, 0xff5d6c, 0.04));      // polpa
+
+  for (let i = 0; i < 4; i++) {
+    const semente = new THREE.Mesh(new THREE.SphereGeometry(0.07, 5, 4), mat(0x2b2028));
+    semente.scale.z = 0.4;
+    const a = ((i + 0.5) / 4) * Math.PI;
+    semente.position.set(Math.cos(a) * 0.45, 0.1 + Math.sin(a) * 0.42, 0.28);
+    g.add(semente);
   }
   return g;
 }
 
 function pineapple() {
   const g = new THREE.Group();
-  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 1.15, 8), mat(0xffb02e));
-  corpo.position.y = 0.6;
+
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.52, 10, 10), mat(0xffb02e));
+  corpo.scale.set(1, 1.35, 1);
+  corpo.position.y = 0.75;
   corpo.castShadow = true;
   g.add(corpo);
 
-  // casquinha quadriculada
-  for (let i = 0; i < 10; i++) {
-    const escama = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.08), mat(0xd98a1f));
-    const a = (i / 5) * Math.PI * 2;
-    const alt = 0.3 + (i % 5) * 0.2;
-    escama.position.set(Math.cos(a) * 0.42, alt, Math.sin(a) * 0.42);
-    escama.rotation.y = -a;
-    g.add(escama);
+  // Casquinha: dois anéis de escamas, o bastante para dar a textura.
+  for (let anel = 0; anel < 2; anel++) {
+    const alt = 0.6 + anel * 0.42;
+    for (let i = 0; i < 5; i++) {
+      const escama = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), mat(0xd98a1f));
+      const a = (i / 5) * Math.PI * 2 + anel * 0.6;
+      escama.position.set(Math.cos(a) * 0.5, alt, Math.sin(a) * 0.5);
+      escama.scale.set(1, 0.8, 0.5);
+      g.add(escama);
+    }
   }
 
-  for (let i = 0; i < 5; i++) {
-    const folha = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 4), mat(0x5aa86a));
-    const a = (i / 5) * Math.PI * 2;
-    folha.position.set(Math.cos(a) * 0.12, 1.4, Math.sin(a) * 0.12);
-    folha.rotation.set(Math.cos(a) * 0.4, 0, -Math.sin(a) * 0.4);
-    folha.castShadow = true;
-    g.add(folha);
-  }
+  const coroa = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.85, 6), mat(0x4f9e5c));
+  coroa.position.y = 1.75;
+  coroa.castShadow = true;
+  g.add(coroa);
   return g;
 }
 
@@ -548,7 +662,8 @@ const DECORATIONS = {
   tree, pineTree, mushroom, glowMushroom, crystal, flower, flowerPatch,
   lollipop, cupcake, candyCane, sprinkles, chocolate,
   cloudHill, balloon, rainbowArch,
-  strawberry, orangeTree, bananaBunch, coral, seaweed, starfish,
+  strawberry, orangeTree, bananaBunch, watermelonPatch, orangePile, grapes, kiwi,
+  coral, seaweed, starfish,
 };
 
 export function createDecoration(track) {

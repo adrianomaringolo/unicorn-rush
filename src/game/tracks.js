@@ -88,9 +88,14 @@ export const TRACKS = {
     backdrop: 'rainbow',
     cloud: 0xffffff,
     mountains: [0x9bd88a, 0xffc46b, 0xff8f8f],
-    decorations: ['strawberry', 'orangeTree', 'bananaBunch', 'flower'],
+    decorations: [
+      'strawberry', 'orangeTree', 'bananaBunch',
+      'watermelonPatch', 'orangePile', 'grapes', 'kiwi',
+      'strawberry', 'orangePile', 'grapes',
+    ],
+    decorationCount: 58,          // pomar cheio dos dois lados
     obstacles: ['watermelon', 'pineapple', 'coconutPile'],
-    ambience: [{ kind: 'butterfly', count: 12 }, { kind: 'bee', count: 12 }],
+    ambience: [{ kind: 'bee', count: 22 }, { kind: 'butterfly', count: 8 }],
   },
 
   oceano: {
