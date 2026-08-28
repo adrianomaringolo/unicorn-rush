@@ -31,20 +31,25 @@ acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
 ## Pistas
 
 Também dá para escolher por onde correr — a pista muda o céu, a neblina, a
-luz, o chão, os enfeites das laterais e até os obstáculos:
+luz, o chão, os enfeites das laterais, os bichinhos que voam por perto e até
+os obstáculos:
 
 | | Pista | Como é |
 | --- | --- | --- |
-| 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, árvores-pirulito, cogumelos, cristais e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
-| 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes e bengalas doces. Obstáculos de bala de goma, rosquinha e barra de doce. |
-| ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris e morrinhos de nuvem. Obstáculos de nuvem carregada, pipa e cacho de balões. |
+| 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, árvores-pirulito, cogumelos, cristais, **borboletas e abelhas voando** e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
+| 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes, bengalas doces, **granulado colorido** e **pedacinhos de chocolate** espalhados pelo chão. Obstáculos de bala de goma, rosquinha e barra de doce. |
+| ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris, morrinhos de nuvem e **passarinhos cruzando o céu**. Obstáculos de nuvem carregada, pipa e cacho de balões. |
+| 🍓 | **Frutas** | Pomar: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, cachos de banana e borboletas com abelhas. Obstáculos de melancia, abacaxi e monte de cocos. |
+| 🐠 | **Oceano** | Fundo do mar: água azul por todos os lados, trilha de areia, corais, algas, estrelas-do-mar e **cardumes de peixinhos** nadando em volta. Obstáculos de ouriço, concha gigante e pedra. |
 | 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
 pista, então nenhuma cai em cima do caminho.
 
 Cada pista é uma entrada em `src/game/tracks.js` (cores, lista de enfeites e
-obstáculos e, se for escura, um `glow` que acende o personagem), então uma
+obstáculos, os bichinhos do `ambience` — borboleta, abelha, passarinho,
+vagalume ou peixinho, cada um com o seu jeito de voar — e, se for escura, um
+`glow` que acende o personagem), então uma
 pista nova é só mais uma entrada — os enfeites
 disponíveis estão em `src/models/scenery.js`.
 

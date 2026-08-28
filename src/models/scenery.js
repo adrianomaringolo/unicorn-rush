@@ -272,9 +272,283 @@ function rainbowArch() {
   return g;
 }
 
+// Granulado espalhado pelo chão da pista dos doces.
+function sprinkles() {
+  const g = new THREE.Group();
+  const cores = [0xff7bac, 0xffd166, 0x9be7ff, 0xc4f0a8, 0xffffff, 0xc9a6ff];
+  const n = 10 + Math.floor(Math.random() * 10);
+  for (let i = 0; i < n; i++) {
+    const grao = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.055, 0.16, 2, 5),
+      mat(pick(cores))
+    );
+    grao.position.set((Math.random() - 0.5) * 2.4, 0.06, (Math.random() - 0.5) * 2.4);
+    grao.rotation.set(Math.PI / 2, Math.random() * Math.PI, Math.random() * Math.PI);
+    grao.castShadow = true;
+    g.add(grao);
+  }
+  return g;
+}
+
+// Pedacinhos de chocolate, tipo lascas caídas no chão.
+function chocolate() {
+  const g = new THREE.Group();
+  const n = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    const cor = pick([0x6b4423, 0x8b5a2b, 0x4a2c17]);
+    const pedaco = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.22, 0.42), mat(cor));
+    pedaco.position.set((Math.random() - 0.5) * 1.6, 0.11, (Math.random() - 0.5) * 1.6);
+    pedaco.rotation.set((Math.random() - 0.5) * 0.4, Math.random() * Math.PI, (Math.random() - 0.5) * 0.4);
+    pedaco.castShadow = true;
+    g.add(pedaco);
+
+    // Risquinhos de chocolate branco por cima
+    const listra = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.1), mat(0xfff0d9));
+    listra.position.copy(pedaco.position).setY(0.23);
+    listra.rotation.copy(pedaco.rotation);
+    g.add(listra);
+  }
+  return g;
+}
+
+// --- Pista das Frutas -------------------------------------------------------
+
+function strawberry() {
+  const g = new THREE.Group();
+
+  const fruta = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.0, 8), mat(0xff4d5e));
+  fruta.rotation.x = Math.PI;
+  fruta.position.y = 0.5;
+  fruta.castShadow = true;
+  g.add(fruta);
+
+  // sementinhas
+  for (let i = 0; i < 8; i++) {
+    const semente = new THREE.Mesh(new THREE.SphereGeometry(0.05, 5, 4), mat(0xfff0c9));
+    const a = (i / 8) * Math.PI * 2;
+    semente.position.set(Math.cos(a) * 0.36, 0.45 + (i % 3) * 0.2, Math.sin(a) * 0.36);
+    g.add(semente);
+  }
+
+  for (let i = 0; i < 5; i++) {
+    const folha = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 4), mat(0x5aa86a));
+    const a = (i / 5) * Math.PI * 2;
+    folha.position.set(Math.cos(a) * 0.26, 1.02, Math.sin(a) * 0.26);
+    folha.rotation.set(Math.cos(a) * 0.6, 0, -Math.sin(a) * 0.6);
+    g.add(folha);
+  }
+  return g;
+}
+
+function orangeTree() {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 1.5, 6), mat(0xa9744f));
+  trunk.position.y = 0.75;
+  trunk.castShadow = true;
+  g.add(trunk);
+
+  const copa = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0, 0), mat(0x5aa86a));
+  copa.position.y = 2.1;
+  copa.castShadow = true;
+  g.add(copa);
+
+  for (let i = 0; i < 4; i++) {
+    const laranja = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 6), mat(0xffa02e));
+    const a = (i / 4) * Math.PI * 2;
+    laranja.position.set(Math.cos(a) * 0.75, 1.95 + Math.sin(a * 2) * 0.35, Math.sin(a) * 0.75);
+    laranja.castShadow = true;
+    g.add(laranja);
+  }
+  return g;
+}
+
+function bananaBunch() {
+  const g = new THREE.Group();
+  const caule = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 1.1, 5), mat(0x7a8f4a));
+  caule.position.y = 0.55;
+  g.add(caule);
+
+  for (let i = 0; i < 5; i++) {
+    const banana = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.11, 5, 8, Math.PI * 0.8), mat(0xffd93d));
+    const a = (i / 5) * Math.PI * 2;
+    banana.position.set(Math.cos(a) * 0.18, 1.05, Math.sin(a) * 0.18);
+    banana.rotation.set(Math.PI / 2 + 0.4, a, 0);
+    banana.castShadow = true;
+    g.add(banana);
+  }
+  return g;
+}
+
+function watermelon() {
+  const g = new THREE.Group();
+  const casca = new THREE.Mesh(new THREE.SphereGeometry(0.72, 10, 8), mat(0x3f8f4a));
+  casca.scale.y = 0.85;
+  casca.position.y = 0.62;
+  casca.castShadow = true;
+  g.add(casca);
+
+  for (let i = 0; i < 5; i++) {
+    const listra = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.07, 4, 12, Math.PI), mat(0x2b6b34));
+    listra.position.y = 0.62;
+    listra.rotation.set(Math.PI / 2, 0, (i / 5) * Math.PI);
+    listra.scale.y = 0.85;
+    g.add(listra);
+  }
+  return g;
+}
+
+function pineapple() {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 1.15, 8), mat(0xffb02e));
+  corpo.position.y = 0.6;
+  corpo.castShadow = true;
+  g.add(corpo);
+
+  // casquinha quadriculada
+  for (let i = 0; i < 10; i++) {
+    const escama = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.08), mat(0xd98a1f));
+    const a = (i / 5) * Math.PI * 2;
+    const alt = 0.3 + (i % 5) * 0.2;
+    escama.position.set(Math.cos(a) * 0.42, alt, Math.sin(a) * 0.42);
+    escama.rotation.y = -a;
+    g.add(escama);
+  }
+
+  for (let i = 0; i < 5; i++) {
+    const folha = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 4), mat(0x5aa86a));
+    const a = (i / 5) * Math.PI * 2;
+    folha.position.set(Math.cos(a) * 0.12, 1.4, Math.sin(a) * 0.12);
+    folha.rotation.set(Math.cos(a) * 0.4, 0, -Math.sin(a) * 0.4);
+    folha.castShadow = true;
+    g.add(folha);
+  }
+  return g;
+}
+
+function coconutPile() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const coco = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 1), mat(0x7a5230));
+    coco.position.set((i - 1) * 0.5, 0.42 + (i === 1 ? 0.5 : 0), (Math.random() - 0.5) * 0.3);
+    coco.castShadow = true;
+    g.add(coco);
+
+    for (let j = 0; j < 3; j++) {
+      const olho = new THREE.Mesh(new THREE.SphereGeometry(0.07, 5, 4), mat(0x4a2c17));
+      olho.position.set(coco.position.x + (j - 1) * 0.14, coco.position.y + 0.2, coco.position.z + 0.36);
+      g.add(olho);
+    }
+  }
+  return g;
+}
+
+// --- Pista do Oceano --------------------------------------------------------
+
+function coral() {
+  const g = new THREE.Group();
+  const cor = pick([0xff7b9d, 0xffa02e, 0xc9a6ff, 0xff5d8f]);
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.9, 6), mat(cor));
+  tronco.position.y = 0.45;
+  tronco.castShadow = true;
+  g.add(tronco);
+
+  for (let i = 0; i < 4; i++) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.85, 5), mat(cor));
+    const a = (i / 4) * Math.PI * 2;
+    braco.position.set(Math.cos(a) * 0.3, 1.05, Math.sin(a) * 0.3);
+    braco.rotation.set(Math.cos(a) * 0.5, 0, -Math.sin(a) * 0.5);
+    braco.castShadow = true;
+    g.add(braco);
+  }
+  return g;
+}
+
+function seaweed() {
+  const g = new THREE.Group();
+  const cor = pick([0x3f8f6a, 0x4aa87a, 0x2f7a58]);
+  const n = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) {
+    const base = (i - n / 2) * 0.3;
+    for (let j = 0; j < 4; j++) {
+      const folha = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.55, 0.08), mat(cor));
+      folha.position.set(base + Math.sin(j) * 0.15, 0.3 + j * 0.5, 0);
+      folha.rotation.z = Math.sin(j + i) * 0.35;
+      folha.castShadow = true;
+      g.add(folha);
+    }
+  }
+  return g;
+}
+
+function starfish() {
+  const shape = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? 0.6 : 0.26;
+    const a = (i / 10) * Math.PI * 2;
+    const x = Math.cos(a) * r;
+    const y = Math.sin(a) * r;
+    i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y);
+  }
+  shape.closePath();
+
+  const estrela = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape, { depth: 0.18, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.06, bevelSegments: 1 }),
+    mat(pick([0xffa02e, 0xff7b9d, 0xffd166]))
+  );
+  estrela.rotation.x = -Math.PI / 2;
+  estrela.position.y = 0.12;
+  estrela.castShadow = true;
+
+  const g = new THREE.Group();
+  g.add(estrela);
+  return g;
+}
+
+function seaUrchin() {
+  const g = new THREE.Group();
+  const cor = 0x6b4bb0;
+  const corpo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), mat(cor));
+  corpo.position.y = 0.55;
+  corpo.castShadow = true;
+  g.add(corpo);
+
+  for (let i = 0; i < 12; i++) {
+    const espinho = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.45, 4), mat(0x4a3080));
+    const a = (i / 12) * Math.PI * 2;
+    const alt = (i % 3) - 1;
+    espinho.position.set(Math.cos(a) * 0.52, 0.55 + alt * 0.32, Math.sin(a) * 0.52);
+    espinho.rotation.set(Math.cos(a) * 1.2, 0, -Math.sin(a) * 1.2);
+    espinho.castShadow = true;
+    g.add(espinho);
+  }
+  return g;
+}
+
+function clam() {
+  const g = new THREE.Group();
+  const cor = pick([0xffd6e8, 0xffe9c9, 0xe0d6ff]);
+  for (const lado of [-1, 1]) {
+    const concha = new THREE.Mesh(
+      new THREE.SphereGeometry(0.72, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+      mat(cor)
+    );
+    concha.position.set(0, 0.5, 0);
+    concha.rotation.z = lado * 0.55;
+    concha.scale.set(1, 0.75, 0.85);
+    concha.castShadow = true;
+    g.add(concha);
+  }
+  const perola = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), mat(0xfffdf5, { emissive: 0x554d3d }));
+  perola.position.y = 0.55;
+  g.add(perola);
+  return g;
+}
+
 const DECORATIONS = {
   tree, pineTree, mushroom, glowMushroom, crystal, flower, flowerPatch,
-  lollipop, cupcake, candyCane, cloudHill, balloon, rainbowArch,
+  lollipop, cupcake, candyCane, sprinkles, chocolate,
+  cloudHill, balloon, rainbowArch,
+  strawberry, orangeTree, bananaBunch, coral, seaweed, starfish,
 };
 
 export function createDecoration(track) {
@@ -494,6 +768,7 @@ function balloonBunch() {
 const OBSTACLES = {
   rock, candyBar, bush, gumdrop, donut, crystalSpike,
   stormCloud, kite, balloonBunch, moonStone, bigGlowMushroom,
+  watermelon, pineapple, coconutPile, seaUrchin, clam,
 };
 
 export function createObstacle(track) {
@@ -504,6 +779,155 @@ export function createObstacle(track) {
 }
 
 // --- Fundo ------------------------------------------------------------------
+
+// --- Bichinhos que voam (ou nadam) em volta da pista ----------------------
+//
+// Todos seguem o mesmo contrato: nascem com `userData.parts` (o que precisa
+// se mexer) e são animados por `animateAmbience`.
+
+function asaSimples(color, size = 0.22) {
+  const wing = new THREE.Mesh(new THREE.CircleGeometry(size, 8), new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: 0.9, side: THREE.DoubleSide, fog: false,
+  }));
+  return wing;
+}
+
+// Borboleta: duas asinhas coloridas batendo.
+function butterfly() {
+  const g = new THREE.Group();
+  const color = pick([0xff9ecb, 0xffd166, 0x9be7ff, 0xc9a6ff, 0xffb3d1]);
+
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.045, 0.16, 2, 5),
+    new THREE.MeshBasicMaterial({ color: 0x6b5a8f, fog: false })
+  );
+  g.add(body);
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    const cima = asaSimples(color, 0.19);
+    cima.position.set(side * 0.16, 0.06, 0);
+    const baixo = asaSimples(color, 0.13);
+    baixo.position.set(side * 0.13, -0.11, 0);
+    wing.add(cima, baixo);
+    wing.userData.side = side;
+    g.add(wing);
+    wings.push(wing);
+  }
+
+  g.userData.parts = { wings };
+  return g;
+}
+
+// Abelha: corpo listrado e asinhas transparentes.
+function bee() {
+  const g = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.1, 0.14, 3, 6),
+    new THREE.MeshBasicMaterial({ color: 0xffd166, fog: false })
+  );
+  body.rotation.z = Math.PI / 2;
+  g.add(body);
+
+  for (let i = 0; i < 2; i++) {
+    const stripe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.105, 0.105, 0.05, 8),
+      new THREE.MeshBasicMaterial({ color: 0x4a3b2a, fog: false })
+    );
+    stripe.rotation.z = Math.PI / 2;
+    stripe.position.x = -0.03 - i * 0.09;
+    g.add(stripe);
+  }
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    const asa = asaSimples(0xffffff, 0.13);
+    asa.material.opacity = 0.55;
+    asa.position.set(0.02, 0.1, side * 0.07);
+    wing.add(asa);
+    wing.userData.side = side;
+    g.add(wing);
+    wings.push(wing);
+  }
+
+  g.userData.parts = { wings };
+  return g;
+}
+
+// Passarinho: corpo redondinho, bico e asas planando.
+function bird() {
+  const g = new THREE.Group();
+  const color = pick([0xffffff, 0xffe9a3, 0xbfe9ff, 0xffd6e8]);
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 7, 6),
+    new THREE.MeshBasicMaterial({ color, fog: false })
+  );
+  body.scale.set(1.3, 1, 1);
+  g.add(body);
+
+  const beak = new THREE.Mesh(
+    new THREE.ConeGeometry(0.05, 0.13, 5),
+    new THREE.MeshBasicMaterial({ color: 0xffab1f, fog: false })
+  );
+  beak.rotation.z = -Math.PI / 2;
+  beak.position.x = 0.26;
+  g.add(beak);
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    const asa = asaSimples(color, 0.24);
+    asa.scale.set(1, 0.45, 1);
+    asa.position.set(-0.02, 0, side * 0.16);
+    asa.rotation.x = Math.PI / 2;
+    wing.add(asa);
+    wing.userData.side = side;
+    g.add(wing);
+    wings.push(wing);
+  }
+
+  g.userData.parts = { wings };
+  return g;
+}
+
+// Peixinho: corpo e rabo que balança.
+function fish() {
+  const g = new THREE.Group();
+  const color = pick([0xff9f68, 0xffd166, 0x9be7ff, 0xff8fb1, 0xa6ffcb]);
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 7, 6),
+    new THREE.MeshBasicMaterial({ color, fog: false })
+  );
+  body.scale.set(1.5, 1, 0.6);
+  g.add(body);
+
+  const tail = new THREE.Group();
+  const leque = new THREE.Mesh(
+    new THREE.ConeGeometry(0.14, 0.2, 3),
+    new THREE.MeshBasicMaterial({ color, fog: false, side: THREE.DoubleSide })
+  );
+  leque.rotation.z = Math.PI / 2;
+  leque.scale.z = 0.4;
+  leque.position.x = -0.1;
+  tail.position.x = -0.24;
+  tail.add(leque);
+  g.add(tail);
+
+  const eye = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 6, 5),
+    new THREE.MeshBasicMaterial({ color: 0x30203a, fog: false })
+  );
+  eye.position.set(0.17, 0.05, 0.1);
+  g.add(eye);
+
+  g.userData.parts = { tail };
+  return g;
+}
 
 // Vagalume: um pontinho aceso com um halo bem de leve em volta.
 export function createFirefly() {
@@ -527,6 +951,62 @@ export function createFirefly() {
 
   g.userData = { spark, halo, phase: Math.random() * Math.PI * 2, speed: 0.6 + Math.random() * 0.9 };
   return g;
+}
+
+const AMBIENCE = { firefly: createFirefly, butterfly, bee, bird, fish };
+
+// Cria um bichinho do tipo pedido pela pista.
+export function createAmbience(kind) {
+  const build = AMBIENCE[kind] || createFirefly;
+  const item = build();
+  item.userData.kind = kind;
+  item.userData.phase = Math.random() * Math.PI * 2;
+  item.userData.speed = 0.6 + Math.random() * 0.9;
+  return item;
+}
+
+// Cada bichinho se mexe do seu jeito: a borboleta bate asa devagar, a abelha
+// vibra, o passarinho plana, o peixe balança o rabo e o vagalume pisca.
+export function animateAmbience(item, elapsed) {
+  const { kind, phase, speed, parts, spark, halo } = item.userData;
+  const t = elapsed * speed + phase;
+
+  if (kind === 'firefly') {
+    const brilho = 0.45 + Math.sin(elapsed * 3.5 + phase) * 0.55;
+    spark.material.opacity = brilho;
+    spark.material.transparent = true;
+    halo.material.opacity = brilho * 0.35;
+    halo.scale.setScalar(0.8 + brilho * 0.5);
+    return { x: Math.sin(t) * 1.1, y: Math.cos(t * 0.8) * 0.5 };
+  }
+
+  if (kind === 'butterfly') {
+    const bate = Math.sin(elapsed * 9 + phase) * 0.9;
+    for (const wing of parts.wings) wing.rotation.y = wing.userData.side * (0.5 + bate * 0.5);
+    item.rotation.z = Math.sin(t * 1.6) * 0.3;
+    return { x: Math.sin(t * 1.2) * 1.6, y: Math.sin(t * 2.1) * 0.9 };
+  }
+
+  if (kind === 'bee') {
+    const bate = Math.sin(elapsed * 26 + phase);
+    for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.5;
+    return { x: Math.sin(t * 2.6) * 1.2, y: Math.sin(t * 3.4) * 0.5 };
+  }
+
+  if (kind === 'bird') {
+    const bate = Math.sin(elapsed * 5 + phase);
+    for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.7;
+    item.rotation.y = Math.sin(t * 0.5) * 0.3;
+    return { x: Math.sin(t * 0.7) * 2.4, y: Math.sin(t * 1.1) * 0.8 };
+  }
+
+  if (kind === 'fish') {
+    parts.tail.rotation.y = Math.sin(elapsed * 7 + phase) * 0.7;
+    item.rotation.y = Math.sin(t * 0.6) * 0.4;
+    return { x: Math.sin(t * 0.9) * 2.2, y: Math.sin(t * 1.4) * 0.6 };
+  }
+
+  return { x: 0, y: 0 };
 }
 
 export function createCloud(color = 0xffffff) {

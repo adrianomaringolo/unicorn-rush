@@ -11,11 +11,20 @@ import { createPowerup, POWERUP_LIST } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createCloud,
   createRainbow, createMountains, createMoon, createStars, createSun,
-  createDistanceMarker, createRecordBanner, createFirefly,
+  createDistanceMarker, createRecordBanner, createAmbience, animateAmbience,
 } from '../models/scenery.js';
 
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
 const MARKER_STEP = 100;      // de quantos em quantos passos vem uma placa
+
+// Altura de voo (ou de nado) de cada bichinho e distância mínima da pista.
+const AMBIENCE_SPOT = {
+  firefly:   { alto: [0.6, 4.2], longe: 5 },
+  butterfly: { alto: [0.5, 2.6], longe: 5 },
+  bee:       { alto: [0.4, 2.2], longe: 5 },
+  bird:      { alto: [4, 11],    longe: 0 },   // passarinho pode cruzar por cima
+  fish:      { alto: [0.9, 5.5], longe: 4.5 },
+};
 
 export class World {
   constructor(scene, track = TRACKS[DEFAULT_TRACK]) {
@@ -44,7 +53,7 @@ export class World {
     this.root.add(createMountains(track));
 
     this.buildBackdrop();
-    this.buildFireflies();
+    this.buildAmbience();
     this.buildStripes();
     this.buildDecorations();
     this.buildClouds();
@@ -79,22 +88,29 @@ export class World {
     }
   }
 
-  // Vagalumes rodeando a pista (só nas pistas que pedem, como a Noite).
-  buildFireflies() {
-    this.fireflies = [];
-    const total = this.track.fireflies || 0;
-    for (let i = 0; i < total; i++) {
-      const bug = createFirefly();
-      this.placeFirefly(bug, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
-      this.root.add(bug);
-      this.fireflies.push(bug);
+  // Bichinhos rodeando a pista: borboletas e abelhas no Campo, passarinhos
+  // no Céu, vagalumes na Noite, peixinhos no Oceano…
+  buildAmbience() {
+    this.ambience = [];
+    for (const { kind, count } of this.track.ambience || []) {
+      for (let i = 0; i < count; i++) {
+        const bug = createAmbience(kind);
+        this.placeAmbience(bug, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
+        this.root.add(bug);
+        this.ambience.push(bug);
+      }
     }
   }
 
-  placeFirefly(bug, z) {
+  placeAmbience(bug, z) {
+    const spot = AMBIENCE_SPOT[bug.userData.kind] || AMBIENCE_SPOT.firefly;
+    const [minY, maxY] = spot.alto;
     const side = Math.random() < 0.5 ? -1 : 1;
     // Longe da pista o suficiente para não confundir com item para pegar.
-    bug.position.set(side * (5 + Math.random() * 16), 0.6 + Math.random() * 3.4, z);
+    const x = spot.longe
+      ? side * (spot.longe + Math.random() * 16)
+      : (Math.random() - 0.5) * 46;
+    bug.position.set(x, minY + Math.random() * (maxY - minY), z);
     bug.userData.home = bug.position.clone();
   }
 
@@ -307,21 +323,15 @@ export class World {
       if (deco.position.z > DESPAWN_DISTANCE + 6) this.placeDecoration(deco, SPAWN_DISTANCE - Math.random() * 20);
     }
 
-    for (const bug of this.fireflies) {
+    for (const bug of this.ambience) {
       bug.position.z += move;
       if (bug.position.z > DESPAWN_DISTANCE + 6) {
-        this.placeFirefly(bug, SPAWN_DISTANCE - Math.random() * 20);
+        this.placeAmbience(bug, SPAWN_DISTANCE - Math.random() * 20);
         continue;
       }
-      // Voo bobinho e piscadinha.
-      const { home, phase, speed, halo, spark } = bug.userData;
-      bug.position.x = home.x + Math.sin(elapsed * speed + phase) * 1.1;
-      bug.position.y = home.y + Math.cos(elapsed * speed * 0.8 + phase) * 0.5;
-      const brilho = 0.45 + Math.sin(elapsed * 3.5 + phase) * 0.55;
-      spark.material.opacity = brilho;
-      spark.material.transparent = true;
-      halo.material.opacity = brilho * 0.35;
-      halo.scale.setScalar(0.8 + brilho * 0.5);
+      const desloc = animateAmbience(bug, elapsed);
+      bug.position.x = bug.userData.home.x + desloc.x;
+      bug.position.y = bug.userData.home.y + desloc.y;
     }
 
     for (const cloud of this.clouds) {

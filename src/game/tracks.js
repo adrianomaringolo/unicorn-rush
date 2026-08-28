@@ -25,6 +25,7 @@ export const TRACKS = {
     mountains: [0xc7b9ff, 0xa8c8ff, 0xe0c3ff],
     decorations: ['tree', 'flower', 'flowerPatch', 'mushroom', 'flower', 'crystal'],
     obstacles: ['rock', 'candyBar', 'bush'],
+    ambience: [{ kind: 'butterfly', count: 16 }, { kind: 'bee', count: 10 }],
   },
 
   doces: {
@@ -44,7 +45,7 @@ export const TRACKS = {
     backdrop: 'clouds',
     cloud: 0xfff6fb,
     mountains: [0xff9ac9, 0xffcf8a, 0xc9a6ff],
-    decorations: ['lollipop', 'cupcake', 'candyCane'],
+    decorations: ['lollipop', 'cupcake', 'candyCane', 'sprinkles', 'chocolate', 'sprinkles'],
     obstacles: ['gumdrop', 'donut', 'candyBar'],
   },
 
@@ -67,6 +68,51 @@ export const TRACKS = {
     mountains: [0xffffff, 0xeaf2ff, 0xffe8f4],
     decorations: ['cloudHill', 'balloon', 'rainbowArch'],
     obstacles: ['stormCloud', 'kite', 'balloonBunch'],
+    ambience: [{ kind: 'bird', count: 18 }],
+  },
+
+  frutas: {
+    id: 'frutas',
+    name: 'Frutas',
+    emoji: '🍓',
+    tagline: 'Morangos, laranjeiras e cheiro de fruta madura',
+    sky: ['#c9f0a8', '#fff3c4'],
+    fog: { color: 0xe6f7cf, near: 44, far: 104 },
+    ground: 0x86d472,
+    path: 0xffe3a8,
+    kerb: 0xfff4d6,
+    stripe: 0xfff8e0,
+    stripeOpacity: 0.4,
+    hemisphere: { sky: 0xffffff, ground: 0xc9e08a, intensity: 1.1 },
+    sun: { color: 0xfff6cf, intensity: 1.5 },
+    backdrop: 'rainbow',
+    cloud: 0xffffff,
+    mountains: [0x9bd88a, 0xffc46b, 0xff8f8f],
+    decorations: ['strawberry', 'orangeTree', 'bananaBunch', 'flower'],
+    obstacles: ['watermelon', 'pineapple', 'coconutPile'],
+    ambience: [{ kind: 'butterfly', count: 12 }, { kind: 'bee', count: 12 }],
+  },
+
+  oceano: {
+    id: 'oceano',
+    name: 'Oceano',
+    emoji: '🐠',
+    tagline: 'Um caminho de areia no fundo do mar',
+    sky: ['#2f7fbf', '#a8e6f0'],
+    fog: { color: 0x4f9fc4, near: 34, far: 88 },
+    ground: 0x3f8fae,
+    path: 0xffeec2,
+    kerb: 0xfff6dd,
+    stripe: 0xfff8e6,
+    stripeOpacity: 0.35,
+    hemisphere: { sky: 0xbfeaff, ground: 0x2b6f8f, intensity: 1.0 },
+    sun: { color: 0xdff4ff, intensity: 1.15 },
+    backdrop: null,
+    cloud: 0x8fd8ee,
+    mountains: [0x2f7a94, 0x3f8fae, 0x53a5b8],
+    decorations: ['coral', 'seaweed', 'starfish', 'coral'],
+    obstacles: ['seaUrchin', 'clam', 'rock'],
+    ambience: [{ kind: 'fish', count: 26 }],
   },
 
   noite: {
@@ -90,7 +136,7 @@ export const TRACKS = {
     mountains: [0x413f80, 0x4c4a95, 0x5d4b90],
     decorations: ['glowMushroom', 'pineTree', 'crystal'],
     obstacles: ['crystalSpike', 'moonStone', 'bigGlowMushroom'],
-    fireflies: 44,
+    ambience: [{ kind: 'firefly', count: 44 }],
   },
 };
 
