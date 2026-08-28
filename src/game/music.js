@@ -47,6 +47,30 @@ export const THEMES = {
     bass: [50, 50, 45, 45, 43, 43, 45, 47],
   },
 
+  frutas: {
+    name: 'Suco de melancia',
+    bpm: 132, wave: 'square', bassWave: 'triangle', gain: 0.06,
+    melody: [
+      76, 79, 83, 79, 76, 83, 79, null,
+      74, 78, 81, 78, 74, 81, 78, null,
+      76, 79, 83, 86, 88, 86, 83, 79,
+      81, 79, 78, 76, 74, 76, null, null,
+    ],
+    bass: [52, 59, 55, 62, 50, 57, 53, 60],
+  },
+
+  oceano: {
+    name: 'Fundo do mar',
+    bpm: 92, wave: 'sine', bassWave: 'sine', gain: 0.085,
+    melody: [
+      64, 67, 71, 74, 71, 67, null, null,
+      66, 69, 73, 76, 73, 69, null, null,
+      64, 71, 67, 74, 78, 74, null, null,
+      62, 66, 69, 73, 69, 66, null, null,
+    ],
+    bass: [40, 40, 42, 42, 38, 38, 40, 45],
+  },
+
   noite: {
     name: 'Canção de ninar',
     bpm: 84, wave: 'triangle', bassWave: 'sine', gain: 0.08,

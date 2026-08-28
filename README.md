@@ -57,7 +57,8 @@ disponíveis estão em `src/models/scenery.js`.
 
 Cada pista tem sua música tema, tocada por osciladores do WebAudio (nada de
 arquivo de áudio): *Passeio no campo* 🌈, *Valsa de açúcar* 🍭,
-*Sonho de nuvem* ☁️ e *Canção de ninar* 🌙. A música troca junto com a pista e
+*Sonho de nuvem* ☁️, *Suco de melancia* 🍓, *Fundo do mar* 🐠 e
+*Canção de ninar* 🌙. A música troca junto com a pista e
 dá para desligar no botãozinho 🔊 do canto do HUD (a escolha fica salva).
 As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 
