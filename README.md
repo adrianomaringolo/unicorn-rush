@@ -18,10 +18,14 @@ de fora — dá até para instalar no celular e jogar offline.
 
 ## Personagens
 
-Na tela inicial dá para escolher entre seis unicórnios (setas ← → ou toque
-no retrato). O escolhido gira devagar embaixo do cartão, para dar tempo de
-ver o modelo, e cada um tem corpo, crina, chifre, asas, marca na anca e
-rastro próprios:
+A escolha do personagem tem três telas. Na primeira, o **modelo 3D do
+escolhido gira** embaixo do cartão, com o nome entre duas **setas** para
+passar de um para o outro (ou ← → no teclado). O botão *Ver todos* abre uma
+**grade** com o retrato de cada unicórnio — retratos renderizados a partir dos
+próprios modelos, não imagens prontas — e, ao tocar num deles, aparece a
+**ficha** com a historinha e a opção de correr com ele ou ver os outros.
+
+Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 
 | | Personagem | Jeitão | História |
 | --- | --- | --- | --- |
@@ -240,7 +244,7 @@ npm start        # abre http://localhost:5173
 | Mudar de pista | ← → ou A / D | arrastar para o lado |
 | Pular | Espaço, ↑ ou W | tocar na tela |
 | Começar / recomeçar | Enter ou Espaço | botão na tela |
-| Escolher (nas telas de escolha) | ← → · Enter continua | tocar na opção |
+| Escolher (nas telas de escolha) | ← → · Enter continua | setas na tela ou tocar na opção |
 | Ligar/desligar a música | — | botão 🔊 no HUD |
 | Pausar | Esc ou P | botão ⏸️ no HUD |
 
@@ -303,6 +307,7 @@ src/
   models/
     characters.js     os quatro personagens (cores, asas, marca, rastro, história)
     unicorn.js        monta o modelo 3D a partir de um personagem + galope
+    portraits.js      retratos da grade, renderizados dos próprios modelos
     powerups.js       escudo, ímã, turbo e vida extra (modelo + efeito)
     auras.js          o efeito visual de cada power-up no personagem
     rainbowTrail.js   rastro de arco-íris que segue o caminho percorrido

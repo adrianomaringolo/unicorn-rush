@@ -144,11 +144,11 @@ export function createUI() {
       hud.classList.remove('dim');
     },
 
-    // Cliques dentro do bloco livre (usado pela grade de fases).
+    // Cliques dentro do bloco livre (grade de fases, grade de personagens…).
     bindExtra: (handler) => {
       extra.onclick = (event) => {
-        const target = event.target.closest('[data-level]');
-        if (target && !target.disabled) handler(Number(target.dataset.level));
+        const target = event.target.closest('[data-pick]');
+        if (target && !target.disabled) handler(target.dataset.pick);
       };
     },
 

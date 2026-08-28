@@ -7,6 +7,7 @@ import {
 } from './config.js';
 import { createUnicorn, animateUnicorn } from '../models/unicorn.js';
 import { CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER } from '../models/characters.js';
+import { getPortraits } from '../models/portraits.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
@@ -214,7 +215,7 @@ export class Game {
     update((save) => { save.choices.character = id; });
     this.buildCharacter();
     sfx.collect();
-    if (this.state !== STATE.PLAYING) this.showMenu();
+    if (this.state !== STATE.PLAYING && this.step !== 'character') this.showMenu();
   }
 
   // Setas na tela de escolha passam de uma opção para a outra.
@@ -328,6 +329,59 @@ export class Game {
     this.ui.showPause(true);
   }
 
+  // Lista em grade: o retrato 3D de cada um, com o nome embaixo.
+  showCharacterGrid() {
+    this.state = STATE.READY;
+    this.step = 'character';
+    this.ui.showPause(false);
+
+    const retratos = getPortraits(CHARACTER_LIST);
+    const cartoes = CHARACTER_LIST.map((personagem) => {
+      const escolhido = personagem.id === this.character.id ? ' escolhido' : '';
+      return `<button class="cast-card${escolhido}" data-pick="${personagem.id}">`
+        + `<img class="cast-face" src="${retratos[personagem.id]}" alt="" />`
+        + `<span class="cast-name">${personagem.emoji} ${personagem.name}</span></button>`;
+    }).join('');
+
+    this.ui.showOverlay({
+      step: { index: 2, total: 3 },
+      title: 'Escolha o unicórnio',
+      html: `<div class="cast-grid">${cartoes}</div>`,
+      buttons: [
+        { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
+      ],
+    });
+    this.ui.bindExtra((id) => this.showCharacterStory(id));
+  }
+
+  // Ficha do personagem: retrato, historinha e a opção de escolher ou trocar.
+  showCharacterStory(id) {
+    const personagem = CHARACTERS[id];
+    if (!personagem) return;
+    this.state = STATE.READY;
+    this.step = 'character';
+
+    const retratos = getPortraits(CHARACTER_LIST);
+    this.ui.showOverlay({
+      step: { index: 2, total: 3 },
+      title: `${personagem.emoji} ${personagem.name}`,
+      html: `
+        <div class="cast-sheet">
+          <img class="cast-portrait" src="${retratos[personagem.id]}" alt="" />
+          <p class="cast-title">${personagem.title}</p>
+          <p class="cast-story">${personagem.story}</p>
+        </div>
+      `,
+      buttons: [
+        {
+          label: '✅ Correr com ' + personagem.name,
+          onClick: () => { this.setCharacter(personagem.id); this.showMenu('character'); },
+        },
+        { label: '🔁 Ver os outros', onClick: () => this.showCharacterGrid(), secondary: true },
+      ],
+    });
+  }
+
   // Grade das dez fases, com as que ainda não abriram cadeadas.
   showLevels() {
     this.state = STATE.READY;
@@ -341,7 +395,7 @@ export class Game {
       const number = i + 1;
       const open = number <= unlocked;
       const state = done[number] ? 'done' : open ? 'open' : 'locked';
-      return `<button class="level-tile ${state}" data-level="${number}" ${open ? '' : 'disabled'}>`
+      return `<button class="level-tile ${state}" data-pick="${number}" ${open ? '' : 'disabled'}>`
         + `<span class="level-number">${open ? number : '🔒'}</span>`
         + `<span class="level-keys">${open ? `🔑 ${levelData(number).keys}` : ''}</span>`
         + `${done[number] ? '<span class="level-done">⭐</span>' : ''}</button>`;
@@ -356,7 +410,7 @@ export class Game {
         { label: '⬅️ Voltar', onClick: () => this.showMenu('mode'), secondary: true },
       ],
     });
-    this.ui.bindExtra((number) => this.startLevel(number));
+    this.ui.bindExtra((numero) => this.startLevel(Number(numero)));
   }
 
   levelComplete() {
@@ -432,19 +486,23 @@ export class Game {
         step: { index: 2, total: 3 },
         picker: true,
         title: 'Quem vai correr?',
-        chips: CHARACTER_LIST.map((character) => ({
-          id: character.id,
-          name: character.name,
-          emoji: character.emoji,
-          active: character.id === this.character.id,
-          onClick: () => this.setCharacter(character.id),
-        })),
-        text: `<b>${this.character.name}</b>, ${this.character.title}<br>${this.character.story}`,
+        html: `
+          <div class="chooser">
+            <button class="chooser-arrow" data-pick="anterior" aria-label="Personagem anterior">◀</button>
+            <div class="chooser-name">
+              <b>${this.character.name}</b>
+              <small>${this.character.title}</small>
+            </div>
+            <button class="chooser-arrow" data-pick="proximo" aria-label="Próximo personagem">▶</button>
+          </div>
+        `,
         buttons: [
           { label: 'Continuar ➡️', onClick: () => this.showMenu('mode') },
+          { label: '🖼️ Ver todos', onClick: () => this.showCharacterGrid(), secondary: true },
           { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
         ],
       });
+      this.ui.bindExtra((lado) => this.cycleCharacter(lado === 'proximo' ? 1 : -1));
       return;
     }
 
