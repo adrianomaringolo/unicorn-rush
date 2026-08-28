@@ -163,6 +163,24 @@ export class Game {
     this.nightGlow.visible = false;
     this.unicorn.add(this.nightGlow);
 
+    // Bolha de ar na cabeça, para respirar debaixo d'água.
+    this.headBubble = new THREE.Mesh(
+      new THREE.SphereGeometry(0.95, 16, 12),
+      new THREE.MeshPhongMaterial({
+        color: 0xdff6ff,
+        transparent: true,
+        opacity: 0.22,
+        shininess: 90,
+        specular: 0xffffff,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    this.headBubble.position.set(0, 0.02, -0.2);
+    this.headBubble.renderOrder = 3;
+    this.headBubble.visible = false;
+    this.unicorn.userData.head.add(this.headBubble);
+
     this.scene.add(this.unicorn);
 
     sfx.setPitch(this.character.voice);
@@ -185,6 +203,9 @@ export class Game {
 
     this.nightGlow.visible = !!glow;
     if (glow) this.nightGlow.material.color.setHex(glow.halo);
+
+    // Debaixo d'água todo mundo ganha o capacete de ar.
+    this.headBubble.visible = !!this.track.helmet;
   }
 
   setCharacter(id) {

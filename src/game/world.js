@@ -24,6 +24,8 @@ const AMBIENCE_SPOT = {
   bee:       { alto: [0.4, 2.2], longe: 5 },
   bird:      { alto: [4, 11],    longe: 0 },   // passarinho pode cruzar por cima
   fish:      { alto: [0.9, 5.5], longe: 4.5 },
+  bubble:    { alto: [0.1, 1.2],  longe: 4.5 },   // sobe sozinha na animação
+  ant:       { alto: [0.12, 0.12], longe: 4.4 },  // andando no chão
 };
 
 export class World {

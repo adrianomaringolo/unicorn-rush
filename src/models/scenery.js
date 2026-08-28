@@ -1044,6 +1044,72 @@ function fish() {
   return g;
 }
 
+// Bolha de ar subindo no oceano.
+function bubble() {
+  const g = new THREE.Group();
+  const raio = 0.12 + Math.random() * 0.22;
+
+  const bolha = new THREE.Mesh(
+    new THREE.SphereGeometry(raio, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xeafaff, transparent: true, opacity: 0.4, fog: false })
+  );
+  g.add(bolha);
+
+  // Brilhinho, para parecer bolha mesmo.
+  const luz = new THREE.Mesh(
+    new THREE.SphereGeometry(raio * 0.3, 5, 4),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.75, fog: false })
+  );
+  luz.position.set(-raio * 0.4, raio * 0.4, raio * 0.4);
+  g.add(luz);
+
+  g.userData.parts = { subida: 1.2 + Math.random() * 1.6 };
+  return g;
+}
+
+// Formiguinha andando pela beira da pista dos doces.
+function ant() {
+  const g = new THREE.Group();
+  const corpo = new THREE.Group();
+
+  for (const [x, r] of [[-0.16, 0.1], [0, 0.08], [0.17, 0.12]]) {
+    const parte = new THREE.Mesh(
+      new THREE.SphereGeometry(r, 6, 5),
+      new THREE.MeshBasicMaterial({ color: 0x3a2b2b, fog: false })
+    );
+    parte.position.x = x;
+    corpo.add(parte);
+  }
+
+  for (const lado of [-1, 1]) {
+    const antena = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.16, 4),
+      new THREE.MeshBasicMaterial({ color: 0x3a2b2b, fog: false })
+    );
+    antena.position.set(0.24, 0.1, lado * 0.05);
+    antena.rotation.z = -0.7;
+    corpo.add(antena);
+  }
+
+  const pernas = [];
+  for (let i = 0; i < 6; i++) {
+    const perna = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, 0.18, 4),
+      new THREE.MeshBasicMaterial({ color: 0x3a2b2b, fog: false })
+    );
+    const lado = i % 2 === 0 ? -1 : 1;
+    perna.position.set(-0.12 + Math.floor(i / 2) * 0.14, -0.06, lado * 0.09);
+    perna.rotation.x = lado * 0.9;
+    perna.userData.lado = lado;
+    corpo.add(perna);
+    pernas.push(perna);
+  }
+
+  g.add(corpo);
+  g.userData.parts = { corpo, pernas };
+  return g;
+}
+
 // Vagalume: um pontinho aceso com um halo bem de leve em volta.
 export function createFirefly() {
   const g = new THREE.Group();
@@ -1068,7 +1134,7 @@ export function createFirefly() {
   return g;
 }
 
-const AMBIENCE = { firefly: createFirefly, butterfly, bee, bird, fish };
+const AMBIENCE = { firefly: createFirefly, butterfly, bee, bird, fish, bubble, ant };
 
 // Cria um bichinho do tipo pedido pela pista.
 export function createAmbience(kind) {
@@ -1113,6 +1179,25 @@ export function animateAmbience(item, elapsed) {
     for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.7;
     item.rotation.y = Math.sin(t * 0.5) * 0.3;
     return { x: Math.sin(t * 0.7) * 2.4, y: Math.sin(t * 1.1) * 0.8 };
+  }
+
+  if (kind === 'bubble') {
+    // Sobe sempre, balançando de leve; quem devolve para baixo é o mundo.
+    const alturaCiclo = 9;
+    const subiu = (elapsed * parts.subida + phase * 3) % alturaCiclo;
+    item.scale.setScalar(0.85 + Math.sin(elapsed * 3 + phase) * 0.12);
+    return { x: Math.sin(t * 1.4) * 0.5, y: subiu };
+  }
+
+  if (kind === 'ant') {
+    // Anda em fila, mexendo as perninhas.
+    const passo = Math.sin(elapsed * 12 + phase);
+    for (const perna of parts.pernas) {
+      perna.rotation.x = perna.userData.lado * (0.9 + passo * perna.userData.lado * 0.35);
+    }
+    parts.corpo.position.y = Math.abs(passo) * 0.03;
+    item.rotation.y = Math.sin(t * 0.4) * 0.6;
+    return { x: Math.sin(t * 0.5) * 2.5, y: 0 };
   }
 
   if (kind === 'fish') {

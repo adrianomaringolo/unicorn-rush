@@ -47,6 +47,7 @@ export const TRACKS = {
     mountains: [0xff9ac9, 0xffcf8a, 0xc9a6ff],
     decorations: ['lollipop', 'cupcake', 'candyCane', 'sprinkles', 'chocolate', 'sprinkles'],
     obstacles: ['gumdrop', 'donut', 'candyBar'],
+    ambience: [{ kind: 'ant', count: 18 }],
   },
 
   ceu: {
@@ -117,7 +118,8 @@ export const TRACKS = {
     mountains: [0x2f7a94, 0x3f8fae, 0x53a5b8],
     decorations: ['coral', 'seaweed', 'starfish', 'coral'],
     obstacles: ['seaUrchin', 'clam', 'rock'],
-    ambience: [{ kind: 'fish', count: 26 }],
+    ambience: [{ kind: 'fish', count: 22 }, { kind: 'bubble', count: 26 }],
+    helmet: true,          // capacete de ar na cabeça, para respirar embaixo d'água
   },
 
   noite: {
