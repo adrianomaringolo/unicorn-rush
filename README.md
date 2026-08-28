@@ -156,6 +156,22 @@ atrás do cartão:
 Dá para voltar um passo a qualquer momento; as setas ← → passeiam pelas
 opções do passo atual e Enter continua.
 
+## Publicar (Vercel)
+
+O jogo é estático — não tem build, e o three.js já está em `vendor/`. Na
+Vercel: *Add New… → Project* → importar o repositório, **Framework Preset:
+Other**, *Build Command* e *Install Command* vazios e *Output Directory* `.`.
+Pelo terminal dá no mesmo: `npx vercel` e depois `npx vercel --prod`.
+
+O `vercel.json` já vai junto: ele impede que o `sw.js`, o `index.html` e o
+manifesto fiquem em cache longo — senão quem já abriu o jogo continuaria com
+a versão velha mesmo depois de um deploy novo. O resto (módulos, three.js,
+fonte, ícones) pode ser cacheado à vontade, porque quem controla isso é o
+service worker.
+
+**A cada deploy com mudanças, suba a `VERSION` no topo do `sw.js`** — é ela
+que faz o cache antigo ser descartado no aparelho de quem já jogou.
+
 ## Instalar no aparelho (PWA)
 
 O UnicornRush é um **PWA**: dá para instalar na tela inicial do celular ou do
