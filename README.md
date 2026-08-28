@@ -201,14 +201,16 @@ daí funciona offline. Ao mudar arquivos, é só trocar a `VERSION` no começo d
 
 ## Ícone
 
-O logo é o `assets/icon.svg` — a cabeça da unicórnia com o chifre dourado e a
-crina em três faixas arco-íris, desenhado em SVG com poucas formas grandes,
-para continuar legível no tamanho de favicon. Ele é
-o favicon, aparece ao lado do nome nas telas de escolha e é a base dos PNGs em
-`assets/icons/` (192, 512, 180 para iOS e uma versão *maskable* com o desenho
-dentro da zona segura). Para regerar os PNGs depois de mexer no SVG, basta
-abrir o SVG no tamanho desejado e exportar — o arquivo fonte é sempre o
-`icon.svg`.
+O logo é o `assets/logo.png` — a cabeça da unicórnia branca com o chifre
+dourado e a crina em rosa, amarelo e azul. Dele saem os ícones em `assets/icons/` (64 para o favicon, 180 para o iOS,
+192 e 512 para instalar, mais uma versão *maskable* com a arte a 78% sobre o
+mesmo degradê, para o recorte do sistema não cortar o chifre). Ele também
+aparece ao lado do nome nas telas de escolha e no cartão *Sobre*.
+
+Para refazer os tamanhos depois de trocar o logo: com `npm start` rodando,
+abra `http://localhost:5173/scripts/gerar-icones.html` — a página redesenha
+tudo num canvas e mostra os arquivos em base64 para salvar em
+`assets/icons/`.
 
 ## Como jogar
 
@@ -262,7 +264,7 @@ index.html            página + HUD
 style.css             visual do HUD e das telas
 manifest.webmanifest  dados do app instalável (nome, ícones, cores)
 sw.js                 service worker: guarda o jogo para rodar offline
-assets/icon.svg       logo do jogo (também é o favicon)
+assets/logo.png       logo do jogo (dele saem todos os ícones)
 assets/icons/         PNGs do ícone para instalar no aparelho
 fonts.css             fonte Fredoka hospedada localmente
 assets/fonts/         arquivos .woff2 da Fredoka (SIL Open Font License 1.1)

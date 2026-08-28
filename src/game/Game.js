@@ -478,7 +478,7 @@ export class Game {
       title: 'Sobre o jogo',
       html: `
         <div class="about">
-          <img class="about-logo" src="./assets/icon.svg" alt="" width="84" height="84" />
+          <img class="about-logo" src="./assets/icons/icon-192.png" alt="" width="84" height="84" />
           <p class="about-text">
             <b>UnicornRush</b> é um joguinho de corrida para crianças, feito em
             3D com <b>three.js</b> — todos os unicórnios, pistas e enfeites são

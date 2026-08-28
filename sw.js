@@ -3,7 +3,7 @@
 // O jogo inteiro cabe no cache (não tem nada vindo de fora), então depois da
 // primeira visita ele abre offline — inclusive instalado na tela inicial.
 // Ao mudar arquivos, troque a versão abaixo: o cache velho é apagado sozinho.
-const VERSION = 'unicornrush-v2';
+const VERSION = 'unicornrush-v3';
 
 const SHELL = [
   './',
@@ -13,7 +13,7 @@ const SHELL = [
   './fonts.css',
   './assets/fonts/fredoka-latin.woff2',
   './assets/fonts/fredoka-latin-ext.woff2',
-  './assets/icon.svg',
+  './assets/icons/icon-64.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   './vendor/three.module.js',
