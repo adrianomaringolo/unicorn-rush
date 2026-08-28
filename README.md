@@ -1,8 +1,20 @@
 # 🦄 UnicornRush
 
-Jogo infantil de corrida infinita feito com [three.js](https://threejs.org/):
-a unicórnia Lua corre por uma pista mágica juntando corações, desviando de
-pedras, barreiras de doce e arbustos espinhosos.
+Jogo infantil de corrida feito com [three.js](https://threejs.org/): seis
+unicórnios correm por pistas mágicas juntando corações e chaves, desviando de
+obstáculos e pegando power-ups. Roda no navegador, sem build e sem nada vindo
+de fora — dá até para instalar no celular e jogar offline.
+
+## As pistas
+
+| | |
+| :---: | :---: |
+| ![Pista Campo](docs/prints/1-campo.png) | ![Pista Doces](docs/prints/2-doces.png) |
+| **🌈 Campo** — flores, cogumelos, borboletas e abelhas | **🍭 Doces** — pirulitos, granulado, chocolate e formigas |
+| ![Pista Céu](docs/prints/3-ceu.png) | ![Pista Frutas](docs/prints/4-frutas.png) |
+| **☁️ Céu** — mar de nuvens, balões e passarinhos | **🍓 Frutas** — pomar cheio (aqui com o Brasa e seu rastro de fogo) |
+| ![Pista Oceano](docs/prints/5-oceano.png) | ![Pista Noite](docs/prints/6-noite.png) |
+| **🐠 Oceano** — corais, peixinhos e bolha de ar na cabeça | **🌙 Noite** — lua cheia, vagalumes e o unicórnio brilhando |
 
 ## Personagens
 
@@ -269,6 +281,7 @@ style.css             visual do HUD e das telas
 manifest.webmanifest  dados do app instalável (nome, ícones, cores)
 sw.js                 service worker: guarda o jogo para rodar offline
 assets/logo.png       logo do jogo (dele saem todos os ícones)
+docs/prints/          capturas das pistas usadas aqui no README
 assets/icons/         PNGs do ícone para instalar no aparelho
 fonts.css             fonte Fredoka hospedada localmente
 assets/fonts/         arquivos .woff2 da Fredoka (SIL Open Font License 1.1)
