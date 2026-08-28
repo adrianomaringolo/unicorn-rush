@@ -465,6 +465,44 @@ export class Game {
       buttons: [
         { label: 'Continuar ➡️', onClick: () => this.showMenu('character') },
         { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
+        { label: 'ℹ️ Sobre', onClick: () => this.showAbout(), secondary: true },
+      ],
+    });
+  }
+
+  // Cartão "sobre": quem fez, com o quê, e os links.
+  showAbout() {
+    this.state = STATE.READY;
+    this.ui.showPause(false);
+    this.ui.showOverlay({
+      title: 'Sobre o jogo',
+      html: `
+        <div class="about">
+          <img class="about-logo" src="./assets/icon.svg" alt="" width="84" height="84" />
+          <p class="about-text">
+            <b>UnicornRush</b> é um joguinho de corrida para crianças, feito em
+            3D com <b>three.js</b> — todos os unicórnios, pistas e enfeites são
+            desenhados por código, sem nenhuma imagem pronta.
+          </p>
+          <p class="about-text">Criado por <b>Adriano Maringolo</b></p>
+          <div class="about-links">
+            <a class="about-link" href="https://adrianomaringolo.dev" target="_blank" rel="noopener">
+              🌐 adrianomaringolo.dev
+            </a>
+            <a class="about-link" href="https://github.com/adrianomaringolo" target="_blank" rel="noopener">
+              🐙 github.com/adrianomaringolo
+            </a>
+            <a class="about-link" href="https://github.com/adrianomaringolo/unicorn-rush" target="_blank" rel="noopener">
+              🦄 código do jogo
+            </a>
+          </div>
+          <p class="about-note">
+            Feito com three.js · fonte Fredoka (SIL Open Font License)
+          </p>
+        </div>
+      `,
+      buttons: [
+        { label: '⬅️ Voltar', onClick: () => this.showMenu(this.step) },
       ],
     });
   }
@@ -801,13 +839,21 @@ export class Game {
   // Ímã ligado: os corações e estrelas por perto vêm voando até o unicórnio.
   attractCollectibles(dt) {
     const p = this.player;
+    const alvo = new THREE.Vector3(p.x, p.y + 1.15, 0);
+
     for (const e of this.world.entities) {
       if (e.userData.kind === 'obstacle') continue;
-      if (e.position.z < -16 || e.position.z > 6) continue;
-      const pull = Math.min(1, 6 * dt);
-      e.position.x += (p.x - e.position.x) * pull;
-      e.position.y += (p.y + 1.15 - e.position.y) * pull;
-      e.position.z += (0 - e.position.z) * pull * 0.5;
+      if (e.position.z < -16 || e.position.z > 9) continue;
+
+      const rumo = alvo.clone().sub(e.position);
+      const distancia = rumo.length();
+      if (distancia < 0.001) continue;
+
+      // A pista empurra tudo para trás a `speed` por segundo. Se o ímã puxasse
+      // mais devagar que isso, o item ficava só acompanhando o unicórnio sem
+      // nunca encostar — era o que acontecia com o que ficava para trás.
+      const velocidade = Math.max(this.speed + 8, distancia * 9);
+      e.position.addScaledVector(rumo.divideScalar(distancia), Math.min(distancia, velocidade * dt));
     }
   }
 

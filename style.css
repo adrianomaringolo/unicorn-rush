@@ -379,6 +379,47 @@ html, body {
 .level-tile.locked { opacity: .55; cursor: default; background: #f6f1fb; }
 .level-tile:not(.locked):active { transform: scale(.94); }
 
+/* --- Cartão "sobre" --------------------------------------------------- */
+.about { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.about-logo {
+  width: clamp(54px, 15vw, 72px);
+  height: auto;
+  border-radius: 22%;
+  box-shadow: 0 6px 0 rgba(122, 78, 199, .18);
+  margin-bottom: 2px;
+}
+.about-text {
+  margin: 0 !important;
+  font-size: clamp(12.5px, 3.3vw, 14.5px) !important;
+  line-height: 1.35 !important;
+}
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+.about-link {
+  display: block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 3px solid #f3dcef;
+  background: #fff;
+  color: var(--purple);
+  font-size: clamp(12px, 3.4vw, 15px);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.about-link:hover { border-color: var(--pink); background: #ffeef6; }
+.about-link:active { transform: scale(.97); }
+.about-note {
+  margin: 4px 0 0 !important;
+  font-size: clamp(10px, 2.8vw, 12px) !important;
+  opacity: .6;
+}
+
 /* --- Tela de estatísticas ------------------------------------------- */
 #overlay-extra { width: 100%; }
 #overlay-extra[hidden] { display: none; }
@@ -540,7 +581,7 @@ html, body {
    ficam sempre numa linha só — assim dá para ver a pista e o personagem
    enquanto escolhe. */
 @media (orientation: portrait) {
-  .card { max-height: 82vh; padding: 14px 14px 16px; }
+  .card { max-height: 88vh; padding: 14px 14px 16px; }
   .card.picker { max-height: 66vh; }
   /* A historinha é o que pode encolher, para as fichas e os botões caberem. */
   #overlay-text { font-size: clamp(12px, 3.3vw, 15px); line-height: 1.3; }

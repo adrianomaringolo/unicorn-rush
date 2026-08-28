@@ -107,6 +107,9 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
   power-ups de cada tipo;
 - se a **música** está ligada ou desligada.
 
+No primeiro passo da escolha ainda tem o botão **ℹ️ Sobre**, com quem fez, o
+que foi usado e os links do autor.
+
 Tem uma **tela de estatísticas** (botão 📊 no primeiro passo da escolha e na
 tela de fim de corrida) com tudo em números grandes: vitórias, nível e meta
 atual, corridas, corações, itens e recorde, mais duas barrinhas — quantas
@@ -193,8 +196,9 @@ daí funciona offline. Ao mudar arquivos, é só trocar a `VERSION` no começo d
 
 ## Ícone
 
-O logo é o `assets/icon.svg` — a cabeça da unicórnia com o chifre dourado, a
-crina arco-íris e um coração, desenhado em SVG (nada de imagem pesada). Ele é
+O logo é o `assets/icon.svg` — a cabeça da unicórnia com o chifre dourado e a
+crina em três faixas arco-íris, desenhado em SVG com poucas formas grandes,
+para continuar legível no tamanho de favicon. Ele é
 o favicon, aparece ao lado do nome nas telas de escolha e é a base dos PNGs em
 `assets/icons/` (192, 512, 180 para iOS e uma versão *maskable* com o desenho
 dentro da zona segura). Para regerar os PNGs depois de mexer no SVG, basta
