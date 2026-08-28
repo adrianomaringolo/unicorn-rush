@@ -58,6 +58,28 @@ export const CHARACTERS = {
     trail: { colors: [0xe3dcff, 0xbcaef5, 0x9a7ae0, 0x6d7fe0, 0x5b6bd6, 0x8ea3ff], width: 0.75 },
   },
 
+  brasa: {
+    id: 'brasa',
+    name: 'Brasa',
+    emoji: '🔥',
+    title: 'o unicórnio de fogo',
+    story: 'Brasa é o maior da turma e corre tão rápido que a crina dele pega fogo. '
+      + 'Onde ele passa fica um caminho de brasas quentinhas que some devagar.',
+    body: 0x3a2f3f,
+    hoof: 0xff8a3c,
+    muzzle: 0xff6b3c,
+    horn: { color: 0xffb02e, length: 0.78, radius: 0.1 },
+    hair: [0xffd166, 0xff8a1f, 0xff4d1f, 0xffb02e, 0xff6b0f],
+    wing: { style: 'ray', colors: [0xfff0a8, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f] },
+    mark: { shape: 'flame', color: 0xff8a1f },
+    // Macho grandão: maior que os outros e de pernas compridas.
+    scale: 1.18,
+    proportions: { head: 0.95, legs: 1.1, eye: 0.9 },
+    fiery: true,          // crina e rabo com labaredas (ver unicorn.js)
+    voice: 0.8,           // voz mais grave que a dos outros
+    trail: { colors: [0xfff3c4, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f, 0xff2f0f], width: 1.05 },
+  },
+
   lulu: {
     id: 'lulu',
     name: 'Lulu',

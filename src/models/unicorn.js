@@ -18,7 +18,7 @@ const mat = (color, opts = {}) =>
 // e afina um pouquinho. Girando cada elo alguns graus, a mecha vira uma curva
 // contínua de cabelo — nada de bolinhas soltas.
 // ---------------------------------------------------------------------------
-function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45 } = {}) {
+function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false } = {}) {
   const root = new THREE.Group();
   const joints = [];
   const segLength = length / segments;
@@ -31,9 +31,12 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
     const joint = new THREE.Group();
     if (i > 0) joint.position.y = -segLength;
 
+    const material = fiery
+      ? mat(color, { emissive: color, emissiveIntensity: 0.9 })
+      : mat(color);
     const mesh = new THREE.Mesh(
       new THREE.CylinderGeometry(top, bottom, segLength * 1.06, 6),
-      mat(color)
+      material
     );
     mesh.position.y = -segLength / 2;
     mesh.scale.x = flatten;          // fina de lado: mecha de cabelo, não tubo
@@ -45,14 +48,25 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
     joints.push(joint);
   }
 
+  // Fogo: uma línguinha clara na ponta da mecha.
+  if (fiery) {
+    const lingua = new THREE.Mesh(
+      new THREE.ConeGeometry(width * 0.34, segLength * 1.5, 5),
+      mat(0xfff3c4, { emissive: 0xffd166, emissiveIntensity: 1 })
+    );
+    lingua.position.y = -segLength * 0.9;
+    parent.add(lingua);
+  }
+
   root.userData.joints = joints;
   root.userData.phase = 0;
+  root.userData.fiery = fiery;
   return root;
 }
 
 // Crina: fileira de mechas finas ao longo da crista do pescoço, caindo dos
 // dois lados — curtinhas na nuca, compridas no meio do pescoço.
-function makeMane(colors) {
+function makeMane(colors, fiery = false) {
   const mane = new THREE.Group();
   const locks = [];
   const rows = 4;
@@ -66,7 +80,8 @@ function makeMane(colors) {
         length: 0.45 + Math.sin(u * Math.PI * 0.9) * 0.5,
         width: 0.26,
         segments: 4,
-        flatten: 0.28,
+        flatten: fiery ? 0.55 : 0.28,
+        fiery,
       });
       // Da nuca (u=0) até a cernelha, acompanhando a curva do pescoço.
       lock.position.set(side * 0.05, 1.98 - u * 0.48, -0.72 + u * 0.6);
@@ -82,7 +97,7 @@ function makeMane(colors) {
 }
 
 // Rabo: um punhado de mechas saindo da garupa.
-function makeTail(colors) {
+function makeTail(colors, fiery = false) {
   const tail = new THREE.Group();
   const locks = [];
   const count = 6;
@@ -93,7 +108,8 @@ function makeTail(colors) {
       length: 0.85 - Math.abs(offset) * 0.06,
       width: 0.18,
       segments: 4,
-      flatten: 0.55,
+      flatten: fiery ? 0.7 : 0.55,
+      fiery,
     });
     // Bem juntinhas: de trás o rabo tem que parecer um tufo, não fitas soltas.
     lock.position.set(offset * 0.06, 0, -Math.abs(offset) * 0.05);
@@ -250,6 +266,15 @@ function markShape(kind) {
     return shape;
   }
 
+  if (kind === 'flame') {
+    shape.moveTo(0, 0.62);
+    shape.bezierCurveTo(0.34, 0.2, 0.42, -0.1, 0.24, -0.42);
+    shape.bezierCurveTo(0.2, -0.16, 0.06, -0.12, 0.02, -0.3);
+    shape.bezierCurveTo(-0.12, -0.12, -0.4, -0.12, -0.3, -0.34);
+    shape.bezierCurveTo(-0.46, 0.02, -0.3, 0.32, 0, 0.62);
+    return shape;
+  }
+
   if (kind === 'rainbow') {
     shape.absarc(0, -0.2, 0.55, 0, Math.PI, false);
     shape.absarc(0, -0.2, 0.28, Math.PI, 0, true);
@@ -378,7 +403,7 @@ export function createUnicorn(character = CHARACTERS.uni) {
   const forelockLocks = [];
   for (let i = 0; i < 3; i++) {
     const lock = makeLock(character.hair[i % character.hair.length], {
-      length: 0.34, width: 0.13, segments: 2,
+      length: 0.34, width: 0.13, segments: 2, fiery: character.fiery,
     });
     lock.position.set((i - 1) * 0.12, 0, 0);
     lock.rotation.z = (i - 1) * 0.2;
@@ -390,10 +415,10 @@ export function createUnicorn(character = CHARACTERS.uni) {
   head.add(forelock);
 
   // Crina e rabo
-  const mane = makeMane(character.hair);
+  const mane = makeMane(character.hair, character.fiery);
   torso.add(mane);
 
-  const tail = makeTail(character.hair);
+  const tail = makeTail(character.hair, character.fiery);
   tail.position.set(0, 1.52, 0.66);
   torso.add(tail);
 
@@ -453,11 +478,18 @@ export function createUnicorn(character = CHARACTERS.uni) {
 // Faz uma mecha ondular. `sweep` é o quanto ela é jogada para trás
 // (negativo joga para trás, positivo para a frente).
 function animateLock(lock, time, { sweep, wave, sway, speed }) {
-  const { joints, phase } = lock.userData;
+  const { joints, phase, fiery } = lock.userData;
   joints.forEach((joint, i) => {
     const t = (i + 1) / joints.length;
     joint.rotation.x = sweep + Math.sin(time * speed - i * 0.8 + phase) * wave * (0.35 + t);
     joint.rotation.z = Math.sin(time * speed * 0.6 + i * 0.5 + phase) * sway * (0.3 + t);
+
+    // Labareda: além de ondular, a chama treme e estica.
+    if (fiery) {
+      const tremor = 1 + Math.sin(time * 16 + i * 1.7 + phase) * 0.12 * t;
+      joint.scale.set(tremor, 1 + Math.sin(time * 11 + i + phase) * 0.14 * t, tremor);
+      joint.rotation.x += Math.sin(time * 13 + i * 2.1) * 0.06;
+    }
   });
 }
 

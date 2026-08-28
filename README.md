@@ -6,7 +6,7 @@ pedras, barreiras de doce e arbustos espinhosos.
 
 ## Personagens
 
-Na tela inicial dá para escolher entre cinco unicórnios (setas ← → ou toque
+Na tela inicial dá para escolher entre seis unicórnios (setas ← → ou toque
 no retrato). O escolhido gira devagar embaixo do cartão, para dar tempo de
 ver o modelo, e cada um tem corpo, crina, chifre, asas, marca na anca e
 rastro próprios:
@@ -16,6 +16,7 @@ rastro próprios:
 | 🌈 | **Uni** | branca, crina arco-íris, asas de penas, rastro de sete cores | Nasceu na ponta de um arco-íris, num dia de sol com chuva. Onde ela pisa fica colorido. |
 | ☀️ | **Sol** | dourado, crina de fogo, asas em raios de sol, rastro alaranjado | Acorda antes de todo mundo para acender o dia; seu rastro morninho faz as flores abrirem. |
 | 🌙 | **Lua** | lilás clarinho, crina azul da noite, asas de véu, rastro violeta | Só sai quando escurece, para cuidar dos sonhos de quem dorme. Conhece todos os atalhos da noite. |
+| 🔥 | **Brasa** | o único **macho** e o maior da turma (18% maior que os outros, de pernas compridas): corpo escuro, chifre grande, asas em raios de fogo e **crina e rabo em labaredas** que tremem e esticam. O rastro dele é um caminho de brasas. Fala grosso — os sons de coleta são mais graves. | Corre tão rápido que a crina pega fogo; onde ele passa fica um caminho de brasas quentinhas que some devagar. |
 | 🤍 | **Lulu** | unicórnia **bebê**: pequenina (78% do tamanho dos outros), cabeçuda, olhos grandes e perninhas curtas, toda branca com crina em tons pastel e um coração na anca. O rastro dela é **um fiozinho** de brilho e ela pega os itens com uma **vozinha bem aguda** | É a menorzinha do grupo e ainda está aprendendo a voar; branquinha como nuvem, deixa um fiozinho de brilho por onde passa. |
 | ⭐ | **Estrela** | dourada clara, crina de brilho, asas cor de creme, rastro de luz | Caiu do céu numa noite de agosto e ficou para brincar. Brilha tanto que as estrelinhas correm junto. |
 
@@ -24,7 +25,8 @@ Tudo isso é dado, não código: cada personagem é uma entrada em
 (`feather`, `ray` ou `veil`), a marca da anca (`rainbow`, `sun`, `moon`,
 `star`, `heart`), as cores e a largura do rastro e, se quiser, o tamanho
 (`scale`), as proporções (`proportions`: cabeça, olhos e pernas — é o que faz
-a Lulu parecer um bebê) e a `voice`, que é o tom dos sons de coleta (1 é o
+a Lulu parecer um bebê e o Brasa parecer adulto), o `fiery` (que acende a
+crina e o rabo em chamas) e a `voice`, que é o tom dos sons de coleta (1 é o
 normal; a Lulu usa 1,5, uma quinta acima). Para inventar um quinto unicórnio basta
 acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
 
