@@ -78,6 +78,9 @@ arquivo de áudio): *Passeio no campo* 🌈, *Valsa de açúcar* 🍭,
 *Sonho de nuvem* ☁️, *Suco de melancia* 🍓, *Fundo do mar* 🐠 e
 *Canção de ninar* 🌙. A música troca junto com a pista e
 dá para desligar no botãozinho 🔊 do canto do HUD (a escolha fica salva).
+Quando a aba sai de foco — a criança troca de app ou bloqueia a tela — o
+áudio inteiro é suspenso e a corrida entra em pausa sozinha, para ninguém
+perder vida enquanto está fora.
 As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 
 ## Modos de jogo
@@ -129,6 +132,9 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
 - **contagens**: vitórias, corridas jogadas, corações e itens coletados no
   total, quantas corridas em cada pista e com cada unicórnio, e quantos
   power-ups de cada tipo;
+- as **chaves mágicas** somam para sempre e aparecem num selo ao lado do nome
+  do jogo, nas telas de escolha — são a moeda guardada para destravar
+  conteúdo mais para a frente;
 - se a **música** está ligada ou desligada.
 
 No primeiro passo da escolha ainda tem o botão **ℹ️ Sobre**, com quem fez, o
@@ -215,6 +221,14 @@ que faz o cache antigo ser descartado no aparelho de quem já jogou.
 
 O UnicornRush é um **PWA**: dá para instalar na tela inicial do celular ou do
 computador e jogar **sem internet**.
+
+Quando o navegador permite, aparece um botão **📲 Instalar** na primeira tela
+de escolha, que abre o convite de instalação na hora. No iPhone, onde não
+existe esse convite, o mesmo botão mostra o passo a passo (Compartilhar →
+Adicionar à Tela de Início). Se o jogo já estiver instalado, o botão
+some sozinho.
+
+Dá para instalar pelo navegador também:
 
 - No Android/Chrome: abrir o jogo → menu → *Instalar app*.
 - No iPhone/Safari: abrir o jogo → compartilhar → *Adicionar à Tela de Início*.
@@ -309,6 +323,7 @@ src/
     Game.js           cena, câmera, estado do jogador, laço principal
     world.js          pista rolando, spawn de itens e obstáculos, partículas
     input.js          teclado, arrastar e botões de toque
+    install.js        o convite de instalar o PWA (e o passo a passo no iPhone)
     audio.js          efeitos sonoros gerados na hora (WebAudio)
     ui.js             ponte com o HUD em HTML
   models/

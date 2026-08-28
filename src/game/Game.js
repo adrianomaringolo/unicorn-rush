@@ -20,6 +20,7 @@ import { createInput } from './input.js';
 import { sfx } from './audio.js';
 import { getSave, update, resetSave } from './storage.js';
 import * as music from './music.js';
+import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
@@ -97,12 +98,21 @@ export class Game {
     this.ui.onPause(() => this.togglePause());
 
     this.setupMuteButton();
+    watchInstall(() => {
+      if (this.state === STATE.READY && this.step === 'character') this.showMenu('character');
+    });
+    // Trocou de app ou bloqueou a tela? A corrida espera (e o áudio também,
+    // em src/game/music.js) — ninguém perde vida enquanto está fora.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.state === STATE.PLAYING) this.pause();
+    });
     addEventListener('resize', () => this.resize());
     addEventListener('orientationchange', () => setTimeout(() => this.resize(), 250));
     window.visualViewport?.addEventListener('resize', () => this.resize());
     this.resize();
 
     this.clock = new THREE.Clock();
+    this.ui.setWallet(this.save.stats.keys || 0);
     this.reset();
     this.renderer.setAnimationLoop(() => this.tick());
   }
@@ -141,7 +151,7 @@ export class Game {
     update((save) => { save.choices.track = id; });
     this.buildWorld();
     sfx.collect();
-    if (this.state !== STATE.PLAYING && this.step !== 'track') this.showMenu();
+    if (this.state !== STATE.PLAYING) this.showMenu(this.step === 'track' ? 'track' : this.step);
   }
 
   // Monta (ou remonta) o unicórnio e o rastro do personagem escolhido.
@@ -216,7 +226,8 @@ export class Game {
     update((save) => { save.choices.character = id; });
     this.buildCharacter();
     sfx.collect();
-    if (this.state !== STATE.PLAYING && this.step !== 'character') this.showMenu();
+    // Redesenha o passo atual, para o nome e o retrato acompanharem a troca.
+    if (this.state !== STATE.PLAYING) this.showMenu(this.step === 'character' ? 'character' : this.step);
   }
 
   // Setas na tela de escolha passam de uma opção para a outra.
@@ -502,6 +513,11 @@ export class Game {
           { label: '🖼️ Ver todos', onClick: () => this.showCharacterGrid(), secondary: true },
           { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
           { label: 'ℹ️ Sobre', onClick: () => this.showAbout(), secondary: true },
+          ...(canInstall() ? [{
+            label: '📲 Instalar',
+            onClick: () => this.installApp(),
+            secondary: true,
+          }] : []),
         ],
       });
       this.ui.bindExtra((lado) => this.cycleCharacter(lado === 'proximo' ? 1 : -1));
@@ -614,6 +630,35 @@ export class Game {
         { label: '🔁 Ver as outras', onClick: () => this.showTrackGrid(), secondary: true },
       ],
     });
+  }
+
+  // Instalação: no Android o próprio navegador abre o convite; no iPhone
+  // mostramos o passo a passo, porque lá é manual.
+  installApp() {
+    if (needsManualInstall()) {
+      this.ui.showOverlay({
+        title: '📲 Instalar no iPhone',
+        html: `
+          <div class="about">
+            <p class="about-text">
+              No iPhone a instalação é pelo Safari, em dois toques:
+            </p>
+            <ol class="install-steps">
+              <li>Toque em <b>Compartilhar</b> <span aria-hidden="true">􀈂</span> na barra de baixo</li>
+              <li>Escolha <b>Adicionar à Tela de Início</b></li>
+            </ol>
+            <p class="about-note">
+              Depois disso o jogo abre em tela cheia, com o ícone próprio e
+              funciona sem internet.
+            </p>
+          </div>
+        `,
+        buttons: [{ label: '⬅️ Voltar', onClick: () => this.showMenu('character') }],
+      });
+      return;
+    }
+
+    promptInstall().then(() => this.showMenu('character'));
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
@@ -988,7 +1033,9 @@ export class Game {
     this.ui.setKeys(this.keys, this.mode.keys);
     this.ui.setScore(this.score);
     this.ui.pop();
+    // As chaves são guardadas para sempre: no futuro elas destravam conteúdo.
     update((save) => { save.stats.keys = (save.stats.keys || 0) + 1; });
+    this.ui.setWallet(this.save.stats.keys);
 
     if (this.keys >= this.mode.keys) this.levelComplete();
   }

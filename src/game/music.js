@@ -84,6 +84,18 @@ export const THEMES = {
   },
 };
 
+// Quando a aba sai de foco (a criança troca de app, bloqueia a tela…), o
+// áudio inteiro é suspenso — música e efeitos — e volta ao reaparecer.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!theme) return;               // nem começou a tocar ainda
+    const ctx = getContext();
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend?.();
+    else if (!muted) ctx.resume?.();
+  });
+}
+
 const LOOKAHEAD_MS = 60;
 const SCHEDULE_AHEAD = 0.28;   // segundos de música já agendados no futuro
 

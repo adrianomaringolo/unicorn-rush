@@ -18,6 +18,7 @@ export function createUI() {
   const chips = $('#overlay-chips');
   const extra = $('#overlay-extra');
   const steps = $('#overlay-steps');
+  const wallet = $('#wallet');
   const hud = $('#hud');
   const stage = $('#stage');
   const powers = $('#powers');
@@ -64,6 +65,12 @@ export function createUI() {
     showPause: (visible) => { pauseButton.hidden = !visible; },
     onPause: (handler) => pauseButton.addEventListener('click', handler),
     setLevel: (v) => { level.textContent = v; },
+
+    // Carteira: o total de chaves mágicas já guardadas (a moeda do jogo).
+    setWallet: (total) => {
+      wallet.textContent = `🔑 ${total}`;
+      wallet.hidden = !total;
+    },
     setLives: (v) => {
       lives.textContent = '💗'.repeat(Math.max(0, v)) + '🖤'.repeat(Math.max(0, 3 - v));
     },
