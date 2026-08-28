@@ -1301,34 +1301,35 @@ export function createDistanceMarker(distance) {
   return marker;
 }
 
-// Faixa do recorde anterior: dá para ver de longe onde está o desafio.
+// Marca do recorde anterior: só no chão, para não atrapalhar a visão da
+// pista. É uma faixa colorida atravessando o caminho, com a palavra deitada
+// no chão logo antes dela.
 export function createRecordBanner() {
   const banner = new THREE.Group();
 
-  for (const side of [-1, 1]) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 4.2, 6), mat(0xffd166));
-    pole.position.set(side * 4.6, 2.1, 0);
-    pole.castShadow = true;
-    banner.add(pole);
+  const faixa = new THREE.Mesh(
+    new THREE.PlaneGeometry(8.4, 1.1),
+    new THREE.MeshBasicMaterial({ color: 0xff5d8f, transparent: true, opacity: 0.75 })
+  );
+  faixa.rotation.x = -Math.PI / 2;
+  faixa.position.y = 0.06;
+  banner.add(faixa);
+
+  // Quadradinhos claros dentro da faixa, tipo linha de chegada.
+  for (let i = -3; i <= 3; i++) {
+    const quadro = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.55, 0.5),
+      new THREE.MeshBasicMaterial({ color: 0xfff0f6, transparent: true, opacity: 0.85 })
+    );
+    quadro.rotation.x = -Math.PI / 2;
+    quadro.position.set(i * 1.15, 0.07, i % 2 === 0 ? 0.24 : -0.24);
+    banner.add(quadro);
   }
 
-  const cloth = new THREE.Mesh(new THREE.BoxGeometry(9.2, 1.1, 0.16), mat(0xff5d8f));
-  cloth.position.y = 3.6;
-  cloth.castShadow = true;
-  banner.add(cloth);
-
-  const plate = labelPlate('RECORDE', 6.2, 0.9, '#ffffff', '#ff5d8f');
-  plate.position.set(0, 3.6, 0.1);
+  const plate = labelPlate('RECORDE', 4.4, 0.9, '#ffffff', '#ff5d8f');
+  plate.rotation.x = -Math.PI / 2;
+  plate.position.set(0, 0.07, 1.6);
   banner.add(plate);
-
-  // Risco no chão, na altura exata do recorde.
-  const line = new THREE.Mesh(
-    new THREE.PlaneGeometry(8.4, 0.7),
-    new THREE.MeshBasicMaterial({ color: 0xff5d8f, transparent: true, opacity: 0.65 })
-  );
-  line.rotation.x = -Math.PI / 2;
-  line.position.y = 0.06;
-  banner.add(line);
 
   banner.userData.kind = 'record';
   return banner;

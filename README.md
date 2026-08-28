@@ -135,9 +135,10 @@ Enquanto corre, o HUD mostra a **distância percorrida** em passos, e a cada
 300…) — ela nasce lá na frente já na posição certa, então cruza com o
 unicórnio exatamente no número dela.
 
-A maior distância já corrida em cada modo fica salva e vira a **faixa do
-recorde**: um arco rosa atravessando a pista, com um risco no chão marcando o
-ponto exato. Ao passar por ela aparece o aviso *"🏁 Novo recorde!"*. A maior
+A maior distância já corrida em cada modo fica salva e vira a **marca do
+recorde**: uma faixa quadriculada rosa atravessando o chão da pista, com a
+palavra deitada logo antes dela — tudo rente ao chão, sem nada na altura dos
+olhos para atrapalhar a visão do caminho. Ao passar por ela aparece o aviso *"🏁 Novo recorde!"*. A maior
 distância de todas também virou um quadro na tela de estatísticas.
 
 Em telas estreitas o HUD mostra só o essencial de cada modo (o recorde de
