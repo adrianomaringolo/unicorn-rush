@@ -8,6 +8,7 @@ import {
 import { createUnicorn, animateUnicorn } from '../models/unicorn.js';
 import { CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER } from '../models/characters.js';
 import { getPortraits } from '../models/portraits.js';
+import { getTrackPortraits } from '../models/trackPortraits.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
@@ -64,7 +65,7 @@ export class Game {
     this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
     this.character = CHARACTERS[this.save.choices.character] || CHARACTERS[DEFAULT_CHARACTER];
     this.track = TRACKS[this.save.choices.track] || TRACKS[DEFAULT_TRACK];
-    this.step = 'track';   // passo da escolha: pista → personagem → modo
+    this.step = 'character';   // passo da escolha: personagem → pista → modo
     this.difficulty = DIFFICULTIES[this.save.choices.difficulty] || DIFFICULTIES[DEFAULT_DIFFICULTY];
     this.level = Math.min(this.save.levels.unlocked, LEVEL_COUNT);
 
@@ -140,7 +141,7 @@ export class Game {
     update((save) => { save.choices.track = id; });
     this.buildWorld();
     sfx.collect();
-    if (this.state !== STATE.PLAYING) this.showMenu();
+    if (this.state !== STATE.PLAYING && this.step !== 'track') this.showMenu();
   }
 
   // Monta (ou remonta) o unicórnio e o rastro do personagem escolhido.
@@ -483,7 +484,7 @@ export class Game {
 
     if (step === 'character') {
       this.ui.showOverlay({
-        step: { index: 2, total: 3 },
+        step: { index: 1, total: 3 },
         picker: true,
         title: 'Quem vai correr?',
         html: `
@@ -497,9 +498,10 @@ export class Game {
           </div>
         `,
         buttons: [
-          { label: 'Continuar ➡️', onClick: () => this.showMenu('mode') },
+          { label: 'Continuar ➡️', onClick: () => this.showMenu('track') },
           { label: '🖼️ Ver todos', onClick: () => this.showCharacterGrid(), secondary: true },
-          { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
+          { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
+          { label: 'ℹ️ Sobre', onClick: () => this.showAbout(), secondary: true },
         ],
       });
       this.ui.bindExtra((lado) => this.cycleCharacter(lado === 'proximo' ? 1 : -1));
@@ -531,28 +533,85 @@ export class Game {
               return this.start(mode.id);
             },
           })),
-          { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
+          { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
         ],
       });
       return;
     }
 
     this.ui.showOverlay({
-      step: { index: 1, total: 3 },
+      step: { index: 2, total: 3 },
       picker: true,
-      title: 'Escolha a pista',
-      chips: TRACK_LIST.map((track) => ({
-        id: track.id,
-        name: track.name,
-        emoji: track.emoji,
-        active: track.id === this.track.id,
-        onClick: () => this.setTrack(track.id),
-      })),
-      text: `${this.track.tagline}<br><span class="muted">🎵 ${music.themeName(this.track.id)}</span>`,
+      title: 'Por onde vamos?',
+      html: `
+        <div class="chooser">
+          <button class="chooser-arrow" data-pick="anterior" aria-label="Pista anterior">◀</button>
+          <div class="chooser-name">
+            <b>${this.track.emoji} ${this.track.name}</b>
+            <small>${this.track.tagline}</small>
+          </div>
+          <button class="chooser-arrow" data-pick="proximo" aria-label="Próxima pista">▶</button>
+        </div>
+        <p class="chooser-note">🎵 ${music.themeName(this.track.id)}</p>
+      `,
       buttons: [
-        { label: 'Continuar ➡️', onClick: () => this.showMenu('character') },
-        { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
-        { label: 'ℹ️ Sobre', onClick: () => this.showAbout(), secondary: true },
+        { label: 'Continuar ➡️', onClick: () => this.showMenu('mode') },
+        { label: '🗺️ Ver todas', onClick: () => this.showTrackGrid(), secondary: true },
+        { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
+      ],
+    });
+    this.ui.bindExtra((lado) => this.cycleTrack(lado === 'proximo' ? 1 : -1));
+  }
+
+  // Lista das pistas em grade, com uma miniatura de cada cenário.
+  showTrackGrid() {
+    this.state = STATE.READY;
+    this.step = 'track';
+    this.ui.showPause(false);
+
+    const retratos = getTrackPortraits(TRACK_LIST);
+    const cartoes = TRACK_LIST.map((pista) => {
+      const escolhida = pista.id === this.track.id ? ' escolhido' : '';
+      return `<button class="cast-card${escolhida}" data-pick="${pista.id}">`
+        + `<img class="cast-face" src="${retratos[pista.id]}" alt="" />`
+        + `<span class="cast-name">${pista.emoji} ${pista.name}</span></button>`;
+    }).join('');
+
+    this.ui.showOverlay({
+      step: { index: 2, total: 3 },
+      title: 'Escolha a pista',
+      html: `<div class="cast-grid">${cartoes}</div>`,
+      buttons: [
+        { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
+      ],
+    });
+    this.ui.bindExtra((id) => this.showTrackSheet(id));
+  }
+
+  // Ficha da pista: miniatura, o que tem nela e a música.
+  showTrackSheet(id) {
+    const pista = TRACKS[id];
+    if (!pista) return;
+    this.state = STATE.READY;
+    this.step = 'track';
+
+    const retratos = getTrackPortraits(TRACK_LIST);
+    this.ui.showOverlay({
+      step: { index: 2, total: 3 },
+      title: `${pista.emoji} ${pista.name}`,
+      html: `
+        <div class="cast-sheet">
+          <img class="cast-portrait" src="${retratos[pista.id]}" alt="" />
+          <p class="cast-story">${pista.tagline}</p>
+          <p class="cast-title">🎵 ${music.themeName(pista.id)}</p>
+        </div>
+      `,
+      buttons: [
+        {
+          label: `✅ Correr aqui`,
+          onClick: () => { this.setTrack(pista.id); this.showMenu('track'); },
+        },
+        { label: '🔁 Ver as outras', onClick: () => this.showTrackGrid(), secondary: true },
       ],
     });
   }
@@ -685,7 +744,7 @@ export class Game {
           onClick: () => (naFase ? this.startLevel(this.level) : this.start(this.mode.id)),
           secondary: true,
         },
-        { label: '🏠 Sair para o menu', onClick: () => this.showMenu('track'), secondary: true },
+        { label: '🏠 Sair para o menu', onClick: () => this.showMenu('character'), secondary: true },
       ],
     });
   }
@@ -728,7 +787,7 @@ export class Game {
       text,
       buttons: [
         { label: '🔁 Jogar de novo', onClick: () => this.start() },
-        { label: '🎮 Escolher de novo', onClick: () => this.showMenu('track'), secondary: true },
+        { label: '🎮 Escolher de novo', onClick: () => this.showMenu('character'), secondary: true },
         { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
       ],
     });

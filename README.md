@@ -176,13 +176,20 @@ exatamente de onde estava.
 A escolha é um passo de cada vez, com o cenário e o unicórnio mudando ao vivo
 atrás do cartão:
 
-1. **Escolha a pista** — as quatro pistas, com o nome da música tema;
-2. **Quem vai correr?** — os quatro unicórnios, com a historinha de cada um;
-3. **Como vamos jogar?** — modo Livre, Fases ou Aventura. O modo Fases abre
-   ainda a grade das dez fases (as fechadas ficam com cadeado).
+1. **Quem vai correr?** — o modelo 3D do unicórnio girando, com setas ◀ ▶
+   para passar de um para o outro. *Ver todos* abre a grade com o retrato de
+   cada um; tocar num retrato mostra a ficha com a historinha;
+2. **Por onde vamos?** — a mesma coisa para as pistas: nome, o que tem nela,
+   o nome da música e setas para trocar. *Ver todas* abre a grade com uma
+   miniatura de cada cenário, e a ficha mostra o que esperar de cada uma;
+3. **Como vamos jogar?** — modo Livre, Fases ou Aventura. Fases abre a grade
+   das dez fases (as fechadas ficam com cadeado) e Aventura pergunta a
+   dificuldade.
 
-Dá para voltar um passo a qualquer momento; as setas ← → passeiam pelas
-opções do passo atual e Enter continua.
+Os retratos e as miniaturas não são imagens prontas: saem dos próprios
+modelos e cenários, renderizados uma vez quando a lista abre. Dá para voltar
+um passo a qualquer momento; as setas ← → passeiam pelas opções do passo
+atual e Enter continua.
 
 ## Publicar (Vercel)
 
@@ -307,7 +314,8 @@ src/
   models/
     characters.js     os quatro personagens (cores, asas, marca, rastro, história)
     unicorn.js        monta o modelo 3D a partir de um personagem + galope
-    portraits.js      retratos da grade, renderizados dos próprios modelos
+    portraits.js      retratos dos personagens, tirados dos próprios modelos
+    trackPortraits.js miniatura de cada pista, montada com o cenário dela
     powerups.js       escudo, ímã, turbo e vida extra (modelo + efeito)
     auras.js          o efeito visual de cada power-up no personagem
     rainbowTrail.js   rastro de arco-íris que segue o caminho percorrido

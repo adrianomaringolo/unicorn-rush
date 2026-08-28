@@ -3,7 +3,7 @@
 // O jogo inteiro cabe no cache (não tem nada vindo de fora), então depois da
 // primeira visita ele abre offline — inclusive instalado na tela inicial.
 // Ao mudar arquivos, troque a versão abaixo: o cache velho é apagado sozinho.
-const VERSION = 'unicornrush-v4';
+const VERSION = 'unicornrush-v5';
 
 const SHELL = [
   './',
@@ -35,6 +35,7 @@ const SHELL = [
   './src/models/powerups.js',
   './src/models/portraits.js',
   './src/models/rainbowTrail.js',
+  './src/models/trackPortraits.js',
   './src/models/scenery.js',
   './src/models/unicorn.js',
 ];

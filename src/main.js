@@ -4,7 +4,7 @@ import { createUI } from './game/ui.js';
 const ui = createUI();
 const game = new Game(document.querySelector('#scene'), ui);
 
-game.showMenu('track');
+game.showMenu('character');
 
 // PWA: guarda o jogo no aparelho, para abrir offline e dar para instalar
 // na tela inicial. Só faz sentido servido por http(s).
