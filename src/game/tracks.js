@@ -89,7 +89,8 @@ export const TRACKS = {
     cloud: 0x6f6ab0,
     mountains: [0x413f80, 0x4c4a95, 0x5d4b90],
     decorations: ['glowMushroom', 'pineTree', 'crystal'],
-    obstacles: ['rock', 'crystalSpike', 'bush'],
+    obstacles: ['crystalSpike', 'moonStone', 'bigGlowMushroom'],
+    fireflies: 44,
   },
 };
 

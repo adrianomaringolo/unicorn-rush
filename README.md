@@ -38,7 +38,10 @@ luz, o chão, os enfeites das laterais e até os obstáculos:
 | 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, árvores-pirulito, cogumelos, cristais e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
 | 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes e bengalas doces. Obstáculos de bala de goma, rosquinha e barra de doce. |
 | ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris e morrinhos de nuvem. Obstáculos de nuvem carregada, pipa e cacho de balões. |
-| 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham e pista enluarada. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Obstáculos de pedra, espinho de cristal e arbusto. |
+| 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
+
+As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
+pista, então nenhuma cai em cima do caminho.
 
 Cada pista é uma entrada em `src/game/tracks.js` (cores, lista de enfeites e
 obstáculos e, se for escura, um `glow` que acende o personagem), então uma
@@ -58,10 +61,10 @@ As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 | Modo | Como é |
 | --- | --- |
 | 🗺️ **Fases** | Dez fases numeradas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 10 (12 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
-| 🍼 **Bebê** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
+| 🎈 **Livre** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
 | ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, 3 vidas e velocidade que vai aumentando. |
 
-A meta inicial, o quanto ela cresce por vitória (`targetStep`), o teto
+A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
 `src/game/config.js`. O recorde é guardado separado por modo.
 
@@ -83,7 +86,7 @@ com uma argolinha girando em volta):
 | 🛡️ | **Escudo** | 8 segundos atravessando obstáculos sem perder vida. O unicórnio ganha uma **bolha de energia** em volta, com uma redinha brilhando. |
 | 🧲 | **Ímã** | 8 segundos puxando os corações e estrelas por perto. Três **argolas rosa** giram em volta do unicórnio. |
 | ⚡ | **Turbo** | 5 segundos de super velocidade: o unicórnio **decola e passa voando por cima dos obstáculos**, com **anéis dourados** escapando para trás e a câmera abrindo um pouco. Ao acabar, ele pousa sozinho. |
-| 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. Não aparece no modo Bebê, que não tem vidas. |
+| 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. Não aparece no modo Livre, que não tem vidas. |
 
 Enquanto está valendo, o power-up aparece no alto da tela com uma barrinha do
 tempo que falta — e o efeito no personagem **pisca no último segundo**,
@@ -96,7 +99,7 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
 `src/game/storage.js`:
 
 - **escolhas**: personagem, pista e último modo jogado;
-- **nível do modo Bebê**, que define a meta da próxima partida;
+- **nível do modo Livre**, que define a meta da próxima partida;
 - **progresso das fases**: até qual fase foi liberada e quais já estão feitas;
 - **recordes** de pontuação, um por modo;
 - **contagens**: vitórias, corridas jogadas, corações e itens coletados no
@@ -147,7 +150,7 @@ atrás do cartão:
 
 1. **Escolha a pista** — as quatro pistas, com o nome da música tema;
 2. **Quem vai correr?** — os quatro unicórnios, com a historinha de cada um;
-3. **Como vamos jogar?** — modo Bebê, Fases ou Aventura. O modo Fases abre
+3. **Como vamos jogar?** — modo Livre, Fases ou Aventura. O modo Fases abre
    ainda a grade das dez fases (as fechadas ficam com cadeado).
 
 Dá para voltar um passo a qualquer momento; as setas ← → passeiam pelas

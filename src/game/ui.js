@@ -68,7 +68,7 @@ export function createUI() {
       lives.textContent = '💗'.repeat(Math.max(0, v)) + '🖤'.repeat(Math.max(0, 3 - v));
     },
 
-    // O HUD muda de acordo com o modo: "Meta" no Bebê, "Vidas" na Aventura.
+    // O HUD muda de acordo com o modo: "Meta" no Livre, "Vidas" na Aventura.
     setMode: (mode) => { hud.dataset.mode = mode.id; },
 
     // Power-ups ligados agora, com a barrinha do tempo que falta.

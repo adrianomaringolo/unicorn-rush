@@ -11,7 +11,7 @@ import { createPowerup, POWERUP_LIST } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createCloud,
   createRainbow, createMountains, createMoon, createStars, createSun,
-  createDistanceMarker, createRecordBanner,
+  createDistanceMarker, createRecordBanner, createFirefly,
 } from '../models/scenery.js';
 
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
@@ -44,6 +44,7 @@ export class World {
     this.root.add(createMountains(track));
 
     this.buildBackdrop();
+    this.buildFireflies();
     this.buildStripes();
     this.buildDecorations();
     this.buildClouds();
@@ -76,6 +77,25 @@ export class World {
       this.root.add(rainbow);
       this.backdrop = rainbow;
     }
+  }
+
+  // Vagalumes rodeando a pista (só nas pistas que pedem, como a Noite).
+  buildFireflies() {
+    this.fireflies = [];
+    const total = this.track.fireflies || 0;
+    for (let i = 0; i < total; i++) {
+      const bug = createFirefly();
+      this.placeFirefly(bug, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
+      this.root.add(bug);
+      this.fireflies.push(bug);
+    }
+  }
+
+  placeFirefly(bug, z) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    // Longe da pista o suficiente para não confundir com item para pegar.
+    bug.position.set(side * (5 + Math.random() * 16), 0.6 + Math.random() * 3.4, z);
+    bug.userData.home = bug.position.clone();
   }
 
   buildStripes() {
@@ -194,7 +214,7 @@ export class World {
     if (this.rowsSincePower < 12) return null;
     if (Math.random() > 0.35) return null;
 
-    // No modo Bebê não há vidas, então o coração extra não aparece.
+    // No modo Livre não há vidas, então o coração extra não aparece.
     const pool = POWERUP_LIST.filter((p) => this.mode.obstacles || p.id !== 'life');
     this.rowsSincePower = 0;
     return pool[Math.floor(Math.random() * pool.length)].id;
@@ -216,7 +236,7 @@ export class World {
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
 
-    // Modo Bebê: nada de obstáculo, só itens espalhados pelas pistas.
+    // Modo Livre: nada de obstáculo, só itens espalhados pelas pistas.
     if (!this.mode.obstacles) {
       const powerLane = powerId === null ? -1 : Math.floor(Math.random() * LANES.length);
       for (let lane = 0; lane < LANES.length; lane++) {
@@ -285,6 +305,23 @@ export class World {
     for (const deco of this.decorations) {
       deco.position.z += move;
       if (deco.position.z > DESPAWN_DISTANCE + 6) this.placeDecoration(deco, SPAWN_DISTANCE - Math.random() * 20);
+    }
+
+    for (const bug of this.fireflies) {
+      bug.position.z += move;
+      if (bug.position.z > DESPAWN_DISTANCE + 6) {
+        this.placeFirefly(bug, SPAWN_DISTANCE - Math.random() * 20);
+        continue;
+      }
+      // Voo bobinho e piscadinha.
+      const { home, phase, speed, halo, spark } = bug.userData;
+      bug.position.x = home.x + Math.sin(elapsed * speed + phase) * 1.1;
+      bug.position.y = home.y + Math.cos(elapsed * speed * 0.8 + phase) * 0.5;
+      const brilho = 0.45 + Math.sin(elapsed * 3.5 + phase) * 0.55;
+      spark.material.opacity = brilho;
+      spark.material.transparent = true;
+      halo.material.opacity = brilho * 0.35;
+      halo.scale.setScalar(0.8 + brilho * 0.5);
     }
 
     for (const cloud of this.clouds) {

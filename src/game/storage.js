@@ -10,14 +10,14 @@ const DEFAULTS = {
   version: 1,
   choices: { character: 'uni', track: 'campo', mode: 'baby' },
   muted: false,
-  babyLevel: 1,          // sobe a cada vitória no modo Bebê e aumenta a meta
+  babyLevel: 1,          // sobe a cada vitória no modo Livre e aumenta a meta
   levels: {
     unlocked: 1,         // até que fase o modo Fases foi liberado
     done: {},            // fases já concluídas
   },
   stats: {
     runs: 0,             // corridas começadas
-    wins: 0,             // metas do modo Bebê completadas
+    wins: 0,             // metas do modo Livre completadas
     hearts: 0,           // corações somados em todas as corridas
     items: 0,            // itens (corações + estrelas) coletados
     bests: {},           // melhor pontuação por modo

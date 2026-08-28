@@ -272,7 +272,7 @@ export class Game {
     });
   }
 
-  // Meta do modo Bebê: começa no `target` do modo e cresce a cada vitória.
+  // Meta do modo Livre: começa no `target` do modo e cresce a cada vitória.
   goalFor(mode) {
     if (!mode.target) return null;
     const step = (mode.targetStep || 0) * (this.save.babyLevel - 1);

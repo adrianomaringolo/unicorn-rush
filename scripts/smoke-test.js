@@ -96,9 +96,9 @@ for (const track of TRACK_LIST) {
       `   modo ${mode.name.padEnd(9)} ${world.entities.length} itens na pista `
       + `(${obstacles} obstáculos, ${powers.length} power-up)`
     );
-    if (!mode.obstacles && obstacles > 0) throw new Error('modo Bebê não pode ter obstáculos!');
+    if (!mode.obstacles && obstacles > 0) throw new Error('modo Livre não pode ter obstáculos!');
     if (!mode.obstacles && powers.some((p) => p.userData.power === 'life')) {
-      throw new Error('vida extra não faz sentido no modo Bebê!');
+      throw new Error('vida extra não faz sentido no modo Livre!');
     }
   }
 

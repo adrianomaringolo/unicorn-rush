@@ -357,19 +357,80 @@ function donut() {
   return g;
 }
 
+// Discos de luz no chão embaixo dos obstáculos da noite: de longe já dá para
+// ver que tem coisa ali.
+function warningRing(color) {
+  const ring = new THREE.Mesh(
+    new THREE.CircleGeometry(0.95, 16),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, depthWrite: false })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+  return ring;
+}
+
+// Pedra de luar: clara e acesa, para não sumir no escuro.
+function moonStone() {
+  const g = new THREE.Group();
+  const color = 0xdfe6ff;
+  for (let i = 0; i < 3; i++) {
+    const stone = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.5 - i * 0.11, 0),
+      mat(color, { emissive: 0x8fa8ff, emissiveIntensity: 0.7 })
+    );
+    stone.position.set((Math.random() - 0.5) * 0.7, 0.38 + i * 0.16, (Math.random() - 0.5) * 0.5);
+    stone.rotation.set(Math.random(), Math.random(), Math.random());
+    stone.castShadow = true;
+    g.add(stone);
+  }
+  g.add(warningRing(0x9fb8ff));
+  return g;
+}
+
+// Cogumelão brilhante: o chapéu acende forte e ocupa a pista inteira.
+function bigGlowMushroom() {
+  const g = new THREE.Group();
+  const color = pick([0x8ce9ff, 0xffa6f0, 0xa6ffcb]);
+
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.9, 7), mat(0xfff4ff, { emissive: 0x554466 }));
+  stem.position.y = 0.45;
+  stem.castShadow = true;
+  g.add(stem);
+
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.78, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+    mat(color, { emissive: color, emissiveIntensity: 0.9 })
+  );
+  cap.position.y = 0.9;
+  cap.castShadow = true;
+  g.add(cap);
+
+  // Pintinhas claras no chapéu
+  for (let i = 0; i < 5; i++) {
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 5), mat(0xfffbe8, { emissive: 0x888066 }));
+    const a = (i / 5) * Math.PI * 2;
+    dot.position.set(Math.cos(a) * 0.42, 1.12, Math.sin(a) * 0.42);
+    g.add(dot);
+  }
+
+  g.add(warningRing(color));
+  return g;
+}
+
 function crystalSpike() {
   const g = new THREE.Group();
   const color = pick([0x8ce9ff, 0xc7a6ff]);
   for (let i = 0; i < 3; i++) {
     const spike = new THREE.Mesh(
-      new THREE.ConeGeometry(0.26 - i * 0.05, 1.1 - i * 0.25, 5),
-      mat(color, { emissive: color, emissiveIntensity: 0.3 })
+      new THREE.ConeGeometry(0.28 - i * 0.05, 1.3 - i * 0.25, 5),
+      mat(color, { emissive: color, emissiveIntensity: 0.95 })
     );
     spike.position.set((i - 1) * 0.34, (1.1 - i * 0.25) / 2, (Math.random() - 0.5) * 0.3);
     spike.rotation.z = (i - 1) * 0.22;
     spike.castShadow = true;
     g.add(spike);
   }
+  g.add(warningRing(color));
   return g;
 }
 
@@ -432,7 +493,7 @@ function balloonBunch() {
 
 const OBSTACLES = {
   rock, candyBar, bush, gumdrop, donut, crystalSpike,
-  stormCloud, kite, balloonBunch,
+  stormCloud, kite, balloonBunch, moonStone, bigGlowMushroom,
 };
 
 export function createObstacle(track) {
@@ -443,6 +504,30 @@ export function createObstacle(track) {
 }
 
 // --- Fundo ------------------------------------------------------------------
+
+// Vagalume: um pontinho aceso com um halo bem de leve em volta.
+export function createFirefly() {
+  const g = new THREE.Group();
+  const color = pick([0xfff3a8, 0xd6ffa8, 0xfff8d6]);
+
+  const spark = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 6, 5),
+    new THREE.MeshBasicMaterial({ color, fog: false })
+  );
+  g.add(spark);
+
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 8, 6),
+    new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: 0.3, depthWrite: false,
+      blending: THREE.AdditiveBlending, fog: false,
+    })
+  );
+  g.add(halo);
+
+  g.userData = { spark, halo, phase: Math.random() * Math.PI * 2, speed: 0.6 + Math.random() * 0.9 };
+  return g;
+}
 
 export function createCloud(color = 0xffffff) {
   const cloud = new THREE.Group();
@@ -533,11 +618,14 @@ export function createMountains(track) {
   const g = new THREE.Group();
   for (let i = 0; i < 14; i++) {
     const h = 8 + Math.random() * 14;
-    const peak = new THREE.Mesh(
-      new THREE.ConeGeometry(6 + Math.random() * 4, h, 5),
-      mat(pick(track.mountains))
-    );
-    peak.position.set((Math.random() - 0.5) * 160, h / 2 - 2, -60 - Math.random() * 60);
+    const radius = 6 + Math.random() * 4;
+    const peak = new THREE.Mesh(new THREE.ConeGeometry(radius, h, 5), mat(pick(track.mountains)));
+
+    // Sempre longe do corredor da pista (e dos enfeites das laterais), para
+    // nenhuma montanha nascer em cima do caminho.
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = side * (radius + 20 + Math.random() * 52);
+    peak.position.set(x, h / 2 - 2, -60 - Math.random() * 60);
     g.add(peak);
   }
   return g;

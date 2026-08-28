@@ -4,13 +4,13 @@
 export const LANES = [-2.2, 0, 2.2];      // posição X de cada pista
 export const LANE_CHANGE_SPEED = 10;      // suavidade da troca de pista
 
-// Modos de jogo. O modo "Bebê" não tem obstáculo nenhum: a criança só
+// Modos de jogo. O modo "Livre" não tem obstáculo nenhum: a criança só
 // precisa juntar uma quantidade fixa de itens para ganhar.
 export const MODES = {
   baby: {
     id: 'baby',
-    name: 'Bebê',
-    emoji: '🍼',
+    name: 'Livre',
+    emoji: '🎈',
     tagline: 'Sem obstáculos — é só juntar!',
     obstacles: false,
     startSpeed: 8.5,
