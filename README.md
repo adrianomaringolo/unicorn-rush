@@ -70,7 +70,7 @@ As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 | --- | --- |
 | 🗺️ **Fases** | Dez fases numeradas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 10 (12 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
 | 🎈 **Livre** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
-| ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, 3 vidas e velocidade que vai aumentando. |
+| ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, 3 vidas e velocidade que vai aumentando. Ao entrar, escolhe-se a **dificuldade**: 🌱 Fácil (22% de obstáculo por faixa, mais devagar), 🌞 Médio (40%) ou ⚡ Difícil (62%, e mais rápido). |
 
 A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de

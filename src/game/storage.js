@@ -8,7 +8,7 @@ const KEY = 'unicornrush-save';
 
 const DEFAULTS = {
   version: 1,
-  choices: { character: 'uni', track: 'campo', mode: 'baby' },
+  choices: { character: 'uni', track: 'campo', mode: 'baby', difficulty: 'medio' },
   muted: false,
   babyLevel: 1,          // sobe a cada vitória no modo Livre e aumenta a meta
   levels: {

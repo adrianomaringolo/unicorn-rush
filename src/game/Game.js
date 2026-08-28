@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import {
   LANES, LANE_CHANGE_SPEED, MODES, DEFAULT_MODE,
+  DIFFICULTIES, DIFFICULTY_LIST, DEFAULT_DIFFICULTY,
   JUMP_VELOCITY, GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS, COLORS,
 } from './config.js';
 import { createUnicorn, animateUnicorn } from '../models/unicorn.js';
@@ -63,6 +64,7 @@ export class Game {
     this.character = CHARACTERS[this.save.choices.character] || CHARACTERS[DEFAULT_CHARACTER];
     this.track = TRACKS[this.save.choices.track] || TRACKS[DEFAULT_TRACK];
     this.step = 'track';   // passo da escolha: pista → personagem → modo
+    this.difficulty = DIFFICULTIES[this.save.choices.difficulty] || DIFFICULTIES[DEFAULT_DIFFICULTY];
     this.level = Math.min(this.save.levels.unlocked, LEVEL_COUNT);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.handheld });
@@ -441,8 +443,14 @@ export class Game {
               ? `Meta: ${this.goalFor(mode)} itens · nível ${this.save.babyLevel}`
               : mode.id === 'levels'
                 ? `${this.save.levels.unlocked} de ${LEVEL_COUNT} fases abertas`
-                : mode.tagline,
-            onClick: () => (mode.id === 'levels' ? this.showLevels() : this.start(mode.id)),
+                : mode.difficulties
+                  ? `${this.difficulty.emoji} ${this.difficulty.name} · escolha ao entrar`
+                  : mode.tagline,
+            onClick: () => {
+              if (mode.id === 'levels') return this.showLevels();
+              if (mode.difficulties) return this.showDifficulty();
+              return this.start(mode.id);
+            },
           })),
           { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
         ],
@@ -611,12 +619,16 @@ export class Game {
     this.clock.getDelta();       // descarta o tempo parado
   }
 
-  start(modeId = this.mode.id) {
+  start(modeId = this.mode.id, difficultyId = this.difficulty.id) {
     sfx.resume();
     music.play(this.track.id);
-    this.mode = MODES[modeId] || MODES[DEFAULT_MODE];
+    this.difficulty = DIFFICULTIES[difficultyId] || DIFFICULTIES[DEFAULT_DIFFICULTY];
+    this.mode = modeId === 'adventure'
+      ? this.adventureMode(this.difficulty)
+      : MODES[modeId] || MODES[DEFAULT_MODE];
     update((save) => {
       save.choices.mode = this.mode.id;
+      save.choices.difficulty = this.difficulty.id;
       save.stats.runs += 1;
       save.stats.plays[this.track.id] = (save.stats.plays[this.track.id] || 0) + 1;
       save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
@@ -706,9 +718,43 @@ export class Game {
     sfx.jump();
   }
 
-  get difficulty() {
+  // O quanto a corrida já acelerou (0 a 1) — usado para apertar o ritmo.
+  get progress() {
     const range = this.mode.maxSpeed - this.mode.startSpeed;
     return range > 0 ? THREE.MathUtils.clamp((this.speed - this.mode.startSpeed) / range, 0, 1) : 0;
+  }
+
+  // Modo Aventura montado com a dificuldade escolhida.
+  adventureMode(difficulty) {
+    const base = MODES.adventure;
+    return {
+      ...base,
+      obstacleChance: difficulty.obstacleChance,
+      startSpeed: difficulty.startSpeed,
+      maxSpeed: difficulty.maxSpeed,
+      speedRamp: difficulty.speedRamp,
+      difficultyId: difficulty.id,
+    };
+  }
+
+  // Escolha da dificuldade, só no modo Aventura.
+  showDifficulty() {
+    this.state = STATE.READY;
+    this.step = 'difficulty';
+    this.ui.showPause(false);
+    this.reset();
+    this.ui.showOverlay({
+      title: 'Qual a dificuldade?',
+      text: `${this.track.emoji} ${this.track.name} · ${this.character.emoji} ${this.character.name}`,
+      buttons: [
+        ...DIFFICULTY_LIST.map((nivel) => ({
+          label: `${nivel.emoji} ${nivel.name}`,
+          hint: nivel.tagline,
+          onClick: () => this.start('adventure', nivel.id),
+        })),
+        { label: '⬅️ Voltar', onClick: () => this.showMenu('mode'), secondary: true },
+      ],
+    });
   }
 
   updatePlayer(dt) {
@@ -938,7 +984,7 @@ export class Game {
       }
     }
 
-    this.world.update(dt, worldSpeed, playing ? this.difficulty : 0, this.elapsed);
+    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
     animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded);
     updateAuras(this.auras, this.powers, this.elapsed);
     if (this.nightGlow.visible) {

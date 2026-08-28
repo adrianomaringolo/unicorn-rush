@@ -49,8 +49,47 @@ export const MODES = {
     speedRamp: 0.35,
     spawnInterval: 0.55,
     target: null,        // corrida infinita
+    difficulties: 'adventure',
   },
 };
+
+// Níveis de dificuldade do modo Aventura: mudam quantos obstáculos aparecem
+// (e um tiquinho a velocidade), mantendo o resto igual.
+export const DIFFICULTIES = {
+  facil: {
+    id: 'facil',
+    name: 'Fácil',
+    emoji: '🌱',
+    tagline: 'Pouca coisa no caminho',
+    obstacleChance: 0.22,
+    startSpeed: 10,
+    maxSpeed: 20,
+    speedRamp: 0.25,
+  },
+  medio: {
+    id: 'medio',
+    name: 'Médio',
+    emoji: '🌞',
+    tagline: 'Do jeitinho certo',
+    obstacleChance: 0.4,
+    startSpeed: 12,
+    maxSpeed: 26,
+    speedRamp: 0.35,
+  },
+  dificil: {
+    id: 'dificil',
+    name: 'Difícil',
+    emoji: '⚡',
+    tagline: 'Pista cheia, sem moleza',
+    obstacleChance: 0.62,
+    startSpeed: 14,
+    maxSpeed: 30,
+    speedRamp: 0.45,
+  },
+};
+
+export const DIFFICULTY_LIST = Object.values(DIFFICULTIES);
+export const DEFAULT_DIFFICULTY = 'medio';
 
 export const DEFAULT_MODE = 'baby';
 
