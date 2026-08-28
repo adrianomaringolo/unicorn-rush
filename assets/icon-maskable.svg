@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="UnicornRush">
+  <defs>
+    <linearGradient id="ceu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bfe9ff"/>
+      <stop offset="1" stop-color="#ffdcef"/>
+    </linearGradient>
+    <linearGradient id="chifre" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffab1f"/>
+      <stop offset=".55" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#fff3c4"/>
+    </linearGradient>
+    <clipPath id="recorte"><rect width="512" height="512"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#recorte)">
+    <rect width="512" height="512" fill="url(#ceu)"/>
+    <g transform="translate(256 256) scale(.8) translate(-256 -256)">
+
+    <!-- arco-íris ao fundo -->
+    <g fill="none" stroke-width="24" stroke-linecap="round" opacity=".5">
+      <path d="M30 500a226 226 0 0 1 452 0" stroke="#ff7b9d"/>
+      <path d="M64 500a192 192 0 0 1 384 0" stroke="#ffb26b"/>
+      <path d="M98 500a158 158 0 0 1 316 0" stroke="#ffe36b"/>
+      <path d="M132 500a124 124 0 0 1 248 0" stroke="#8ce99a"/>
+      <path d="M166 500a90 90 0 0 1 180 0" stroke="#74c0fc"/>
+    </g>
+
+    <!-- crina esvoaçando para trás -->
+    <g fill="none" stroke-width="42" stroke-linecap="round">
+      <path d="M290 132c-84 10-140 58-160 130" stroke="#ff7b9d"/>
+      <path d="M280 186c-86 16-140 64-158 138" stroke="#ffb02e"/>
+      <path d="M272 240c-84 22-134 70-148 142" stroke="#8ce99a"/>
+      <path d="M268 296c-78 28-122 74-134 142" stroke="#74c0fc"/>
+      <path d="M270 350c-66 32-104 76-114 138" stroke="#b197fc"/>
+    </g>
+
+    <!-- pescoço e cabeça -->
+    <path d="M266 300h96v212h-96z" fill="#fffaff"/>
+    <ellipse cx="318" cy="252" rx="94" ry="110" fill="#fffaff"/>
+    <ellipse cx="406" cy="300" rx="70" ry="53" fill="#fffaff"/>
+    <ellipse cx="446" cy="306" rx="12" ry="9" fill="#ff9dc0"/>
+    <path d="M348 356c22 10 48 8 66-4" fill="none" stroke="#ffd7ea" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- orelha -->
+    <path d="M270 156l-24-84 74 52z" fill="#fffaff"/>
+    <path d="M276 152l-14-52 46 32z" fill="#ffd0e6"/>
+
+    <!-- olho -->
+    <circle cx="366" cy="238" r="18" fill="#30203a"/>
+    <circle cx="373" cy="231" r="6.5" fill="#fff"/>
+
+    <!-- chifre -->
+    <path d="M316 146l30-136 42 142z" fill="url(#chifre)"/>
+    <g stroke="#fff8e0" stroke-width="8" stroke-linecap="round" opacity=".8">
+      <path d="M328 100l38 12"/>
+      <path d="M338 62l30 10"/>
+    </g>
+
+    <!-- coração brilhando -->
+    <path d="M56 398c0-19 15-33 34-33 11 0 21 6 27 15 6-9 16-15 27-15
+             18 0 34 14 34 33 0 30-43 53-61 68-18-15-61-38-61-68z"
+          fill="#ff5d8f"/>
+    <circle cx="82" cy="386" r="7" fill="#fff" opacity=".65"/>
+  </g>
+  </g>
+</svg>

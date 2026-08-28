@@ -1,0 +1,8 @@
+# dependências (o three.js que o jogo usa fica versionado em vendor/)
+node_modules/
+
+# lixo do sistema e de editores
+.DS_Store
+*.log
+.vscode/
+.idea/

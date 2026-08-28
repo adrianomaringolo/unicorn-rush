@@ -1,0 +1,20 @@
+{
+  "name": "UnicornRush",
+  "short_name": "UnicornRush",
+  "description": "Jogo infantil de corrida com unicórnios: junte corações e chaves mágicas voando pela pista.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#bfe9ff",
+  "theme_color": "#ff5d8f",
+  "categories": ["games", "kids", "entertainment"],
+  "icons": [
+    { "src": "./assets/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "./assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "unicornrush",
+  "version": "0.1.0",
+  "description": "Jogo infantil de corrida com um unicórnio, feito com three.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node scripts/smoke-test.js",
+    "sync-three": "cp node_modules/three/build/three.module.js node_modules/three/build/three.core.js vendor/"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  }
+}
