@@ -159,11 +159,15 @@ opções do passo atual e Enter continua.
 ## Publicar (Vercel)
 
 O jogo é estático — não tem build, e o three.js já está em `vendor/`. Na
-Vercel: *Add New… → Project* → importar o repositório, **Framework Preset:
-Other**, *Build Command* e *Install Command* vazios e *Output Directory* `.`.
-Pelo terminal dá no mesmo: `npx vercel` e depois `npx vercel --prod`.
+Vercel: *Add New… → Project* → importar o repositório e mandar **Deploy**.
+Não precisa mexer em nada do *Application Preset* nem do *Build and Output
+Settings*: o `vercel.json` já manda `"framework": null` (que é o antigo preset
+"Other"), `"buildCommand": null` e `"installCommand": ""`, e o arquivo
+sobrepõe o que estiver no painel — mesmo que ele mostre "Node", por causa do
+`package.json`. Pelo terminal dá no mesmo: `npx vercel` e depois
+`npx vercel --prod`.
 
-O `vercel.json` já vai junto: ele impede que o `sw.js`, o `index.html` e o
+O `vercel.json` também impede que o `sw.js`, o `index.html` e o
 manifesto fiquem em cache longo — senão quem já abriu o jogo continuaria com
 a versão velha mesmo depois de um deploy novo. O resto (módulos, three.js,
 fonte, ícones) pode ser cacheado à vontade, porque quem controla isso é o
