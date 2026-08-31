@@ -158,6 +158,10 @@ function makeVeil(length, width) {
   return shape;
 }
 
+// Tamanho normal da asa. O ⚡ multiplica isto (ver Game.applyRushWings), por
+// isso ele é exportado em vez de ficar solto no meio do código.
+export const WING_SCALE = 0.95;
+
 const WING_STYLES = {
   feather: {
     count: 6, shape: makeFeather, arm: 0.45,
@@ -241,7 +245,7 @@ function makeWing(side, wing) {
   pivot.add(shoulder);
 
   pivot.userData.feathers = feathers;
-  pivot.scale.setScalar(0.95);   // asa proporcional ao corpo, não gigante
+  pivot.scale.setScalar(WING_SCALE);   // asa proporcional ao corpo, não gigante
   return pivot;
 }
 
@@ -278,6 +282,76 @@ function markShape(kind) {
   if (kind === 'rainbow') {
     shape.absarc(0, -0.2, 0.55, 0, Math.PI, false);
     shape.absarc(0, -0.2, 0.28, Math.PI, 0, true);
+    return shape;
+  }
+
+  if (kind === 'leaf') {
+    // Folha: duas curvas que se encontram na ponta, com o bico virado.
+    shape.moveTo(0, 0.6);
+    shape.bezierCurveTo(0.42, 0.28, 0.46, -0.24, 0.06, -0.58);
+    shape.bezierCurveTo(-0.34, -0.24, -0.42, 0.28, 0, 0.6);
+    return shape;
+  }
+
+  if (kind === 'wave') {
+    // Onda: a crista quebrando, desenhada de um lado e fechada por baixo.
+    shape.moveTo(-0.58, -0.18);
+    shape.bezierCurveTo(-0.4, 0.34, 0.04, 0.5, 0.24, 0.16);
+    shape.bezierCurveTo(0.36, -0.06, 0.2, -0.2, 0.06, -0.06);
+    shape.bezierCurveTo(0.18, -0.3, 0.5, -0.24, 0.56, 0.06);
+    shape.bezierCurveTo(0.6, 0.5, 0.06, 0.78, -0.28, 0.5);
+    shape.bezierCurveTo(-0.52, 0.3, -0.6, 0.06, -0.58, -0.18);
+    return shape;
+  }
+
+  if (kind === 'snowflake') {
+    // Floco: seis braços com uma farpa em cada, desenhados em volta do centro.
+    const bracos = 6;
+    for (let i = 0; i < bracos; i++) {
+      const a = (i / bracos) * Math.PI * 2;
+      const dx = Math.cos(a), dy = Math.sin(a);
+      const px = Math.cos(a + Math.PI / 2), py = Math.sin(a + Math.PI / 2);
+      const g = 0.075;                       // metade da grossura do braço
+      if (i === 0) shape.moveTo(px * g, py * g);
+      else shape.lineTo(px * g, py * g);
+      shape.lineTo(dx * 0.34 + px * g, dy * 0.34 + py * g);
+      shape.lineTo(dx * 0.42 + px * 0.16, dy * 0.42 + py * 0.16);   // farpa
+      shape.lineTo(dx * 0.58, dy * 0.58);                            // ponta
+      shape.lineTo(dx * 0.42 - px * 0.16, dy * 0.42 - py * 0.16);
+      shape.lineTo(dx * 0.34 - px * g, dy * 0.34 - py * g);
+      shape.lineTo(-px * g, -py * g);
+    }
+    shape.closePath();
+    return shape;
+  }
+
+  if (kind === 'comet') {
+    // Cometa: a cabeça redonda e a cauda afinando para trás.
+    shape.moveTo(0.55, 0.28);
+    shape.bezierCurveTo(0.1, 0.5, -0.3, 0.34, -0.42, 0.1);
+    shape.bezierCurveTo(-0.6, -0.24, -0.2, -0.5, 0.12, -0.34);
+    shape.bezierCurveTo(0.02, -0.12, 0.2, 0.02, 0.55, 0.28);
+    return shape;
+  }
+
+  if (kind === 'shell') {
+    // Concha: o leque com as ranhuras sugeridas pelo recorte da borda.
+    shape.moveTo(0, -0.5);
+    for (let i = 0; i <= 7; i++) {
+      const a = Math.PI * (0.08 + (i / 7) * 0.84);
+      const r = i % 2 === 0 ? 0.58 : 0.5;
+      shape.lineTo(Math.cos(a) * r, Math.sin(a) * r - 0.12);
+    }
+    shape.closePath();
+    return shape;
+  }
+
+  if (kind === 'bubble') {
+    // Bolha de chiclete: a bolha grande com um brilho na quina.
+    shape.absarc(-0.06, -0.04, 0.5, 0, Math.PI * 2, false);
+    const brilho = new THREE.Path();
+    brilho.absarc(0.18, 0.24, 0.13, 0, Math.PI * 2, true);
+    shape.holes.push(brilho);
     return shape;
   }
 
