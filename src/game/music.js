@@ -71,6 +71,54 @@ export const THEMES = {
     bass: [40, 40, 42, 42, 38, 38, 40, 45],
   },
 
+  praia: {
+    name: 'Onda na areia',
+    bpm: 104, wave: 'triangle', bassWave: 'sine', gain: 0.075,
+    melody: [
+      72, null, 76, null, 79, null, 76, null,
+      74, null, 71, null, 72, null, null, null,
+      69, null, 72, null, 76, null, 74, null,
+      72, null, 69, null, 67, null, null, null,
+    ],
+    bass: [48, 48, 52, 52, 45, 45, 47, 47],
+  },
+
+  geada: {
+    name: 'Neve devagar',
+    bpm: 76, wave: 'sine', bassWave: 'sine', gain: 0.07,
+    melody: [
+      76, null, null, 79, 81, null, null, 79,
+      76, null, 74, null, 72, null, null, null,
+      74, null, null, 76, 79, null, null, 76,
+      74, null, 72, null, 71, null, null, null,
+    ],
+    bass: [40, 40, 45, 45, 43, 43, 38, 38],
+  },
+
+  espaco: {
+    name: 'Poeira de estrela',
+    bpm: 96, wave: 'square', bassWave: 'triangle', gain: 0.055,
+    melody: [
+      69, null, 74, null, 76, null, 81, null,
+      79, null, 76, null, 74, null, null, null,
+      71, null, 76, null, 78, null, 83, null,
+      81, null, 78, null, 76, null, null, null,
+    ],
+    bass: [33, 33, 38, 38, 35, 35, 40, 40],
+  },
+
+  vulcao: {
+    name: 'Tambor da montanha',
+    bpm: 128, wave: 'sawtooth', bassWave: 'square', gain: 0.065,
+    melody: [
+      57, null, 60, 62, 63, null, 62, 60,
+      57, null, 55, null, 57, null, null, null,
+      63, null, 65, 63, 62, null, 60, 58,
+      57, null, 60, null, 57, null, null, null,
+    ],
+    bass: [33, 33, 36, 36, 34, 34, 29, 31],
+  },
+
   noite: {
     name: 'Canção de ninar',
     bpm: 84, wave: 'triangle', bassWave: 'sine', gain: 0.08,
