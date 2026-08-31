@@ -1,6 +1,7 @@
 import { Game } from './game/Game.js';
 import { createUI } from './game/ui.js';
 import { update, resetSave } from './game/storage.js';
+import { watchUpdates } from './game/update.js';
 import { CHARACTER_LIST } from './models/characters.js';
 import { TRACK_LIST } from './game/tracks.js';
 
@@ -9,13 +10,9 @@ const game = new Game(document.querySelector('#scene'), ui);
 
 game.showHome();
 
-// PWA: guarda o jogo no aparelho, para abrir offline e dar para instalar
-// na tela inicial. Só faz sentido servido por http(s).
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => { /* sem offline, tudo bem */ });
-  });
-}
+// PWA: guarda o jogo no aparelho, para abrir offline e dar para instalar na
+// tela inicial — e avisa quando existe versão nova esperando.
+watchUpdates();
 
 window.game = game; // útil para brincar no console
 

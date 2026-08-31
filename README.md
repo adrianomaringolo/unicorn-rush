@@ -650,6 +650,24 @@ troca dele que faz o aparelho de quem já jogou descartar os arquivos antigos.
 Sem subir a versão, quem já abriu o jogo continua com o código velho mesmo
 depois de um deploy novo.
 
+### O botão "Atualizar"
+
+Quando existe versão nova publicada, o worker novo **instala e espera** — o
+`sw.js` não chama `skipWaiting()` no install de propósito. A página aberta
+segue inteira no cache velho, consistente, e aparece um **🔄 Atualizar**: um
+botão miúdo ao lado de *Estatísticas* e *Sobre* no hub, e um botão grande no
+cartão *Sobre*, ao lado da versão. Tocar nele manda o worker assumir e o jogo
+recarrega **uma vez** — antes disto era preciso recarregar duas.
+
+A checagem não depende de navegar: o `src/game/update.js` chama
+`registration.update()` quando o app volta do fundo e a cada quinze minutos,
+porque num app instalado a sessão dura horas. O `vercel.json` já serve o
+`sw.js` com `max-age=0, must-revalidate`, que é o pré-requisito para isso
+funcionar.
+
+Na primeira visita nada aparece: o worker que entra não é atualização, é a
+instalação.
+
 O script confere os três antes de escrever qualquer um e recusa se estiverem
 em versões diferentes — melhor falhar do que deixar um para trás. **Todo
 commit que muda o jogo deve subir a versão**; a regra também está no

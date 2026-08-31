@@ -27,6 +27,7 @@ import { canInstall, needsManualInstall, promptInstall, watchInstall } from './i
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
 import { withIcons } from './icons.js';
 import { VERSION } from './version.js';
+import { hasUpdate, applyUpdate, onUpdate } from './update.js';
 
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
@@ -113,6 +114,9 @@ export class Game {
 
     this.setupMuteButton();
     setSpeech(this.save.speech);
+    // Versão nova esperando: redesenha a tela para o botão aparecer sem
+    // precisar sair e voltar.
+    onUpdate(() => { if (this.state === STATE.READY) this.render(); });
     watchInstall(() => {
       // O convite de instalar mora no cantinho dos adultos; se ele aparecer
       // enquanto a tela está aberta, é só redesenhar.
@@ -634,6 +638,7 @@ export class Game {
         <div class="extras">
           <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
           <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
+          ${hasUpdate() ? '<button class="mini-button nova" data-pick="update">🔄 Atualizar</button>' : ''}
         </div>
       `,
       buttons: [{ label: '▶️ JOGAR', huge: true, onClick: () => this.playNow() }],
@@ -645,6 +650,7 @@ export class Game {
       if (qual === 'track') return this.showTrackPicker();
       if (qual === 'stats') return this.showStats();
       if (qual === 'about') return this.showAbout();
+      if (qual === 'update') return this.applyUpdate();
       return this.showModePicker();
     });
   }
@@ -1052,9 +1058,24 @@ export class Game {
         </div>
       `,
       buttons: [
+        // O botão de atualizar mora aqui, ao lado da versão: é onde já se
+        // olha para saber o que está instalado.
+        ...(hasUpdate() ? [{
+          label: '🔄 Atualizar o jogo',
+          hint: 'tem versão nova esperando — o jogo recarrega',
+          huge: true,
+          onClick: () => this.applyUpdate(),
+        }] : []),
         { label: '⬅️ Voltar', onClick: () => this.showHome() },
       ],
     });
+  }
+
+  // Troca para a versão nova. O recarregamento acontece quando o service
+  // worker novo assume de verdade (ver src/game/update.js).
+  applyUpdate() {
+    this.ui.toast('🔄 Atualizando…');
+    if (!applyUpdate()) this.ui.toast('Já está na versão mais nova ✨');
   }
 
   // Quantas fases já foram concluídas somando todas as pistas.

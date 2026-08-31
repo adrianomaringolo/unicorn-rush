@@ -526,6 +526,13 @@ html, body {
   touch-action: manipulation;
 }
 .mini-button:active { transform: scale(.94); }
+/* O de atualizar chama atenção, porque só existe quando há o que atualizar. */
+.mini-button.nova {
+  border-color: #ffd166;
+  background: #fff6dd;
+  color: #b07a12;
+  opacity: 1;
+}
 
 /* A legenda das grades fica logo abaixo do título, acima do bloco que rola:
    é o texto que diz quem está escolhido e de quem é o ⚡ das pistas. */

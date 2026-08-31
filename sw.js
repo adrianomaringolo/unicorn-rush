@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.3.2';
+const VERSION = 'unicornrush-v0.3.3';
 
 const SHELL = [
   './',
@@ -31,6 +31,7 @@ const SHELL = [
   './src/game/speech.js',
   './src/game/icons.js',
   './src/game/version.js',
+  './src/game/update.js',
   './src/game/storage.js',
   './src/game/tracks.js',
   './src/game/ui.js',
@@ -111,12 +112,18 @@ const SHELL = [
   './assets/emoji/world_map.png',
 ];
 
+// Sem `skipWaiting()` aqui de propósito: o worker novo instala e **espera**.
+// A página aberta segue inteira no cache velho — consistente —, e quem
+// manda ele assumir é o botão "Atualizar" do jogo (ver src/game/update.js).
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(VERSION)
-      .then((cache) => cache.addAll(SHELL))
-      .then(() => self.skipWaiting())
+    caches.open(VERSION).then((cache) => cache.addAll(SHELL))
   );
+});
+
+// É o jogo que pede a troca, quando o adulto toca em Atualizar.
+self.addEventListener('message', (event) => {
+  if (event.data?.tipo === 'assumir') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
