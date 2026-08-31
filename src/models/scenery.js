@@ -13,20 +13,77 @@ const CANDY = [0xff8fc0, 0xffd166, 0x9ce0ff, 0xffb3e6, 0xc4f0a8];
 
 // --- Enfeites das laterais --------------------------------------------------
 
+// Árvore do Campo. Eram três bolinhas empilhadas, que davam uma silhueta
+// magra de pirulito; agora a copa é uma cúpula de nove bolotas em dois
+// tamanhos — um anel largo embaixo e menores em cima —, com frutinhas
+// penduradas na borda de fora, onde elas realmente se veem.
+//
+// A copa fica em tom pastel porque o Campo é o "campo encantado do
+// arco-íris"; as frutas são saturadas, para aparecerem contra ela.
 function tree() {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 1.6, 6), mat(0xc98f6b));
-  trunk.position.y = 0.8;
+
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.3, 1.7, 7), mat(0xc98f6b));
+  trunk.position.y = 0.85;
   trunk.castShadow = true;
   g.add(trunk);
 
-  const color = pick(PASTEL);
-  for (let i = 0; i < 3; i++) {
-    const blob = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75 - i * 0.12, 0), mat(color));
-    blob.position.set((Math.random() - 0.5) * 0.5, 1.9 + i * 0.55, (Math.random() - 0.5) * 0.5);
-    blob.castShadow = true;
-    g.add(blob);
+  // Dois toquinhos de galho: quebram a linha reta do tronco.
+  for (const lado of [-1, 1]) {
+    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.5, 5), mat(0xbb8260));
+    galho.position.set(lado * 0.22, 1.5, lado * 0.1);
+    galho.rotation.z = lado * -0.7;
+    galho.castShadow = true;
+    g.add(galho);
   }
+
+  const copa = new THREE.Group();
+  copa.position.y = 2.15;
+  g.add(copa);
+
+  const color = new THREE.Color(pick(PASTEL));
+  const claro = color.clone().lerp(new THREE.Color(0xffffff), 0.22);
+  const escuro = color.clone().multiplyScalar(0.86);
+
+  // Anel largo: é ele que dá a frondosidade.
+  const bolotas = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + Math.random() * 0.3;
+    const raio = 0.62 + Math.random() * 0.16;
+    const bolota = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(raio, 1),
+      mat(i % 2 === 0 ? color : escuro)
+    );
+    bolota.position.set(Math.cos(a) * 0.62, -0.1 + Math.random() * 0.2, Math.sin(a) * 0.62);
+    bolota.castShadow = true;
+    copa.add(bolota);
+    bolotas.push({ x: bolota.position.x, y: bolota.position.y, z: bolota.position.z, r: raio });
+  }
+
+  // Cúpula: as de cima, um pouco menores.
+  for (const [x, y, z, r] of [[0, 0.42, 0, 0.66], [-0.3, 0.3, 0.28, 0.5], [0.32, 0.34, -0.26, 0.48], [0, 0.05, 0, 0.6]]) {
+    const bolota = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(claro));
+    bolota.position.set(x, y, z);
+    bolota.castShadow = true;
+    copa.add(bolota);
+  }
+
+  // Frutinhas na borda de fora do anel, encostadas na bolota de cada uma.
+  const corFruta = pick([0xf2385a, 0xffb01f]);
+  for (let i = 0; i < 8; i++) {
+    const base = bolotas[i % bolotas.length];
+    const a = Math.atan2(base.z, base.x) + (Math.random() - 0.5) * 0.9;
+    const dist = base.r * 0.82;
+    const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.13, 7, 6), mat(corFruta));
+    fruta.position.set(
+      base.x + Math.cos(a) * dist,
+      base.y - 0.12 - Math.random() * 0.3,
+      base.z + Math.sin(a) * dist
+    );
+    fruta.castShadow = true;
+    copa.add(fruta);
+  }
+
   return g;
 }
 

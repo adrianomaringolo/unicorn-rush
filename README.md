@@ -175,7 +175,7 @@ faltam. Só o **Campo** vem liberado — as outras são trocadas por chaves:
 
 | | Pista | Como é |
 | --- | --- | --- |
-| 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, árvores-pirulito, cogumelos, cristais, **borboletas e abelhas voando** e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
+| 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, **árvores frondosas com frutinhas** (copa larga em tom pastel, com frutas vermelhas ou douradas penduradas na borda), cogumelos, cristais, **borboletas e abelhas voando** e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
 | 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes, bengalas doces, **granulado colorido**, **pedacinhos de chocolate** espalhados pelo chão e **formigas** andando em fila pelas beiradas. Obstáculos de bala de goma, rosquinha e barra de doce. |
 | ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris, morrinhos de nuvem e **passarinhos cruzando o céu**. Obstáculos de nuvem carregada, pipa e cacho de balões. |
 | 🍓 | **Frutas** | Pomar cheio: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, pencas de banana e, espalhados pelo chão, melancias, montinhos de laranja, cachos de uva e kiwis cortados — com **abelhas** zunindo por perto. Obstáculos de fatia de melancia, abacaxi e monte de cocos. |
