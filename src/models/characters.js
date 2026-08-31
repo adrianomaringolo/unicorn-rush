@@ -50,6 +50,9 @@ export const CHARACTERS = {
     mark: { shape: 'sun', color: 0xffab1f },
     // o sol mora no Céu e amadurece as Frutas
     fast: ['ceu', 'frutas'],
+    // O dia dele é mais longo: os power-ups duram metade a mais.
+    powerTime: 1.5,
+    power: 'os power-ups duram mais tempo com ele',
     trail: { colors: [0xfff0b0, 0xffd75e, 0xffb02e, 0xff9433, 0xff7a3c, 0xffc46b], width: 0.8 },
   },
 
@@ -70,6 +73,9 @@ export const CHARACTERS = {
     mark: { shape: 'moon', color: 0xbcaef5 },
     // a Noite é a hora dela, e a Geada tem o mesmo silêncio
     fast: ['noite', 'geada'],
+    // Conhece os atalhos: os itens vêm um pouquinho até ela, sempre.
+    magnetRange: 3.4,
+    power: 'os corações chegam mais perto dela sozinhos',
     trail: { colors: [0xe3dcff, 0xbcaef5, 0x9a7ae0, 0x6d7fe0, 0x5b6bd6, 0x8ea3ff], width: 0.75 },
   },
 
@@ -95,6 +101,10 @@ export const CHARACTERS = {
     voice: 0.8,           // voz mais grave que a dos outros
     // o Vulcão é a casa dele, e as brasas iluminam a Noite
     fast: ['vulcao', 'noite'],
+    // Corre tão rápido que a crina pega fogo: a velocidade sobe 60% mais
+    // depressa. Mais ponto por segundo, e mais obstáculo também.
+    speedRamp: 1.6,
+    power: 'ele ganha velocidade muito mais rápido',
     trail: { colors: [0xfff3c4, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f, 0xff2f0f], width: 1.05 },
   },
 
@@ -117,6 +127,9 @@ export const CHARACTERS = {
     scale: 0.78,
     proportions: { head: 1.35, legs: 0.72, eye: 1.35 },
     voice: 1.5,          // voz de bebê: sons de coleta bem mais agudos
+    // É a bebê: todo mundo cuida dela, então corre com uma vida a mais.
+    extraLives: 1,
+    power: 'ela corre com uma vidinha extra',
     // branquinha como as nuvens do Céu
     fast: ['ceu'],
     trail: { colors: [0xffffff, 0xfff2f8, 0xffe4f1, 0xeaf3ff, 0xfff8e6, 0xfdefff], width: 0.3 },
@@ -139,6 +152,9 @@ export const CHARACTERS = {
     mark: { shape: 'star', color: 0xffd166 },
     // ela caiu de lá: no Espaço está em casa
     fast: ['espaco', 'noite'],
+    // As estrelinhas da pista são parentes dela: valem o dobro.
+    starValue: 2,
+    power: 'as estrelas ⭐ valem o dobro para ela',
     trail: { colors: [0xffffff, 0xfff8dd, 0xfff3b0, 0xffe066, 0xffd166, 0xfff0f6], width: 0.7 },
   },
 
@@ -165,6 +181,9 @@ export const CHARACTERS = {
     voice: 1.2,
     // os Doces são a casa dela
     fast: ['doces'],
+    // A bolha de chiclete protege: ela começa cada corrida de escudo.
+    startShield: 5,
+    power: 'começa cada corrida dentro de uma bolha',
     trail: { colors: [0xfff0f6, 0xffd9ef, 0xffabd9, 0xff5d8f, 0xff9ecb, 0xffc2e4], width: 0.65 },
   },
 
@@ -189,6 +208,9 @@ export const CHARACTERS = {
     voice: 0.92,
     // mato e pomar são o quintal dele
     fast: ['campo', 'frutas'],
+    // O mais calmo: a velocidade sobe bem devagar. É o mais fácil de guiar.
+    speedRamp: 0.55,
+    power: 'a corrida dele acelera bem devagarinho',
     trail: { colors: [0xe6f7d9, 0xc4ebaa, 0xa8d98a, 0x7fc45a, 0x4f9d3a, 0xd9f0c4], width: 0.85 },
   },
 
@@ -216,6 +238,9 @@ export const CHARACTERS = {
     voice: 1.12,
     // nasceu na espuma: o Oceano e a Praia são dela
     fast: ['oceano', 'praia'],
+    // A mais rápida de todas: ela passa do teto de velocidade da pista.
+    topSpeed: 1.14,
+    power: 'ela corre mais rápido do que a pista deixa',
     trail: { colors: [0xffffff, 0xcaf0f8, 0x90e0ef, 0x48cae4, 0x00b4d8, 0x0077b6], width: 0.7 },
   },
 
@@ -247,6 +272,10 @@ export const CHARACTERS = {
     voice: 1.08,
     // a Geada é dele, e a Noite gela do mesmo jeito
     fast: ['geada', 'noite'],
+    // Ele é do gelo: chão escorregadio não o atrapalha (ignora o `laneGrip`
+    // da pista).
+    steady: true,
+    power: 'não escorrega no gelo da Geada',
     trail: { colors: [0xffffff, 0xdff4ff, 0xbfe9ff, 0x9ed8f5, 0x5fc4f0, 0x2f9bff], width: 0.7 },
   },
 
@@ -272,6 +301,9 @@ export const CHARACTERS = {
     voice: 1.05,
     // a Praia é dele, e no pomar ele também se dá bem
     fast: ['praia', 'frutas'],
+    // Casca dura: a primeira batida de cada corrida não custa vida.
+    firstHitFree: true,
+    power: 'a primeira batida não machuca ele',
     trail: { colors: [0xfff0c9, 0xffe3a8, 0xd9f0c4, 0xa8d98a, 0x7fc45a, 0xffd9ef], width: 0.8 },
   },
 
@@ -299,6 +331,9 @@ export const CHARACTERS = {
     voice: 0.95,
     // ele é de lá
     fast: ['espaco'],
+    // Não sabe parar: pula uma terceira vez no ar.
+    extraJump: 1,
+    power: 'ele pula três vezes no ar',
     trail: { colors: [0xffffff, 0x8ce9ff, 0xc9a6ff, 0xff8fd8, 0x5fc4f0, 0xffd166], width: 0.95 },
   },
 
@@ -331,6 +366,7 @@ export const CHARACTERS = {
     // Troca de faixa quase 50% mais rápido — é o jeitão dela.
     laneGrip: 1.5,
     fast: ['doces', 'frutas'],
+    power: 'ela desvia de pista muito mais rápido',
     trail: { colors: [0xffd9e0, 0xff9eb0, 0xe03050, 0x5faf46, 0x2f7a26, 0xff7a90], width: 0.6 },
   },
 
@@ -359,6 +395,7 @@ export const CHARACTERS = {
     // desequilibrar a corrida.
     jumpBoost: 1.12,
     fast: ['frutas', 'ceu'],
+    power: 'ele pula mais alto que os outros',
     trail: { colors: [0xffffff, 0xfffbc9, 0xf2e33a, 0xc4e832, 0x8fd420, 0xfff08a], width: 0.55 },
   },
 
@@ -384,6 +421,7 @@ export const CHARACTERS = {
     // Cai mais devagar: o pulo dela flutua.
     airGlide: 0.78,
     fast: ['noite', 'espaco'],
+    power: 'ela demora para descer do pulo',
     trail: { colors: [0xf0d9ff, 0xd9a6ff, 0xb87ae8, 0x8b3fd6, 0x6b28b0, 0xe6c9ff], width: 0.85 },
   },
 
@@ -408,6 +446,7 @@ export const CHARACTERS = {
     proportions: { head: 0.95, legs: 1.1, eye: 1 },
     voice: 1.2,
     fast: ['geada', 'espaco'],
+    power: 'ela é de vidro: dá para ver através dela',
     trail: { colors: [0xffffff, 0xeaf9ff, 0x8ce9ff, 0x5fd0f0, 0xbfe9ff, 0xd9f4ff], width: 0.7 },
   },
 
@@ -434,6 +473,7 @@ export const CHARACTERS = {
     // Vira devagar — e em troca deixa o rastro mais largo do jogo.
     laneGrip: 0.6,
     fast: ['campo'],
+    power: 'vira devagar, mas deixa o rastro mais largo',
     trail: { colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4, 0x9aa0ad], width: 1.5 },
   },
 
@@ -461,6 +501,7 @@ export const CHARACTERS = {
     proportions: { head: 0.96, legs: 1.06, eye: 1.05 },
     voice: 0.85,
     fast: ['noite', 'vulcao'],
+    power: 'ele acende sozinho em qualquer pista',
     trail: { colors: [0xc9a6ff, 0x8c7ac9, 0x6b5fa8, 0x4a3f7a, 0x2f2a4a, 0xa98ee0], width: 0.8 },
   },
 };

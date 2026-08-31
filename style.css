@@ -748,8 +748,21 @@ html, body {
   color: #b07a12;
 }
 .shop-price.falta { background: #fff0f3; border-color: #ffc9d6; color: #c2456b; }
-/* A linha das pistas rápidas: é o que diferencia um unicórnio do outro além
-   da cor, então tem destaque próprio na ficha. */
+/* A característica especial: é a informação que decide a escolha, então
+   ganha o destaque mais forte da ficha. */
+.shop-power {
+  margin: 8px 0 0 !important;
+  font-size: clamp(12.5px, 3.5vw, 15px) !important;
+  background: #f0e6ff;
+  border: 2px solid #d9c2ff;
+  border-radius: 14px;
+  padding: 6px 12px;
+  color: #6b3fa8;
+  line-height: 1.35 !important;
+}
+.shop-power b { color: #4f2b85; }
+
+/* A linha das pistas rápidas: o complemento, com destaque mais leve. */
 .shop-fast {
   margin: 8px 0 0 !important;
   font-size: clamp(12px, 3.3vw, 14.5px) !important;

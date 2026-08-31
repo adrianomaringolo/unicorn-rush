@@ -34,20 +34,41 @@ música dela no lugar do preço.
 
 ### O jeito de correr de cada um
 
-Seis unicórnios não mudam só de cor: eles mudam **como se joga**. O campo
-mora no próprio personagem, em `src/models/characters.js`, e é lido no
-`Game.updatePlayer` do mesmo jeito que as mecânicas de pista — quando os dois
-existem, eles se multiplicam (o chão escorregadio da Geada atrapalha todo
-mundo, e por cima disso a Cereja é ligeira e o Vovô é lento).
+**Todo unicórnio, menos a Uni, tem uma característica que muda como se
+joga.** A Uni fica sem nenhuma de propósito: ela é a que vem de graça, e é
+com ela que a criança aprende o jogo cru, sem nada por cima.
+
+O campo mora no próprio personagem, em `src/models/characters.js`, e é lido
+onde faz sentido — `updatePlayer`, `collect`, `hit`, `takePower`, o laço.
+Quando personagem e pista têm o mesmo campo, eles se **multiplicam**: o chão
+escorregadio da Geada atrapalha todo mundo, e por cima disso a Cereja é
+ligeira e o Vovô é lento.
+
+Cada número abaixo foi **medido em jogo**, não estimado:
 
 | Unicórnio | Campo | O que muda |
 | --- | --- | --- |
-| 🍒 Cereja | `laneGrip: 1.5` | troca de faixa em **11 quadros** contra os 17 dos outros |
-| 🎩 Vovô | `laneGrip: 0.6` | troca em **30 quadros** — e em troca leva o rastro mais largo (1,5) |
+| ☀️ Sol | `powerTime: 1.5` | power-ups duram **12 s em vez de 8** |
+| 🌙 Lua | `magnetRange: 3.4` | os itens que passam perto **vêm um pouquinho até ela**, sem power-up |
+| 🔥 Brasa | `speedRamp: 1.6` | a velocidade sobe a **0,56/s contra 0,35** |
+| 🤍 Lulu | `extraLives: 1` | corre com **4 vidas** em vez de 3 |
+| ⭐ Estrela | `starValue: 2` | a estrela vale **10 corações em vez de 5** |
+| 🫧 Chiclete | `startShield: 5` | começa cada corrida com **5 s de bolha** |
+| 🍃 Musgo | `speedRamp: 0.55` | a velocidade sobe a **0,19/s** — o mais fácil de guiar |
+| 🌊 Onda | `topSpeed: 1.14` | o teto vai a **29,6 em vez de 26** |
+| 🧊 Floco | `steady: true` | **ignora o chão escorregadio**: 17 quadros na Geada contra 40 |
+| 🥥 Coco | `firstHitFree` | a **primeira batida da corrida não custa vida** (ainda dói) |
+| ☄️ Cometa | `extraJump: 1` | **três pulos** no ar em vez de dois |
+| 🍒 Cereja | `laneGrip: 1.5` | troca de faixa em **11 quadros** contra 17 |
+| 🎩 Vovô | `laneGrip: 0.6` | troca em **30 quadros** — e leva o rastro mais largo (1,5) |
 | 🍋 Limão | `jumpBoost: 1.12` | o pulo sobe **2,52 contra 2,0**. A altura vai com o quadrado da velocidade, por isso 1,12 rende ×1,25 |
-| 🔮 Violeta | `airGlide: 0.78` | fica **64 quadros no ar** contra 49: o pulo dela flutua |
-| 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista**, não só nas que têm brilho próprio |
+| 🔮 Violeta | `airGlide: 0.78` | fica **64 quadros no ar** contra 49 |
 | 💎 Cristal | `translucent: 0.72` | o **corpo** fica de vidro (crina, rabo, asas e marca ficam opacos, senão ela desaparecia) |
+| 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista** |
+
+O campo `power` de cada personagem é a frase que a **ficha mostra**, em
+linguagem de criança ("a primeira batida não machuca ele"), com o destaque
+mais forte do cartão — é ela que responde "por que escolher este?".
 
 Sem esses campos o unicórnio corre do jeito normal, então inventar o próximo
 continua sendo só uma entrada na tabela.

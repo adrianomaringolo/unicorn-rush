@@ -562,13 +562,17 @@ export class Game {
     this.distance = 0;
     this.recordDistance = this.save.stats.distances?.[this.mode.id] || 0;
     this.beatRecord = false;
-    this.lives = START_LIVES;
+    // `extraLives` é a Lulu, que é bebê e corre com uma vida a mais.
+    this.lives = START_LIVES + (this.character.extraLives ?? 0);
     this.speed = this.mode.startSpeed;
+    // `firstHitFree` é o Coco: a casca dura aguenta a primeira trombada.
+    this.hitShield = !!this.character.firstHitFree;
     this.elapsed = 0;
     this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0, jumps: 0, flip: 0 };
     this.unicorn.rotation.x = 0;
     // Segundos restantes de cada efeito (`flash` é só o brilho da vida extra).
-    this.powers = { shield: 0, magnet: 0, boost: 0, flash: 0 };
+    // `startShield` é a Chiclete, que começa dentro da bolha de chiclete.
+    this.powers = { shield: this.character.startShield ?? 0, magnet: 0, boost: 0, flash: 0 };
     this.ui.setPowers([]);
     this.unicorn.position.set(0, 0, 0);
     this.unicorn.visible = true;
@@ -910,6 +914,12 @@ export class Game {
           onClick: () => this.buyItem(kind, id),
         };
 
+    // A característica especial dele. É o que responde "por que escolher
+    // este?", então vem antes das pistas rápidas, que são o complemento.
+    const poder = kind === 'character' && item.power
+      ? `<p class="shop-power"><b>✨ ${item.power}</b></p>`
+      : '';
+
     // As pistas em que ele corre mais rápido: é o que diferencia um
     // unicórnio do outro além da cor, então aparece na ficha.
     const rapidas = kind === 'character' && item.fast?.length
@@ -933,6 +943,7 @@ export class Game {
           <img class="shop-face" src="${loja.retratos()[item.id]}" alt="" />
           ${loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
           <p class="shop-story">${loja.descricao(item)}</p>
+          ${poder}
           ${rapidas}
           ${rodape}
         </div>
@@ -1294,7 +1305,8 @@ export class Game {
     if (this.state !== STATE.PLAYING) return;
     if (this.powers.boost > 0) return;      // já está voando
     const p = this.player;
-    if (p.jumps >= MAX_JUMPS) return;
+    // `extraJump` é o Cometa, que não sabe parar: pula uma terceira vez.
+    if (p.jumps >= MAX_JUMPS + (this.character.extraJump ?? 0)) return;
 
     const primeiro = p.jumps === 0;
     // `jumpBoost` é o Limão, que é miúdo e elétrico: pula mais alto que os
@@ -1341,7 +1353,10 @@ export class Game {
     // A pista e o personagem se multiplicam: o chão escorregadio da Geada
     // atrapalha todo mundo, e por cima disso a Cereja é rápida e o Vovô é
     // lento. Sem os campos, tudo vale 1.
-    const grip = (this.track.laneGrip ?? 1) * (this.character.laneGrip ?? 1);
+    // `steady` é o Floco: chão escorregadio não o atrapalha, então o
+    // `laneGrip` da pista não conta para ele.
+    const gripPista = this.character.steady ? 1 : (this.track.laneGrip ?? 1);
+    const grip = gripPista * (this.character.laneGrip ?? 1);
     p.x += (targetX - p.x) * Math.min(1, LANE_CHANGE_SPEED * grip * dt);
 
     if (this.powers.boost > 0) {
@@ -1412,9 +1427,12 @@ export class Game {
 
   collect(entity, index) {
     const isStar = entity.userData.kind === 'star';
-    this.hearts += isStar ? 5 : 1;
+    // `starValue` é a Estrela: as estrelinhas da pista são parentes dela.
+    const valorEstrela = 5 * (this.character.starValue ?? 1);
+    const vale = isStar ? valorEstrela : 1;
+    this.hearts += vale;
     this.collected += 1;
-    this.score += isStar ? HEART_POINTS * 5 : HEART_POINTS;
+    this.score += HEART_POINTS * vale;
     this.world.burst(entity.position, isStar ? COLORS.star : COLORS.heart);
     isStar ? sfx.star() : sfx.collect();
     this.world.group.remove(entity);
@@ -1424,7 +1442,7 @@ export class Game {
     this.ui.setGoal(this.collected, this.goal);
     this.ui.pop();
 
-    const ganho = isStar ? 5 : 1;
+    const ganho = vale;
     let ganhou = 0;
     update((save) => {
       save.stats.items += 1;
@@ -1494,7 +1512,7 @@ export class Game {
 
     if (power.id === 'life') {
       this.powers.flash = FLASH_TIME;
-      if (this.lives < START_LIVES) {
+      if (this.lives < START_LIVES + (this.character.extraLives ?? 0)) {
         this.lives += 1;
         this.ui.setLives(this.lives);
       } else {
@@ -1503,7 +1521,8 @@ export class Game {
       return;
     }
 
-    this.powers[power.id] = power.duration;
+    // `powerTime` é o Sol: o dia dele é mais longo.
+    this.powers[power.id] = power.duration * (this.character.powerTime ?? 1);
     if (power.id === 'shield') this.player.invulnerable = 0;   // para de piscar
   }
 
@@ -1545,13 +1564,31 @@ export class Game {
     if (this.powers.magnet > 0) this.attractCollectibles(dt);
   }
 
-  hit(entity) {
-    this.player.invulnerable = INVULNERABLE_TIME;
-    this.powers.dizzy = INVULNERABLE_TIME;     // estrelinhas em volta da cabeça
-    this.lives -= 1;
-    this.speed = Math.max(this.mode.startSpeed, this.speed - 3);
+  // `magnetRange` é a Lua: sem power-up nenhum, os itens que passam perto
+  // vêm um pouquinho até ela. É bem mais fraco que o ímã de verdade, que
+  // puxa a pista inteira.
+  attractNearby(dt) {
+    const alcance = this.character.magnetRange;
+    if (!alcance) return;
+    const p = this.player;
+    const alvo = new THREE.Vector3(p.x, p.y + 1.15, 0);
 
-    // O obstáculo é arremessado para cima e para trás, girando.
+    for (const e of this.world.entities) {
+      if (e.userData.kind === 'obstacle') continue;
+      if (e.position.z < -6 || e.position.z > 4) continue;
+      const rumo = alvo.clone().sub(e.position);
+      const distancia = rumo.length();
+      if (distancia < 0.001 || distancia > alcance) continue;
+      // Puxa proporcional à proximidade: de longe quase não sente.
+      const forca = (1 - distancia / alcance) * 5.5;
+      e.position.addScaledVector(rumo.divideScalar(distancia), Math.min(distancia, forca * dt));
+    }
+  }
+
+  // O obstáculo atingido sai voando e girando, com poeira na cor dele. Vale
+  // tanto para a batida que custa vida quanto para a que a casca do Coco
+  // aguenta — a trombada é a mesma, só o preço é diferente.
+  knockAway(entity) {
     entity.userData.knocked = true;
     entity.userData.knock = new THREE.Vector3(
       (entity.position.x - this.player.x) * 2.5 + (Math.random() - 0.5) * 2,
@@ -1559,10 +1596,30 @@ export class Game {
       6 + Math.random() * 3
     );
 
-    // Poeira da batida, na cor do que foi atingido.
     const cor = entity.children.find((c) => c.isMesh)?.material?.color?.getHex() ?? 0xffffff;
     this.world.burst(entity.position, cor);
     this.world.burst(entity.position.clone().setY(1.2), 0xffffff);
+  }
+
+  hit(entity) {
+    this.player.invulnerable = INVULNERABLE_TIME;
+    // A casca do Coco: a primeira trombada da corrida não custa vida. Ela
+    // ainda dói (piscada, tremida, o obstáculo sai voando), só não tira vida.
+    if (this.hitShield) {
+      this.hitShield = false;
+      this.powers.dizzy = INVULNERABLE_TIME;
+      this.knockAway(entity);
+      sfx.hit();
+      this.ui.flash();
+      this.ui.shake();
+      this.ui.toast('🥥 A casca aguentou!');
+      return;
+    }
+    this.powers.dizzy = INVULNERABLE_TIME;     // estrelinhas em volta da cabeça
+    this.lives -= 1;
+    this.speed = Math.max(this.mode.startSpeed, this.speed - 3);
+
+    this.knockAway(entity);
 
     sfx.hit();
     this.ui.setLives(this.lives);
@@ -1577,10 +1634,15 @@ export class Game {
     this.elapsed += dt;
 
     if (playing) {
-      this.speed = Math.min(this.mode.maxSpeed, this.speed + this.mode.speedRamp * dt);
+      // `speedRamp` do personagem é o ritmo (Brasa acelera rápido, Musgo
+      // devagar) e `topSpeed` é o teto (a Onda passa do limite da pista).
+      const teto = this.mode.maxSpeed * (this.character.topSpeed ?? 1);
+      const ritmo = this.mode.speedRamp * (this.character.speedRamp ?? 1);
+      this.speed = Math.min(teto, this.speed + ritmo * dt);
       this.score += this.speed * dt * 0.6;
       this.ui.setScore(this.score);
       this.updatePowers(dt);
+      this.attractNearby(dt);
       this.updatePlayer(dt);
       this.checkCollisions();
     }
