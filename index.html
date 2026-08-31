@@ -29,7 +29,7 @@
       </div>
       <div class="panel hearts">
         <span class="label">Corações</span>
-        <span>💗 <span id="hearts">0</span></span>
+        <span><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /> <span id="hearts">0</span></span>
       </div>
       <div class="panel goal">
         <span class="label">Meta</span>
@@ -41,11 +41,11 @@
       </div>
       <div class="panel keys">
         <span class="label">Chaves</span>
-        <span>🔑 <span id="keys">0/3</span></span>
+        <span><img class="fi" src="./assets/emoji/key.png" alt="🔑" draggable="false" /> <span id="keys">0/3</span></span>
       </div>
       <div class="panel lives">
         <span class="label">Vidas</span>
-        <span id="lives">💗💗💗</span>
+        <span id="lives"><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /></span>
       </div>
       <div class="panel distance">
         <span class="label">Distância</span>
@@ -55,8 +55,16 @@
         <span class="label">Recorde</span>
         <span id="best">0</span>
       </div>
-      <button id="pause" class="panel mute" aria-label="Pausar o jogo" hidden>⏸️</button>
-      <button id="mute" class="panel mute" aria-label="Ligar ou desligar a música">🔊</button>
+      <div id="hud-buttons">
+        <button id="pause" class="panel mute" aria-label="Pausar o jogo" hidden><img class="fi" src="./assets/emoji/pause_button.png" alt="⏸️" draggable="false" /></button>
+        <button id="mute" class="panel mute" aria-label="Ligar ou desligar a música"><img class="fi" src="./assets/emoji/speaker_high_volume.png" alt="🔊" draggable="false" /></button>
+        <button id="rush" class="panel mute" aria-label="Correr mais rápido" aria-pressed="false" hidden><img class="fi" src="./assets/emoji/high_voltage.png" alt="⚡" draggable="false" /></button>
+        <div id="speed" class="panel gauge" hidden>
+          <span class="label">Velocidade</span>
+          <span id="speed-value">0</span>
+          <span class="gauge-bar"><i></i></span>
+        </div>
+      </div>
     </div>
 
     <div id="flash"></div>
@@ -64,29 +72,30 @@
     <div id="toast"></div>
 
     <div id="touch-controls">
-      <button data-action="left" aria-label="Ir para a esquerda">⬅️</button>
-      <button data-action="jump" aria-label="Pular">⬆️</button>
-      <button data-action="right" aria-label="Ir para a direita">➡️</button>
+      <button data-action="left" aria-label="Ir para a esquerda"><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
+      <button data-action="jump" aria-label="Pular"><img class="fi" src="./assets/emoji/up_arrow.png" alt="⬆️" draggable="false" /></button>
+      <button data-action="right" aria-label="Ir para a direita"><img class="fi" src="./assets/emoji/right_arrow.png" alt="➡️" draggable="false" /></button>
     </div>
 
     <div id="overlay">
       <div class="card">
+        <button id="overlay-back" class="corner-button back" aria-label="Voltar" hidden><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
+        <button id="overlay-grown" class="corner-button grown" aria-label="Cantinho dos adultos (segure o dedo)" hidden><img class="fi" src="./assets/emoji/crown.png" alt="👑" draggable="false" /></button>
         <p class="brand">
           <img class="brand-mark" src="./assets/icons/icon-64.png" alt="" width="26" height="26" />UnicornRush
           <span id="wallet" class="wallet" title="chaves mágicas guardadas" hidden></span>
         </p>
-        <div id="overlay-steps" aria-hidden="true"></div>
         <h1 id="overlay-title"></h1>
-        <div id="overlay-chips"></div>
         <p id="overlay-text"></p>
         <div id="overlay-extra"></div>
         <div id="overlay-buttons"></div>
         <p class="hint">
           <span class="hint-keyboard">
-            <b>Setas</b> ou <b>A / D</b> para escolher · <b>Enter</b> para continuar
+            <span class="hint-arrows"><b>Setas</b> para escolher · </span>
+            <b>Enter</b> para o botão grande
           </span>
           <span class="hint-touch">
-            Toque para escolher e para continuar
+            Toque na figura que você quiser
           </span>
         </p>
       </div>
