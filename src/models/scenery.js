@@ -1401,6 +1401,391 @@ function ufo() {
   return g;
 }
 
+// --- Parque -----------------------------------------------------------------
+
+const LISTRAS = [[0xff4d5e, 0xffffff], [0xffd166, 0xffffff], [0x4dc3ff, 0xffffff]];
+
+function circusTent() {
+  const g = new THREE.Group();
+  const par = pick(LISTRAS);
+  const parede = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 1, 12), mat(0xfff6ec));
+  parede.position.y = 0.5;
+  parede.castShadow = true;
+  g.add(parede);
+  // Cobertura em gomos alternados: é a listra que faz a tenda de circo.
+  for (let i = 0; i < 12; i++) {
+    const gomo = new THREE.Mesh(
+      new THREE.CylinderGeometry(0, 1.2, 1.1, 3, 1, true, (i / 12) * Math.PI * 2, Math.PI / 6),
+      new THREE.MeshLambertMaterial({ color: par[i % 2], flatShading: true, side: THREE.DoubleSide })
+    );
+    gomo.position.y = 1.55;
+    gomo.castShadow = true;
+    g.add(gomo);
+  }
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 5), mat(0xd9a86b));
+  mastro.position.y = 2.2;
+  g.add(mastro);
+  const bandeira = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 3), mat(par[0]));
+  bandeira.rotation.z = -Math.PI / 2;
+  bandeira.position.set(0.16, 2.4, 0);
+  g.add(bandeira);
+  return g;
+}
+
+function ferrisWheel() {
+  const g = new THREE.Group();
+  const cor = pick([0xff4d5e, 0x4dc3ff, 0xffd166]);
+  for (const lado of [-0.3, 0.3]) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 2.4, 5), mat(0xb9c2d6));
+    perna.position.set(lado, 1.2, 0);
+    perna.rotation.z = -lado * 0.25;
+    perna.castShadow = true;
+    g.add(perna);
+  }
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.07, 6, 20), mat(cor));
+  aro.position.y = 2.6;
+  aro.castShadow = true;
+  g.add(aro);
+  // Raios e cabines: oito de cada, alternando a cor.
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const raio = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3, 0.06), mat(0xe8ecf5));
+    raio.position.y = 2.6;
+    raio.rotation.z = a;
+    g.add(raio);
+    const cabine = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.28, 0.24), mat(i % 2 ? 0xffffff : cor));
+    cabine.position.set(Math.cos(a) * 1.5, 2.6 + Math.sin(a) * 1.5, 0);
+    cabine.castShadow = true;
+    g.add(cabine);
+  }
+  return g;
+}
+
+function cottonCandy() {
+  const g = new THREE.Group();
+  const palito = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 5), mat(0xfff6ec));
+  palito.position.y = 0.75;
+  g.add(palito);
+  const cor = pick([0xff9ecb, 0x9be7ff, 0xfff0a8]);
+  for (let i = 0; i < 4; i++) {
+    const nuvem = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34 - i * 0.04, 0), mat(cor));
+    const a = (i / 4) * Math.PI * 2;
+    nuvem.position.set(Math.cos(a) * 0.2, 1.6 + (i % 2) * 0.16, Math.sin(a) * 0.2);
+    nuvem.castShadow = true;
+    g.add(nuvem);
+  }
+  return g;
+}
+
+// Obstáculo do Parque: a caixa de pipoca listrada, tombada na pista.
+function popcornBox() {
+  const g = new THREE.Group();
+  const par = pick(LISTRAS);
+  for (let i = 0; i < 6; i++) {
+    const listra = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.8, 0.62), mat(par[i % 2]));
+    listra.position.set(-0.35 + i * 0.14, 0.4, 0);
+    listra.castShadow = true;
+    g.add(listra);
+  }
+  for (let i = 0; i < 5; i++) {
+    const pipoca = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 0), mat(0xfff6dd));
+    pipoca.position.set((Math.random() - 0.5) * 0.7, 0.85 + Math.random() * 0.2, (Math.random() - 0.5) * 0.5);
+    pipoca.castShadow = true;
+    g.add(pipoca);
+  }
+  return g;
+}
+
+// --- Tempestade -------------------------------------------------------------
+
+function windmill() {
+  const g = new THREE.Group();
+  const torre = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.55, 2.6, 8), mat(0xe0dcd2));
+  torre.position.y = 1.3;
+  torre.castShadow = true;
+  g.add(torre);
+  const telhado = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.6, 8), mat(0x7a5c4a));
+  telhado.position.y = 2.9;
+  g.add(telhado);
+  const eixo = new THREE.Group();
+  eixo.position.set(0, 2.6, 0.5);
+  eixo.rotation.z = Math.random() * Math.PI;
+  for (let i = 0; i < 4; i++) {
+    const pa = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.5, 0.05), mat(0xfff6ec));
+    pa.position.y = 0.75;
+    const braco = new THREE.Group();
+    braco.rotation.z = (i / 4) * Math.PI * 2;
+    braco.add(pa);
+    eixo.add(braco);
+  }
+  g.add(eixo);
+  return g;
+}
+
+function lightningRod() {
+  const g = new THREE.Group();
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 3.2, 6), mat(0x8a94ad));
+  haste.position.y = 1.6;
+  haste.castShadow = true;
+  g.add(haste);
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 5), mat(0xd6dcea));
+  ponta.position.y = 3.4;
+  g.add(ponta);
+  const bola = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 8, 6),
+    mat(0xfff08a, { emissive: 0xfff08a, emissiveIntensity: 1 })
+  );
+  bola.position.y = 3.05;
+  g.add(bola);
+  return g;
+}
+
+function puddle() {
+  const g = new THREE.Group();
+  const raio = 0.8 + Math.random() * 0.7;
+  const agua = new THREE.Mesh(
+    new THREE.CircleGeometry(raio, 10),
+    new THREE.MeshBasicMaterial({ color: 0x6b83a8, transparent: true, opacity: 0.55, depthWrite: false })
+  );
+  agua.rotation.x = -Math.PI / 2;
+  agua.position.y = 0.03;
+  g.add(agua);
+  const brilho = new THREE.Mesh(
+    new THREE.CircleGeometry(raio * 0.45, 8),
+    new THREE.MeshBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.4, depthWrite: false })
+  );
+  brilho.rotation.x = -Math.PI / 2;
+  brilho.position.set(raio * 0.2, 0.05, -raio * 0.15);
+  g.add(brilho);
+  return g;
+}
+
+function barrel() {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.36, 0.85, 10), mat(0x8a5c3c));
+  corpo.position.y = 0.43;
+  corpo.rotation.z = 0.12;
+  corpo.castShadow = true;
+  g.add(corpo);
+  for (const y of [0.2, 0.66]) {
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.045, 5, 12), mat(0x5c6270));
+    aro.rotation.x = Math.PI / 2;
+    aro.position.y = y;
+    g.add(aro);
+  }
+  return g;
+}
+
+// --- Bruma ------------------------------------------------------------------
+
+function ghostTree() {
+  const g = new THREE.Group();
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 2.6, 6), mat(0x9a93a8));
+  tronco.position.y = 1.3;
+  tronco.castShadow = true;
+  g.add(tronco);
+  for (let i = 0; i < 5; i++) {
+    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 1.1, 5), mat(0x877f96));
+    const a = (i / 5) * Math.PI * 2;
+    galho.position.set(Math.cos(a) * 0.3, 2.2 + (i % 2) * 0.3, Math.sin(a) * 0.3);
+    galho.rotation.set(Math.cos(a) * 0.8, 0, -Math.sin(a) * 0.8 - 0.5);
+    galho.castShadow = true;
+    g.add(galho);
+  }
+  return g;
+}
+
+function floatingLantern() {
+  const g = new THREE.Group();
+  const cor = pick([0xffd9a8, 0xd9c2ff, 0xa8e6ff]);
+  const vidro = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.44, 0.34),
+    mat(cor, { emissive: cor, emissiveIntensity: 0.95, transparent: true, opacity: 0.85 })
+  );
+  vidro.position.y = 1.7;
+  g.add(vidro);
+  for (const y of [1.46, 1.94]) {
+    const tampa = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.07, 0.42), mat(0x6b6478));
+    tampa.position.y = y;
+    g.add(tampa);
+  }
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.6, 8, 6),
+    new THREE.MeshBasicMaterial({
+      color: cor, transparent: true, opacity: 0.14, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  halo.position.y = 1.7;
+  g.add(halo);
+  return g;
+}
+
+function mossRock() {
+  const g = new THREE.Group();
+  const pedra = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), mat(0x8a8496));
+  pedra.position.y = 0.42;
+  pedra.rotation.set(Math.random(), Math.random(), Math.random());
+  pedra.castShadow = true;
+  g.add(pedra);
+  for (let i = 0; i < 3; i++) {
+    const musgo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), mat(0x9ab894));
+    musgo.position.set((Math.random() - 0.5) * 0.6, 0.75, (Math.random() - 0.5) * 0.6);
+    musgo.scale.y = 0.45;
+    g.add(musgo);
+  }
+  return g;
+}
+
+// --- Caverna ----------------------------------------------------------------
+
+function crystalVein() {
+  const g = new THREE.Group();
+  const cor = pick([0x8ce9ff, 0xc7a6ff, 0xff9ecb]);
+  for (let i = 0; i < 5; i++) {
+    const espinho = new THREE.Mesh(
+      new THREE.ConeGeometry(0.16 + Math.random() * 0.1, 0.8 + Math.random() * 1.1, 5),
+      mat(cor, { emissive: cor, emissiveIntensity: 0.9 })
+    );
+    const a = (i / 5) * Math.PI * 2;
+    espinho.position.set(Math.cos(a) * 0.35, espinho.geometry.parameters.height / 2, Math.sin(a) * 0.35);
+    espinho.rotation.z = Math.cos(a) * 0.3;
+    espinho.castShadow = true;
+    g.add(espinho);
+  }
+  g.add(warningRing(cor));
+  return g;
+}
+
+function stalagmite() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.3 - i * 0.07, 1.4 - i * 0.35, 6),
+      mat(i % 2 ? 0x6b6478 : 0x585268)
+    );
+    cone.position.set((i - 1) * 0.42, cone.geometry.parameters.height / 2, (Math.random() - 0.5) * 0.4);
+    cone.castShadow = true;
+    g.add(cone);
+  }
+  return g;
+}
+
+function glowPool() {
+  const g = new THREE.Group();
+  const cor = pick([0x8ce9ff, 0xc7a6ff]);
+  const raio = 0.9 + Math.random() * 0.6;
+  const poca = new THREE.Mesh(
+    new THREE.CircleGeometry(raio, 10),
+    mat(cor, { emissive: cor, emissiveIntensity: 0.8 })
+  );
+  poca.rotation.x = -Math.PI / 2;
+  poca.position.y = 0.04;
+  g.add(poca);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const pedra = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2, 0), mat(0x4a4558));
+    pedra.position.set(Math.cos(a) * raio, 0.08, Math.sin(a) * raio);
+    pedra.scale.y = 0.6;
+    g.add(pedra);
+  }
+  return g;
+}
+
+// --- Vilarejo ---------------------------------------------------------------
+
+function cottage() {
+  const g = new THREE.Group();
+  const parede = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.2, 1.3), mat(0xf0e2c8));
+  parede.position.y = 0.6;
+  parede.castShadow = true;
+  g.add(parede);
+  const telhado = new THREE.Mesh(new THREE.ConeGeometry(1.25, 0.9, 4), mat(pick([0xc2603f, 0xa8503a, 0xd6764f])));
+  telhado.position.y = 1.65;
+  telhado.rotation.y = Math.PI / 4;
+  telhado.castShadow = true;
+  g.add(telhado);
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.7, 0.06), mat(0x8a5c3c));
+  porta.position.set(0, 0.35, 0.68);
+  g.add(porta);
+  for (const x of [-0.45, 0.45]) {
+    const janela = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.06), mat(0xffe9a8, { emissive: 0xffe9a8, emissiveIntensity: 0.5 }));
+    janela.position.set(x, 0.75, 0.68);
+    g.add(janela);
+  }
+  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.6, 0.22), mat(0x9a8a78));
+  chamine.position.set(0.45, 1.9, -0.3);
+  g.add(chamine);
+  return g;
+}
+
+function lamppost() {
+  const g = new THREE.Group();
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 2.2, 6), mat(0x4a4a52));
+  poste.position.y = 1.1;
+  poste.castShadow = true;
+  g.add(poste);
+  const luz = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.36, 0.3),
+    mat(0xffe0a0, { emissive: 0xffe0a0, emissiveIntensity: 1 })
+  );
+  luz.position.y = 2.35;
+  g.add(luz);
+  const capa = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.22, 4), mat(0x3a3a42));
+  capa.position.y = 2.62;
+  capa.rotation.y = Math.PI / 4;
+  g.add(capa);
+  const halo = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 8, 6),
+    new THREE.MeshBasicMaterial({
+      color: 0xffe0a0, transparent: true, opacity: 0.12, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  halo.position.y = 2.35;
+  g.add(halo);
+  return g;
+}
+
+function well() {
+  const g = new THREE.Group();
+  const muro = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.6, 10), mat(0x9a8a78));
+  muro.position.y = 0.3;
+  muro.castShadow = true;
+  g.add(muro);
+  const agua = new THREE.Mesh(new THREE.CircleGeometry(0.44, 10), mat(0x4a6b8a));
+  agua.rotation.x = -Math.PI / 2;
+  agua.position.y = 0.52;
+  g.add(agua);
+  for (const x of [-0.5, 0.5]) {
+    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.1, 0.1), mat(0x8a5c3c));
+    pilar.position.set(x, 0.85, 0);
+    g.add(pilar);
+  }
+  const telhado = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.45, 4), mat(0xc2603f));
+  telhado.position.y = 1.6;
+  telhado.rotation.y = Math.PI / 4;
+  telhado.castShadow = true;
+  g.add(telhado);
+  return g;
+}
+
+function crate() {
+  const g = new THREE.Group();
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.75, 0.8), mat(0xb08a5c));
+  caixa.position.y = 0.38;
+  caixa.rotation.y = Math.random() * 0.6;
+  caixa.castShadow = true;
+  g.add(caixa);
+  for (const [a, ey] of [[0, 0.38], [Math.PI / 2, 0.38]]) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), mat(0x8a6a44));
+    tabua.position.y = ey;
+    tabua.rotation.y = caixa.rotation.y + a;
+    g.add(tabua);
+  }
+  return g;
+}
+
 const DECORATIONS = {
   tree, pineTree, mushroom, glowMushroom, crystal, flower, flowerPatch,
   lollipop, cupcake, candyCane, sprinkles, chocolate,
@@ -1412,6 +1797,11 @@ const DECORATIONS = {
   planet, asteroid, asteroidChunk, ufo,
   parasol, sandcastle, palmTree, beachChair,
   boat, surfboard, buoy,
+  circusTent, ferrisWheel, cottonCandy,
+  windmill, lightningRod, puddle,
+  ghostTree, floatingLantern, mossRock,
+  crystalVein, stalagmite, glowPool,
+  cottage, lamppost, well,
 };
 
 // `nomes` deixa a pista pedir um conjunto específico — é como a Praia põe
@@ -1635,6 +2025,7 @@ const OBSTACLES = {
   stormCloud, kite, balloonBunch, moonStone, bigGlowMushroom,
   watermelon, pineapple, coconutPile, seaUrchin, clam,
   lavaBoulder, iceBlock, meteor,
+  popcornBox, barrel, crate, stalagmite,
 };
 
 export function createObstacle(track) {
@@ -1670,6 +2061,11 @@ const BARRIER_LOOKS = {
   geada:  { bar: 0xdff4ff, post: 0x9ed8f5, warn: 0x2f9bff, top: 'gelo' },
   espaco: { bar: 0x6b6478, post: 0x413c52, warn: 0xffd166, top: 'planeta' },
   praia:  { bar: 0xe8ca94, post: 0xb08a5c, warn: 0xff6b35, top: 'concha' },
+  parque: { bar: 0xff4d5e, post: 0xfff6ec, warn: 0xffd166, top: 'bala' },
+  tempestade: { bar: 0x8a94ad, post: 0x5c6270, warn: 0xfff08a, top: 'cristal' },
+  bruma:  { bar: 0x9a93a8, post: 0x6b6478, warn: 0xd9c2ff, top: 'nuvem' },
+  caverna: { bar: 0x6b6478, post: 0x413c52, warn: 0x8ce9ff, top: 'cristal' },
+  vilarejo: { bar: 0xb08a5c, post: 0x8a6a44, warn: 0xffb02e, top: 'flor' },
 };
 
 // Setas chapadas no chão, apontando para a barreira: o aviso que a criança
@@ -2279,10 +2675,22 @@ export function createMeteorite() {
   return g;
 }
 
+// Pingo de chuva: um risco fino caindo rápido. É o irmão do floco de neve,
+// mas em vez de girar ele desce reto e depressa — é isso que faz parecer
+// chuva e não neve.
+export function createRaindrop() {
+  const pingo = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.022, 0.34, 2, 5),
+    new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.7, fog: false })
+  );
+  pingo.userData.parts = { queda: 5 + Math.random() * 3 };
+  return pingo;
+}
+
 const AMBIENCE = {
   firefly: createFirefly, butterfly, bee, bird, fish, bubble, ant,
   spark: createSpark, smoke: createSmoke, snow: createSnowflake,
-  seagull: createSeagull, meteorite: createMeteorite,
+  seagull: createSeagull, meteorite: createMeteorite, rain: createRaindrop,
 };
 
 // Cria um bichinho do tipo pedido pela pista.
@@ -2389,6 +2797,13 @@ export function animateAmbience(item, elapsed) {
       bolota.material.opacity = 0.24 * (1 - andamento) * (1 - andamento);
     }
     return { x: Math.sin(t * 0.5) * 0.9, y: subiu };
+  }
+
+  if (kind === 'rain') {
+    // Desce reto e rápido, num ciclo curto: nenhuma volta, nenhum balanço.
+    const ciclo = 12;
+    const caiu = (elapsed * parts.queda + phase * 4) % ciclo;
+    return { x: 0, y: ciclo - caiu };
   }
 
   if (kind === 'snow') {

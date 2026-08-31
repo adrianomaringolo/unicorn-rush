@@ -32,6 +32,7 @@ const AMBIENCE_SPOT = {
   // O floco desce na animação, então nasce embaixo e o ciclo o joga lá para
   // cima; pode cair em cima da pista, que é o que faz parecer nevando.
   snow:      { alto: [0, 0.5],    longe: 0 },
+  rain:      { alto: [0, 0.5],    longe: 0 },   // igual ao floco: cai na animação
   seagull:   { alto: [3.5, 10],   longe: 0 },   // planando por cima da pista
   // O meteorito atravessa: o x vem da animação, então nasce no meio.
   meteorite: { alto: [-6, 16],    longe: 0 },

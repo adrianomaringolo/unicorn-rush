@@ -347,6 +347,29 @@ export class Game {
     this.ui.toast(this.rush ? '⚡ Disparou!' : 'Voltou ao normal');
   }
 
+  // Relâmpago da Tempestade: de vez em quando o céu clareia de uma vez e
+  // volta ao normal em meio segundo. Mexe só na luz, então não custa nada —
+  // e é o que faz a pista parecer viva sem mudar uma regra do jogo.
+  applyLightning(dt) {
+    if (!this.track.lightning) {
+      if (this.flashBoost) { this.flashBoost = 0; this.applyTrackLook(); }
+      return;
+    }
+    this.nextBolt = (this.nextBolt ?? 3) - dt;
+    if (this.nextBolt <= 0) {
+      this.nextBolt = 2.5 + Math.random() * 5;
+      this.flashBoost = 1;
+      sfx.thunder();
+    }
+    if (!this.flashBoost) return;
+
+    this.flashBoost = Math.max(0, this.flashBoost - dt * 2.2);
+    const f = this.flashBoost;
+    this.hemisphere.intensity = this.track.hemisphere.intensity * (1 + f * 1.6);
+    this.sun.intensity = this.track.sun.intensity * (1 + f * 2.2);
+    if (f === 0) this.applyTrackLook();
+  }
+
   // Com o ⚡ ligado as asas crescem e acendem. A transição é suave nos dois
   // sentidos (`rushLook` vai de 0 a 1), senão o unicórnio "pula de tamanho"
   // no meio da corrida.
@@ -1359,6 +1382,16 @@ export class Game {
     const grip = gripPista * (this.character.laneGrip ?? 1);
     p.x += (targetX - p.x) * Math.min(1, LANE_CHANGE_SPEED * grip * dt);
 
+    // `sideWind` é a Tempestade: o vento empurra devagar para um lado e troca
+    // de direção de vez em quando, então não dá para simplesmente compensar.
+    // Ele mexe na posição, não na faixa escolhida — a criança continua no
+    // controle, só tem de segurar o rumo.
+    if (this.track.sideWind) {
+      const lado = Math.sin(this.elapsed * 0.22) > 0 ? 1 : -1;
+      const empurrao = this.track.sideWind * lado * dt;
+      p.x = THREE.MathUtils.clamp(p.x + empurrao, LANES[0] - 0.9, LANES[LANES.length - 1] + 0.9);
+    }
+
     if (this.powers.boost > 0) {
       // Turbo: o unicórnio decola e passa voando por cima de tudo.
       p.grounded = false;
@@ -1692,6 +1725,7 @@ export class Game {
       }
     }
 
+    this.applyLightning(playing ? dt : 0);
     this.applyRushWings(dt);
     updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
     this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;

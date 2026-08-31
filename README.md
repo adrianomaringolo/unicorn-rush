@@ -118,12 +118,12 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 🧊 Floco | Geada, Noite | a geada é dele, e a noite gela do mesmo jeito |
 | 🥥 Coco | Praia, Frutas | a praia é dele, e no pomar também se dá bem |
 | ☄️ Cometa | Espaço | ele é de lá |
-| 🍒 Cereja | Doces, Frutas | onde tem fruta e doce, ela se acha |
-| 🍋 Limão | Frutas, Céu | é fruta, e é elétrico como o céu aberto |
-| 🔮 Violeta | Noite, Espaço | fumaça combina com o escuro |
-| 💎 Cristal | Geada, Espaço | gelo e vácuo são o vidro dela |
-| 🎩 Vovô | Campo | conhece cada palmo dali |
-| 🦇 Sombra | Noite, Vulcão | o escuro é a casa dele |
+| 🍒 Cereja | **Parque**, Doces | o parque é dela: é onde mais se desvia |
+| 🍋 Limão | **Tempestade**, Frutas | elétrico como a tempestade, e é fruta |
+| 🔮 Violeta | **Bruma**, Noite | ela é meio feita de névoa |
+| 💎 Cristal | **Caverna**, Geada | os cristais da caverna são parentes dela |
+| 🎩 Vovô | **Vilarejo**, Campo | o vilarejo é a rua onde ele cresceu |
+| 🦇 Sombra | **Caverna**, Vulcão | o subterrâneo é a casa dele |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
@@ -185,7 +185,7 @@ com criança não funciona.
 | | Preço em chaves |
 | --- | --- |
 | Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 · Cereja 44 · Limão 48 · Violeta 54 · Cristal 60 · Vovô 66 · Sombra 72 |
-| Pistas | Doces 5 · Céu 8 · Frutas 12 · Praia 15 · Oceano 18 · Noite 22 · Geada 26 · Vulcão 30 · Espaço 36 |
+| Pistas | Doces 5 · **Vilarejo 7** · Céu 8 · Frutas 12 · Praia 15 · Oceano 18 · Noite 22 · Geada 26 · Vulcão 30 · Parque 32 · Espaço 36 · Tempestade 40 · Bruma 46 · Caverna 54 |
 
 Os preços seguem o ritmo do modo Fases: a **fase 1 já dá as 3 chaves** que
 quase pagam o Sol. Uma volta completa pelas doze fases de uma pista dá 96
@@ -222,14 +222,14 @@ geometria e um material só, então a animação inteira custa pouco (ver
 
 Também dá para escolher por onde correr — a pista muda o céu, a neblina, a
 luz, o chão, os enfeites das laterais, os bichinhos que voam por perto e até
-os obstáculos. São **15 pistas** planejadas; **dez estão prontas** e as
-outras cinco aparecem na grade como espaço vazio, iguais aos unicórnios que
-faltam. Só o **Campo** vem liberado — as outras são trocadas por chaves:
+os obstáculos. São **15 pistas**, e **as quinze estão prontas** — a grade de pistas não tem
+mais espaço vazio. Só o **Campo** vem liberado — as outras são trocadas por chaves:
 
 | | Pista | Como é |
 | --- | --- | --- |
 | 🌈 | **Campo** | O campo encantado: grama verde, **flores** (com caule, folha e pétalas) e tufinhos floridos rentes ao chão, **árvores frondosas com frutinhas** (copa larga em tom pastel, com frutas vermelhas ou douradas penduradas na borda), cogumelos, cristais, **borboletas e abelhas voando** e um arco-íris gigante no horizonte. Obstáculos de pedra, barreira de doce e arbusto espinhoso. |
 | 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes, bengalas doces, **granulado colorido**, **pedacinhos de chocolate** espalhados pelo chão e **formigas** andando em fila pelas beiradas. Obstáculos de bala de goma, rosquinha e barra de doce. |
+| 🎩 | **Vilarejo** | Uma rua de pedra ao pôr do sol: casinhas de telhado de barro com a luz acesa na janela, lampiões, poço com telhadinho e pombos. É a **pista mansa** — pouca coisa no caminho e nenhuma barreira —, e é barata de propósito: quem mais precisa dela é quem tem menos chaves. |
 | ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris, morrinhos de nuvem e **passarinhos cruzando o céu**. Obstáculos de nuvem carregada, pipa e cacho de balões. |
 | 🍓 | **Frutas** | Pomar cheio: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, pencas de banana e, espalhados pelo chão, melancias, montinhos de laranja, cachos de uva e kiwis cortados — com **abelhas** zunindo por perto. Obstáculos de fatia de melancia, abacaxi e monte de cocos. |
 | 🏖️ | **Praia** | Pista de beira-mar: **um lado é areia e o outro é água**, cada um com os seus enfeites — guarda-sóis, **coqueiros** (tronco curvo feito de gomos, com folhas compridas que arqueiam para baixo), **cadeiras listradas**, castelinhos, conchas e estrelas-do-mar na areia; **barcos a vela, pranchas de surfe e boias** flutuando na água. A água tem **cristas de espuma** que sobem, descem e esticam, e o que flutua **balança junto**; na beirada, uma linha de espuma marca onde a água encontra a pista. No céu, só **gaivotas** planando. |
@@ -237,6 +237,7 @@ faltam. Só o **Campo** vem liberado — as outras são trocadas por chaves:
 | ❄️ | **Geada** | Tudo branco e azul-gelo: pinheiros nevados, iglus, cristais de gelo e bonecos de neve, com **neve caindo de verdade** (o único bichinho do jogo que desce em vez de subir). O chão é **escorregadio** — trocar de faixa demora mais que o dobro para pegar. |
 | 🌋 | **Vulcão** | A pista do Brasa: chão de basalto quase preto, caminho cor de lava, **poças de lava** nas laterais (crosta escura em volta, miolo mais quente e uma bolha saindo do meio), pedras com veios acesos, chaminés soltando brasa e árvores queimadas. No ar, **faíscas de fogo subindo** por toda a volta e **fumaça** em alguns pontos, mais alta e mais lenta que as faíscas. Aqui o unicórnio **não** ganha aura: quem ilumina a cena é o chão, e um halo em volta dele competiria com a lava. |
 | 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
+| 🎪 | **Parque** | Tendas listradas de circo, roda-gigante girando com as cabines coloridas, algodão-doce e balões, com borboletas no ar e arco-íris no fundo. Aqui os obstáculos vêm em **fila apertada** — é a pista da Cereja, que desvia mais rápido que todos. |
 | 🚀 | **Espaço** | **Não tem chão, nem serra no horizonte, nem nuvem** — só a faixa da pista flutuando no vazio, e é isso que dá a sensação de voo. As **estrelas ficam em cima e embaixo** da linha da pista, então dá para vê-las por baixo. Em volta, **discos voadores** com cúpula de vidro, luzinhas e facho apontando para baixo, muito **cascalho e pedaços de asteroide** espalhados, e — raros, mais ou menos um em dez enfeites — **planetas**, que saem em quatro tipos sorteados: listrado como Júpiter, de anéis múltiplos, cheio de crateras ou com lua e órbita próprias; atravessando o campo de visão, **meteoritos** com núcleo de pedra irregular, a frente em brasa, cauda de três camadas que pulsa e fagulhas tremendo na esteira. O unicórnio acende e ganha halo, e a **gravidade é baixa**: o pulo sobe 1,85× e desce devagar. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
@@ -326,7 +327,15 @@ aprende a desviar, e pular vem depois. Os números ficam em `BARRIER`, em
 `src/game/config.js`, e a chance por fase na coluna `barrierChance` de
 `src/game/levels.js`.
 
-### Pistas que mudam a corrida
+#### As três de fim de lista
+
+| | Pista | O que tem |
+| --- | --- | --- |
+| ⚡ | **Tempestade** | Céu de chumbo, chuva caindo de verdade, poças refletindo, moinhos e para-raios com a ponta acesa. O **vento empurra de lado** e troca de direção, e de vez em quando um **relâmpago clareia a cena inteira**, com trovão. |
+| 🌫️ | **Bruma** | Névoa fechada: sem chão longe, sem serra, sem nuvem — árvores fantasmas, lampiões flutuando e pedras cobertas de musgo pálido aparecem **na hora**. A névoa fecha em 14 e engole tudo em 34, contra os 38–108 das outras. |
+| 💎 | **Caverna** | Subterrâneo roxo escuro: veios de cristal acesos, estalagmites e poças que brilham. O **unicórnio acende**, como na Noite. |
+
+## Pistas que mudam a corrida
 
 Três pistas não mudam só a cor — mudam como se joga, e o campo que faz isso
 mora na própria pista, em `src/game/tracks.js`:
@@ -339,6 +348,11 @@ mora na própria pista, em `src/game/tracks.js`:
 | 🏖️ Praia | `shore` | um lado vira areia e o outro água, cada um com o seu conjunto de enfeites, mais as cristas de onda animadas |
 | 🐠 Oceano · 🚀 Espaço | `cloud: null` | pista sem céu não constrói nuvem nenhuma |
 | 🚀 Espaço | `ground: null` · `mountains: null` | sem chão e sem horizonte: a pista flutua no vazio |
+| 🌫️ Bruma | `fog: { near: 14, far: 34 }` | a névoa mais curta do jogo: o obstáculo **aparece** em vez de se anunciar |
+| ⚡ Tempestade | `sideWind: 1.5` · `lightning: true` | o vento empurra de lado e troca de direção; relâmpagos levam o sol de 1,0 a **3,1** por meio segundo |
+| 🎪 Parque | `obstacleChance: 0.58` · `spawnInterval: 0.5` | fila apertada: desviar sem parar |
+| 🎩 Vilarejo | `obstacleChance: 0.14` · `barrierChance: 0` | pista mansa, a de aprender |
+| 💎 Caverna | `glow` | o unicórnio acende no escuro |
 | 🚀 Espaço | `gravity: 0.55` | gravidade baixa: o mesmo pulo sobe **1,85×** e desce devagar |
 
 Uma pista sem esses campos se comporta do jeito normal, então acrescentar

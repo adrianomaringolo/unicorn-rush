@@ -70,6 +70,8 @@ const ARQUIVOS = {
   '🦄': 'unicorn',
   '⬆️': 'up_arrow',
   '⚠️': 'warning',
+  '🎪': 'circus_tent',
+  '🌫️': 'fog',
   '🍒': 'cherries',
   '🍋': 'lemon',
   '🔮': 'crystal_ball',

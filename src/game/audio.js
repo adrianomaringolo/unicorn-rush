@@ -75,6 +75,13 @@ export const sfx = {
   }),
   resume: safe(() => ensure()),
 
+  // Trovão da Tempestade: um estrondo baixo e arrastado.
+  thunder: safe(() => {
+    blip(70, 0.7, 'sawtooth', 0.1);
+    setTimeout(() => blip(55, 0.9, 'triangle', 0.09), 90);
+    setTimeout(() => blip(90, 0.5, 'sawtooth', 0.05), 220);
+  }),
+
   // Sons dos menus. Criança precisa ouvir que o toque funcionou: sem isso,
   // um toque que "não fez nada" parece defeito.
   tap: safe(() => blip(660, 0.07, 'sine', 0.07)),

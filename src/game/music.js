@@ -71,6 +71,66 @@ export const THEMES = {
     bass: [40, 40, 42, 42, 38, 38, 40, 45],
   },
 
+  vilarejo: {
+    name: 'Rua de pedra',
+    bpm: 92, wave: 'triangle', bassWave: 'sine', gain: 0.075,
+    melody: [
+      67, null, 69, null, 71, null, 72, null,
+      71, null, 67, null, 64, null, null, null,
+      65, null, 67, null, 69, null, 71, null,
+      67, null, 64, null, 60, null, null, null,
+    ],
+    bass: [43, 43, 48, 48, 41, 41, 36, 36],
+  },
+
+  parque: {
+    name: 'Marcha do parque',
+    bpm: 132, wave: 'square', bassWave: 'square', gain: 0.06,
+    melody: [
+      72, null, 72, 74, 76, null, 76, 74,
+      72, null, 76, null, 79, null, null, null,
+      77, null, 77, 76, 74, null, 74, 72,
+      71, null, 74, null, 72, null, null, null,
+    ],
+    bass: [48, 43, 48, 43, 47, 43, 48, 43],
+  },
+
+  tempestade: {
+    name: 'Trovoada',
+    bpm: 116, wave: 'sawtooth', bassWave: 'square', gain: 0.06,
+    melody: [
+      64, null, 67, 70, 71, null, 70, 67,
+      64, null, 62, null, 64, null, null, null,
+      70, null, 72, 70, 67, null, 65, 64,
+      62, null, 64, null, 59, null, null, null,
+    ],
+    bass: [40, 40, 43, 43, 38, 38, 35, 35],
+  },
+
+  bruma: {
+    name: 'Neblina',
+    bpm: 68, wave: 'sine', bassWave: 'sine', gain: 0.07,
+    melody: [
+      69, null, null, null, 72, null, null, 71,
+      69, null, null, 67, 66, null, null, null,
+      71, null, null, null, 74, null, null, 72,
+      71, null, null, 69, 67, null, null, null,
+    ],
+    bass: [45, 45, 45, 45, 42, 42, 40, 40],
+  },
+
+  caverna: {
+    name: 'Eco de cristal',
+    bpm: 88, wave: 'triangle', bassWave: 'triangle', gain: 0.065,
+    melody: [
+      76, null, 79, null, 83, null, 79, null,
+      76, null, 74, null, 71, null, null, null,
+      78, null, 81, null, 85, null, 81, null,
+      78, null, 76, null, 74, null, null, null,
+    ],
+    bass: [35, 35, 40, 40, 33, 33, 38, 38],
+  },
+
   praia: {
     name: 'Onda na areia',
     bpm: 104, wave: 'triangle', bassWave: 'sine', gain: 0.075,

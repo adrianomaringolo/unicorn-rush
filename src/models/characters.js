@@ -365,7 +365,7 @@ export const CHARACTERS = {
     voice: 1.15,
     // Troca de faixa quase 50% mais rápido — é o jeitão dela.
     laneGrip: 1.5,
-    fast: ['doces', 'frutas'],
+    fast: ['parque', 'doces'],
     power: 'ela desvia de pista muito mais rápido',
     trail: { colors: [0xffd9e0, 0xff9eb0, 0xe03050, 0x5faf46, 0x2f7a26, 0xff7a90], width: 0.6 },
   },
@@ -394,7 +394,7 @@ export const CHARACTERS = {
     // 1,12 vira ×1,25 de altura — o suficiente para a criança notar sem
     // desequilibrar a corrida.
     jumpBoost: 1.12,
-    fast: ['frutas', 'ceu'],
+    fast: ['tempestade', 'frutas'],
     power: 'ele pula mais alto que os outros',
     trail: { colors: [0xffffff, 0xfffbc9, 0xf2e33a, 0xc4e832, 0x8fd420, 0xfff08a], width: 0.55 },
   },
@@ -420,7 +420,7 @@ export const CHARACTERS = {
     voice: 1.1,
     // Cai mais devagar: o pulo dela flutua.
     airGlide: 0.78,
-    fast: ['noite', 'espaco'],
+    fast: ['bruma', 'noite'],
     power: 'ela demora para descer do pulo',
     trail: { colors: [0xf0d9ff, 0xd9a6ff, 0xb87ae8, 0x8b3fd6, 0x6b28b0, 0xe6c9ff], width: 0.85 },
   },
@@ -445,7 +445,7 @@ export const CHARACTERS = {
     scale: 1.02,
     proportions: { head: 0.95, legs: 1.1, eye: 1 },
     voice: 1.2,
-    fast: ['geada', 'espaco'],
+    fast: ['caverna', 'geada'],
     power: 'ela é de vidro: dá para ver através dela',
     trail: { colors: [0xffffff, 0xeaf9ff, 0x8ce9ff, 0x5fd0f0, 0xbfe9ff, 0xd9f4ff], width: 0.7 },
   },
@@ -472,7 +472,7 @@ export const CHARACTERS = {
     voice: 0.78,
     // Vira devagar — e em troca deixa o rastro mais largo do jogo.
     laneGrip: 0.6,
-    fast: ['campo'],
+    fast: ['vilarejo', 'campo'],
     power: 'vira devagar, mas deixa o rastro mais largo',
     trail: { colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4, 0x9aa0ad], width: 1.5 },
   },
@@ -500,7 +500,7 @@ export const CHARACTERS = {
     scale: 1.05,
     proportions: { head: 0.96, legs: 1.06, eye: 1.05 },
     voice: 0.85,
-    fast: ['noite', 'vulcao'],
+    fast: ['caverna', 'vulcao'],
     power: 'ele acende sozinho em qualquer pista',
     trail: { colors: [0xc9a6ff, 0x8c7ac9, 0x6b5fa8, 0x4a3f7a, 0x2f2a4a, 0xa98ee0], width: 0.8 },
   },
