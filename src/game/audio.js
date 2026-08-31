@@ -5,6 +5,16 @@ export function getContext() {
   return ensure();
 }
 
+// O contexto que já existe, sem criar nem retomar.
+//
+// `getContext()` retoma de propósito — é o que faz o som voltar quando a
+// criança toca na tela. Mas quem roda em laço (o agendador da música) não
+// pode usá-lo: chamar de dentro do laço fazia o áudio suspenso voltar
+// sozinho, e a música continuava tocando com o app minimizado.
+export function peekContext() {
+  return ctx;
+}
+
 function ensure() {
   const Ctor = window.AudioContext || window.webkitAudioContext;
   if (!Ctor) return null;

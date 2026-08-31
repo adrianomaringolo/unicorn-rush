@@ -3,7 +3,7 @@
 // Nada de arquivo de áudio: as melodias são notas MIDI tocadas com
 // osciladores do WebAudio, num laço que fica se repetindo. Cada pista tem o
 // seu tema, com andamento, timbre e escala próprios.
-import { getContext } from './audio.js';
+import { getContext, peekContext } from './audio.js';
 import { getSave, update } from './storage.js';
 
 const noteHz = (midi) => 440 * 2 ** ((midi - 69) / 12);
@@ -132,16 +132,39 @@ export const THEMES = {
   },
 };
 
-// Quando a aba sai de foco (a criança troca de app, bloqueia a tela…), o
-// áudio inteiro é suspenso — música e efeitos — e volta ao reaparecer.
+// Quando a aba sai de foco (a criança troca de app, minimiza, bloqueia a
+// tela…), o áudio inteiro para — música e efeitos — e volta ao reaparecer.
+//
+// Suspender o contexto não bastava: o agendador continuava rodando e o
+// contexto voltava sozinho (ver `tick`). Então aqui o timer é desligado
+// junto, que é o que garante silêncio de verdade com o app no fundo.
+function silenciarNoFundo() {
+  clearInterval(timer);
+  timer = null;
+  peekContext()?.suspend?.();
+}
+
+function voltarDoFundo() {
+  const ctx = peekContext();
+  if (!ctx || !theme) return;
+  ctx.resume?.();
+  // O relógio do contexto não anda enquanto suspenso, mas se ele tiver
+  // andado — ou se o navegador tiver derrubado o áudio no meio —, retomar
+  // de onde parou dispararia todas as notas atrasadas de uma vez.
+  if (nextNoteTime < ctx.currentTime) nextNoteTime = ctx.currentTime + 0.1;
+  if (!timer) timer = setInterval(tick, LOOKAHEAD_MS);
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (!theme) return;               // nem começou a tocar ainda
-    const ctx = getContext();
-    if (!ctx) return;
-    if (document.hidden) ctx.suspend?.();
-    else if (!muted) ctx.resume?.();
+    document.hidden ? silenciarNoFundo() : voltarDoFundo();
   });
+
+  // No iPhone o `visibilitychange` não é confiável ao trocar de app; o
+  // `pagehide` pega esse caso.
+  addEventListener('pagehide', () => { if (theme) silenciarNoFundo(); });
+  addEventListener('pageshow', () => { if (theme) voltarDoFundo(); });
 }
 
 const LOOKAHEAD_MS = 60;
@@ -190,8 +213,11 @@ function scheduleStep(ctx, time) {
 }
 
 function tick() {
-  const ctx = getContext();
-  if (!ctx || !theme) return;
+  // `peekContext` e não `getContext`: aqui não se retoma nada. Com o app
+  // minimizado o navegador continua chamando este timer (mais devagar), e
+  // retomar aqui era o que fazia a música voltar por trás.
+  const ctx = peekContext();
+  if (!ctx || !theme || ctx.state !== 'running') return;
   while (nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD) scheduleStep(ctx, nextNoteTime);
 }
 
