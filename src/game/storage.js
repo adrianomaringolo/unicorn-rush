@@ -10,10 +10,15 @@ const DEFAULTS = {
   version: 1,
   choices: { character: 'uni', track: 'campo', mode: 'baby', difficulty: 'medio' },
   muted: false,
+  speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
   babyLevel: 1,          // sobe a cada vitória no modo Livre e aumenta a meta
-  levels: {
-    unlocked: 1,         // até que fase o modo Fases foi liberado
-    done: {},            // fases já concluídas
+  // Progresso das fases, uma entrada por pista: { campo: { unlocked, done } }.
+  // Cada pista tem o seu caminho de doze fases, então comprar uma pista nova
+  // abre um caminho inteiro.
+  levels: {},
+  shop: {
+    characters: [],      // unicórnios já trocados por chaves mágicas
+    tracks: [],          // pistas já trocadas por chaves mágicas
   },
   stats: {
     runs: 0,             // corridas começadas
@@ -67,10 +72,19 @@ function migrateOldKeys(save) {
   return save;
 }
 
+// Antes as fases eram uma sequência só, sem pista: { unlocked, done }. Quem
+// já tinha progresso fica com ele no Campo, que é a pista que vem liberada.
+function migrateFlatLevels(save) {
+  const levels = save.levels || {};
+  if (typeof levels.unlocked !== 'number') return save;
+  save.levels = { campo: { unlocked: levels.unlocked, done: levels.done || {} } };
+  return save;
+}
+
 function read() {
   try {
     const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(KEY)));
-    return migrateOldKeys(save);
+    return migrateFlatLevels(migrateOldKeys(save));
   } catch {
     return clone(DEFAULTS);   // aba anônima, save corrompido…
   }

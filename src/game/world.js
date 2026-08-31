@@ -4,12 +4,12 @@
 // Tudo fica dentro de `root`, então trocar de pista é jogar fora um mundo
 // inteiro e montar outro (ver Game.buildWorld).
 import * as THREE from 'three';
-import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE } from './config.js';
+import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE, BARRIER } from './config.js';
 import { TRACKS, DEFAULT_TRACK } from './tracks.js';
 import { createHeart, createStar, createKey } from '../models/collectibles.js';
 import { createPowerup, POWERUP_LIST } from '../models/powerups.js';
 import {
-  createGround, createDecoration, createObstacle, createCloud,
+  createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
   createRainbow, createMountains, createMoon, createStars, createSun,
   createDistanceMarker, createRecordBanner, createAmbience, animateAmbience,
 } from '../models/scenery.js';
@@ -26,6 +26,15 @@ const AMBIENCE_SPOT = {
   fish:      { alto: [0.9, 5.5], longe: 4.5 },
   bubble:    { alto: [0.1, 1.2],  longe: 4.5 },   // sobe sozinha na animação
   ant:       { alto: [0.12, 0.12], longe: 4.4 },  // andando no chão
+  // As duas do Vulcão sobem sozinhas na animação, então nascem rente ao chão.
+  spark:     { alto: [0.1, 0.8],  longe: 4.5 },
+  smoke:     { alto: [0.05, 0.4], longe: 6 },
+  // O floco desce na animação, então nasce embaixo e o ciclo o joga lá para
+  // cima; pode cair em cima da pista, que é o que faz parecer nevando.
+  snow:      { alto: [0, 0.5],    longe: 0 },
+  seagull:   { alto: [3.5, 10],   longe: 0 },   // planando por cima da pista
+  // O meteorito atravessa: o x vem da animação, então nasce no meio.
+  meteorite: { alto: [-6, 16],    longe: 0 },
 };
 
 export class World {
@@ -52,12 +61,15 @@ export class World {
     this.root.add(this.group);
 
     this.group.add(createGround(track));
-    this.root.add(createMountains(track));
+    // Pista sem `mountains` não tem horizonte: é o Espaço, onde a ausência de
+    // chão e de serra é justamente o que dá a sensação de estar voando.
+    if (track.mountains) this.root.add(createMountains(track));
 
     this.buildBackdrop();
     this.buildAmbience();
     this.buildStripes();
     this.buildDecorations();
+    this.buildWaves();
     this.buildClouds();
     this.buildSparkles();
   }
@@ -69,7 +81,9 @@ export class World {
       const moon = createMoon();
       moon.position.set(19, 17, -84);
       this.root.add(moon);
-      this.root.add(createStars());
+      // No Espaço as estrelas também vêm por baixo: sem chão, é o que dá
+      // a impressão de voar no meio delas.
+      this.root.add(createStars(this.track.starsBelow ? 140 : 90, !!this.track.starsBelow));
       this.backdrop = moon;
       return;
     }
@@ -134,20 +148,55 @@ export class World {
 
   buildDecorations() {
     const quantos = this.track.decorationCount || 40;
+    const shore = this.track.shore;
     for (let i = 0; i < quantos; i++) {
-      const deco = createDecoration(this.track);
+      // Numa pista de beira-mar cada lado tem o seu conjunto: guarda-sol e
+      // castelinho na areia, barco e prancha na água. O lado fica gravado no
+      // enfeite, para ele voltar sempre do mesmo lado ao ser reciclado.
+      const lado = shore ? (i % 2 === 0 ? shore.side : -shore.side) : 0;
+      const nomes = !shore ? this.track.decorations
+        : lado === shore.side ? shore.sandDecor : shore.seaDecor;
+      const deco = createDecoration(this.track, nomes);
+      deco.userData.side = lado;
       this.placeDecoration(deco, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
       this.group.add(deco);
       this.decorations.push(deco);
     }
   }
 
+  // Cristas de onda espalhadas pela metade de água, que sobem e descem no
+  // lugar enquanto correm com o mundo.
+  buildWaves() {
+    this.waves = [];
+    const shore = this.track.shore;
+    if (!shore) return;
+    for (let i = 0; i < 22; i++) {
+      const crista = createWaveCrest(shore.foam);
+      this.placeWave(crista, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
+      this.group.add(crista);
+      this.waves.push(crista);
+    }
+  }
+
+  placeWave(crista, z) {
+    const shore = this.track.shore;
+    crista.position.set(-shore.side * (5.5 + Math.random() * 26), 0.02, z);
+  }
+
   placeDecoration(deco, z) {
-    const side = Math.random() < 0.5 ? -1 : 1;
-    deco.position.set(side * (4.8 + Math.random() * 14), 0, z);
+    // Sem beira-mar, cai de qualquer lado; com, respeita o lado dele.
+    const side = deco.userData.side || (Math.random() < 0.5 ? -1 : 1);
+    // O que flutua fica um pouco afundado, e mais longe: barco encostado na
+    // pista pareceria obstáculo.
+    const naAgua = this.track.shore && side === -this.track.shore.side;
+    const dist = naAgua ? 6.5 + Math.random() * 16 : 4.8 + Math.random() * 14;
+    deco.position.set(side * dist, naAgua ? -0.12 : 0, z);
   }
 
   buildClouds() {
+    // Pista sem `cloud` não tem nuvem nenhuma — é o caso do Oceano, que se
+    // passa debaixo da água.
+    if (!this.track.cloud) return;
     for (let i = 0; i < 14; i++) {
       const cloud = createCloud(this.track.cloud);
       cloud.position.set(
@@ -224,6 +273,8 @@ export class World {
     this.entities.length = 0;
     this.spawnTimer = 0;
     this.rowsSincePower = 0;
+    this.rowsSinceBarrier = 0;
+    this.barrierDone = false;
     for (const s of this.sparkles) { s.userData.life = 0; s.visible = false; }
   }
 
@@ -250,7 +301,32 @@ export class World {
     return Math.floor(Math.random() * LANES.length);
   }
 
+  // Barreira: ocupa as três pistas, então não tem desvio — ou pula, ou bate.
+  // Por isso ela é rara, nunca vem colada na anterior e demora mais para
+  // aparecer pela primeira vez.
+  rollBarrier() {
+    if (!this.mode.obstacles || !this.mode.barrierChance) return false;
+    this.rowsSinceBarrier += 1;
+    const espera = this.barrierDone ? BARRIER.gap : BARRIER.firstGap;
+    if (this.rowsSinceBarrier < espera) return false;
+    if (Math.random() > this.mode.barrierChance) return false;
+    this.rowsSinceBarrier = 0;
+    this.barrierDone = true;
+    return true;
+  }
+
   spawnRow(difficulty) {
+    // A barreira toma a linha inteira: nada mais nasce junto, fora o prêmio
+    // de quem pula, flutuando na altura do salto.
+    if (this.rollBarrier()) {
+      const barreira = createBarrier(this.track);
+      barreira.position.set(0, 0, SPAWN_DISTANCE);
+      this.group.add(barreira);
+      this.entities.push(barreira);
+      this.addEntity(this.makeCollectible(), 1, 1.75);
+      return;
+    }
+
     const powerId = this.rollPowerup();
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
@@ -324,6 +400,21 @@ export class World {
     for (const deco of this.decorations) {
       deco.position.z += move;
       if (deco.position.z > DESPAWN_DISTANCE + 6) this.placeDecoration(deco, SPAWN_DISTANCE - Math.random() * 20);
+      // O que flutua balança na água em vez de ficar parado.
+      if (deco.userData.side && this.track.shore && deco.userData.side === -this.track.shore.side) {
+        deco.position.y = -0.12 + Math.sin(elapsed * 1.6 + deco.position.z * 0.35) * 0.09;
+        deco.rotation.z = Math.sin(elapsed * 1.3 + deco.position.z * 0.3) * 0.07;
+      }
+    }
+
+    for (const crista of this.waves || []) {
+      crista.position.z += move;
+      if (crista.position.z > DESPAWN_DISTANCE + 4) this.placeWave(crista, SPAWN_DISTANCE - Math.random() * 20);
+      // Sobe, desce e estica: é o que faz a água parecer viva.
+      const t = elapsed * 1.7 + crista.userData.fase;
+      crista.position.y = 0.02 + Math.sin(t) * 0.05;
+      crista.scale.x = 0.8 + Math.sin(t * 0.8) * 0.25;
+      crista.children[0].material.opacity = 0.22 + (Math.sin(t) * 0.5 + 0.5) * 0.3;
     }
 
     for (const bug of this.ambience) {
