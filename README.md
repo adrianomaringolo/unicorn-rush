@@ -18,8 +18,8 @@ de fora — dá até para instalar no celular e jogar offline.
 
 ## Personagens
 
-O elenco planejado é de **21 unicórnios**; **doze estão prontos** e os outros
-nove aparecem na grade como espaço vazio, com um `?` e "em breve" — a criança
+O elenco planejado é de **21 unicórnios**; **dezoito estão prontos** e os
+outros três aparecem na grade como espaço vazio, com um `?` e "em breve" — a criança
 vê que tem mais coisa vindo. A grade tem três colunas e rola por dentro do
 cartão; as pontas desbotam quando há mais para ver.
 
@@ -31,6 +31,26 @@ muda é o botão: **✅ Escolher esse** para quem já é seu, **🔑 Trocar N
 chaves** para quem está à venda e você tem chaves, e **🗺️ Buscar chaves**
 quando faltam (esse leva direto para as fases). A ficha da pista mostra a
 música dela no lugar do preço.
+
+### O jeito de correr de cada um
+
+Seis unicórnios não mudam só de cor: eles mudam **como se joga**. O campo
+mora no próprio personagem, em `src/models/characters.js`, e é lido no
+`Game.updatePlayer` do mesmo jeito que as mecânicas de pista — quando os dois
+existem, eles se multiplicam (o chão escorregadio da Geada atrapalha todo
+mundo, e por cima disso a Cereja é ligeira e o Vovô é lento).
+
+| Unicórnio | Campo | O que muda |
+| --- | --- | --- |
+| 🍒 Cereja | `laneGrip: 1.5` | troca de faixa em **11 quadros** contra os 17 dos outros |
+| 🎩 Vovô | `laneGrip: 0.6` | troca em **30 quadros** — e em troca leva o rastro mais largo (1,5) |
+| 🍋 Limão | `jumpBoost: 1.12` | o pulo sobe **2,52 contra 2,0**. A altura vai com o quadrado da velocidade, por isso 1,12 rende ×1,25 |
+| 🔮 Violeta | `airGlide: 0.78` | fica **64 quadros no ar** contra 49: o pulo dela flutua |
+| 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista**, não só nas que têm brilho próprio |
+| 💎 Cristal | `translucent: 0.72` | o **corpo** fica de vidro (crina, rabo, asas e marca ficam opacos, senão ela desaparecia) |
+
+Sem esses campos o unicórnio corre do jeito normal, então inventar o próximo
+continua sendo só uma entrada na tabela.
 
 ### A pista de cada um
 
@@ -77,6 +97,12 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 🧊 Floco | Geada, Noite | a geada é dele, e a noite gela do mesmo jeito |
 | 🥥 Coco | Praia, Frutas | a praia é dele, e no pomar também se dá bem |
 | ☄️ Cometa | Espaço | ele é de lá |
+| 🍒 Cereja | Doces, Frutas | onde tem fruta e doce, ela se acha |
+| 🍋 Limão | Frutas, Céu | é fruta, e é elétrico como o céu aberto |
+| 🔮 Violeta | Noite, Espaço | fumaça combina com o escuro |
+| 💎 Cristal | Geada, Espaço | gelo e vácuo são o vidro dela |
+| 🎩 Vovô | Campo | conhece cada palmo dali |
+| 🦇 Sombra | Noite, Vulcão | o escuro é a casa dele |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
@@ -98,18 +124,24 @@ Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 | 🍃 | **Musgo** 🔑 18 | verde, **atarracado** (6% maior, mas de pernas curtas), chifre de madeira, crina de mato e folha na anca; o mais lento de se olhar | O mais calmo da turma, conhece cada árvore pelo nome. Onde ele cochila de tarde, no dia seguinte nasce uma flor. |
 | 🧊 | **Floco** 🔑 34 | **azul-gelo** (não branco, para não se perder entre a Uni, a Lulu e a Estrela), crina azul-escura, parrudo e de perna curta, asas de pena bem claras, floco de neve na anca | Dorme o verão inteiro e acorda no primeiro dia frio; sopra baixinho e o ar vira purpurina de gelo. |
 | 🥥 | **Coco** 🔑 38 | o **único marrom** do elenco: cor de casca, crina verde de folha de coqueiro, redondinho e de perna curta, concha na anca | Dormiu tanto debaixo do coqueiro que ficou da cor da casca; sabe o lugar exato onde a onda faz mais espuma. |
+| 🍒 | **Cereja** 🔑 44 | o **vermelho** que faltava, crina verde-escura como o cabinho, miúda; **troca de faixa 50% mais rápido** | Não anda: desvia. Trocaria de pista duas vezes antes de a poeira do primeiro desvio assentar. |
+| 🍋 | **Limão** 🔑 48 | amarelo-limão, o segundo menor depois da Lulu, crina espetada, a voz mais aguda; **pula 25% mais alto** | O menor depois da Lulu e não para quieto; quando pula, dá até para ouvir um estalinho no ar. |
+| 🔮 | **Violeta** 🔑 54 | **roxo saturado** (a Lua é lilás pálido), crina que parece fumaça, asas de véu; **cai mais devagar** | É meio feita de fumaça: quando salta, demora para descer, como se o ar segurasse ela. |
+| 💎 | **Cristal** 🔑 60 | **corpo translúcido** — o único de vidro no elenco —, alta e magra, brilhante de gelo | Transparente como uma janela de gelo; dá para ver o arco-íris passar por dentro dela. |
+| 🎩 | **Vovô** 🔑 66 | o **cinza/prata** que faltava, crina branca comprida, o maior do elenco; **vira devagar, mas tem o rastro mais largo do jogo** | Já correu em todas as pistas, algumas antes de elas terem nome. |
+| 🦇 | **Sombra** 🔑 72 | **preto puro**, sem o laranja do Brasa, com **asas de morcego** em vez de pena; **acende sozinho em qualquer pista** | Preto de verdade, sem um fiozinho de cor. Brilha por conta própria, então nunca corre no escuro. |
 | ☄️ | **Cometa** 🔑 42 | índigo com crina em ciano e rosa, **perna comprida e cabeça pequena**, asas em raios que lêem como cauda | Não sabe parar: desde que nasceu está atravessando o céu. Dizem que quem o acompanha ganha um pedido. |
 | 🌊 | **Onda** 🔑 32 | **turquesa** de corpo inteiro (puxa para o verde, ao contrário do azul do Floco), com **chifre e mecha de coral** como acento quente, **esguia e de pernas compridas**, asas de véu que lêem como nadadeira | Nasceu numa espuma de onda grande e nunca aprendeu a andar devagar; debaixo d'água é a mais rápida de todas. |
 
 Tudo isso é dado, não código: cada personagem é uma entrada em
 `src/models/characters.js` com as cores, o estilo do chifre, das asas
-(`feather`, `ray` ou `veil`), a marca da anca (`rainbow`, `sun`, `moon`,
+(`feather`, `ray`, `veil` ou `bat`), a marca da anca (`rainbow`, `sun`, `moon`,
 `star`, `heart`, `flame`, `leaf`, `wave`, `bubble`, `snowflake`, `comet`,
-`shell`), as cores e a largura do rastro e, se quiser, o `price` em chaves, o tamanho
+`shell`, `bolt`, `diamond`), as cores e a largura do rastro e, se quiser, o `price` em chaves, o tamanho
 (`scale`), as proporções (`proportions`: cabeça, olhos e pernas — é o que faz
 a Lulu parecer um bebê e o Brasa parecer adulto), o `fiery` (que acende a
 crina e o rabo em chamas) e a `voice`, que é o tom dos sons de coleta (1 é o
-normal; a Lulu usa 1,5, uma quinta acima). Para inventar o décimo terceiro
+normal; a Lulu usa 1,5, uma quinta acima). Para inventar o décimo nono
 basta acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
 
 ### A loja
@@ -131,7 +163,7 @@ com criança não funciona.
 
 | | Preço em chaves |
 | --- | --- |
-| Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 |
+| Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 · Cereja 44 · Limão 48 · Violeta 54 · Cristal 60 · Vovô 66 · Sombra 72 |
 | Pistas | Doces 5 · Céu 8 · Frutas 12 · Praia 15 · Oceano 18 · Noite 22 · Geada 26 · Vulcão 30 · Espaço 36 |
 
 Os preços seguem o ritmo do modo Fases: a **fase 1 já dá as 3 chaves** que

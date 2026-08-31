@@ -301,6 +301,168 @@ export const CHARACTERS = {
     fast: ['espaco'],
     trail: { colors: [0xffffff, 0x8ce9ff, 0xc9a6ff, 0xff8fd8, 0x5fc4f0, 0xffd166], width: 0.95 },
   },
+
+  // --- Os seis com jeito próprio de correr -----------------------------------
+  //
+  // Estes não mudam só de cor: cada um tem um campo que mexe em como se
+  // joga (`laneGrip`, `jumpBoost`, `airGlide`, `glow`, `translucent`), lido
+  // no Game.updatePlayer do mesmo jeito que as mecânicas de pista.
+
+  cereja: {
+    id: 'cereja',
+    name: 'Cereja',
+    emoji: '🍒',
+    title: 'a unicórnia mais ligeira',
+    story: 'Cereja não anda: ela desvia. Dizem que consegue trocar de pista '
+      + 'duas vezes antes de a poeira do primeiro desvio assentar.',
+    price: 44,
+    // O vermelho que faltava no elenco.
+    body: 0xe03050,
+    hoof: 0x8f1a30,
+    muzzle: 0xf06a80,
+    horn: { color: 0xfff0c9, length: 0.58, radius: 0.09 },
+    hair: [0x2f7a26, 0x5faf46, 0xa8d98a, 0x3f8f2f, 0x7fc45a],
+    wing: { style: 'ray', colors: [0xffd9e0, 0xff9eb0, 0xe03050, 0xff7a90, 0xffc2cc] },
+    // Círculo com brilho, em vermelho: lê como cereja.
+    mark: { shape: 'bubble', color: 0x8f1a30 },
+    scale: 0.93,
+    proportions: { head: 1, legs: 1.04, eye: 1.1 },
+    voice: 1.15,
+    // Troca de faixa quase 50% mais rápido — é o jeitão dela.
+    laneGrip: 1.5,
+    fast: ['doces', 'frutas'],
+    trail: { colors: [0xffd9e0, 0xff9eb0, 0xe03050, 0x5faf46, 0x2f7a26, 0xff7a90], width: 0.6 },
+  },
+
+  limao: {
+    id: 'limao',
+    name: 'Limão',
+    emoji: '🍋',
+    title: 'o unicórnio elétrico',
+    story: 'Limão é o menor depois da Lulu e não para quieto um segundo. '
+      + 'Quando ele pula, dá até para ouvir um estalinho no ar.',
+    price: 48,
+    // Amarelo-limão: o elenco tinha dourado (Sol), mas não amarelo.
+    body: 0xf2e33a,
+    hoof: 0xb8a800,
+    muzzle: 0xf7ee8a,
+    horn: { color: 0xfffbc9, length: 0.5, radius: 0.095 },
+    hair: [0xc4e832, 0xf2e33a, 0xffffff, 0x8fd420, 0xfff08a],
+    wing: { style: 'ray', colors: [0xfffbc9, 0xf7ee8a, 0xf2e33a, 0xc4e832, 0x8fd420] },
+    mark: { shape: 'bolt', color: 0x6b8f00 },
+    // Miudinho e espetado.
+    scale: 0.88,
+    proportions: { head: 1.12, legs: 0.98, eye: 1.2 },
+    voice: 1.35,
+    // Pula mais alto. A altura vai com o quadrado da velocidade, então este
+    // 1,12 vira ×1,25 de altura — o suficiente para a criança notar sem
+    // desequilibrar a corrida.
+    jumpBoost: 1.12,
+    fast: ['frutas', 'ceu'],
+    trail: { colors: [0xffffff, 0xfffbc9, 0xf2e33a, 0xc4e832, 0x8fd420, 0xfff08a], width: 0.55 },
+  },
+
+  violeta: {
+    id: 'violeta',
+    name: 'Violeta',
+    emoji: '🔮',
+    title: 'a unicórnia de fumaça',
+    story: 'Violeta é meio feita de fumaça: quando salta, demora para descer, '
+      + 'como se o ar segurasse ela um pouquinho.',
+    price: 54,
+    // Roxo saturado — a Lua é lilás pálido e o Cometa é índigo escuro.
+    body: 0x8b3fd6,
+    hoof: 0x5a1f96,
+    muzzle: 0xa96ee8,
+    horn: { color: 0xe6c9ff, length: 0.7, radius: 0.085 },
+    hair: [0xd9a6ff, 0x8b3fd6, 0xf0d9ff, 0xa96ee8, 0x6b28b0],
+    wing: { style: 'veil', colors: [0xf0d9ff, 0xd9a6ff, 0xb87ae8] },
+    mark: { shape: 'star', color: 0xf0d9ff },
+    scale: 1.0,
+    proportions: { head: 0.98, legs: 1.05, eye: 1.15 },
+    voice: 1.1,
+    // Cai mais devagar: o pulo dela flutua.
+    airGlide: 0.78,
+    fast: ['noite', 'espaco'],
+    trail: { colors: [0xf0d9ff, 0xd9a6ff, 0xb87ae8, 0x8b3fd6, 0x6b28b0, 0xe6c9ff], width: 0.85 },
+  },
+
+  cristal: {
+    id: 'cristal',
+    name: 'Cristal',
+    emoji: '💎',
+    title: 'a unicórnia de vidro',
+    story: 'Cristal é transparente como uma janela de gelo, e dá para ver o '
+      + 'arco-íris passar por dentro dela quando o sol bate de lado.',
+    price: 60,
+    body: 0xdff4ff,
+    hoof: 0x8fd0e8,
+    muzzle: 0xeaf9ff,
+    horn: { color: 0xffffff, length: 0.78, radius: 0.08 },
+    hair: [0x8ce9ff, 0xd9f4ff, 0xffffff, 0x5fd0f0, 0xbfe9ff],
+    wing: { style: 'veil', colors: [0xffffff, 0xeaf9ff, 0xd9f4ff] },
+    mark: { shape: 'diamond', color: 0x2f9bff },
+    // O corpo é de vidro: 72% de opacidade (ver createUnicorn).
+    translucent: 0.72,
+    scale: 1.02,
+    proportions: { head: 0.95, legs: 1.1, eye: 1 },
+    voice: 1.2,
+    fast: ['geada', 'espaco'],
+    trail: { colors: [0xffffff, 0xeaf9ff, 0x8ce9ff, 0x5fd0f0, 0xbfe9ff, 0xd9f4ff], width: 0.7 },
+  },
+
+  vovo: {
+    id: 'vovo',
+    name: 'Vovô',
+    emoji: '🎩',
+    title: 'o unicórnio mais antigo',
+    story: 'Vovô já correu em todas as pistas, algumas antes de elas terem nome. '
+      + 'Ele não é rápido para desviar, mas o rastro dele cobre a pista inteira.',
+    price: 66,
+    // O cinza/prata que faltava.
+    body: 0x9aa0ad,
+    hoof: 0x5c6270,
+    muzzle: 0xc4c9d4,
+    horn: { color: 0xe8ebf2, length: 0.66, radius: 0.115 },
+    hair: [0xffffff, 0xe8ebf2, 0xd0d5e0, 0xf7f9ff, 0xc4c9d4],
+    wing: { style: 'feather', colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4] },
+    mark: { shape: 'comet', color: 0x5c6270 },
+    // Grande e de pernas firmes, sem pressa.
+    scale: 1.12,
+    proportions: { head: 1.02, legs: 1, eye: 0.9 },
+    voice: 0.78,
+    // Vira devagar — e em troca deixa o rastro mais largo do jogo.
+    laneGrip: 0.6,
+    fast: ['campo'],
+    trail: { colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4, 0x9aa0ad], width: 1.5 },
+  },
+
+  sombra: {
+    id: 'sombra',
+    name: 'Sombra',
+    emoji: '🦇',
+    title: 'o unicórnio da meia-noite',
+    story: 'Sombra é preto de verdade, sem um fiozinho de cor. '
+      + 'Ele brilha por conta própria, então nunca corre no escuro.',
+    price: 72,
+    // Preto fosco, sem o laranja do Brasa.
+    body: 0x22202b,
+    hoof: 0x3d3a4a,
+    muzzle: 0x35323f,
+    horn: { color: 0xc9a6ff, length: 0.74, radius: 0.09 },
+    hair: [0x6b5fa8, 0x4a3f7a, 0x8c7ac9, 0x2f2a4a, 0x5a4f96 ],
+    // Asa de morcego: membrana em festões, nada de pena.
+    // Membranas mais claras que o corpo, senão a asa virava uma mancha só.
+    wing: { style: 'bat', colors: [0x6b6480, 0x554f68, 0x7d7594] },
+    mark: { shape: 'moon', color: 0xc9a6ff },
+    // Acende sozinho em qualquer pista, não só nas que têm `glow`.
+    glow: { intensity: 0.3, halo: 0xc9a6ff },
+    scale: 1.05,
+    proportions: { head: 0.96, legs: 1.06, eye: 1.05 },
+    voice: 0.85,
+    fast: ['noite', 'vulcao'],
+    trail: { colors: [0xc9a6ff, 0x8c7ac9, 0x6b5fa8, 0x4a3f7a, 0x2f2a4a, 0xa98ee0], width: 0.8 },
+  },
 };
 
 export const CHARACTER_LIST = Object.values(CHARACTERS);

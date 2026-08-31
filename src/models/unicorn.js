@@ -162,6 +162,21 @@ function makeVeil(length, width) {
 // isso ele é exportado em vez de ficar solto no meio do código.
 export const WING_SCALE = 0.95;
 
+// Membrana de morcego: um arco entre dois "dedos", com a borda de baixo
+// recortada. Em leque, três dessas dão a asa fechada e coriácea do Sombra —
+// nada de pena.
+function makeBat(length, width) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(length * 0.96, width * 0.35);          // o dedo comprido
+  shape.lineTo(length, -width * 0.05);
+  // A borda de baixo volta em festões, que é o que faz parecer membrana.
+  shape.bezierCurveTo(length * 0.82, -width * 0.9, length * 0.72, -width * 0.05, length * 0.6, -width * 0.62);
+  shape.bezierCurveTo(length * 0.5, -width * 1.1, length * 0.4, -width * 0.1, length * 0.3, -width * 0.7);
+  shape.bezierCurveTo(length * 0.2, -width * 1.12, length * 0.1, -width * 0.1, 0, 0);
+  return shape;
+}
+
 const WING_STYLES = {
   feather: {
     count: 6, shape: makeFeather, arm: 0.45,
@@ -177,6 +192,11 @@ const WING_STYLES = {
     count: 5, shape: makeVeil, arm: 0.4,
     near: 0.65, far: 1.15, width: 0.28, taper: 0.03,
     sweepNear: 0.12, sweepFar: 1.05, coverts: 2,
+  },
+  bat: {
+    count: 3, shape: makeBat, arm: 0.5,
+    near: 0.85, far: 1.3, width: 0.42, taper: 0.06,
+    sweepNear: 0.1, sweepFar: 0.9, coverts: 1,
   },
 };
 
@@ -342,6 +362,28 @@ function markShape(kind) {
       const r = i % 2 === 0 ? 0.58 : 0.5;
       shape.lineTo(Math.cos(a) * r, Math.sin(a) * r - 0.12);
     }
+    shape.closePath();
+    return shape;
+  }
+
+  if (kind === 'bolt') {
+    // Raio: o zigue-zague clássico, que lê como "elétrico".
+    shape.moveTo(0.06, 0.6);
+    shape.lineTo(-0.34, 0.02);
+    shape.lineTo(-0.04, 0.02);
+    shape.lineTo(-0.14, -0.6);
+    shape.lineTo(0.32, 0.06);
+    shape.lineTo(0.02, 0.06);
+    shape.closePath();
+    return shape;
+  }
+
+  if (kind === 'diamond') {
+    // Brilhante lapidado: a mesa em cima e o pavilhão em ponta.
+    shape.moveTo(0, 0.52);
+    shape.lineTo(0.46, 0.2);
+    shape.lineTo(0, -0.58);
+    shape.lineTo(-0.46, 0.2);
     shape.closePath();
     return shape;
   }
@@ -546,6 +588,22 @@ export function createUnicorn(character = CHARACTERS.uni) {
 
   unicorn.userData = { character, torso, head, ears, mane, forelock, tail, wings, legs };
   unicorn.scale.setScalar(character.scale || 1);
+
+  // Corpo de vidro (a Cristal). Só o corpo: crina, rabo, asas e marca ficam
+  // opacos, senão o unicórnio inteiro sumia. O `depthWrite` continua ligado
+  // de propósito — sem ele daria para ver o avesso das peças por dentro.
+  if (character.translucent) {
+    const asas = new Set();
+    wings.traverse((obj) => asas.add(obj));
+    for (const raiz of [torso, head, ears, legs].flat()) {
+      raiz.traverse((obj) => {
+        if (!obj.isMesh || asas.has(obj)) return;
+        obj.material.transparent = true;
+        obj.material.opacity = character.translucent;
+      });
+    }
+  }
+
   return unicorn;
 }
 

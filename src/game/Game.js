@@ -233,7 +233,9 @@ export class Game {
   // Na pista da Noite o unicórnio acende: as próprias cores dele viram luz e
   // um halo suave aparece em volta. Nas outras pistas, tudo volta ao normal.
   applyTrackGlow() {
-    const glow = this.track.glow;
+    // A pista acende o unicórnio (Noite, Espaço) — e o Sombra acende sozinho
+    // em qualquer pista, porque brilhar no escuro é o jeitão dele.
+    const glow = this.track.glow || this.character.glow;
     this.unicorn.traverse((obj) => {
       const material = obj.isMesh ? obj.material : null;
       if (!material || !material.emissive || material === this.nightGlow.material) return;
@@ -1295,7 +1297,10 @@ export class Game {
     if (p.jumps >= MAX_JUMPS) return;
 
     const primeiro = p.jumps === 0;
-    p.vy = primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY;
+    // `jumpBoost` é o Limão, que é miúdo e elétrico: pula mais alto que os
+    // outros, nos dois saltos.
+    const impulso = this.character.jumpBoost ?? 1;
+    p.vy = (primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY) * impulso;
     p.grounded = false;
     p.jumps += 1;
 
@@ -1332,9 +1337,11 @@ export class Game {
   updatePlayer(dt) {
     const p = this.player;
     const targetX = LANES[p.lane];
-    // `laneGrip` < 1 deixa a troca de faixa preguiçosa: é o chão escorregadio
-    // da Geada. Sem o campo, a pista tem aderência normal.
-    const grip = this.track.laneGrip ?? 1;
+    // `laneGrip` < 1 deixa a troca de faixa preguiçosa e > 1 a deixa ligeira.
+    // A pista e o personagem se multiplicam: o chão escorregadio da Geada
+    // atrapalha todo mundo, e por cima disso a Cereja é rápida e o Vovô é
+    // lento. Sem os campos, tudo vale 1.
+    const grip = (this.track.laneGrip ?? 1) * (this.character.laneGrip ?? 1);
     p.x += (targetX - p.x) * Math.min(1, LANE_CHANGE_SPEED * grip * dt);
 
     if (this.powers.boost > 0) {
@@ -1343,8 +1350,9 @@ export class Game {
       p.vy = 0;
       p.y += (FLY_HEIGHT - p.y) * Math.min(1, 6 * dt);
     } else if (!p.grounded) {
-      // `gravity` < 1 é o pulo flutuante do Espaço: sobe mais e desce devagar.
-      p.vy -= GRAVITY * (this.track.gravity ?? 1) * dt;
+      // `gravity` da pista é o pulo flutuante do Espaço; `airGlide` do
+      // personagem é a Violeta, que é meio feita de fumaça e demora a descer.
+      p.vy -= GRAVITY * (this.track.gravity ?? 1) * (this.character.airGlide ?? 1) * dt;
       p.y += p.vy * dt;
       if (p.y <= 0) { p.y = 0; p.vy = 0; p.grounded = true; p.jumps = 0; }
     }
