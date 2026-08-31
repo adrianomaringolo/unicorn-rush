@@ -42,8 +42,32 @@ export const sfx = {
   star: safe(() => [0, 90, 180].forEach((d, i) => setTimeout(() => blip(tom(660 + i * 330), 0.15, 'triangle'), d))),
   hit: safe(() => blip(160, 0.3, 'sawtooth', 0.16)),
   jump: safe(() => blip(520, 0.15, 'triangle', 0.1)),
+  // O segundo pulo sobe de tom: dá para ouvir que foi a asa batendo de novo.
+  doubleJump: safe(() => {
+    blip(tom(700), 0.12, 'triangle', 0.1);
+    setTimeout(() => blip(tom(1050), 0.16, 'triangle', 0.11), 70);
+  }),
   key: safe(() => [784, 988, 1319].forEach((f, i) => setTimeout(() => blip(tom(f), 0.18, 'sine', 0.14), i * 60))),
   power: safe(() => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(tom(f), 0.16, 'triangle', 0.13), i * 70))),
   gameOver: safe(() => [440, 350, 260].forEach((f, i) => setTimeout(() => blip(f, 0.3, 'triangle'), i * 160))),
+
+  // Fase completa: uma fanfarra curta subindo (dó–mi–sol–dó) com a última
+  // nota segurada, e um brilhinho por cima. É o som mais comprido do jogo de
+  // propósito — é o único momento em que a criança "ganhou" alguma coisa.
+  win: safe(() => {
+    const notas = [523, 659, 784, 1047];
+    notas.forEach((f, i) => setTimeout(() => {
+      blip(tom(f), i === notas.length - 1 ? 0.55 : 0.18, 'triangle', 0.14);
+    }, i * 130));
+    // O brilho vem em cima da última nota, não junto com a subida.
+    setTimeout(() => blip(tom(1568), 0.4, 'sine', 0.1), 390);
+    setTimeout(() => blip(tom(2093), 0.35, 'sine', 0.07), 520);
+  }),
   resume: safe(() => ensure()),
+
+  // Sons dos menus. Criança precisa ouvir que o toque funcionou: sem isso,
+  // um toque que "não fez nada" parece defeito.
+  tap: safe(() => blip(660, 0.07, 'sine', 0.07)),
+  pick: safe(() => { blip(tom(784), 0.1); setTimeout(() => blip(tom(1175), 0.12), 60); }),
+  deny: safe(() => { blip(300, 0.1, 'triangle', 0.09); setTimeout(() => blip(240, 0.14, 'triangle', 0.09), 90); }),
 };
