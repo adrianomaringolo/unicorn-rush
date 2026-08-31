@@ -4,7 +4,8 @@ import {
   LANES, LANE_CHANGE_SPEED, MODES, DEFAULT_MODE,
   DIFFICULTIES, DIFFICULTY_LIST, DEFAULT_DIFFICULTY,
   JUMP_VELOCITY, DOUBLE_JUMP_VELOCITY, MAX_JUMPS, FLIP_TIME, RUSH_SPEED,
-  GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS, COLORS,
+  GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS,
+  HEARTS_PER_KEY, COLORS,
 } from './config.js';
 import { createUnicorn, animateUnicorn, WING_SCALE } from '../models/unicorn.js';
 import {
@@ -18,6 +19,7 @@ import { World } from './world.js';
 import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../models/rainbowTrail.js';
 import { POWERUPS, POWERUP_LIST } from '../models/powerups.js';
 import { createGlow } from '../models/collectibles.js';
+import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../models/keyReward.js';
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
@@ -1414,15 +1416,44 @@ export class Game {
     this.ui.setGoal(this.collected, this.goal);
     this.ui.pop();
 
+    const ganho = isStar ? 5 : 1;
+    let ganhou = 0;
     update((save) => {
       save.stats.items += 1;
-      save.stats.hearts += isStar ? 5 : 1;
+      save.stats.hearts += ganho;
+      // Cada 50 corações viram uma chave. O `while` cobre a estrela, que
+      // vale 5 e pode passar do corte de uma vez.
+      save.stats.heartsToKey = (save.stats.heartsToKey || 0) + ganho;
+      while (save.stats.heartsToKey >= HEARTS_PER_KEY) {
+        save.stats.heartsToKey -= HEARTS_PER_KEY;
+        save.stats.keys = (save.stats.keys || 0) + 1;
+        ganhou += 1;
+      }
     });
+    if (ganhou) this.rewardKey(ganhou);
 
     if (this.goal && this.collected >= this.goal) this.victory();
   }
 
   // Chave mágica: o objetivo do modo Fases.
+  // Os 50 corações se juntando e virando chave. A animação é o que explica
+  // a regra sem texto, então ela roda mesmo que a criança não esteja olhando
+  // o HUD.
+  rewardKey(quantas = 1) {
+    this.ui.setWallet(this.wallet, false);
+    sfx.key();
+    this.ui.toast(quantas > 1 ? `🔑 +${quantas} chaves!` : '🔑 Mais uma chave!');
+
+    if (this.keyFx) {
+      this.scene.remove(this.keyFx);
+      disposeHeartsToKey(this.keyFx);
+    }
+    this.keyFx = createHeartsToKey();
+    // Acima e um pouco à frente do unicórnio: aparece sem cobrir a pista.
+    this.keyFx.position.set(this.player.x, 2.7, -1.6);
+    this.scene.add(this.keyFx);
+  }
+
   collectKey(entity, index) {
     this.keys += 1;
     this.score += HEART_POINTS * 3;
@@ -1582,6 +1613,15 @@ export class Game {
     if (this.nightGlow.visible) {
       this.nightGlow.scale.setScalar(1.8 * (1 + Math.sin(this.elapsed * 2.2) * 0.05));
     }
+    if (this.keyFx) {
+      this.keyFx.position.x += (this.player.x - this.keyFx.position.x) * Math.min(1, 6 * dt);
+      if (!updateHeartsToKey(this.keyFx, dt)) {
+        this.scene.remove(this.keyFx);
+        disposeHeartsToKey(this.keyFx);
+        this.keyFx = null;
+      }
+    }
+
     this.applyRushWings(dt);
     updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
     this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;

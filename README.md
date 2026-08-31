@@ -143,12 +143,27 @@ As setas do teclado passeiam só pelo que já é seu; o trancado se pega tocando
 nele, e o espaço vazio responde com uma chacoalhada e um "ainda está sendo
 feito".
 
-As chaves nascem nas **Fases** e na **Aventura**. Nas Fases elas são a meta
-(uma a cada ~12 linhas, ~8 s de corrida); na Aventura são só moeda e saem
-**bem mais raras** — uma a cada ~27 linhas, perto de 15 s. Lá o HUD mostra só
+As chaves vêm de dois lugares.
+
+**Da pista**, nas **Fases** e na **Aventura**. Nas Fases elas são a meta (uma
+a cada ~12 linhas, ~8 s de corrida); na Aventura são só moeda e saem **bem
+mais raras** — uma a cada ~27 linhas, perto de 15 s. Lá o HUD mostra só
 quantas saíram, sem meta, e cada uma vai direto para a carteira: mesmo que a
-corrida acabe no segundo seguinte, a chave fica. No modo **Livre** não há
-chave nenhuma — aquela pista é só de juntar corações.
+corrida acabe no segundo seguinte, a chave fica. No modo **Livre** não nasce
+chave na pista.
+
+**Dos corações**, em qualquer modo: **a cada 50 corações juntados** aparece
+uma chave. A contagem é somada entre corridas e fica no save
+(`stats.heartsToKey`), e a estrela, que vale 5, pode fechar a conta de uma
+vez. É por aqui que quem joga o modo **Livre** também consegue comprar
+alguma coisa — antes aquela pista não dava chave nenhuma, e é justamente a
+dos menores.
+
+E a regra se explica sozinha, sem texto: ao fechar os 50, **cinquenta
+corações aparecem em volta do unicórnio, giram para dentro encolhendo, e no
+lugar deles nasce a chave**, que sobe e some. Os cinquenta dividem uma
+geometria e um material só, então a animação inteira custa pouco (ver
+`src/models/keyReward.js`).
 
 ## Pistas
 

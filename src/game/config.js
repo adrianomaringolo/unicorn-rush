@@ -136,6 +136,10 @@ export const INVULNERABLE_TIME = 1.4;     // segundos piscando após levar toque
 
 export const HEART_POINTS = 10;
 
+// Corações que valem uma chave mágica. É o jeito de quem joga o modo Livre
+// também ganhar chaves — lá não nasce nenhuma na pista.
+export const HEARTS_PER_KEY = 50;
+
 export const COLORS = {
   sky: 0xbfe9ff,
   skyBottom: 0xffe3f4,

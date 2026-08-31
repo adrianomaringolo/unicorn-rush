@@ -55,7 +55,10 @@ function shine(mesh, color, size, kind) {
   return group;
 }
 
-const heartGeo = new THREE.ExtrudeGeometry(heartShape(), extrude).center();
+// Exportada porque a animação dos 50 corações (src/models/keyReward.js)
+// reaproveita a mesma forma — são cinquenta malhas de uma vez, e criar
+// geometria para cada uma seria desperdício.
+export const heartGeo = new THREE.ExtrudeGeometry(heartShape(), extrude).center();
 const starGeo = new THREE.ExtrudeGeometry(starShape(), extrude).center();
 
 const heartMat = new THREE.MeshLambertMaterial({ color: COLORS.heart, emissive: 0x5a0f2a });

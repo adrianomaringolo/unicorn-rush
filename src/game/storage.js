@@ -25,6 +25,8 @@ const DEFAULTS = {
     wins: 0,             // metas do modo Livre completadas
     hearts: 0,           // corações somados em todas as corridas
     items: 0,            // itens (corações + estrelas) coletados
+    keys: 0,             // chaves mágicas guardadas (a moeda do jogo)
+    heartsToKey: 0,      // corações juntados para a próxima chave (0…49)
     bests: {},           // melhor pontuação por modo
     distances: {},       // maior distância por modo (vira a faixa do recorde)
     plays: {},           // corridas por pista
