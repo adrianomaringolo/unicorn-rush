@@ -29,6 +29,7 @@ export function createUI() {
   const backButton = $('#overlay-back');
   const grownButton = $('#overlay-grown');
   const wallet = $('#wallet');
+  const testBadge = $('#test-badge');
   const hud = $('#hud');
   const stage = $('#stage');
   const powers = $('#powers');
@@ -132,6 +133,9 @@ export function createUI() {
       wallet.innerHTML = withIcons(`🔑 ${total}`);
       wallet.hidden = !total && !sempre;
     },
+    // Selo do modo teste, ao lado do nome do jogo.
+    setTestBadge: (on) => { testBadge.hidden = !on; },
+
     setLives: (v) => {
       lives.innerHTML = withIcons('💗'.repeat(Math.max(0, v)) + '🖤'.repeat(Math.max(0, 3 - v)));
     },

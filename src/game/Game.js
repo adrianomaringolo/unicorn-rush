@@ -23,7 +23,7 @@ import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../mod
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
-import { getSave, update, resetSave } from './storage.js';
+import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
@@ -115,6 +115,9 @@ export class Game {
     this.ui.onRush(() => this.toggleRush());
 
     this.setupMuteButton();
+    // Selo ao lado do nome do jogo: modo teste ligado sem aviso é receita
+    // para achar que o progresso sumiu.
+    this.ui.setTestBadge(isTestMode());
     setSpeech(this.save.speech);
     // Versão nova esperando: redesenha a tela para o botão aparecer sem
     // precisar sair e voltar.
@@ -281,10 +284,13 @@ export class Game {
   }
 
   // Sem `price` vem liberado (só a Uni e o Campo); o resto, depois de trocado.
+  // No modo teste tudo está liberado — sem escrever nada na loja, então
+  // desligar o modo devolve as compras de verdade.
   isOwned(kind, id) {
     const loja = this.shopOf(kind);
     const item = loja.obter(id);
     if (!item) return false;
+    if (isTestMode()) return true;
     if (!loja.preco(item)) return true;
     return (this.save.shop?.[loja.guardados] || []).includes(id);
   }
@@ -1116,6 +1122,15 @@ export class Game {
     if (!applyUpdate()) this.ui.toast('Já está na versão mais nova ✨');
   }
 
+  // Liga e desliga o modo teste. Recarrega de propósito: ao ligar, para a
+  // sessão começar limpa; ao desligar, para jogar fora tudo o que aconteceu
+  // durante o teste, que só existia na memória.
+  toggleTestMode() {
+    const ligado = setTestMode(!isTestMode());
+    this.ui.toast(ligado ? '🧪 Modo teste ligado' : '🧪 Modo teste desligado');
+    setTimeout(() => location.reload(), 500);
+  }
+
   // Quantas fases já foram concluídas somando todas as pistas.
   levelsDone() {
     return Object.values(this.save.levels)
@@ -1170,6 +1185,14 @@ export class Game {
       html,
       buttons: [
         { label: '⬅️ Voltar', onClick: () => this.showHome() },
+        {
+          label: isTestMode() ? '🧪 Modo teste: ligado' : '🧪 Modo teste: desligado',
+          hint: isTestMode()
+            ? 'tudo liberado e nada é guardado · o jogo recarrega ao desligar'
+            : 'libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega',
+          secondary: true,
+          onClick: () => this.toggleTestMode(),
+        },
         confirmingReset
           ? {
             label: '⚠️ Apagar mesmo?',

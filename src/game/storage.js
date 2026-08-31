@@ -11,6 +11,7 @@ const DEFAULTS = {
   choices: { character: 'uni', track: 'campo', mode: 'baby', difficulty: 'medio' },
   muted: false,
   speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
+  testMode: false,       // modo teste: tudo liberado e nada é guardado
   babyLevel: 1,          // sobe a cada vitória no modo Livre e aumenta a meta
   // Progresso das fases, uma entrada por pista: { campo: { unlocked, done } }.
   // Cada pista tem o seu caminho de doze fases, então comprar uma pista nova
@@ -105,8 +106,30 @@ export function persist() {
 }
 
 // Uso: update((s) => { s.stats.runs += 1; })
+// No modo teste o save da sessão continua mudando — chaves entram, fases
+// abrem, a corrida funciona igual —, mas nada disso é escrito no aparelho.
+// Ao recarregar, tudo volta a ser o que era.
+let testMode = !!save.testMode;
+
+export function isTestMode() {
+  return testMode;
+}
+
+// A chave do modo teste é a única coisa que ele grava. E ela é escrita
+// direto no que está guardado, sem passar pelo `save` da sessão — que no
+// modo teste está sujo de propósito e não pode ir para o disco.
+export function setTestMode(on) {
+  let guardado = {};
+  try { guardado = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { /* save novo */ }
+  guardado.testMode = !!on;
+  try { localStorage.setItem(KEY, JSON.stringify(guardado)); } catch { /* sem espaço */ }
+  testMode = !!on;
+  return testMode;
+}
+
 export function update(change) {
   change(save);
+  if (testMode) return;
   persist();
 }
 

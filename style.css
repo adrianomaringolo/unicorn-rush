@@ -423,6 +423,21 @@ html, body {
 }
 .wallet[hidden] { display: none; }
 
+/* Modo teste ligado: o selo fica sempre à vista, porque esquecer que ele
+   está ligado é achar que o progresso sumiu. */
+.test-badge {
+  margin-left: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #e6f7e6;
+  border: 2px solid #a8dba8;
+  color: #2f7a3a;
+  font-size: clamp(11px, 3vw, 13px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.test-badge[hidden] { display: none; }
+
 /* Os ícones entram no lugar de um emoji, então precisam se comportar como
    uma letra: acompanhar o tamanho e a linha do texto em volta. */
 .fi {

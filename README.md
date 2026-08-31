@@ -770,6 +770,28 @@ game          // o jogo inteiro, para bisbilhotar
 Não existe tela para isso de propósito — são para quem está mexendo no
 código, não para quem está jogando.
 
+## Modo teste
+
+Nas **Estatísticas** há um botão **🧪 Modo teste**. Ligado, ele:
+
+- **libera todos os unicórnios e todas as pistas**, sem escrever nada na loja
+  — então desligar devolve as compras de verdade;
+- **não guarda nada**: chaves, fases, recordes, contagens, compras. O save da
+  sessão continua mudando (a corrida funciona igual, as chaves entram, as
+  fases abrem), mas nada disso vai para o aparelho.
+
+Ligar e desligar **recarrega o jogo**, de propósito: ao ligar para a sessão
+começar limpa, e ao desligar para jogar fora tudo o que aconteceu durante o
+teste, que só existia na memória.
+
+A implementação é uma linha no `update()` do `storage.js` — no modo teste ele
+muda o save da sessão e **não persiste**. A única coisa que o modo grava é a
+própria chave `testMode`, e ela é escrita direto no que está guardado, sem
+passar pelo save da sessão, que está sujo de propósito.
+
+Enquanto está ligado, um selo **🧪 teste** fica ao lado do nome do jogo:
+esquecer que o modo está ligado é achar que o progresso sumiu.
+
 ## Ajustes rápidos
 
 Quase tudo que muda a sensação do jogo está em `src/game/config.js`:
