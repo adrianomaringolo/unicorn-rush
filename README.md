@@ -18,12 +18,71 @@ de fora — dá até para instalar no celular e jogar offline.
 
 ## Personagens
 
-A escolha do personagem tem três telas. Na primeira, o **modelo 3D do
-escolhido gira** embaixo do cartão, com o nome entre duas **setas** para
-passar de um para o outro (ou ← → no teclado). O botão *Ver todos* abre uma
-**grade** com o retrato de cada unicórnio — retratos renderizados a partir dos
-próprios modelos, não imagens prontas — e, ao tocar num deles, aparece a
-**ficha** com a historinha e a opção de correr com ele ou ver os outros.
+O elenco planejado é de **21 unicórnios**; **doze estão prontos** e os outros
+nove aparecem na grade como espaço vazio, com um `?` e "em breve" — a criança
+vê que tem mais coisa vindo. A grade tem três colunas e rola por dentro do
+cartão; as pontas desbotam quando há mais para ver.
+
+Os retratos são de perfil, renderizados a partir dos próprios modelos, não
+imagens prontas. A grade não tem legenda nenhuma: quem quiser saber quem é
+cada um abre a ficha. Tocar num retrato abre a **ficha** dele — retrato grande,
+quem é, a historinha inteira e um botão só. É a mesma tela para todos; o que
+muda é o botão: **✅ Escolher esse** para quem já é seu, **🔑 Trocar N
+chaves** para quem está à venda e você tem chaves, e **🗺️ Buscar chaves**
+quando faltam (esse leva direto para as fases). A ficha da pista mostra a
+música dela no lugar do preço.
+
+### A pista de cada um
+
+Cada unicórnio tem **uma ou duas pistas em que ele corre mais rápido** — é o
+que diferencia um do outro além da cor, e a ficha dele diz quais são. Correndo
+numa delas, um botão **⚡** aparece no HUD **logo abaixo da dupla pause +
+som**, centralizado entre os dois: apertar faz o mundo passar 35% mais
+rápido, apertar de novo volta ao normal. Vale nos **três modos** — nas Fases
+correr mais rápido junta as chaves antes, ao preço de mais obstáculo por
+segundo; no Livre, onde não há obstáculo, é só diversão.
+
+Nas Fases o ⚡ **atravessa a troca de fase**: quem escolheu correr rápido não
+precisa apertar de novo a cada fase. Ele só cai fora sozinho se a fase
+seguinte for numa pista em que aquele unicórnio não é rápido.
+
+Na **grade de pistas** um ⚡ marca, no canto de cada miniatura, as pistas em
+que o unicórnio escolhido é rápido — inclusive nas que ainda estão à venda,
+porque isso ajuda a decidir qual comprar. A linha logo abaixo do título diz
+de quem é o raio.
+
+Dá para ver no unicórnio, não só no HUD: com o ⚡ ligado as **asas crescem
+50% e acendem** e o **rastro engorda 90% e ganha estrelinhas** correndo por
+cima dele, que giram, piscam e vão sumindo para trás. Tudo volta sozinho ao
+desligar. A transição é suave nos dois
+sentidos, senão ele mudaria de tamanho num salto no meio da corrida. O brilho
+soma ao da pista — na Noite, onde todo mundo já é aceso, as asas ficam ainda
+mais.
+
+É opcional de propósito. Mais veloz é mais divertido e rende mais distância,
+mas também é mais obstáculo por segundo — quem decide é a criança, no meio da
+corrida. Fora das pistas dele o botão nem aparece.
+
+| Unicórnio | Voa em | Por quê |
+| --- | --- | --- |
+| 🌈 Uni | Campo | o arco-íris do Campo é dela |
+| ☀️ Sol | Céu, Frutas | o sol mora no céu e amadurece as frutas |
+| 🌙 Lua | Noite, Geada | a noite é a hora dela, e a geada tem o mesmo silêncio |
+| 🔥 Brasa | Vulcão, Noite | o vulcão é a casa dele, e as brasas iluminam a noite |
+| 🤍 Lulu | Céu | branquinha como as nuvens |
+| ⭐ Estrela | Espaço, Noite | ela caiu de lá: no espaço está em casa |
+| 🫧 Chiclete | Doces | os doces são a casa dela |
+| 🍃 Musgo | Campo, Frutas | mato e pomar são o quintal dele |
+| 🌊 Onda | Oceano, Praia | nasceu na espuma: o mar inteiro é dela |
+| 🧊 Floco | Geada, Noite | a geada é dele, e a noite gela do mesmo jeito |
+| 🥥 Coco | Praia, Frutas | a praia é dele, e no pomar também se dá bem |
+| ☄️ Cometa | Espaço | ele é de lá |
+
+O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
+de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
+
+**Só a Uni vem liberada.** Todo o resto é trocado por chaves mágicas (ver
+*A loja*).
 
 Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 
@@ -35,22 +94,69 @@ Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 | 🔥 | **Brasa** | o único **macho** e o maior da turma (18% maior que os outros, de pernas compridas): corpo escuro, chifre grande, asas em raios de fogo e **crina e rabo em labaredas** que tremem e esticam. O rastro dele é um caminho de brasas. Fala grosso — os sons de coleta são mais graves. | Corre tão rápido que a crina pega fogo; onde ele passa fica um caminho de brasas quentinhas que some devagar. |
 | 🤍 | **Lulu** | unicórnia **bebê**: pequenina (78% do tamanho dos outros), cabeçuda, olhos grandes e perninhas curtas, toda branca com crina em tons pastel e um coração na anca. O rastro dela é **um fiozinho** de brilho e ela pega os itens com uma **vozinha bem aguda** | É a menorzinha do grupo e ainda está aprendendo a voar; branquinha como nuvem, deixa um fiozinho de brilho por onde passa. |
 | ⭐ | **Estrela** | dourada clara, crina de brilho, asas cor de creme, rastro de luz | Caiu do céu numa noite de agosto e ficou para brincar. Brilha tanto que as estrelinhas correm junto. |
+| 🫧 | **Chiclete** 🔑 10 | rosa forte, crina de chiclete, olho grande e corpo pequeno de quem vive quicando; marca de bolha na anca | Faz bolhas do tamanho da cabeça dela e sai quicando pela pista; quando a bolha estoura, ri até precisar parar. |
+| 🍃 | **Musgo** 🔑 18 | verde, **atarracado** (6% maior, mas de pernas curtas), chifre de madeira, crina de mato e folha na anca; o mais lento de se olhar | O mais calmo da turma, conhece cada árvore pelo nome. Onde ele cochila de tarde, no dia seguinte nasce uma flor. |
+| 🧊 | **Floco** 🔑 34 | **azul-gelo** (não branco, para não se perder entre a Uni, a Lulu e a Estrela), crina azul-escura, parrudo e de perna curta, asas de pena bem claras, floco de neve na anca | Dorme o verão inteiro e acorda no primeiro dia frio; sopra baixinho e o ar vira purpurina de gelo. |
+| 🥥 | **Coco** 🔑 38 | o **único marrom** do elenco: cor de casca, crina verde de folha de coqueiro, redondinho e de perna curta, concha na anca | Dormiu tanto debaixo do coqueiro que ficou da cor da casca; sabe o lugar exato onde a onda faz mais espuma. |
+| ☄️ | **Cometa** 🔑 42 | índigo com crina em ciano e rosa, **perna comprida e cabeça pequena**, asas em raios que lêem como cauda | Não sabe parar: desde que nasceu está atravessando o céu. Dizem que quem o acompanha ganha um pedido. |
+| 🌊 | **Onda** 🔑 32 | **turquesa** de corpo inteiro (puxa para o verde, ao contrário do azul do Floco), com **chifre e mecha de coral** como acento quente, **esguia e de pernas compridas**, asas de véu que lêem como nadadeira | Nasceu numa espuma de onda grande e nunca aprendeu a andar devagar; debaixo d'água é a mais rápida de todas. |
 
 Tudo isso é dado, não código: cada personagem é uma entrada em
 `src/models/characters.js` com as cores, o estilo do chifre, das asas
 (`feather`, `ray` ou `veil`), a marca da anca (`rainbow`, `sun`, `moon`,
-`star`, `heart`), as cores e a largura do rastro e, se quiser, o tamanho
+`star`, `heart`, `flame`, `leaf`, `wave`, `bubble`, `snowflake`, `comet`,
+`shell`), as cores e a largura do rastro e, se quiser, o `price` em chaves, o tamanho
 (`scale`), as proporções (`proportions`: cabeça, olhos e pernas — é o que faz
 a Lulu parecer um bebê e o Brasa parecer adulto), o `fiery` (que acende a
 crina e o rabo em chamas) e a `voice`, que é o tom dos sons de coleta (1 é o
-normal; a Lulu usa 1,5, uma quinta acima). Para inventar um quinto unicórnio basta
-acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
+normal; a Lulu usa 1,5, uma quinta acima). Para inventar o décimo terceiro
+basta acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
+
+### A loja
+
+As **chaves mágicas** 🔑 são a moeda do jogo: elas somam para sempre e é com
+elas que se destrava tudo. O jogo começa com **um unicórnio (a Uni) e uma
+pista (o Campo)**; os outros 8 unicórnios e as outras 5 pistas prontas têm
+`price` e são trocados por chaves.
+
+Quem tem preço começa trancado: na grade aparece com o retrato desbotado, um
+cadeado na quina e o preço no lugar do nome. Tocar nele abre a **tela da
+troca** — retrato grande, o texto inteiro, quanto custa, quanto você tem, e
+um botão só. É a mesma tela para unicórnio e para pista (`Game.showShopOffer`
+recebe qual dos dois).
+
+Quando falta chave, o botão não some: ele vira **🗺️ Buscar chaves** e leva
+direto para a grade das fases, que é de onde as chaves vêm. Beco sem saída
+com criança não funciona.
+
+| | Preço em chaves |
+| --- | --- |
+| Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 |
+| Pistas | Doces 5 · Céu 8 · Frutas 12 · Praia 15 · Oceano 18 · Noite 22 · Geada 26 · Vulcão 30 · Espaço 36 |
+
+Os preços seguem o ritmo do modo Fases: a **fase 1 já dá as 3 chaves** que
+quase pagam o Sol. Uma volta completa pelas doze fases de uma pista dá 96
+chaves, e a Aventura pinga mais algumas. Ter tudo o que existe hoje custa
+188 chaves — cerca de duas voltas, e cada pista nova traz doze fases a mais.
+
+As setas do teclado passeiam só pelo que já é seu; o trancado se pega tocando
+nele, e o espaço vazio responde com uma chacoalhada e um "ainda está sendo
+feito".
+
+As chaves nascem nas **Fases** e na **Aventura**. Nas Fases elas são a meta
+(uma a cada ~12 linhas, ~8 s de corrida); na Aventura são só moeda e saem
+**bem mais raras** — uma a cada ~27 linhas, perto de 15 s. Lá o HUD mostra só
+quantas saíram, sem meta, e cada uma vai direto para a carteira: mesmo que a
+corrida acabe no segundo seguinte, a chave fica. No modo **Livre** não há
+chave nenhuma — aquela pista é só de juntar corações.
 
 ## Pistas
 
 Também dá para escolher por onde correr — a pista muda o céu, a neblina, a
 luz, o chão, os enfeites das laterais, os bichinhos que voam por perto e até
-os obstáculos:
+os obstáculos. São **15 pistas** planejadas; **dez estão prontas** e as
+outras cinco aparecem na grade como espaço vazio, iguais aos unicórnios que
+faltam. Só o **Campo** vem liberado — as outras são trocadas por chaves:
 
 | | Pista | Como é |
 | --- | --- | --- |
@@ -58,8 +164,12 @@ os obstáculos:
 | 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes, bengalas doces, **granulado colorido**, **pedacinhos de chocolate** espalhados pelo chão e **formigas** andando em fila pelas beiradas. Obstáculos de bala de goma, rosquinha e barra de doce. |
 | ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris, morrinhos de nuvem e **passarinhos cruzando o céu**. Obstáculos de nuvem carregada, pipa e cacho de balões. |
 | 🍓 | **Frutas** | Pomar cheio: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, pencas de banana e, espalhados pelo chão, melancias, montinhos de laranja, cachos de uva e kiwis cortados — com **abelhas** zunindo por perto. Obstáculos de fatia de melancia, abacaxi e monte de cocos. |
-| 🐠 | **Oceano** | Fundo do mar: água azul por todos os lados, trilha de areia, corais, algas, estrelas-do-mar, **cardumes de peixinhos** e **bolhas de ar subindo**. Aqui o unicórnio ganha uma **bolha de ar na cabeça**, para respirar debaixo d'água. Obstáculos de ouriço, concha gigante e pedra. |
+| 🏖️ | **Praia** | Pista de beira-mar: **um lado é areia e o outro é água**, cada um com os seus enfeites — guarda-sóis, **coqueiros** (tronco curvo feito de gomos, com folhas compridas que arqueiam para baixo), **cadeiras listradas**, castelinhos, conchas e estrelas-do-mar na areia; **barcos a vela, pranchas de surfe e boias** flutuando na água. A água tem **cristas de espuma** que sobem, descem e esticam, e o que flutua **balança junto**; na beirada, uma linha de espuma marca onde a água encontra a pista. No céu, só **gaivotas** planando. |
+| 🐠 | **Oceano** | Fundo do mar: água azul por todos os lados, trilha de areia, corais, algas, estrelas-do-mar, **cardumes de peixinhos** e **bolhas de ar subindo** — e **nenhuma nuvem**, porque debaixo da água não há céu. Aqui o unicórnio ganha uma **bolha de ar na cabeça**, para respirar debaixo d'água. Obstáculos de ouriço, concha gigante e pedra. |
+| ❄️ | **Geada** | Tudo branco e azul-gelo: pinheiros nevados, iglus, cristais de gelo e bonecos de neve, com **neve caindo de verdade** (o único bichinho do jogo que desce em vez de subir). O chão é **escorregadio** — trocar de faixa demora mais que o dobro para pegar. |
+| 🌋 | **Vulcão** | A pista do Brasa: chão de basalto quase preto, caminho cor de lava, **poças de lava** nas laterais (crosta escura em volta, miolo mais quente e uma bolha saindo do meio), pedras com veios acesos, chaminés soltando brasa e árvores queimadas. No ar, **faíscas de fogo subindo** por toda a volta e **fumaça** em alguns pontos, mais alta e mais lenta que as faíscas. Aqui o unicórnio **não** ganha aura: quem ilumina a cena é o chão, e um halo em volta dele competiria com a lava. |
 | 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
+| 🚀 | **Espaço** | **Não tem chão, nem serra no horizonte, nem nuvem** — só a faixa da pista flutuando no vazio, e é isso que dá a sensação de voo. As **estrelas ficam em cima e embaixo** da linha da pista, então dá para vê-las por baixo. Em volta, **discos voadores** com cúpula de vidro, luzinhas e facho apontando para baixo, muito **cascalho e pedaços de asteroide** espalhados, e — raros, mais ou menos um em dez enfeites — **planetas**, que saem em quatro tipos sorteados: listrado como Júpiter, de anéis múltiplos, cheio de crateras ou com lua e órbita próprias; atravessando o campo de visão, **meteoritos** com núcleo de pedra irregular, a frente em brasa, cauda de três camadas que pulsa e fagulhas tremendo na esteira. O unicórnio acende e ganha halo, e a **gravidade é baixa**: o pulo sobe 1,85× e desce devagar. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
 pista, então nenhuma cai em cima do caminho.
@@ -87,21 +197,84 @@ As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 
 | Modo | Como é |
 | --- | --- |
-| 🗺️ **Fases** | Dez fases numeradas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 10 (12 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
+| 🗺️ **Fases** | **Doze fases por pista** — cada pista tem o seu caminho, guardado separado, então comprar uma pista nova abre doze fases novas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 12 (15 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
 | 🎈 **Livre** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
-| ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, 3 vidas e velocidade que vai aumentando. Ao entrar, escolhe-se a **dificuldade**: 🌱 Fácil (22% de obstáculo por faixa, mais devagar), 🌞 Médio (40%) ou ⚡ Difícil (62%, e mais rápido). |
+| ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, mais as **barreiras que atravessam as três pistas** (dessas não tem desvio), 3 vidas e velocidade que vai aumentando. Aqui também saem **chaves mágicas**, bem mais raras que nas Fases — sem meta, direto para a carteira. A velocidade é escolhida no próprio card: 🐢 Devagarinho (22% de obstáculo por faixa, 16% de barreira), 🌞 Normal (40% / 30%) ou ⚡ Voando (62% / 45%, e mais rápido). |
 
 A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
 `src/game/config.js`. O recorde é guardado separado por modo.
 
-A tabela das dez fases fica em `src/game/levels.js` — uma linha por fase, com
+### Fases por pista
+
+A tabela é uma só — a mesma curva de doze fases vale para todas as pistas —,
+mas **o progresso é separado por pista**: o save guarda
+`levels: { campo: { unlocked, done }, doces: {…} }`, e o título da grade diz
+em qual pista você está. Trocar de pista leva a fase atual para a última
+aberta daquela pista.
+
+Isso encaixa com a loja: a criança termina as doze do Campo, compra os Doces
+e ganha um caminho inteiro de novo. Um save do formato antigo (uma sequência
+só, sem pista) é migrado para o Campo, que é a pista que vem liberada.
+
+A tabela das doze fases fica em `src/game/levels.js` — uma linha por fase, com
 quantas chaves ela pede, a velocidade, o intervalo entre as linhas de itens, a
-chance de sair obstáculo e o espaçamento das chaves (`keyGap` é o mínimo de
+chance de sair obstáculo, a chance de sair barreira (`barrierChance`, zero
+nas duas primeiras) e o espaçamento das chaves (`keyGap` é o mínimo de
 linhas entre uma chave e a próxima; `keyChance`, a chance depois disso).
 Mexer numa fase é mexer numa linha; o `npm run check` simula cada fase até
 completar a meta e confere que ela fica mais difícil que a anterior, que as
 chaves não ficam grudadas e que a fase inteira cabe num tempo razoável.
+
+## Pular
+
+O pulo é **duplo**: o primeiro sai do chão e o segundo é no ar mesmo — a asa
+bate de novo. O segundo impulso é um tiquinho menor que o primeiro (8,6
+contra 10), para ganhar altura sem virar voo, e vem com uma **cambalhota**
+completa, que é o aviso visual de que a segunda chance foi usada. Sozinho, um
+pulo sobe 2,0; com o duplo, 3,3. O contador zera ao encostar no chão, então
+não dá para subir indefinidamente.
+
+### As barreiras
+
+Fora os obstáculos de uma faixa só, existem as **barreiras**: elas atravessam
+as três pistas de ponta a ponta, então não tem para onde desviar — ou pula,
+ou bate. Cada pista tem a sua (trave de madeira com flores no campo, balas no
+mundo dos doces, cristais acesos na noite…), e todas seguem o mesmo desenho:
+
+- uma **faixa colorida no chão com setas**, que entra na tela *antes* da
+  trave e avisa o que vem — em cor saturada, porque o chão de todas as pistas
+  é claro e um tom pastel simplesmente some;
+- a trave em si, com **90 cm de altura** contra o 1,1 que a colisão libera no
+  pulo: quem pula passa com folga visível;
+- um **coração flutuando** na altura do salto, logo acima dela — pular rende
+  prêmio, não só sobrevivência.
+
+Elas são raras de propósito: nunca vêm coladas (no mínimo 8 linhas entre uma
+e a próxima) e a primeira só aparece depois de 15 linhas, para ninguém levar
+barreira nos primeiros segundos. No modo **Livre não existem** — lá não há
+obstáculo nenhum — e nas **fases 1 e 2 também não**: essas são onde a criança
+aprende a desviar, e pular vem depois. Os números ficam em `BARRIER`, em
+`src/game/config.js`, e a chance por fase na coluna `barrierChance` de
+`src/game/levels.js`.
+
+### Pistas que mudam a corrida
+
+Três pistas não mudam só a cor — mudam como se joga, e o campo que faz isso
+mora na própria pista, em `src/game/tracks.js`:
+
+| Pista | Campo | O que muda |
+| --- | --- | --- |
+| 🐠 Oceano | `helmet` | o unicórnio ganha uma bolha de ar na cabeça |
+| 🌙 Noite / 🚀 Espaço | `glow` | o unicórnio acende e ganha um halo suave |
+| ❄️ Geada | `laneGrip: 0.45` | chão escorregadio: a troca de faixa leva **2,4× mais quadros** para pegar |
+| 🏖️ Praia | `shore` | um lado vira areia e o outro água, cada um com o seu conjunto de enfeites, mais as cristas de onda animadas |
+| 🐠 Oceano · 🚀 Espaço | `cloud: null` | pista sem céu não constrói nuvem nenhuma |
+| 🚀 Espaço | `ground: null` · `mountains: null` | sem chão e sem horizonte: a pista flutua no vazio |
+| 🚀 Espaço | `gravity: 0.55` | gravidade baixa: o mesmo pulo sobe **1,85×** e desce devagar |
+
+Uma pista sem esses campos se comporta do jeito normal, então acrescentar
+uma nova continua sendo só uma entrada na tabela.
 
 ## Power-ups
 
@@ -133,8 +306,9 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
   total, quantas corridas em cada pista e com cada unicórnio, e quantos
   power-ups de cada tipo;
 - as **chaves mágicas** somam para sempre e aparecem num selo ao lado do nome
-  do jogo, nas telas de escolha — são a moeda guardada para destravar
-  conteúdo mais para a frente;
+  do jogo, nas telas de escolha — são a moeda do jogo, e é com elas que se
+  trocam os unicórnios trancados;
+- quais **unicórnios já foram trocados** por chaves;
 - se a **música** está ligada ou desligada.
 
 No primeiro passo da escolha ainda tem o botão **ℹ️ Sobre**, com quem fez, o
@@ -179,23 +353,43 @@ exatamente de onde estava.
 
 ## Como começa
 
-A escolha é um passo de cada vez, com o cenário e o unicórnio mudando ao vivo
-atrás do cartão:
+A tela inicial é um **hub**, não uma fila de passos. Ela mostra em três
+figuras o que está escolhido — o unicórnio, a pista e a brincadeira — e um
+botão **▶️ JOGAR** enorme. Quem quer jogar joga com um toque, na mesma
+combinação de ontem; quem quer trocar alguma coisa toca na figura daquilo.
 
-1. **Quem vai correr?** — o modelo 3D do unicórnio girando, com setas ◀ ▶
-   para passar de um para o outro. *Ver todos* abre a grade com o retrato de
-   cada um; tocar num retrato mostra a ficha com a historinha;
-2. **Por onde vamos?** — a mesma coisa para as pistas: nome, o que tem nela,
-   o nome da música e setas para trocar. *Ver todas* abre a grade com uma
-   miniatura de cada cenário, e a ficha mostra o que esperar de cada uma;
-3. **Como vamos jogar?** — modo Livre, Fases ou Aventura. Fases abre a grade
-   das dez fases (as fechadas ficam com cadeado) e Aventura pergunta a
-   dificuldade.
+Cada figura abre uma tela só, com **todas as opções à vista**:
+
+- **Quem vai correr?** — os seis retratos numa grade. Tocar num retrato já
+  troca o modelo 3D atrás do cartão, sem confirmar nada; tocar de novo em
+  quem já está escolhido conta a historinha dele;
+- **Por onde vamos?** — a mesma tela, com o mesmo gesto: tocar numa
+  miniatura troca o cenário ao vivo, e tocar de novo mostra a música da
+  pista;
+- **Como vamos brincar?** — os três modos em cards que mostram *como é* cada
+  um: a pista limpa do Livre, o mini-mapa das doze fases da pista (cheio = feita,
+  contornado = aberta) e a pista cheia da Aventura. A velocidade da Aventura
+  (🐢 Devagarinho, 🌞 Normal, ⚡ Voando) abre dentro do próprio card, sem
+  outra tela.
+
+O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
+cartão, e **estatísticas, "sobre" e instalar** saem do caminho da criança:
+moram atrás do **👑**, no canto oposto, que só abre segurando o dedo.
+
+Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
+avisa, em vez de ignorar (toque que não faz nada parece defeito). No cantinho
+dos adultos dá para ligar a **voz**, que lê em voz alta o nome do que a
+criança toca — para quem ainda não lê.
 
 Os retratos e as miniaturas não são imagens prontas: saem dos próprios
-modelos e cenários, renderizados uma vez quando a lista abre. Dá para voltar
-um passo a qualquer momento; as setas ← → passeiam pelas opções do passo
-atual e Enter continua.
+modelos e cenários, renderizados uma vez quando a grade abre. A miniatura da
+pista monta **tudo o que a define** — chão (ou a falta dele, no Espaço),
+caminho com as faixas, a metade de água da Praia com as cristas de espuma, os
+enfeites de cada lado, um obstáculo, a serra no horizonte, o quadro do fundo
+(arco-íris, sol ou lua com estrelas) e os bichinhos no ar. Antes desenhava só
+chão, caminho e alguns enfeites, e por isso pistas bem diferentes saíam
+parecidas. No teclado, as
+setas ← → passeiam pela grade aberta e Enter aciona o botão grande.
 
 ## Publicar (Vercel)
 
@@ -214,19 +408,20 @@ a versão velha mesmo depois de um deploy novo. O resto (módulos, three.js,
 fonte, ícones) pode ser cacheado à vontade, porque quem controla isso é o
 service worker.
 
-**A cada deploy com mudanças, suba a `VERSION` no topo do `sw.js`** — é ela
-que faz o cache antigo ser descartado no aparelho de quem já jogou.
+**A cada deploy com mudanças, rode `npm run bump`** — é a versão dentro do
+nome do cache, no `sw.js`, que faz o cache antigo ser descartado no aparelho
+de quem já jogou (ver *Versão*, mais abaixo).
 
 ## Instalar no aparelho (PWA)
 
 O UnicornRush é um **PWA**: dá para instalar na tela inicial do celular ou do
 computador e jogar **sem internet**.
 
-Quando o navegador permite, aparece um botão **📲 Instalar** na primeira tela
-de escolha, que abre o convite de instalação na hora. No iPhone, onde não
-existe esse convite, o mesmo botão mostra o passo a passo (Compartilhar →
-Adicionar à Tela de Início). Se o jogo já estiver instalado, o botão
-some sozinho.
+Quando o navegador permite, aparece um botão **📲 Instalar** no cantinho dos
+adultos (o **👑** do cartão, segurando o dedo), que abre o convite de
+instalação na hora. No iPhone, onde não existe esse convite, o mesmo botão
+mostra o passo a passo (Compartilhar → Adicionar à Tela de Início). Se o jogo
+já estiver instalado, o botão some sozinho.
 
 Dá para instalar pelo navegador também:
 
@@ -240,7 +435,74 @@ navegador. O `sw.js` guarda o jogo inteiro no aparelho na primeira visita
 daí funciona offline. Ao mudar arquivos, é só trocar a `VERSION` no começo do
 `sw.js`: o cache antigo é apagado sozinho.
 
-## Ícone
+## Virar app Android
+
+O jogo é estático e não busca nada de fora — o three.js está em `vendor/` e o
+`sw.js` guarda tudo no aparelho. É justamente o que os empacotadores Android
+pedem, então existem três caminhos, do mais simples ao mais completo.
+
+**1. PWA instalado — já funciona, sem mexer em nada.** É o que está descrito
+na seção acima: Android/Chrome → menu → *Instalar app*. Vira ícone na gaveta,
+abre em tela cheia e roda offline. Não é um app de Play Store, mas para jogar
+em casa resolve.
+
+**2. Capacitor → APK/AAB — um app Android de verdade.** O
+[Capacitor](https://capacitorjs.com/) gera um projeto nativo com o jogo
+embutido nos assets: não depende de servidor, de HTTPS nem de a hospedagem
+estar no ar. Só precisa montar uma pasta `dist/` antes, porque o Capacitor
+copia um diretório inteiro e a raiz do repo tem o `node_modules/`:
+
+```bash
+npm i -D @capacitor/cli @capacitor/core @capacitor/android
+# um script "build" copia para dist/: index.html, style.css, fonts.css,
+# manifest.webmanifest, sw.js, src/, vendor/ e assets/
+npx cap init UnicornRush com.seudominio.unicornrush --web-dir dist
+npx cap add android
+npx cap sync && npx cap open android   # Android Studio → Build APK
+```
+
+Precisa de Android Studio e JDK 17. Dois ajustes que valem a pena: travar
+`landscape` e o modo imersivo no tema/`AndroidManifest.xml`, e **não registrar
+o service worker quando estiver rodando dentro do app** — os arquivos já são
+locais ali, e o cache do `sw.js` só atrapalha na hora de atualizar.
+
+**3. Bubblewrap / TWA — o site hospedado dentro de um app.** O
+[Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap) empacota a URL
+publicada (a da Vercel) num app que é o Chrome sem barra de navegador. Fica
+leve e sempre atualizado, mas exige o site em HTTPS e um
+`.well-known/assetlinks.json` com o fingerprint da chave de assinatura; e se a
+hospedagem cair antes da primeira visita, o app não abre.
+
+Para este jogo o **Capacitor** é a escolha mais sensata: não há backend nem
+conteúdo dinâmico, então embutir tudo deixa o app independente. Publicar na
+Play Store depois é opcional (conta de desenvolvedor, US$ 25 uma vez) — um APK
+assinado, instalado direto no aparelho, já basta para uso na família.
+
+## Ícones
+
+Os ícones do jogo **não são emoji do sistema**. Emoji é desenhado pela fonte
+do aparelho: o mesmo 🔑 tem uma cara no Android, outra no iPhone e outra no
+Windows — e os mais recentes (o 🫧 é de 2021) viram um quadradinho em aparelho
+velho. Como o jogo é feito para instalar no celular, cada criança acabava
+vendo um jogo um pouco diferente.
+
+Em vez disso, o jogo carrega os seus: **Fluent Emoji**, da Microsoft, na
+versão **3D** — que combina com o low-poly do resto —, reduzidos para 128px,
+passados no `pngquant` e guardados em `assets/emoji/` (56 arquivos, ~400 KB
+no total, licença MIT, incluída em `assets/emoji/LICENSE`).
+
+O código continua escrito com emoji de verdade: quem lê o fonte vê
+`🔑 ${preco}`, e a troca acontece na hora de desenhar. Quem faz isso é o
+`withIcons()` do `src/game/icons.js`, ligado nos poucos pontos por onde toda
+a tela passa — o título, o texto, o bloco livre e os botões do
+`ui.showOverlay`, mais o toast, as vidas, a carteira e os power-ups. Para
+usar um emoji novo basta baixar o arquivo dele e acrescentar uma linha na
+tabela `ARQUIVOS`.
+
+O `alt` de cada imagem é o próprio emoji: se um arquivo faltar, a tela volta
+a mostrar o emoji do sistema em vez de deixar um buraco.
+
+## Ícone do app
 
 O logo é o `assets/logo.png` — a cabeça da unicórnia branca com o chifre
 dourado e a crina em rosa, amarelo e azul. Dele saem os ícones em `assets/icons/` (64 para o favicon, 180 para o iOS,
@@ -263,11 +525,18 @@ npm start        # abre http://localhost:5173
 | Ação | Teclado | Celular / tablet |
 | --- | --- | --- |
 | Mudar de pista | ← → ou A / D | arrastar para o lado |
-| Pular | Espaço, ↑ ou W | tocar na tela |
+| Pular (e **pular duplo**) | Espaço, ↑ ou W — de novo no ar | tocar na tela, de novo no ar |
+| Correr mais rápido (só na pista do unicórnio) | — | botão ⚡ abaixo do pause |
 | Começar / recomeçar | Enter ou Espaço | botão na tela |
 | Escolher (nas telas de escolha) | ← → · Enter continua | setas na tela ou tocar na opção |
 | Ligar/desligar a música | — | botão 🔊 no HUD |
 | Pausar | Esc ou P | botão ⏸️ no HUD |
+
+No canto de cima à direita, embaixo do pause e do ⚡, fica o **velocímetro**:
+o número que está passando e uma barrinha que enche conforme a corrida
+acelera. Ela conta o empurrão do ⚡ no teto — senão grudaria no fim assim que
+a velocidade máxima chegasse — e fica quente (amarelo → vermelho) perto do
+limite. Aparece só durante a corrida.
 
 Todo item que dá para pegar — coração, estrela, chave e power-up — tem um
 **brilho** em volta, na cor dele, que respira devagar: de longe é o que a
@@ -275,6 +544,10 @@ criança enxerga primeiro. Os itens são espalhados (menos de um por linha da
 pista), então vale a pena mudar de faixa para pegá-los.
 
 Regras: cada 💗 vale 10 pontos, cada ⭐ vale 5 corações e 50 pontos.
+Completar uma fase toca uma **fanfarra** — dó–mi–sol–dó subindo, com a última
+nota segurada e um brilhinho por cima. É o som mais comprido do jogo de
+propósito: é o único momento em que a criança ganhou alguma coisa.
+
 No modo Aventura são 3 vidas — bater num obstáculo custa uma vida e dá alguns
 segundos de invencibilidade. E a batida é bem sentida: **clarão vermelho** na
 tela, **tremida** da câmera, **poeira** na cor do que foi atingido, o
@@ -308,6 +581,7 @@ sw.js                 service worker: guarda o jogo para rodar offline
 assets/logo.png       logo do jogo (dele saem todos os ícones)
 docs/prints/          capturas das pistas usadas aqui no README
 assets/icons/         PNGs do ícone para instalar no aparelho
+assets/emoji/         ícones Fluent Emoji 3D (Microsoft, MIT) usados na tela
 fonts.css             fonte Fredoka hospedada localmente
 assets/fonts/         arquivos .woff2 da Fredoka (SIL Open Font License 1.1)
 server.js             servidor estático mínimo (sem dependências)
@@ -316,7 +590,7 @@ src/
   main.js             inicialização
   game/
     config.js         todos os números ajustáveis (velocidade, pulo, cores…)
-    levels.js         a tabela das 10 fases do modo Fases
+    levels.js         a tabela das 12 fases (uma curva, progresso por pista)
     tracks.js         as quatro pistas (céu, luz, chão, enfeites, obstáculos)
     music.js          as músicas tema, uma por pista
     storage.js        o save: escolhas, nível, recordes e estatísticas
@@ -325,11 +599,13 @@ src/
     input.js          teclado, arrastar e botões de toque
     install.js        o convite de instalar o PWA (e o passo a passo no iPhone)
     audio.js          efeitos sonoros gerados na hora (WebAudio)
-    ui.js             ponte com o HUD em HTML
+    icons.js          troca os emoji do código pelos ícones de assets/emoji/
+    speech.js         lê os nomes em voz alta, para quem ainda não lê
+    ui.js             ponte com o HUD e com as telas de escolha
   models/
     characters.js     os quatro personagens (cores, asas, marca, rastro, história)
     unicorn.js        monta o modelo 3D a partir de um personagem + galope
-    portraits.js      retratos dos personagens, tirados dos próprios modelos
+    portraits.js      retratos de perfil dos personagens, tirados dos modelos
     trackPortraits.js miniatura de cada pista, montada com o cenário dela
     powerups.js       escudo, ímã, turbo e vida extra (modelo + efeito)
     auras.js          o efeito visual de cada power-up no personagem
@@ -342,11 +618,57 @@ src/
 scripts/smoke-test.js monta tudo fora do navegador (npm run check)
 ```
 
-Nenhum asset externo: todos os modelos são gerados por código a partir de
-formas simples (esferas, cones, cápsulas) e de curvas 2D extrudadas —
-por isso o jogo carrega instantaneamente e é fácil de ajustar. A única
-exceção é a fonte **Fredoka** (Google Fonts, SIL Open Font License 1.1),
-guardada em `assets/fonts/` para o jogo funcionar mesmo sem internet.
+Todos os modelos 3D são gerados por código a partir de formas simples
+(esferas, cones, cápsulas) e de curvas 2D extrudadas — por isso o jogo
+carrega instantaneamente e é fácil de ajustar. As duas exceções são a fonte
+**Fredoka** (Google Fonts, SIL Open Font License 1.1) e os **ícones**
+(Fluent Emoji, MIT), ambos guardados dentro do repositório para o jogo
+funcionar sem internet.
+
+## Versão
+
+A versão aparece no cartão *Sobre*, dentro do jogo — é assim que se sabe o
+que está instalado no aparelho de uma criança quando algo não bate.
+
+Ela vive em três lugares, e **um script mantém os três em sincronia**:
+
+```bash
+npm run bump              # 0.3.0 → 0.3.1   (correção, ajuste pequeno)
+npm run bump -- minor     # 0.3.1 → 0.4.0   (personagem, pista, mecânica nova)
+npm run bump -- major     # 0.4.0 → 1.0.0   (mudança grande de como se joga)
+npm run bump -- 1.4.2     # exatamente essa
+```
+
+| Arquivo | Para quê |
+| --- | --- |
+| `src/game/version.js` | o número que o cartão *Sobre* mostra |
+| `package.json` | a versão do pacote |
+| `sw.js` | o nome do cache offline |
+
+O `sw.js` é o mais importante: **o nome do cache carrega a versão**, e é a
+troca dele que faz o aparelho de quem já jogou descartar os arquivos antigos.
+Sem subir a versão, quem já abriu o jogo continua com o código velho mesmo
+depois de um deploy novo.
+
+O script confere os três antes de escrever qualquer um e recusa se estiverem
+em versões diferentes — melhor falhar do que deixar um para trás. **Todo
+commit que muda o jogo deve subir a versão**; a regra também está no
+`CLAUDE.md`, para quem mexer no projeto depois.
+
+## Atalhos de teste
+
+No console do navegador (o jogo expõe `window.game` e mais quatro atalhos),
+para experimentar a loja sem ter de jogar tudo antes:
+
+```js
+chaves(500)   // guarda 500 chaves mágicas (e salva)
+destravar()   // libera todos os unicórnios e todas as pistas
+zerar()       // devolve o save ao começo: uma Uni, um Campo, zero chaves
+game          // o jogo inteiro, para bisbilhotar
+```
+
+Não existe tela para isso de propósito — são para quem está mexendo no
+código, não para quem está jogando.
 
 ## Ajustes rápidos
 
