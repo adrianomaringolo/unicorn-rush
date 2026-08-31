@@ -3,13 +3,16 @@ import * as THREE from 'three';
 import {
   LANES, LANE_CHANGE_SPEED, MODES, DEFAULT_MODE,
   DIFFICULTIES, DIFFICULTY_LIST, DEFAULT_DIFFICULTY,
-  JUMP_VELOCITY, GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS, COLORS,
+  JUMP_VELOCITY, DOUBLE_JUMP_VELOCITY, MAX_JUMPS, FLIP_TIME, RUSH_SPEED,
+  GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS, COLORS,
 } from './config.js';
-import { createUnicorn, animateUnicorn } from '../models/unicorn.js';
-import { CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER } from '../models/characters.js';
+import { createUnicorn, animateUnicorn, WING_SCALE } from '../models/unicorn.js';
+import {
+  CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER, characterPrice, CHARACTER_SLOTS, isFastOn,
+} from '../models/characters.js';
 import { getPortraits } from '../models/portraits.js';
 import { getTrackPortraits } from '../models/trackPortraits.js';
-import { TRACKS, TRACK_LIST, DEFAULT_TRACK } from './tracks.js';
+import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
 import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../models/rainbowTrail.js';
@@ -21,6 +24,9 @@ import { sfx } from './audio.js';
 import { getSave, update, resetSave } from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
+import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
+import { withIcons } from './icons.js';
+import { VERSION } from './version.js';
 
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
@@ -64,11 +70,16 @@ export class Game {
     this.handheld = isHandheld();
     this.save = getSave();
     this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
-    this.character = CHARACTERS[this.save.choices.character] || CHARACTERS[DEFAULT_CHARACTER];
-    this.track = TRACKS[this.save.choices.track] || TRACKS[DEFAULT_TRACK];
-    this.step = 'character';   // passo da escolha: personagem → pista → modo
+    // Um save antigo pode apontar para algo que hoje está trancado.
+    this.character = this.isOwned('character', this.save.choices.character)
+      ? CHARACTERS[this.save.choices.character]
+      : CHARACTERS[DEFAULT_CHARACTER];
+    this.track = this.isOwned('track', this.save.choices.track)
+      ? TRACKS[this.save.choices.track]
+      : TRACKS[DEFAULT_TRACK];
+    this.screen = 'home';      // tela de menu aberta agora
     this.difficulty = DIFFICULTIES[this.save.choices.difficulty] || DIFFICULTIES[DEFAULT_DIFFICULTY];
-    this.level = Math.min(this.save.levels.unlocked, LEVEL_COUNT);
+    this.level = Math.min(this.trackLevels().unlocked, LEVEL_COUNT);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.handheld });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.handheld ? 1.5 : 2));
@@ -86,20 +97,26 @@ export class Game {
     this.buildWorld();
     this.buildCharacter();
 
-    this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0 };
+    this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0, jumps: 0, flip: 0 };
 
     createInput(canvas, {
       onLeft: () => this.moveLane(-1),
       onRight: () => this.moveLane(1),
       onJump: () => this.jump(),
-      onStart: () => { if (this.state !== STATE.PLAYING) this.ui.pressFirstButton(); },
+      onStart: () => { if (this.state !== STATE.PLAYING) this.ui.pressPrimaryButton(); },
       onPause: () => this.togglePause(),
     });
     this.ui.onPause(() => this.togglePause());
+    this.rush = false;                       // o ⚡ está apertado?
+    this.rushLook = 0;                       // 0…1: o quanto as asas já cresceram
+    this.ui.onRush(() => this.toggleRush());
 
     this.setupMuteButton();
+    setSpeech(this.save.speech);
     watchInstall(() => {
-      if (this.state === STATE.READY && this.step === 'character') this.showMenu('character');
+      // O convite de instalar mora no cantinho dos adultos; se ele aparecer
+      // enquanto a tela está aberta, é só redesenhar.
+      if (this.state === STATE.READY && this.screen === 'grown') this.showGrownUps();
     });
     // Trocou de app ou bloqueou a tela? A corrida espera (e o áudio também,
     // em src/game/music.js) — ninguém perde vida enquanto está fora.
@@ -147,11 +164,16 @@ export class Game {
 
   setTrack(id) {
     if (!TRACKS[id] || id === this.track.id) return;
+    if (!this.isOwned('track', id)) return;
     this.track = TRACKS[id];
     update((save) => { save.choices.track = id; });
     this.buildWorld();
-    sfx.collect();
-    if (this.state !== STATE.PLAYING) this.showMenu(this.step === 'track' ? 'track' : this.step);
+    // Cada pista tem o seu caminho de fases: ao trocar, a fase atual volta
+    // para a última aberta daquela pista.
+    this.level = Math.min(this.trackLevels().unlocked, LEVEL_COUNT);
+    sfx.pick();
+    speak(this.track.name);
+    if (this.state !== STATE.PLAYING) this.render();
   }
 
   // Monta (ou remonta) o unicórnio e o rastro do personagem escolhido.
@@ -220,27 +242,131 @@ export class Game {
     this.headBubble.visible = !!this.track.helmet;
   }
 
+  // A loja é a mesma para as duas coisas que se trocam por chaves — o
+  // unicórnio e a pista. Só muda o que está sendo olhado.
+  shopOf(kind) {
+    return kind === 'track'
+      ? {
+        kind, guardados: 'tracks', lista: TRACK_LIST, slots: TRACK_SLOTS,
+        obter: (id) => TRACKS[id], preco: trackPrice,
+        retratos: () => getTrackPortraits(TRACK_LIST),
+        atual: () => this.track,
+        aplicar: (id) => this.setTrack(id),
+        voltar: () => this.showTrackPicker(),
+        // A pista só tem uma frase (`tagline`), e ela vai na linha de baixo:
+        // a de cima fica vazia em vez de repetir a mesma coisa.
+        subtitulo: () => '',
+        descricao: (item) => item.tagline,
+        chamada: () => 'é para lá que a corrida vai',
+      }
+      : {
+        kind, guardados: 'characters', lista: CHARACTER_LIST, slots: CHARACTER_SLOTS,
+        obter: (id) => CHARACTERS[id], preco: characterPrice,
+        retratos: () => getPortraits(CHARACTER_LIST),
+        atual: () => this.character,
+        aplicar: (id) => this.setCharacter(id),
+        voltar: () => this.showCharacterPicker(),
+        subtitulo: (item) => item.title,
+        descricao: (item) => item.story,
+        chamada: (item) => `${item.name} vem correr com você`,
+      };
+  }
+
+  // Sem `price` vem liberado (só a Uni e o Campo); o resto, depois de trocado.
+  isOwned(kind, id) {
+    const loja = this.shopOf(kind);
+    const item = loja.obter(id);
+    if (!item) return false;
+    if (!loja.preco(item)) return true;
+    return (this.save.shop?.[loja.guardados] || []).includes(id);
+  }
+
+  get wallet() {
+    return this.save.stats.keys || 0;
+  }
+
+  // O progresso das fases é por pista: cada uma tem as suas doze. A entrada
+  // nasce na primeira vez que a pista é jogada.
+  trackLevels(trackId = this.track.id) {
+    const levels = this.save.levels;
+    if (!levels[trackId]) levels[trackId] = { unlocked: 1, done: {} };
+    return levels[trackId];
+  }
+
   setCharacter(id) {
     if (!CHARACTERS[id] || id === this.character.id) return;
+    if (!this.isOwned('character', id)) return;
     this.character = CHARACTERS[id];
     update((save) => { save.choices.character = id; });
     this.buildCharacter();
-    sfx.collect();
-    // Redesenha o passo atual, para o nome e o retrato acompanharem a troca.
-    if (this.state !== STATE.PLAYING) this.showMenu(this.step === 'character' ? 'character' : this.step);
+    sfx.pick();
+    speak(this.character.name);
+    if (this.state !== STATE.PLAYING) this.render();
   }
 
-  // Setas na tela de escolha passam de uma opção para a outra.
-  cycleCharacter(dir) {
-    const index = CHARACTER_LIST.findIndex((c) => c.id === this.character.id);
-    const next = (index + dir + CHARACTER_LIST.length) % CHARACTER_LIST.length;
-    this.setCharacter(CHARACTER_LIST[next].id);
+  // Setas do teclado passeiam pela grade que estiver aberta. Como a grade é
+  // redesenhada a cada troca, o destaque nunca fica para trás.
+  cycleMode(dir) {
+    const lista = Object.values(MODES);
+    const index = lista.findIndex((m) => m.id === this.mode.id);
+    this.pickMode(lista[(index + dir + lista.length) % lista.length].id);
   }
 
-  cycleTrack(dir) {
-    const index = TRACK_LIST.findIndex((t) => t.id === this.track.id);
-    const next = (index + dir + TRACK_LIST.length) % TRACK_LIST.length;
-    this.setTrack(TRACK_LIST[next].id);
+  // As setas passeiam só pelo que já é seu: o trancado se pega tocando nele,
+  // que é o que abre a troca.
+  cycleItem(kind, dir) {
+    const loja = this.shopOf(kind);
+    const meus = loja.lista.filter((item) => this.isOwned(kind, item.id));
+    if (meus.length < 2) return;
+    const index = meus.findIndex((item) => item.id === loja.atual().id);
+    loja.aplicar(meus[(index + dir + meus.length) % meus.length].id);
+  }
+
+  cycleCharacter(dir) { this.cycleItem('character', dir); }
+  cycleTrack(dir) { this.cycleItem('track', dir); }
+
+  // Cada unicórnio tem as suas pistas (ver `fast` em characters.js): nelas
+  // ele corre mais rápido, se a criança apertar o ⚡.
+  isFastHere() {
+    return isFastOn(this.character, this.track.id);
+  }
+
+  toggleRush() {
+    if (!this.isFastHere()) return;
+    this.rush = !this.rush;
+    this.ui.showRush(true, this.rush);
+    sfx.pick();
+    this.ui.toast(this.rush ? '⚡ Disparou!' : 'Voltou ao normal');
+  }
+
+  // Com o ⚡ ligado as asas crescem e acendem. A transição é suave nos dois
+  // sentidos (`rushLook` vai de 0 a 1), senão o unicórnio "pula de tamanho"
+  // no meio da corrida.
+  //
+  // O brilho soma ao da pista: na Noite todo mundo já é aceso, e aqui as
+  // asas ficam ainda mais.
+  applyRushWings(dt) {
+    const alvo = this.state === STATE.PLAYING && this.rush && this.isFastHere() ? 1 : 0;
+    const antes = this.rushLook;
+    this.rushLook += (alvo - this.rushLook) * Math.min(1, 7 * dt);
+    if (Math.abs(alvo - this.rushLook) < 0.002) this.rushLook = alvo;
+    // Nada mudou e não há o que desfazer: não gasta o quadro.
+    if (this.rushLook === antes && this.rushLook === 0) return;
+
+    const t = this.rushLook;
+    const wings = this.unicorn.userData.wings;
+    if (!wings) return;
+    const escala = WING_SCALE * (1 + 0.5 * t);
+    const brilho = (this.track.glow?.intensity || 0) + 0.8 * t;
+
+    for (const wing of wings.children) {
+      wing.scale.setScalar(escala);
+      wing.traverse((obj) => {
+        const material = obj.isMesh ? obj.material : null;
+        if (!material || !material.emissive) return;
+        material.emissive.copy(material.color).multiplyScalar(brilho);
+      });
+    }
   }
 
   // Botãozinho de som no canto do HUD.
@@ -248,7 +374,7 @@ export class Game {
     const button = document.querySelector('#mute');
     if (!button) return;
     const refresh = () => {
-      button.textContent = music.isMuted() ? '🔇' : '🔊';
+      button.innerHTML = withIcons(music.isMuted() ? '🔇' : '🔊');
       button.setAttribute('aria-pressed', String(music.isMuted()));
     };
     button.addEventListener('click', () => {
@@ -339,100 +465,67 @@ export class Game {
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
     this.ui.showPause(true);
+    // O ⚡ vale nas Fases também: correr mais rápido junta as chaves antes,
+    // ao preço de mais obstáculo por segundo. E ele **atravessa a troca de
+    // fase**: quem escolheu correr rápido não aperta de novo a cada fase —
+    // só perde se o unicórnio não for rápido na pista.
+    this.rush = this.rush && this.isFastHere();
+    if (!this.rush) this.rushLook = 0;
+    this.ui.showRush(this.isFastHere(), this.rush);
   }
 
-  // Lista em grade: o retrato 3D de cada um, com o nome embaixo.
-  showCharacterGrid() {
-    this.state = STATE.READY;
-    this.step = 'character';
-    this.ui.showPause(false);
-
-    const retratos = getPortraits(CHARACTER_LIST);
-    const cartoes = CHARACTER_LIST.map((personagem) => {
-      const escolhido = personagem.id === this.character.id ? ' escolhido' : '';
-      return `<button class="cast-card${escolhido}" data-pick="${personagem.id}">`
-        + `<img class="cast-face" src="${retratos[personagem.id]}" alt="" />`
-        + `<span class="cast-name">${personagem.emoji} ${personagem.name}</span></button>`;
-    }).join('');
-
-    this.ui.showOverlay({
-      step: { index: 2, total: 3 },
-      title: 'Escolha o unicórnio',
-      html: `<div class="cast-grid">${cartoes}</div>`,
-      buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
-      ],
-    });
-    this.ui.bindExtra((id) => this.showCharacterStory(id));
-  }
-
-  // Ficha do personagem: retrato, historinha e a opção de escolher ou trocar.
-  showCharacterStory(id) {
-    const personagem = CHARACTERS[id];
-    if (!personagem) return;
-    this.state = STATE.READY;
-    this.step = 'character';
-
-    const retratos = getPortraits(CHARACTER_LIST);
-    this.ui.showOverlay({
-      step: { index: 2, total: 3 },
-      title: `${personagem.emoji} ${personagem.name}`,
-      html: `
-        <div class="cast-sheet">
-          <img class="cast-portrait" src="${retratos[personagem.id]}" alt="" />
-          <p class="cast-title">${personagem.title}</p>
-          <p class="cast-story">${personagem.story}</p>
-        </div>
-      `,
-      buttons: [
-        {
-          label: '✅ Correr com ' + personagem.name,
-          onClick: () => { this.setCharacter(personagem.id); this.showMenu('character'); },
-        },
-        { label: '🔁 Ver os outros', onClick: () => this.showCharacterGrid(), secondary: true },
-      ],
-    });
-  }
-
-  // Grade das dez fases, com as que ainda não abriram cadeadas.
+  // Grade das dez fases. A que ainda não abriu fica do mesmo tamanho das
+  // outras (criança mira mal: tile pequeno colado num grande vira toque
+  // errado) e responde ao toque com uma chacoalhada — toque que não faz
+  // nada parece defeito.
   showLevels() {
     this.state = STATE.READY;
     this.ui.showPause(false);
-    this.step = 'levels';
+    this.screen = 'levels';
     this.mode = this.levelMode(this.level);
     this.reset();
 
-    const { unlocked, done } = this.save.levels;
+    const { unlocked, done } = this.trackLevels();
     const tiles = Array.from({ length: LEVEL_COUNT }, (_, i) => {
       const number = i + 1;
       const open = number <= unlocked;
       const state = done[number] ? 'done' : open ? 'open' : 'locked';
-      return `<button class="level-tile ${state}" data-pick="${number}" ${open ? '' : 'disabled'}>`
+      return `<button class="level-tile ${state}" data-pick="${number}">`
         + `<span class="level-number">${open ? number : '🔒'}</span>`
         + `<span class="level-keys">${open ? `🔑 ${levelData(number).keys}` : ''}</span>`
         + `${done[number] ? '<span class="level-done">⭐</span>' : ''}</button>`;
     }).join('');
 
     this.ui.showOverlay({
-      title: 'Escolha a fase',
-      text: `Junte as chaves mágicas 🔑 antes que as vidas acabem.`
-        + `<br><span class="muted">Fases abertas: ${unlocked} de ${LEVEL_COUNT}</span>`,
+      // O nome da pista no título: cada pista tem o seu caminho de fases, e
+      // é preciso ficar claro em qual delas a criança está.
+      title: `Fases · ${this.track.emoji} ${this.track.name}`,
       html: `<div class="levels-grid">${tiles}</div>`,
-      buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showMenu('mode'), secondary: true },
-      ],
+      back: () => this.showModePicker(),
     });
-    this.ui.bindExtra((numero) => this.startLevel(Number(numero)));
+    this.ui.bindExtra((numero, tile) => {
+      const n = Number(numero);
+      if (n > unlocked) {
+        sfx.deny();
+        this.ui.shakeElement(tile);
+        this.ui.toast('Essa ainda não abriu 🔒');
+        return;
+      }
+      sfx.pick();
+      this.startLevel(n);
+    });
   }
 
   levelComplete() {
     this.ui.showPause(false);
-    sfx.star();
+    sfx.win();
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
     const number = this.level;
+    const trackId = this.track.id;
     update((save) => {
-      save.levels.done[number] = true;
-      save.levels.unlocked = Math.max(save.levels.unlocked, Math.min(number + 1, LEVEL_COUNT));
+      const fases = save.levels[trackId] || (save.levels[trackId] = { unlocked: 1, done: {} });
+      fases.done[number] = true;
+      fases.unlocked = Math.max(fases.unlocked, Math.min(number + 1, LEVEL_COUNT));
       save.stats.wins += 1;
     });
 
@@ -444,7 +537,7 @@ export class Game {
       title: `Fase ${number} completa! 🎉`,
       text: hasNext
         ? `${this.character.name} juntou as ${this.mode.keys} chaves. A fase ${number + 1} abriu!`
-        : `${this.character.name} terminou as ${LEVEL_COUNT} fases! Que corrida!`,
+        : `${this.character.name} terminou as ${LEVEL_COUNT} fases do ${this.track.name}! Que corrida!`,
       buttons: [
         ...(hasNext ? [{ label: '▶️ Próxima fase', onClick: () => this.startLevel(number + 1) }] : []),
         { label: '🔁 Jogar de novo', onClick: () => this.startLevel(number), secondary: hasNext },
@@ -464,7 +557,8 @@ export class Game {
     this.lives = START_LIVES;
     this.speed = this.mode.startSpeed;
     this.elapsed = 0;
-    this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0 };
+    this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0, jumps: 0, flip: 0 };
+    this.unicorn.rotation.x = 0;
     // Segundos restantes de cada efeito (`flash` é só o brilho da vida extra).
     this.powers = { shield: 0, magnet: 0, boost: 0, flash: 0 };
     this.ui.setPowers([]);
@@ -485,151 +579,413 @@ export class Game {
     this.ui.setBest(this.best);
   }
 
-  // Escolha em três passos: pista → personagem → modo. Cada passo mostra a
-  // escolha ao vivo no cenário atrás do cartão.
-  showMenu(step = this.step) {
-    this.state = STATE.READY;
-    this.ui.showPause(false);
-    this.step = step;
-    this.reset();
+  // ---- Telas de escolha ------------------------------------------------
+  //
+  // Não é mais uma fila de passos obrigatórios. O hub mostra em três figuras
+  // o que já está escolhido, com um botão de jogar enorme: quem quer jogar
+  // joga com um toque; quem quer trocar toca na figura do que quer trocar.
 
-    if (step === 'character') {
-      this.ui.showOverlay({
-        step: { index: 1, total: 3 },
-        picker: true,
-        title: 'Quem vai correr?',
-        html: `
-          <div class="chooser">
-            <button class="chooser-arrow" data-pick="anterior" aria-label="Personagem anterior">◀</button>
-            <div class="chooser-name">
-              <b>${this.character.name}</b>
-              <small>${this.character.title}</small>
-            </div>
-            <button class="chooser-arrow" data-pick="proximo" aria-label="Próximo personagem">▶</button>
-          </div>
-        `,
-        buttons: [
-          { label: 'Continuar ➡️', onClick: () => this.showMenu('track') },
-          { label: '🖼️ Ver todos', onClick: () => this.showCharacterGrid(), secondary: true },
-          { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
-          { label: 'ℹ️ Sobre', onClick: () => this.showAbout(), secondary: true },
-          ...(canInstall() ? [{
-            label: '📲 Instalar',
-            onClick: () => this.installApp(),
-            secondary: true,
-          }] : []),
-        ],
-      });
-      this.ui.bindExtra((lado) => this.cycleCharacter(lado === 'proximo' ? 1 : -1));
-      return;
-    }
-
-    if (step === 'mode') {
-      const { wins, hearts, runs } = this.save.stats;
-      this.ui.showOverlay({
-        step: { index: 3, total: 3 },
-        title: 'Como vamos jogar?',
-        text: `${this.track.emoji} ${this.track.name} · ${this.character.emoji} ${this.character.name}`
-          + (runs
-            ? `<br><span class="muted">🏆 ${wins} vitória(s) · 💗 ${hearts} corações · 🏃 ${runs} corridas</span>`
-            : ''),
-        buttons: [
-          ...Object.values(MODES).map((mode) => ({
-            label: `${mode.emoji} Modo ${mode.name}`,
-            hint: mode.target
-              ? `Meta: ${this.goalFor(mode)} itens · nível ${this.save.babyLevel}`
-              : mode.id === 'levels'
-                ? `${this.save.levels.unlocked} de ${LEVEL_COUNT} fases abertas`
-                : mode.difficulties
-                  ? `${this.difficulty.emoji} ${this.difficulty.name} · escolha ao entrar`
-                  : mode.tagline,
-            onClick: () => {
-              if (mode.id === 'levels') return this.showLevels();
-              if (mode.difficulties) return this.showDifficulty();
-              return this.start(mode.id);
-            },
-          })),
-          { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
-        ],
-      });
-      return;
-    }
-
-    this.ui.showOverlay({
-      step: { index: 2, total: 3 },
-      picker: true,
-      title: 'Por onde vamos?',
-      html: `
-        <div class="chooser">
-          <button class="chooser-arrow" data-pick="anterior" aria-label="Pista anterior">◀</button>
-          <div class="chooser-name">
-            <b>${this.track.emoji} ${this.track.name}</b>
-            <small>${this.track.tagline}</small>
-          </div>
-          <button class="chooser-arrow" data-pick="proximo" aria-label="Próxima pista">▶</button>
-        </div>
-        <p class="chooser-note">🎵 ${music.themeName(this.track.id)}</p>
-      `,
-      buttons: [
-        { label: 'Continuar ➡️', onClick: () => this.showMenu('mode') },
-        { label: '🗺️ Ver todas', onClick: () => this.showTrackGrid(), secondary: true },
-        { label: '⬅️ Voltar', onClick: () => this.showMenu('character'), secondary: true },
-      ],
-    });
-    this.ui.bindExtra((lado) => this.cycleTrack(lado === 'proximo' ? 1 : -1));
+  // Redesenha a tela de escolha aberta agora, para o destaque acompanhar o
+  // que acabou de mudar no 3D.
+  render() {
+    if (this.screen === 'character') return this.showCharacterPicker();
+    if (this.screen === 'track') return this.showTrackPicker();
+    if (this.screen === 'mode') return this.showModePicker();
+    if (this.screen === 'home') return this.showHome();
+    return undefined;
   }
 
-  // Lista das pistas em grade, com uma miniatura de cada cenário.
-  showTrackGrid() {
+  // O cantinho de onde tudo sai e para onde tudo volta.
+  showHome() {
     this.state = STATE.READY;
-    this.step = 'track';
+    this.screen = 'home';
     this.ui.showPause(false);
+    this.reset();
 
-    const retratos = getTrackPortraits(TRACK_LIST);
-    const cartoes = TRACK_LIST.map((pista) => {
-      const escolhida = pista.id === this.track.id ? ' escolhido' : '';
-      return `<button class="cast-card${escolhida}" data-pick="${pista.id}">`
-        + `<img class="cast-face" src="${retratos[pista.id]}" alt="" />`
-        + `<span class="cast-name">${pista.emoji} ${pista.name}</span></button>`;
+    const retratos = getPortraits(CHARACTER_LIST);
+    const cenarios = getTrackPortraits(TRACK_LIST);
+    const modo = MODES[this.mode.id] || MODES[DEFAULT_MODE];
+    // Só a Aventura tem velocidade para mostrar; nas outras a figura basta.
+    const selo = modo.difficulties
+      ? `<span class="pick-badge">${this.difficulty.emoji}</span>`
+      : '';
+
+    this.ui.showOverlay({
+      home: true,
+      picker: true,
+      hint: true,
+      arrows: false,        // no hub as setas não têm o que percorrer
+      title: 'Vamos correr?',
+      html: `
+        <div class="picks">
+          <button class="pick" data-pick="character" aria-label="Trocar de unicórnio">
+            <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
+            <span class="pick-name">${this.character.name}</span>
+          </button>
+          <button class="pick" data-pick="track" aria-label="Trocar de pista">
+            <img class="pick-face" src="${cenarios[this.track.id]}" alt="" />
+            <span class="pick-name">${this.track.name}</span>
+          </button>
+          <button class="pick" data-pick="mode" aria-label="Trocar de brincadeira">
+            <span class="pick-emoji">${modo.emoji}${selo}</span>
+            <span class="pick-name">${modo.name}</span>
+          </button>
+        </div>
+        <div class="extras">
+          <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
+          <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
+        </div>
+      `,
+      buttons: [{ label: '▶️ JOGAR', huge: true, onClick: () => this.playNow() }],
+      grown: () => this.showGrownUps(),
+    });
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual === 'character') return this.showCharacterPicker();
+      if (qual === 'track') return this.showTrackPicker();
+      if (qual === 'stats') return this.showStats();
+      if (qual === 'about') return this.showAbout();
+      return this.showModePicker();
+    });
+  }
+
+  // O botão grande: joga já, com o que estiver escolhido. No modo Fases
+  // escolher a fase é parte da brincadeira, então abre a grade.
+  playNow() {
+    if (this.mode.id === 'levels') return this.showLevels();
+    return this.start(this.mode.id);
+  }
+
+  // As três brincadeiras, em figuras: cada card mostra como é a pista, e a
+  // velocidade da Aventura sai no próprio card, sem abrir outra tela.
+  showModePicker() {
+    this.state = STATE.READY;
+    this.screen = 'mode';
+    this.ui.showPause(false);
+    this.reset();
+
+    const { unlocked, done } = this.trackLevels();
+    // Mini-mapa das fases da pista escolhida: cheio = feita, contornada =
+    // aberta, apagada = ainda não.
+    const mapa = Array.from({ length: LEVEL_COUNT }, (_, i) => {
+      const numero = i + 1;
+      const estado = done[numero] ? 'done' : numero <= unlocked ? 'open' : 'locked';
+      return `<i class="map-dot ${estado}"></i>`;
+    }).join('');
+
+    const vitrine = {
+      baby: '<span class="mode-strip">💗 ✨ 💗 ✨</span>',
+      levels: `<span class="mode-strip">${mapa}</span>`,
+      adventure: '<span class="mode-strip">🌵 💗 🪨 ⭐</span>',
+    };
+    const legenda = {
+      baby: 'sem nada no caminho',
+      levels: `${this.track.name}: ${unlocked} de ${LEVEL_COUNT} fases`,
+      adventure: 'com coisas no caminho e 3 vidas',
+    };
+
+    const cards = Object.values(MODES).map((m) => {
+      const escolhido = m.id === this.mode.id;
+      const card = `<button class="mode-card${escolhido ? ' escolhido' : ''}"`
+        + ` data-pick="modo:${m.id}" aria-pressed="${escolhido}">`
+        + `<span class="mode-emoji">${m.emoji}</span>`
+        + `<span class="mode-body">`
+        + `<span class="mode-name">${m.name}</span>`
+        + `${vitrine[m.id] || ''}`
+        + `<span class="mode-hint">${legenda[m.id] || m.tagline}</span>`
+        + `</span></button>`;
+      // A velocidade abre dentro do próprio card escolhido — uma tela a menos.
+      if (!m.difficulties || !escolhido) return card;
+      const bolhas = DIFFICULTY_LIST.map((nivel) => (
+        `<button class="speed${nivel.id === this.difficulty.id ? ' escolhido' : ''}"`
+        + ` data-pick="vel:${nivel.id}" aria-pressed="${nivel.id === this.difficulty.id}">`
+        + `<b>${nivel.emoji}</b>${nivel.name}</button>`
+      )).join('');
+      return `${card}<div class="speeds">${bolhas}</div>`;
     }).join('');
 
     this.ui.showOverlay({
-      step: { index: 2, total: 3 },
-      title: 'Escolha a pista',
-      html: `<div class="cast-grid">${cartoes}</div>`,
-      buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showMenu('track'), secondary: true },
-      ],
+      hint: true,
+      title: 'Como vamos brincar?',
+      html: `<div class="mode-list">${cards}</div>`,
+      buttons: [{ label: '▶️ JOGAR', huge: true, onClick: () => this.playNow() }],
+      back: () => this.showHome(),
     });
-    this.ui.bindExtra((id) => this.showTrackSheet(id));
+    this.ui.bindExtra((valor) => {
+      const [tipo, id] = valor.split(':');
+      return tipo === 'vel' ? this.pickDifficulty(id) : this.pickMode(id);
+    });
   }
 
-  // Ficha da pista: miniatura, o que tem nela e a música.
-  showTrackSheet(id) {
-    const pista = TRACKS[id];
-    if (!pista) return;
-    this.state = STATE.READY;
-    this.step = 'track';
+  pickMode(id) {
+    const modo = MODES[id];
+    if (!modo) return;
+    if (modo.id === this.mode.id) { sfx.tap(); return; }
+    this.mode = modo;
+    update((save) => { save.choices.mode = modo.id; });
+    sfx.pick();
+    speak(modo.name);
+    this.showModePicker();
+  }
 
-    const retratos = getTrackPortraits(TRACK_LIST);
+  pickDifficulty(id) {
+    const nivel = DIFFICULTIES[id];
+    if (!nivel || nivel.id === this.difficulty.id) return;
+    this.difficulty = nivel;
+    update((save) => { save.choices.difficulty = nivel.id; });
+    sfx.pick();
+    speak(nivel.name);
+    this.showModePicker();
+  }
+
+  // Cantinho dos adultos: o que é de configuração sai da pilha de botões da
+  // criança e fica atrás de um toque longo no 👑.
+  showGrownUps() {
+    this.state = STATE.READY;
+    this.screen = 'grown';
+    this.ui.showPause(false);
     this.ui.showOverlay({
-      step: { index: 2, total: 3 },
-      title: `${pista.emoji} ${pista.name}`,
+      title: '👑 Dos adultos',
+      buttons: [
+        { label: '⬅️ Voltar ao jogo', onClick: () => this.showHome() },
+        ...(canSpeak() ? [{
+          label: speechOn() ? '🔊 Voz: ligada' : '🔈 Voz: desligada',
+          hint: 'lê em voz alta o nome do que a criança toca',
+          onClick: () => this.toggleSpeech(),
+          secondary: true,
+        }] : []),
+        ...(canInstall() ? [{
+          label: '📲 Instalar',
+          onClick: () => this.installApp(),
+          secondary: true,
+        }] : []),
+      ],
+      back: () => this.showHome(),
+    });
+  }
+
+  toggleSpeech() {
+    const ligado = setSpeech(!speechOn());
+    update((save) => { save.speech = ligado; });
+    if (ligado) speak('Pronto, agora eu falo');
+    this.showGrownUps();
+  }
+
+  // A grade das duas escolhas, montada do mesmo jeito: o que é seu, o que
+  // está à venda (desbotado, com cadeado e preço) e um espaço vazio para
+  // cada item que ainda não foi criado — a criança vê que tem mais vindo.
+  gridHtml(kind) {
+    const loja = this.shopOf(kind);
+    const retratos = loja.retratos();
+    const atualId = loja.atual().id;
+
+    const cartoes = loja.lista.map((item) => {
+      const escolhido = item.id === atualId;
+      const meu = this.isOwned(kind, item.id);
+      const classes = ['cast-card', escolhido ? 'escolhido' : '', meu ? '' : 'trancado']
+        .filter(Boolean).join(' ');
+      // No trancado o preço ocupa o lugar do nome: é a informação que
+      // importa nele, e o retrato continua à vista para dar vontade.
+      const rodape = meu
+        ? `${item.emoji} ${item.name}`
+        : `<span class="cast-price">🔑 ${loja.preco(item)}</span>`;
+      // Na grade de pistas, o ⚡ marca as que o unicórnio escolhido corre
+      // mais rápido — inclusive nas trancadas, porque isso ajuda a decidir
+      // qual comprar.
+      const raio = kind === 'track' && isFastOn(this.character, item.id)
+        ? `<span class="cast-fast" title="${this.character.name} corre mais rápido aqui">⚡</span>`
+        : '';
+      return `<button class="${classes}" data-pick="${item.id}" aria-pressed="${escolhido}">`
+        + `<img class="cast-face" src="${retratos[item.id]}" alt="" />`
+        + `${meu ? '' : '<span class="cast-lock">🔒</span>'}`
+        + raio
+        + `<span class="cast-name">${rodape}</span></button>`;
+    });
+
+    for (let i = loja.lista.length; i < loja.slots; i++) {
+      cartoes.push('<button class="cast-card vazio" data-pick="vazio" aria-label="ainda não existe">'
+        + '<span class="cast-soon">?</span>'
+        + '<span class="cast-name">em breve</span></button>');
+    }
+
+    return `<div class="cast-grid">${cartoes.join('')}</div>`;
+  }
+
+  // Um toque na grade abre a ficha — a mesma para quem já é seu e para quem
+  // está à venda. Só o espaço vazio responde ali mesmo, porque não tem ficha
+  // para abrir (e toque que não faz nada parece defeito).
+  pickItem(kind, id, tile) {
+    if (id === 'vazio') {
+      sfx.deny();
+      this.ui.shakeElement(tile);
+      this.ui.toast('Esse ainda está sendo feito ✨');
+      return;
+    }
+    sfx.tap();
+    this.showItemSheet(kind, id);
+  }
+
+  // A linha abaixo do título, na grade de pistas: diz de quem é o ⚡ que
+  // aparece nos cantinhos das miniaturas. A grade de unicórnios não tem
+  // legenda — quem quiser saber quem é cada um abre a ficha dele.
+  trackLegend() {
+    return this.character.fast?.length
+      ? `⚡ ${this.character.name} corre mais rápido nas pistas marcadas`
+      : this.track.tagline;
+  }
+
+  // Escolher unicórnio: uma tela só, com todos à vista. Tocar num retrato já
+  // troca o modelo 3D atrás do cartão — sem ficha no meio do caminho e sem
+  // confirmar: a escolha é a própria resposta.
+  showCharacterPicker() {
+    this.state = STATE.READY;
+    this.screen = 'character';
+    this.ui.showPause(false);
+    this.ui.setWallet(this.wallet, true);
+
+    this.ui.showOverlay({
+      picker: true,
+      hint: true,
+      title: 'Quem vai correr?',
+      html: this.gridHtml('character'),
+      buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((id, tile) => this.pickItem('character', id, tile));
+  }
+
+  // A ficha de um unicórnio ou de uma pista. É a mesma tela nos dois casos —
+  // o que muda é o botão embaixo:
+  //
+  //   já é seu ............ ✅ Escolher esse
+  //   à venda, tem chaves .. 🔑 Trocar N chaves
+  //   à venda, faltam ...... 🗺️ Buscar chaves (leva para onde elas nascem)
+  //
+  // É um momento, não um menu: retrato grande, a historinha inteira e um só
+  // botão — que é onde a criança lê quem é aquele antes de escolher.
+  showItemSheet(kind, id) {
+    const loja = this.shopOf(kind);
+    const item = loja.obter(id);
+    if (!item) return loja.voltar();
+
+    this.state = STATE.READY;
+    this.screen = 'sheet';
+    this.ui.showPause(false);
+
+    const meu = this.isOwned(kind, id);
+    const preco = loja.preco(item);
+    const tenho = this.wallet;
+    const falta = preco - tenho;
+    this.ui.setWallet(tenho, !meu);
+    speak(item.name);
+
+    const botao = meu
+      ? {
+        label: '✅ Escolher esse',
+        hint: item.id === loja.atual().id ? 'já é o escolhido' : loja.chamada(item),
+        huge: true,
+        onClick: () => { loja.aplicar(id); loja.voltar(); },
+      }
+      : falta > 0
+        ? {
+          label: '🗺️ Buscar chaves',
+          hint: `ainda falta${falta > 1 ? 'm' : ''} ${falta} · as chaves aparecem nas Fases`,
+          huge: true,
+          onClick: () => this.goFindKeys(),
+        }
+        : {
+          label: `🔑 Trocar ${preco} chaves`,
+          hint: loja.chamada(item),
+          huge: true,
+          onClick: () => this.buyItem(kind, id),
+        };
+
+    // As pistas em que ele corre mais rápido: é o que diferencia um
+    // unicórnio do outro além da cor, então aparece na ficha.
+    const rapidas = kind === 'character' && item.fast?.length
+      ? `<p class="shop-fast">⚡ Corre mais rápido em `
+        + item.fast.map((t) => `<b>${TRACKS[t]?.emoji || ''} ${TRACKS[t]?.name || t}</b>`).join(' e ')
+        + '</p>'
+      : '';
+
+    // O preço só aparece em quem ainda não é seu; na pista, o lugar dele é a
+    // música, que é o outro jeito de reconhecer o cenário.
+    const rodape = meu
+      ? (kind === 'track' ? `<p class="shop-note">🎵 ${music.themeName(item.id)}</p>` : '')
+      : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
+        + `Custa <b>🔑 ${preco}</b> · você tem <b>🔑 ${tenho}</b></p>`;
+
+    this.ui.showOverlay({
+      picker: true,
+      title: `${item.emoji} ${item.name}`,
       html: `
-        <div class="cast-sheet">
-          <img class="cast-portrait" src="${retratos[pista.id]}" alt="" />
-          <p class="cast-story">${pista.tagline}</p>
-          <p class="cast-title">🎵 ${music.themeName(pista.id)}</p>
+        <div class="shop">
+          <img class="shop-face" src="${loja.retratos()[item.id]}" alt="" />
+          ${loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
+          <p class="shop-story">${loja.descricao(item)}</p>
+          ${rapidas}
+          ${rodape}
         </div>
       `,
-      buttons: [
-        {
-          label: `✅ Correr aqui`,
-          onClick: () => { this.setTrack(pista.id); this.showMenu('track'); },
-        },
-        { label: '🔁 Ver as outras', onClick: () => this.showTrackGrid(), secondary: true },
-      ],
+      buttons: [botao],
+      back: () => loja.voltar(),
     });
+  }
+
+  // Faltou chave: em vez de um beco sem saída, leva direto para onde elas
+  // nascem.
+  goFindKeys() {
+    this.mode = MODES.levels;
+    update((save) => { save.choices.mode = 'levels'; });
+    this.showLevels();
+  }
+
+  buyItem(kind, id) {
+    const loja = this.shopOf(kind);
+    const item = loja.obter(id);
+    const preco = loja.preco(item);
+    // Confere de novo na hora de debitar: a tela pode ter ficado aberta.
+    if (!item || this.isOwned(kind, id) || this.wallet < preco) {
+      sfx.deny();
+      return this.showItemSheet(kind, id);
+    }
+
+    update((save) => {
+      save.stats.keys = (save.stats.keys || 0) - preco;
+      save.shop[loja.guardados] = [...(save.shop[loja.guardados] || []), id];
+    });
+    this.ui.setWallet(this.wallet, true);
+
+    // Festa: o que foi comprado já entra em cena.
+    loja.aplicar(id);
+    sfx.star();
+    speak(`${item.name} é sua!`);
+    this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
+    this.ui.toast(`${item.emoji} ${item.name} é sua!`);
+    loja.voltar();
+  }
+
+  // Escolher pista: a mesma tela da escolha de unicórnio, com o mesmo gesto
+  // e a mesma grade. Repetir o padrão importa: a criança aprende uma vez e
+  // usa nas duas.
+  showTrackPicker() {
+    this.state = STATE.READY;
+    this.screen = 'track';
+    this.ui.showPause(false);
+    this.ui.setWallet(this.wallet, true);
+
+    this.ui.showOverlay({
+      picker: true,
+      hint: true,
+      title: 'Por onde vamos?',
+      // A legenda vai no `text`, que fica acima da grade e fora da área que
+      // rola: embaixo de 15 miniaturas ela nunca seria lida.
+      text: this.trackLegend(),
+      html: this.gridHtml('track'),
+      buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((id, tile) => this.pickItem('track', id, tile));
   }
 
   // Instalação: no Android o próprio navegador abre o convite; no iPhone
@@ -653,17 +1009,18 @@ export class Game {
             </p>
           </div>
         `,
-        buttons: [{ label: '⬅️ Voltar', onClick: () => this.showMenu('character') }],
+        buttons: [{ label: '⬅️ Voltar', onClick: () => this.showGrownUps() }],
       });
       return;
     }
 
-    promptInstall().then(() => this.showMenu('character'));
+    promptInstall().then(() => this.showGrownUps());
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
   showAbout() {
     this.state = STATE.READY;
+    this.screen = 'about';
     this.ui.showPause(false);
     this.ui.showOverlay({
       title: 'Sobre o jogo',
@@ -687,21 +1044,30 @@ export class Game {
               🦄 código do jogo
             </a>
           </div>
+          <p class="about-version">versão ${VERSION}</p>
           <p class="about-note">
-            Feito com three.js · fonte Fredoka (SIL Open Font License)
+            Feito com three.js · fonte Fredoka (SIL Open Font License) ·
+            ícones Fluent Emoji, da Microsoft (MIT)
           </p>
         </div>
       `,
       buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showMenu(this.step) },
+        { label: '⬅️ Voltar', onClick: () => this.showHome() },
       ],
     });
+  }
+
+  // Quantas fases já foram concluídas somando todas as pistas.
+  levelsDone() {
+    return Object.values(this.save.levels)
+      .reduce((total, fases) => total + Object.keys(fases.done || {}).length, 0);
   }
 
   // Tela de estatísticas: tudo o que está guardado no save, em números
   // grandes e barrinhas — dá para ver de longe.
   showStats(confirmingReset = false) {
     this.state = STATE.READY;
+    this.screen = 'stats';
     this.ui.showPause(false);
     const { stats } = this.save;
 
@@ -730,7 +1096,7 @@ export class Game {
         ${tile(Math.floor(stats.bests.adventure || 0), 'recorde aventura', '🥇')}
         ${tile(stats.keys || 0, 'chaves mágicas', '🔑')}
         ${tile(Math.floor(Math.max(0, ...Object.values(stats.distances || { x: 0 }))), 'maior distância', '🏁')}
-        ${tile(`${Object.keys(this.save.levels.done).length}/${LEVEL_COUNT}`, 'fases feitas', '🗺️')}
+        ${tile(`${this.levelsDone()}/${LEVEL_COUNT * TRACK_LIST.length}`, 'fases feitas', '🗺️')}
       </div>
       <p class="stats-title">Corridas em cada pista</p>
       <div class="stats-rows">${bars(TRACK_LIST, stats.plays)}</div>
@@ -744,7 +1110,7 @@ export class Game {
       title: '📊 Estatísticas',
       html,
       buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showMenu(this.step) },
+        { label: '⬅️ Voltar', onClick: () => this.showHome() },
         confirmingReset
           ? {
             label: '⚠️ Apagar mesmo?',
@@ -789,7 +1155,7 @@ export class Game {
           onClick: () => (naFase ? this.startLevel(this.level) : this.start(this.mode.id)),
           secondary: true,
         },
-        { label: '🏠 Sair para o menu', onClick: () => this.showMenu('character'), secondary: true },
+        { label: '🏠 Sair para o menu', onClick: () => this.showHome(), secondary: true },
       ],
     });
   }
@@ -799,6 +1165,7 @@ export class Game {
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
     this.ui.showPause(true);
+    this.ui.showRush(this.isFastHere(), this.rush);
     this.clock.getDelta();       // descarta o tempo parado
   }
 
@@ -820,6 +1187,10 @@ export class Game {
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
     this.ui.showPause(true);
+    // O ⚡ só aparece se este unicórnio for rápido nesta pista.
+    this.rush = false;
+    this.rushLook = 0;
+    this.ui.showRush(this.isFastHere(), false);
   }
 
   endRun({ title, text }) {
@@ -831,9 +1202,8 @@ export class Game {
       title,
       text,
       buttons: [
-        { label: '🔁 Jogar de novo', onClick: () => this.start() },
-        { label: '🎮 Escolher de novo', onClick: () => this.showMenu('character'), secondary: true },
-        { label: '📊 Estatísticas', onClick: () => this.showStats(), secondary: true },
+        { label: '🔁 Jogar de novo', huge: true, onClick: () => this.start() },
+        { label: '🏠 Início', onClick: () => this.showHome(), secondary: true },
       ],
     });
   }
@@ -882,23 +1252,38 @@ export class Game {
   }
 
   moveLane(dir) {
-    // Nas telas de escolha as setas passeiam pelas opções do passo atual.
+    // Nas telas de escolha as setas passeiam pelas opções da grade aberta.
     if (this.state === STATE.READY) {
-      if (this.step === 'track') this.cycleTrack(dir);
-      else if (this.step === 'character') this.cycleCharacter(dir);
+      if (this.screen === 'track') this.cycleTrack(dir);
+      else if (this.screen === 'character') this.cycleCharacter(dir);
+      else if (this.screen === 'mode') this.cycleMode(dir);
       return;
     }
     if (this.state !== STATE.PLAYING) return;
     this.player.lane = THREE.MathUtils.clamp(this.player.lane + dir, 0, LANES.length - 1);
   }
 
+  // Pulo duplo: o primeiro sai do chão, o segundo é no ar mesmo — a asa
+  // bate de novo. Passou de MAX_JUMPS, só depois de encostar no chão.
   jump() {
     if (this.state !== STATE.PLAYING) return;
     if (this.powers.boost > 0) return;      // já está voando
-    if (!this.player.grounded) return;
-    this.player.vy = JUMP_VELOCITY;
-    this.player.grounded = false;
-    sfx.jump();
+    const p = this.player;
+    if (p.jumps >= MAX_JUMPS) return;
+
+    const primeiro = p.jumps === 0;
+    p.vy = primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY;
+    p.grounded = false;
+    p.jumps += 1;
+
+    if (primeiro) {
+      sfx.jump();
+      return;
+    }
+    // O segundo pulo se anuncia: cambalhota, brilho e um som mais agudo.
+    p.flip = FLIP_TIME;
+    sfx.doubleJump();
+    this.world.burst(this.unicorn.position.clone().setY(this.unicorn.position.y + 0.3), COLORS.star);
   }
 
   // O quanto a corrida já acelerou (0 a 1) — usado para apertar o ritmo.
@@ -913,6 +1298,7 @@ export class Game {
     return {
       ...base,
       obstacleChance: difficulty.obstacleChance,
+      barrierChance: difficulty.barrierChance,
       startSpeed: difficulty.startSpeed,
       maxSpeed: difficulty.maxSpeed,
       speedRamp: difficulty.speedRamp,
@@ -920,30 +1306,13 @@ export class Game {
     };
   }
 
-  // Escolha da dificuldade, só no modo Aventura.
-  showDifficulty() {
-    this.state = STATE.READY;
-    this.step = 'difficulty';
-    this.ui.showPause(false);
-    this.reset();
-    this.ui.showOverlay({
-      title: 'Qual a dificuldade?',
-      text: `${this.track.emoji} ${this.track.name} · ${this.character.emoji} ${this.character.name}`,
-      buttons: [
-        ...DIFFICULTY_LIST.map((nivel) => ({
-          label: `${nivel.emoji} ${nivel.name}`,
-          hint: nivel.tagline,
-          onClick: () => this.start('adventure', nivel.id),
-        })),
-        { label: '⬅️ Voltar', onClick: () => this.showMenu('mode'), secondary: true },
-      ],
-    });
-  }
-
   updatePlayer(dt) {
     const p = this.player;
     const targetX = LANES[p.lane];
-    p.x += (targetX - p.x) * Math.min(1, LANE_CHANGE_SPEED * dt);
+    // `laneGrip` < 1 deixa a troca de faixa preguiçosa: é o chão escorregadio
+    // da Geada. Sem o campo, a pista tem aderência normal.
+    const grip = this.track.laneGrip ?? 1;
+    p.x += (targetX - p.x) * Math.min(1, LANE_CHANGE_SPEED * grip * dt);
 
     if (this.powers.boost > 0) {
       // Turbo: o unicórnio decola e passa voando por cima de tudo.
@@ -951,9 +1320,10 @@ export class Game {
       p.vy = 0;
       p.y += (FLY_HEIGHT - p.y) * Math.min(1, 6 * dt);
     } else if (!p.grounded) {
-      p.vy -= GRAVITY * dt;
+      // `gravity` < 1 é o pulo flutuante do Espaço: sobe mais e desce devagar.
+      p.vy -= GRAVITY * (this.track.gravity ?? 1) * dt;
       p.y += p.vy * dt;
-      if (p.y <= 0) { p.y = 0; p.vy = 0; p.grounded = true; }
+      if (p.y <= 0) { p.y = 0; p.vy = 0; p.grounded = true; p.jumps = 0; }
     }
 
     if (this.powers.shield > 0) p.invulnerable = 0;
@@ -961,6 +1331,14 @@ export class Game {
       p.invulnerable -= dt;
       this.setBodyVisible(Math.floor(p.invulnerable * 12) % 2 === 0);
       if (p.invulnerable <= 0) this.setBodyVisible(true);
+    }
+
+    // A cambalhota do pulo duplo: uma volta inteira no tempo de FLIP_TIME.
+    if (p.flip > 0) {
+      p.flip = Math.max(0, p.flip - dt);
+      this.unicorn.rotation.x = -(1 - p.flip / FLIP_TIME) * Math.PI * 2;
+    } else if (this.unicorn.rotation.x !== 0) {
+      this.unicorn.rotation.x = 0;
     }
 
     this.unicorn.position.set(p.x, p.y, 0);
@@ -982,7 +1360,8 @@ export class Game {
     for (let i = this.world.entities.length - 1; i >= 0; i--) {
       const e = this.world.entities[i];
       if (Math.abs(e.position.z) > 1.0) continue;
-      if (Math.abs(e.position.x - p.x) > 1.1) continue;
+      // A barreira ocupa as três pistas; o resto pega só a faixa em volta.
+      if (Math.abs(e.position.x - p.x) > (e.userData.halfWidth ?? 1.1)) continue;
 
       if (e.userData.kind === 'obstacle') {
         if (e.userData.knocked) continue;      // esse já foi lá para cima
@@ -1037,7 +1416,8 @@ export class Game {
     update((save) => { save.stats.keys = (save.stats.keys || 0) + 1; });
     this.ui.setWallet(this.save.stats.keys);
 
-    if (this.keys >= this.mode.keys) this.levelComplete();
+    // Só nas Fases a chave é meta; na Aventura ela é só a moeda.
+    if (this.mode.id === 'levels' && this.keys >= this.mode.keys) this.levelComplete();
   }
 
   // Pegou um power-up: guarda o tempo dele e avisa na tela.
@@ -1146,18 +1526,24 @@ export class Game {
     }
 
     const boosting = playing && this.powers.boost > 0;
+    const rushing = playing && this.rush && this.isFastHere();
     const paused = this.state === STATE.PAUSED;
     const worldSpeed = playing
-      ? this.speed * (boosting ? POWERUPS.boost.speed : 1)
+      ? this.speed * (boosting ? POWERUPS.boost.speed : rushing ? RUSH_SPEED : 1)
       : paused ? 0 : this.mode.startSpeed * 0.35;
 
-    // No turbo a câmera abre um pouco: dá sensação de velocidade.
-    const wantedFov = this.baseFov + (boosting ? 7 : 0);
+    // No turbo a câmera abre um pouco: dá sensação de velocidade. No ⚡ ela
+    // abre menos, porque ali o unicórnio continua no chão.
+    const wantedFov = this.baseFov + (boosting ? 7 : rushing ? 4 : 0);
     if (Math.abs(this.camera.fov - wantedFov) > 0.05) {
       this.camera.fov += (wantedFov - this.camera.fov) * Math.min(1, 5 * dt);
       this.camera.updateProjectionMatrix();
     }
     if (playing) {
+      // O teto inclui o empurrão do ⚡: sem isso a barra grudaria no fim.
+      const teto = this.mode.maxSpeed * RUSH_SPEED;
+      const piso = this.mode.startSpeed * 0.6;
+      this.ui.setSpeed(worldSpeed, (worldSpeed - piso) / (teto - piso));
       this.distance += worldSpeed * dt;
       this.ui.setDistance(this.distance);
       this.world.spawnMarkers(this.distance);
@@ -1175,7 +1561,8 @@ export class Game {
     if (this.nightGlow.visible) {
       this.nightGlow.scale.setScalar(1.8 * (1 + Math.sin(this.elapsed * 2.2) * 0.05));
     }
-    updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed);
+    this.applyRushWings(dt);
+    updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
     this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;
 
     // Na tela inicial o personagem gira devagar, para dar para ver o modelo
