@@ -31,6 +31,10 @@ html, body {
   left: calc(10px + env(safe-area-inset-left));
   right: calc(10px + env(safe-area-inset-right));
   display: flex;
+  /* Cada painel fica com a altura do próprio conteúdo. Sem isto o flex
+     estica todos até a altura do mais alto — e o grupo de controles, com
+     três linhas (pause/som, ⚡ e velocímetro), esticava a fileira inteira. */
+  align-items: flex-start;
   gap: var(--hud-gap);
   pointer-events: none;
   transition: opacity .3s;
