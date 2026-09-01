@@ -25,6 +25,8 @@ html, body {
 /* --- HUD ------------------------------------------------------------- */
 #hud {
   --hud-button: clamp(44px, 12vw, 56px);
+  --hud-rush: clamp(42px, 11.5vw, 54px);        /* altura do ⚡ */
+  --hud-rush-largura: clamp(100px, 27vw, 132px); /* e a largura dele */
   --hud-gap: clamp(5px, 1.6vw, 10px);
   position: absolute;
   top: calc(10px + env(safe-area-inset-top));
@@ -86,6 +88,10 @@ html, body {
   cursor: pointer;
   min-width: 0;
   width: var(--hud-button);
+  /* Quadrados, e não achatados: além de virarem alvos maiores, é a altura
+     deles que empurra o ⚡ da linha de baixo para debaixo dos painéis. Sem
+     isto o ⚡ (que agora é largo) subia e cruzava com "Distância". */
+  height: var(--hud-button);
   padding: 0;
   justify-content: center;
   font-size: clamp(18px, 5vw, 24px);
@@ -363,13 +369,55 @@ html, body {
   max-width: var(--hud-button);
   justify-self: center;
 }
-/* O ⚡ ocupa as duas colunas para ficar centralizado, mas desenha do tamanho
-   de uma só — senão ficaria maior que os botões de cima. */
+/* O ⚡ é o único botão que muda a corrida enquanto ela acontece, e o único
+   que a criança precisa achar sem tirar o olho da pista. Então ele é o
+   maior do canto: ocupa as duas colunas inteiras, é mais alto que os outros,
+   tem a palavra escrita do lado e fica pulsando enquanto está disponível.
+   (Antes desenhava do tamanho de um botão só e se perdia entre o pause e o
+   som — três ícones iguais em fila.) */
 #hud-buttons #rush {
   grid-column: 1 / -1;
-  width: calc((100% - var(--hud-gap)) / 2);
-  max-width: var(--hud-button);
-  justify-self: center;
+  /* Largura própria, e não a do grupo: numa tela estreita os painéis do HUD
+     espremem o grupo inteiro para uns 57 px, e o ⚡ ficaria menor do que
+     antes. Ancorado à direita, ele cresce para a esquerda — para dentro do
+     céu, que ali embaixo dos painéis está vazio. */
+  width: var(--hud-rush-largura);
+  max-width: none;
+  justify-self: end;
+  height: var(--hud-rush);
+  flex-direction: row;
+  gap: clamp(2px, 1vw, 5px);
+  /* A borda é um arco inteiro: sem este respiro dos lados, o ⚡ e a palavra
+     ficam por fora do arredondado e aparecem cortados. */
+  padding: 0 clamp(8px, 2.6vw, 12px);
+  border-radius: 999px;
+  border-color: #ffd166;
+  background: linear-gradient(180deg, #fffdf5, #fff1cf);
+  box-shadow: 0 5px 0 rgba(191, 138, 20, .3);
+  animation: rush-chama 1.7s ease-in-out infinite;
+}
+#hud-buttons #rush .fi {
+  width: clamp(20px, 5.8vw, 26px);
+  height: clamp(20px, 5.8vw, 26px);
+  flex: none;
+  vertical-align: 0;
+}
+.rush-label {
+  font-size: clamp(9px, 2.5vw, 12px);
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: #b07a12;
+  line-height: 1;
+}
+/* Disponível e desligado: um anel dourado que abre e some, chamando o dedo. */
+@keyframes rush-chama {
+  0%, 100% { box-shadow: 0 5px 0 rgba(191, 138, 20, .3), 0 0 0 0 rgba(255, 176, 46, .5); }
+  55%      { box-shadow: 0 5px 0 rgba(191, 138, 20, .3), 0 0 0 9px rgba(255, 176, 46, 0); }
+}
+#hud-buttons #rush:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 rgba(191, 138, 20, .3);
+  animation: none;
 }
 
 /* Velocímetro: fica na terceira linha do canto, embaixo do ⚡, com a mesma
@@ -377,7 +425,10 @@ html, body {
    para quem quiser conferir. */
 #hud-buttons #speed {
   grid-column: 1 / -1;
-  width: 100%;
+  /* Mesma largura do ⚡: os dois são o mesmo canto, e um velocímetro estreito
+     embaixo de um botão largo parece defeito. */
+  width: var(--hud-rush-largura);
+  justify-self: end;
   min-width: 0;
   padding: 3px 6px 5px;
   gap: 1px;
@@ -405,9 +456,20 @@ html, body {
 #speed.cheio .gauge-bar i { background: linear-gradient(90deg, #ffd166, #ff5d5d); }
 
 /* Ligado ele fica aceso, para dar para ver de relance se está disparando. */
-#rush.ligado {
-  background: linear-gradient(180deg, #ffe9a3, #ffd166);
-  box-shadow: 0 0 0 3px rgba(255, 176, 46, .45);
+/* Ligado: dourado cheio, a palavra em branco e o pulso mais rápido e mais
+   forte — dá para ver que está ligado pelo canto do olho, correndo. */
+#hud-buttons #rush.ligado {
+  background: linear-gradient(180deg, #ffd875, #ffab1f);
+  border-color: #fff3c4;
+  animation: rush-ligado .55s ease-in-out infinite;
+}
+#hud-buttons #rush.ligado .rush-label {
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(150, 100, 10, .45);
+}
+@keyframes rush-ligado {
+  0%, 100% { box-shadow: 0 5px 0 rgba(150, 100, 10, .4), 0 0 0 0 rgba(255, 209, 102, .85); }
+  70%      { box-shadow: 0 5px 0 rgba(150, 100, 10, .4), 0 0 0 11px rgba(255, 209, 102, 0); }
 }
 
 .wallet {
@@ -1411,6 +1473,8 @@ html, body {
 /* Quem pediu menos movimento ao aparelho continua vendo a Uni — parada. */
 @media (prefers-reduced-motion: reduce) {
   #loading *, #loading *::before { animation: none !important; }
+  /* O ⚡ para de pulsar, mas continua dourado quando ligado. */
+  #hud-buttons #rush { animation: none; }
 }
 
 /* --- O portal que se abre ao destrancar ------------------------------- */

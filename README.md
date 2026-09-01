@@ -77,9 +77,22 @@ continua sendo só uma entrada na tabela.
 
 Cada unicórnio tem **uma ou duas pistas em que ele corre mais rápido** — é o
 que diferencia um do outro além da cor, e a ficha dele diz quais são. Correndo
-numa delas, um botão **⚡** aparece no HUD **logo abaixo da dupla pause +
-som**, centralizado entre os dois: apertar faz o mundo passar 35% mais
-rápido, apertar de novo volta ao normal. Vale nos **três modos** — nas Fases
+numa delas, um botão **⚡ RÁPIDO** aparece no HUD **logo abaixo da dupla
+pause + som**: apertar faz o mundo passar 35% mais rápido, apertar de novo
+volta ao normal.
+
+Ele é o maior controle do canto de propósito — é o único botão que muda a
+corrida enquanto ela acontece, e o único que a criança precisa achar sem
+tirar o olho da pista. Antes desenhava do tamanho de um botão só e se perdia
+entre o pause e o som, três ícones iguais em fila. Agora é uma pílula larga
+com a palavra escrita, e tem largura própria: numa tela estreita os painéis
+do HUD espremem o grupo de controles para uns 57 px, e acompanhar isso o
+deixaria menor do que era. Ancorado à direita, ele cresce para a esquerda,
+para dentro do céu vazio embaixo dos painéis. Enquanto está disponível e
+desligado, um anel dourado abre e some, chamando o dedo; ligado, ele fica
+dourado cheio, com a palavra em branco e o pulso mais rápido — dá para ver
+pelo canto do olho, correndo. O velocímetro logo abaixo tem a mesma largura,
+para o canto ser um grupo só. Vale nos **três modos** — nas Fases
 correr mais rápido junta as chaves antes, ao preço de mais obstáculo por
 segundo; no Livre, onde não há obstáculo, é só diversão.
 
