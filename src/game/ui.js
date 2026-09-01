@@ -188,7 +188,7 @@ export function createUI() {
     showOverlay: ({
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
-      hint = false, arrows = true,
+      book = false, hint = false, arrows = true,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -197,6 +197,9 @@ export function createUI() {
       card.classList.toggle('picker', picker);
       card.classList.toggle('wide', wide);
       card.classList.toggle('home', home);
+      // O livro é o cartão inteiro virando página: sem marca, sem borda
+      // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
+      card.classList.toggle('livro', book);
       // O lembrete dos controles é para aprender o menu: só aparece nas
       // telas de escolha, e só fala em setas onde elas fazem alguma coisa.
       card.classList.toggle('no-hint', !hint);

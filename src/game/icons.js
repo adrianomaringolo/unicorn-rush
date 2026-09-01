@@ -47,6 +47,7 @@ const ARQUIVOS = {
   '🎵': 'musical_note',
   '🔇': 'muted_speaker',
   '🐙': 'octopus',
+  '📖': 'open_book',
   '🎉': 'party_popper',
   '⏸️': 'pause_button',
   '🏃': 'person_running',

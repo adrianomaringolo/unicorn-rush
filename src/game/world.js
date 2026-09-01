@@ -11,11 +11,15 @@ import { createPowerup, POWERUP_LIST } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
   createRainbow, createMountains, createMoon, createStars, createSun,
-  createDistanceMarker, createRecordBanner, createAmbience, animateAmbience,
+  createDistanceMarker, createRecordBanner, createStartLine, createAmbience, animateAmbience,
 } from '../models/scenery.js';
 
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
 const MARKER_STEP = 100;      // de quantos em quantos passos vem uma placa
+// A que distância do zero fica o portal de partida. Não é em cima do
+// unicórnio: assim ele aparece inteiro no quadro, e a criança passa por
+// baixo dele no primeiro segundo de corrida.
+const START_AT = 7;
 
 // Altura de voo (ou de nado) de cada bichinho e distância mínima da pista.
 const AMBIENCE_SPOT = {
@@ -260,6 +264,13 @@ export class World {
       this.addMarker(createRecordBanner(), distance, this.recordAt);
       this.recordPlaced = true;
     }
+  }
+
+  // Planta o portal de partida no começo da pista. Quem chama é o Game, no
+  // início de toda corrida — e só ali: nas telas de menu o mundo está
+  // parado, e um portal em volta do unicórnio atrapalharia a escolha.
+  placeStart() {
+    this.addMarker(createStartLine(), 0, START_AT);
   }
 
   addMarker(marker, distance, at) {

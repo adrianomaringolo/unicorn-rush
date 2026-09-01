@@ -12,6 +12,7 @@ const DEFAULTS = {
   muted: false,
   speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
   testMode: false,       // modo teste: tudo liberado e nada é guardado
+  storySeen: false,      // a história já foi contada uma vez?
   babyLevel: 1,          // sobe a cada vitória no modo Livre e aumenta a meta
   // Progresso das fases, uma entrada por pista: { campo: { unlocked, done } }.
   // Cada pista tem o seu caminho de doze fases, então comprar uma pista nova

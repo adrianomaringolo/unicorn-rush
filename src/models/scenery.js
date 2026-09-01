@@ -3018,6 +3018,75 @@ export function createDistanceMarker(distance) {
 // Marca do recorde anterior: só no chão, para não atrapalhar a visão da
 // pista. É uma faixa colorida atravessando o caminho, com a palavra deitada
 // no chão logo antes dela.
+// Portal de partida: a marcação de onde a corrida começa.
+//
+// Nasce no início de toda corrida, em qualquer modo (ver World.placeStart e
+// Game.start/startLevel). A criança não vê um número na tela subir do zero —
+// ela vê que passou por aqui, e é daqui que a distância conta.
+export function createStartLine() {
+  const gate = new THREE.Group();
+
+  // A faixa quadriculada atravessando as três pistas, deitada no chão.
+  const faixa = new THREE.Mesh(
+    new THREE.PlaneGeometry(8.8, 1.4),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 })
+  );
+  faixa.rotation.x = -Math.PI / 2;
+  faixa.position.y = 0.06;
+  gate.add(faixa);
+
+  for (let i = -3; i <= 3; i++) {
+    for (const linha of [-1, 1]) {
+      if ((i + linha) % 2 !== 0) continue;
+      const quadro = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 0.62),
+        new THREE.MeshBasicMaterial({ color: 0xff5d8f, transparent: true, opacity: 0.9 })
+      );
+      quadro.rotation.x = -Math.PI / 2;
+      quadro.position.set(i * 1.22, 0.07, linha * 0.33);
+      gate.add(quadro);
+    }
+  }
+
+  // Os dois postes e o travessão por cima, alto o bastante para o pulo (e o
+  // voo) passarem por baixo sem parecer que bateram.
+  const ALTURA = 4.6;
+  for (const lado of [-1, 1]) {
+    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, ALTURA, 8), mat(0xfff0fb));
+    poste.position.set(lado * 4.4, ALTURA / 2, 0);
+    poste.castShadow = true;
+    gate.add(poste);
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.3, 8), mat(0xff8fb1));
+    base.position.set(lado * 4.4, 0.15, 0);
+    gate.add(base);
+
+    // Bandeirinha dourada no alto de cada poste, virada para dentro — é o
+    // que faz o portal parecer festa, e não obstáculo.
+    const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.06), mat(0xffd166));
+    bandeira.position.set(lado * 3.95, ALTURA + 0.34, 0);
+    bandeira.rotation.z = lado * -0.18;
+    gate.add(bandeira);
+  }
+
+  const travessao = new THREE.Mesh(new THREE.BoxGeometry(9.4, 0.92, 0.28), mat(0xff5d8f));
+  travessao.position.y = ALTURA - 0.2;
+  travessao.castShadow = true;
+  gate.add(travessao);
+
+  // A palavra fica dos dois lados: quem passa por baixo e olha para trás
+  // (a câmera vai atrás do unicórnio) continua lendo.
+  for (const frente of [1, -1]) {
+    const placa = labelPlate('PARTIDA', 6.4, 0.72, '#ffffff', '#ff5d8f');
+    placa.position.set(0, ALTURA - 0.2, frente * 0.16);
+    placa.rotation.y = frente === 1 ? 0 : Math.PI;
+    gate.add(placa);
+  }
+
+  gate.userData.kind = 'start';
+  return gate;
+}
+
 export function createRecordBanner() {
   const banner = new THREE.Group();
 

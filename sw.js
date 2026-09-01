@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.3.10';
+const VERSION = 'unicornrush-v0.8.0';
 
 const SHELL = [
   './',
@@ -15,6 +15,7 @@ const SHELL = [
   './fonts.css',
   './assets/fonts/fredoka-latin.woff2',
   './assets/fonts/fredoka-latin-ext.woff2',
+  './assets/loading/uni.webp',
   './assets/icons/icon-64.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
@@ -33,6 +34,7 @@ const SHELL = [
   './src/game/version.js',
   './src/game/update.js',
   './src/game/storage.js',
+  './src/game/story.js',
   './src/game/tracks.js',
   './src/game/ui.js',
   './src/game/world.js',
@@ -46,6 +48,16 @@ const SHELL = [
   './src/models/trackPortraits.js',
   './src/models/scenery.js',
   './src/models/unicorn.js',
+  // As nove figuras do livro da história (~780 KB no total).
+  './assets/story/1.webp',
+  './assets/story/2.webp',
+  './assets/story/3.webp',
+  './assets/story/4.webp',
+  './assets/story/5.webp',
+  './assets/story/6.webp',
+  './assets/story/7.webp',
+  './assets/story/8.webp',
+  './assets/story/9.webp',
   // Ícones do Fluent Emoji: sem eles no cache, o jogo instalado abriria
   // offline com buracos no lugar dos ícones.
   './assets/emoji/1st_place_medal.png',
@@ -78,6 +90,7 @@ const SHELL = [
   './assets/emoji/musical_note.png',
   './assets/emoji/muted_speaker.png',
   './assets/emoji/octopus.png',
+  './assets/emoji/open_book.png',
   './assets/emoji/party_popper.png',
   './assets/emoji/pause_button.png',
   './assets/emoji/person_running.png',

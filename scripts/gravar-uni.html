@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Gravar a Uni correndo</title>
+<style>
+  body { margin: 0; background: linear-gradient(#bfe9ff, #ffe3f4); font-family: system-ui, sans-serif; }
+  #palco { display: block; margin: 20px auto; }
+  p { text-align: center; color: #7a4ec7; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "../vendor/three.module.js", "three/": "../vendor/" } }
+</script>
+</head><body>
+<canvas id="palco" width="480" height="300"></canvas>
+<p>A Uni da tela de carregamento, quadro a quadro.<br>
+   <code>npm run gravar-uni</code> transforma isto em <code>assets/loading/uni.webp</code>.</p>
+
+<script type="module">
+// Gerador da animação da tela de carregamento.
+//
+// A Uni do carregamento é o **modelo 3D do jogo** — mas gravada, e não
+// tocada ao vivo: rodar three.js no carregamento seria esperar 1,9 MB de
+// JavaScript justamente para cobrir a espera de 1,9 MB de JavaScript. Aqui
+// o modelo galopa de verdade, e cada quadro vira PNG; o `img2webp` junta
+// tudo num WebP animado de uns 100 KB que o index.html mostra sozinho.
+//
+// Como usar: `npm run gravar-uni` (faz tudo). Para olhar, abra este arquivo
+// pelo `npm start`, em http://localhost:5173/scripts/gravar-uni.html
+import * as THREE from 'three';
+import { createUnicorn, animateUnicorn } from '../src/models/unicorn.js';
+import { CHARACTERS } from '../src/models/characters.js';
+import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../src/models/rainbowTrail.js';
+
+const GALOPE = 2.6;          // mesma cadência do jogo
+const VELOCIDADE = 11;       // o quanto o rastro corre para trás
+export const QUADROS = 32;   // um ciclo de passada inteiro
+
+// Um ciclo de pernas fecha em 2π/GALOPE: gravando exatamente isso, o
+// primeiro quadro é a continuação do último e o laço não tem emenda.
+const CICLO = (2 * Math.PI) / GALOPE;
+
+const canvas = document.getElementById('palco');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(canvas.width, canvas.height, false);
+
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0xffc3e6, 1.15));
+const sol = new THREE.DirectionalLight(0xfff3d6, 1.4);
+sol.position.set(4, 6, 6);
+scene.add(sol);
+
+// De perfil, como nos retratos dos personagens — é de lado que se vê o
+// galope das quatro pernas e o rastro esticado atrás dela. A câmera olha um
+// pouco atrás do corpo, para o rastro caber no quadro junto com ela.
+const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 60);
+camera.position.set(-6.4, 2.85, 1.5);
+camera.lookAt(0, 1.15, 2.1);
+
+const uni = createUnicorn(CHARACTERS.uni);
+scene.add(uni);
+const rastro = createRainbowTrail(CHARACTERS.uni.trail);
+resetRainbowTrail(rastro, 0, 0);
+scene.add(rastro);
+
+// O rastro tem memória (guarda o caminho): antes de gravar, roda um tanto
+// em seco para ele já estar formado no primeiro quadro.
+const passo = CICLO / QUADROS;
+for (let i = 0; i < 240; i++) {
+  const t = i * passo;
+  animateUnicorn(uni, t, GALOPE, true);
+  updateRainbowTrail(rastro, passo, VELOCIDADE, 0, 0, t);
+}
+
+// Gera um quadro e devolve o PNG em base64. É o que o gravador headless
+// chama, um quadro por vez.
+window.quadro = (i) => {
+  const t = (240 + i) * passo;
+  animateUnicorn(uni, t, GALOPE, true);
+  updateRainbowTrail(rastro, passo, VELOCIDADE, 0, 0, t);
+  renderer.render(scene, camera);
+  return canvas.toDataURL('image/png').split(',')[1];
+};
+window.QUADROS = QUADROS;
+window.pronto = true;
+
+// Sem janela (é como o `npm run gravar-uni` roda), a página junta os quadros
+// num <div> e o script de fora os lê do HTML. Com janela, ela só fica
+// rodando a animação, para dar para conferir antes de gravar.
+if (navigator.webdriver || location.search.includes('gravar')) {
+  const saco = [];
+  for (let i = 0; i < QUADROS; i++) saco.push(window.quadro(i));
+  const alvo = document.createElement('div');
+  alvo.id = 'quadros';
+  alvo.textContent = saco.join('|');
+  alvo.style.display = 'none';
+  document.body.appendChild(alvo);
+} else {
+  let i = 0;
+  const laco = () => { window.quadro(i++ % QUADROS); setTimeout(laco, 1000 / 24); };
+  laco();
+}
+</script>
+</body></html>

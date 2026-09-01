@@ -27,13 +27,18 @@ import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.j
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
-import { withIcons } from './icons.js';
+import { withIcons, iconUrl } from './icons.js';
+import { STORY, STORY_PAGES, storyArt } from './story.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate } from './update.js';
 
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
 const CAMERA = { height: 5.1, distance: 9.4, fov: 55 };
+
+// Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
+// animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
+const REVEAL_TIME = 4600;
 
 // Libera a memória da GPU ao trocar de personagem.
 function disposeObject(root) {
@@ -81,6 +86,7 @@ export class Game {
       ? TRACKS[this.save.choices.track]
       : TRACKS[DEFAULT_TRACK];
     this.screen = 'home';      // tela de menu aberta agora
+    this.storyPage = 0;        // página aberta do livro da história
     this.difficulty = DIFFICULTIES[this.save.choices.difficulty] || DIFFICULTIES[DEFAULT_DIFFICULTY];
     this.level = Math.min(this.trackLevels().unlocked, LEVEL_COUNT);
 
@@ -106,7 +112,13 @@ export class Game {
       onLeft: () => this.moveLane(-1),
       onRight: () => this.moveLane(1),
       onJump: () => this.jump(),
-      onStart: () => { if (this.state !== STATE.PLAYING) this.ui.pressPrimaryButton(); },
+      onStart: () => {
+        if (this.state === STATE.PLAYING) return;
+        // Durante o portal o cartão da loja continua no DOM, escondido: sem
+        // esta guarda o Enter apertaria o botão de trocar chaves de novo.
+        if (this.screen === 'reveal') return;
+        this.ui.pressPrimaryButton();
+      },
       onPause: () => this.togglePause(),
     });
     this.ui.onPause(() => this.togglePause());
@@ -499,6 +511,7 @@ export class Game {
       save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
     });
     this.reset();
+    this.world.placeStart();     // o portal de partida, em toda corrida
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
     this.ui.showPause(true);
@@ -633,6 +646,7 @@ export class Game {
     if (this.screen === 'track') return this.showTrackPicker();
     if (this.screen === 'mode') return this.showModePicker();
     if (this.screen === 'home') return this.showHome();
+    if (this.screen === 'story') return this.showStory(this.storyPage);
     return undefined;
   }
 
@@ -673,6 +687,7 @@ export class Game {
           </button>
         </div>
         <div class="extras">
+          <button class="mini-button historia" data-pick="story">📖 A história</button>
           <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
           <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
           ${hasUpdate() ? '<button class="mini-button nova" data-pick="update">🔄 Atualizar</button>' : ''}
@@ -685,6 +700,7 @@ export class Game {
       sfx.tap();
       if (qual === 'character') return this.showCharacterPicker();
       if (qual === 'track') return this.showTrackPicker();
+      if (qual === 'story') return this.showStory(0);
       if (qual === 'stats') return this.showStats();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
@@ -1006,13 +1022,100 @@ export class Game {
     });
     this.ui.setWallet(this.wallet, true);
 
-    // Festa: o que foi comprado já entra em cena.
+    // Festa: o que foi comprado já entra em cena, atrás do portal que abre.
     loja.aplicar(id);
-    sfx.star();
-    speak(`${item.name} é sua!`);
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
-    this.ui.toast(`${item.emoji} ${item.name} é sua!`);
-    loja.voltar();
+    this.revealUnlock(kind, item, () => {
+      this.ui.toast(`${item.emoji} ${item.name} é sua!`);
+      loja.voltar();
+    });
+  }
+
+  // O portal se abrindo.
+  //
+  // Trocar chaves por um unicórnio ou uma pista é a maior conquista do jogo
+  // — custa dezenas de corridas —, e antes disso era só um aviso passando na
+  // tela. Agora é o portal do livro da história (a página "O segredo do
+  // arco-íris") abrindo de verdade: o cadeado cede, as portas giram e lá
+  // dentro está quem estava trancado, saindo do escuro para a cor.
+  //
+  // O desenho é todo CSS por cima do retrato que a grade já usa (ver
+  // #reveal no style.css); aqui só se monta o quadro e se marca o tempo.
+  revealUnlock(kind, item, aoFim) {
+    const loja = this.shopOf(kind);
+    const camada = document.getElementById('reveal');
+    if (!camada) return aoFim();
+
+    this.screen = 'reveal';
+    this.ui.hideOverlay();
+
+    // As faíscas saem do meio para fora, uma por direção.
+    const faiscas = Array.from({ length: 10 }, (_, i) => {
+      const angulo = (Math.PI * 2 * i) / 10 + 0.3;
+      const raio = 120 + (i % 3) * 34;
+      const atraso = 1.35 + (i % 5) * 0.05;
+      return `<img class="portal-faisca" src="${iconUrl('✨')}" alt="" aria-hidden="true"`
+        + ` style="--fx:${(Math.cos(angulo) * raio).toFixed(0)}px;`
+        + `--fy:${(Math.sin(angulo) * raio).toFixed(0)}px;animation-delay:${atraso}s" />`;
+    }).join('');
+
+    camada.innerHTML = `
+      <div class="portal">
+        <div class="portal-arco"></div>
+        <div class="portal-vao">
+          <img class="portal-retrato${kind === 'track' ? ' lugar' : ''}" src="${loja.retratos()[item.id]}" alt="" />
+          <div class="portal-luz"></div>
+          <div class="portal-porta esq"></div>
+          <div class="portal-porta dir"></div>
+        </div>
+        <div class="portal-selo">${withIcons(item.emoji)}</div>
+        <svg class="portal-cadeado" viewBox="0 0 60 76" aria-hidden="true">
+          <path class="cadeado-haste" d="M18 34 V22 a12 12 0 0 1 24 0 v12"
+                fill="none" stroke="#e9a81c" stroke-width="8" stroke-linecap="round"/>
+          <rect x="6" y="32" width="48" height="40" rx="9" fill="#ffd166" stroke="#c98f10" stroke-width="2.5"/>
+          <circle cx="30" cy="48" r="6" fill="#a8760c"/>
+          <path d="M30 52 l-3.5 12 h7 Z" fill="#a8760c"/>
+        </svg>
+        ${faiscas}
+      </div>
+      <p class="portal-nome">${withIcons(item.name)}<small>${loja.chamada(item)}</small></p>
+    `;
+    camada.hidden = false;
+    camada.classList.remove('saindo');
+
+    // O som acompanha o desenho: a chave girando quando o cadeado cede, a
+    // fanfarra quando o retrato aparece.
+    const chave = setTimeout(() => sfx.key(), 800);      // o cadeado cede
+    const fanfarra = setTimeout(() => sfx.win(), 1450);   // o retrato aparece
+    const fala = setTimeout(() => speak(`${item.name} é sua!`), 2100);
+
+    // Sai sozinho, ou no primeiro toque de quem já viu (e vai ver de novo a
+    // cada compra — impaciência aqui é justa).
+    let fechado = false;
+    const fechar = () => {
+      if (fechado) return;
+      fechado = true;
+      clearTimeout(chave);
+      clearTimeout(fanfarra);
+      clearTimeout(fala);
+      clearTimeout(sozinho);
+      camada.removeEventListener('click', fechar);
+      removeEventListener('keydown', fechar);
+      camada.classList.add('saindo');
+      setTimeout(() => {
+        camada.hidden = true;
+        camada.innerHTML = '';
+        camada.classList.remove('saindo');
+        aoFim();
+      }, 350);
+    };
+    const sozinho = setTimeout(fechar, REVEAL_TIME);
+    // Um respiro antes de aceitar toque: senão o dedo que apertou "Trocar"
+    // fecha o portal antes de ele abrir.
+    setTimeout(() => {
+      camada.addEventListener('click', fechar);
+      addEventListener('keydown', fechar);
+    }, 500);
   }
 
   // Escolher pista: a mesma tela da escolha de unicórnio, com o mesmo gesto
@@ -1065,6 +1168,130 @@ export class Game {
     }
 
     promptInstall().then(() => this.showGrownUps());
+  }
+
+  // ---- O livro da história ---------------------------------------------
+  //
+  // Por que a Uni corre sozinha atrás de chaves? A resposta é uma história,
+  // e ela é contada como livro infantil: uma figura grande em cima, duas ou
+  // três frases embaixo, e a página vira com um botão do tamanho da mão de
+  // uma criança.
+  //
+  // Aparece sozinha na primeira vez que o jogo abre, e depois fica no botão
+  // 📖 da tela inicial — para reler quantas vezes quiser.
+
+  showStory(pagina = 0) {
+    this.state = STATE.READY;
+    this.screen = 'story';
+    this.storyPage = Math.min(Math.max(0, pagina), STORY_PAGES - 1);
+    const indice = this.storyPage;
+    const folha = STORY[indice];
+    const ultima = indice === STORY_PAGES - 1;
+    this.ui.showPause(false);
+    // O livro tem a música dele — mais lenta e mais quieta que a da pista,
+    // porque aqui se lê (ou se ouve ler). Volta a da pista ao fechar.
+    music.play(music.STORY_THEME);
+
+    // As bolinhas embaixo: quantas páginas o livro tem e em qual estamos.
+    // Também são botões — dá para pular direto para uma página.
+    const bolinhas = STORY.map((p, i) => (
+      `<button class="page-dot${i === indice ? ' agora' : ''}${i < indice ? ' lida' : ''}"`
+      + ` data-pick="ir:${i}" aria-label="Página ${i + 1}"`
+      + ` aria-current="${i === indice}"></button>`
+    )).join('');
+
+    this.ui.showOverlay({
+      book: true,
+      wide: true,
+      html: `
+        <div class="book">
+          <div class="book-art"${ultima ? '' : ' data-pick="proxima"'}>
+            <img class="book-img" src="${folha.image}" alt="" draggable="false" />
+            ${ultima ? '' : '<button class="book-skip" data-pick="pular">Pular</button>'}
+          </div>
+          <div class="book-page">
+            <h2 class="book-title">${folha.title}</h2>
+            <p class="book-text">${folha.text}</p>
+          </div>
+          <div class="book-nav">
+            <button class="page-arrow" data-pick="anterior"
+                    ${indice === 0 ? 'disabled' : ''} aria-label="Página anterior">⬅️</button>
+            <span class="page-dots">${bolinhas}</span>
+            <button class="page-arrow" data-pick="proxima"
+                    ${ultima ? 'disabled' : ''} aria-label="Próxima página">➡️</button>
+          </div>
+        </div>
+      `,
+      buttons: [ultima
+        ? { label: '▶️ VAMOS!', huge: true, onClick: () => this.closeStory() }
+        : { label: 'Virar a página', huge: true, onClick: () => this.turnPage(1) }],
+      back: () => this.closeStory(),
+    });
+    this.ui.bindExtra((valor) => {
+      if (valor === 'proxima') return this.turnPage(1);
+      if (valor === 'anterior') return this.turnPage(-1);
+      if (valor === 'pular') return this.skipStory();
+      const [tipo, numero] = valor.split(':');
+      if (tipo === 'ir') return this.goToPage(Number(numero));
+      return undefined;
+    });
+
+    // Faltou o arquivo da ilustração (deploy pela metade, cache estragado)?
+    // A página cai no desenho em SVG que mora no próprio story.js, em vez de
+    // ficar um buraco no meio do livro.
+    const figura = document.querySelector('.book-img');
+    figura?.addEventListener('error', () => {
+      const moldura = figura.closest('.book-art');
+      figura.remove();
+      moldura?.insertAdjacentHTML('afterbegin', storyArt(indice));
+    }, { once: true });
+
+    // A próxima página já vai chegando: a virada fica instantânea, sem o
+    // quadro em branco enquanto a imagem baixa.
+    if (!ultima) new Image().src = STORY[indice + 1].image;
+
+    // Para quem ainda não lê: a voz do aparelho conta a página em voz alta.
+    speak(`${folha.title}. ${folha.text}`);
+  }
+
+  turnPage(dir) {
+    const proxima = this.storyPage + dir;
+    // Bateu na capa ou na contracapa: chacoalha em vez de não fazer nada.
+    if (proxima < 0 || proxima >= STORY_PAGES) {
+      sfx.deny();
+      this.ui.shakeElement(document.querySelector('.book'));
+      return;
+    }
+    sfx.pick();
+    this.showStory(proxima);
+  }
+
+  goToPage(numero) {
+    if (numero === this.storyPage) { sfx.tap(); return; }
+    sfx.pick();
+    this.showStory(numero);
+  }
+
+  // "Pular": para o adulto que já conhece a história, ou para a criança que
+  // só quer correr. Vale o mesmo que ler até o fim — a história não volta a
+  // aparecer sozinha, e o botão 📖 continua ali para quem mudar de ideia.
+  skipStory() {
+    sfx.tap();
+    this.closeStory();
+  }
+
+  // Fechar o livro é o que marca a história como contada: quem viu até aqui
+  // não precisa vê-la de novo toda vez que abrir o jogo.
+  closeStory() {
+    if (!this.save.storySeen) update((save) => { save.storySeen = true; });
+    music.play(this.track.id);      // fechou o livro, volta o tema da pista
+    this.showHome();
+  }
+
+  // A primeira tela do jogo. Na primeira vez de todas é a história; depois
+  // é o menu de sempre.
+  showFirstScreen() {
+    return this.save.storySeen ? this.showHome() : this.showStory(0);
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
@@ -1266,6 +1493,7 @@ export class Game {
       save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
     });
     this.reset();
+    this.world.placeStart();     // o portal de partida, em toda corrida
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
     this.ui.showPause(true);
@@ -1339,6 +1567,7 @@ export class Game {
       if (this.screen === 'track') this.cycleTrack(dir);
       else if (this.screen === 'character') this.cycleCharacter(dir);
       else if (this.screen === 'mode') this.cycleMode(dir);
+      else if (this.screen === 'story') this.turnPage(dir);
       return;
     }
     if (this.state !== STATE.PLAYING) return;

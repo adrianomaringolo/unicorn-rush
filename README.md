@@ -218,6 +218,30 @@ lugar deles nasce a chave**, que sobe e some. Os cinquenta dividem uma
 geometria e um material só, então a animação inteira custa pouco (ver
 `src/models/keyReward.js`).
 
+### O portal que se abre
+
+Trocar chaves por um unicórnio ou uma pista é a maior conquista do jogo —
+custa dezenas de corridas. Antes disso era um avisinho passando na tela.
+Agora é o **portal do livro da história** abrindo de verdade, o mesmo da
+página *"O segredo do arco-íris"*: arco de pedra roxa, o emoji de quem está
+sendo destrancado no alto e um cadeado dourado na frente.
+
+A cena leva uns três segundos e conta uma coisa de cada vez: o cadeado
+chacoalha, o arco dele cede (é aí que sai o som da chave), o cadeado despenca,
+as portas giram para fora, um clarão sai de dentro e o retrato passa de
+silhueta preta a cor cheia — com faíscas e a fanfarra. Só então aparece o
+nome.
+
+O unicórnio flutua dentro do escuro, porque é uma figura recortada; a pista
+**preenche o vão inteiro**, e o portal vira uma janela para o lugar — que é
+exatamente como as pistas trancadas aparecem no livro. Um toque (ou uma
+tecla) fecha antes da hora, para quem já viu; sozinho ele sai em 4,6 s.
+
+Tudo é CSS por cima do retrato que a grade já usa (`#reveal` no `style.css`,
+`Game.revealUnlock`) — nenhuma imagem nova. Quem pediu menos movimento ao
+aparelho vê o fim da história direto: portal aberto, retrato revelado, sem
+nada girando nem caindo.
+
 ## Pistas
 
 Também dá para escolher por onde correr — a pista muda o céu, a neblina, a
@@ -257,6 +281,9 @@ arquivo de áudio): *Passeio no campo* 🌈, *Valsa de açúcar* 🍭,
 *Sonho de nuvem* ☁️, *Suco de melancia* 🍓, *Fundo do mar* 🐠 e
 *Canção de ninar* 🌙. A música troca junto com a pista e
 dá para desligar no botãozinho 🔊 do canto do HUD (a escolha fica salva).
+Há um tema que não é de pista nenhuma: *Era uma vez* 📖, que toca enquanto o
+livro da história está aberto — a mais lenta e a mais quieta de todas, porque
+ali se está lendo (ver *A história*).
 Quando a aba sai de foco — a criança troca de app ou bloqueia a tela — o
 áudio inteiro é suspenso e a corrida entra em pausa sozinha, para ninguém
 perder vida enquanto está fora.
@@ -408,7 +435,17 @@ Um save antigo (de quando cada coisa tinha sua própria chave) é migrado
 sozinho na primeira vez, e um campo novo no save não quebra o que já estava
 salvo.
 
-## Distância e recorde na pista
+## Partida, distância e recorde na pista
+
+Toda corrida começa passando por um **portal de partida**: uma faixa
+quadriculada atravessando o chão, dois postes e um travessão rosa escrito
+*PARTIDA*, com bandeirinhas douradas no alto. Ele nasce a sete passos do
+zero — não em cima do unicórnio, para caber inteiro no quadro —, e a criança
+passa por baixo dele no primeiro segundo. Vale para os três modos: quem o
+planta é o `World.placeStart`, chamado pelo `Game.start` e pelo
+`Game.startLevel`, que são as duas portas de entrada de uma corrida. Nas
+telas de menu ele não aparece, porque ali o mundo está parado e um portal em
+volta do unicórnio atrapalharia a escolha.
 
 Enquanto corre, o HUD mostra a **distância percorrida** em passos, e a cada
 100 passos passa uma **placa numerada** nas duas beiras da pista (100, 200,
@@ -455,7 +492,9 @@ Cada figura abre uma tela só, com **todas as opções à vista**:
   outra tela.
 
 O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
-cartão, e **estatísticas, "sobre" e instalar** saem do caminho da criança:
+cartão. Embaixo das três figuras ficam os botões miúdos — **📖 A história**
+(que reabre o livro; ver *A história*), estatísticas e "sobre" —, e
+**instalar** sai do caminho da criança:
 moram atrás do **👑**, no canto oposto, que só abre segurando o dedo.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
@@ -472,6 +511,121 @@ enfeites de cada lado, um obstáculo, a serra no horizonte, o quadro do fundo
 chão, caminho e alguns enfeites, e por isso pistas bem diferentes saíam
 parecidas. No teclado, as
 setas ← → passeiam pela grade aberta e Enter aciona o botão grande.
+
+## A história
+
+A primeira vez que o jogo abre, ele não abre no menu: abre num **livro**.
+
+> Os unicórnios sumiram das Terras Mágicas e só a Uni ficou. Atrás dos
+> amigos, ela descobriu que cada um está preso atrás de uma porta trancada —
+> e que cada porta pede o seu tanto de **chaves mágicas** 🔑. As chaves só
+> aparecem para quem corre nas pistas do reino. Os outros cantos do reino (o
+> País dos Doces, a Praia, a Noite) também estão fechados, cada um com o seu
+> preço em chaves. E ninguém sabe **quem** trancou tudo: dizem que a resposta
+> mora na torre da neblina, que só abre para quem vencer todas as fases.
+
+São nove páginas, cada uma com uma figura grande em cima e duas ou três
+frases embaixo. É o que dá sentido a tudo o que a criança vai encontrar
+depois: por que se juntam chaves, por que os unicórnios e as pistas da loja
+estão trancados, por que cada um custa um número diferente — e por que vale a
+pena chegar até a fase 12. A última página é a única promessa que o jogo
+ainda não cumpre: a torre está lá no desenho, mas ainda não há nada para
+abrir ao fim das doze fases.
+
+A história vive em `src/game/story.js` e a tela em `Game.showStory`:
+
+- vira a página no botão grande, nas setas ⬅️ ➡️, tocando na figura ou com as
+  setas do teclado;
+- as bolinhas embaixo dizem de quantas páginas é o livro e em qual estamos —
+  e levam direto para qualquer uma;
+- o **Pular**, no canto da figura, fecha o livro de uma vez — para o adulto
+  que já conhece a história ou para a criança que só quer correr; some na
+  última página, onde não há mais o que pular;
+- o ⬅️ do canto também fecha o livro, a qualquer momento;
+- a página seguinte já vai baixando enquanto a atual é lida, para a virada
+  ser instantânea;
+- a música muda: enquanto o livro está aberto toca *Era uma vez* (`historia`
+  em `music.js`), uma caixinha de música em fá maior a 80 bpm, mais lenta e
+  mais baixa que qualquer tema de pista — a criança está lendo, ou ouvindo a
+  voz do aparelho ler. Ao fechar o livro volta o tema da pista escolhida;
+- com a **voz** ligada (no cantinho dos adultos), cada página é lida em voz
+  alta — o livro funciona para quem ainda não lê;
+- fechar o livro grava `storySeen` no save. Da segunda vez em diante o jogo
+  abre no menu, e a história volta pelo botão **📖 A história**, na tela
+  inicial, quantas vezes a criança quiser.
+
+### As figuras
+
+As nove ilustrações estão em `assets/story/` (`1.webp` … `9.webp`, na ordem
+das páginas). Foram geradas a partir dos prompts de
+`docs/prompts-historia.md` e depois **otimizadas**: de 1586×992 em PNG
+(13 MB no total) para 1280 px de largura em WebP, ~87 KB cada, **784 KB o
+livro inteiro** — sem diferença visível, e é o tamanho certo para um jogo que
+cabe todo no cache offline. Os PNGs originais ficam em
+`assets/story/originais/`, fora do repositório (`.gitignore`), só para
+gerar de novo se precisar:
+
+```bash
+cwebp -q 88 -resize 1280 0 -m 6 -sharp_yuv assets/story/originais/1.png \
+      -o assets/story/1.webp
+```
+
+Cada figura também existe **desenhada por código**, em SVG, dentro do próprio
+`story.js` — é como o livro nasceu, antes das ilustrações. Continua ali como
+rede de segurança: se um arquivo faltar (deploy pela metade, cache
+estragado), o `onerror` da imagem põe o desenho no lugar, em vez de deixar um
+buraco no meio do livro. Não custa download nenhum, porque o SVG já está no
+módulo. As peças são reaproveitadas entre as páginas (o unicórnio de perfil,
+os morros, o arco-íris, a chave, a porta trancada, o portal de uma pista, a
+torre da neblina, o selo de preço, o caminho das doze fases).
+
+## A tela de carregamento
+
+Antes de qualquer coisa aparecer, o navegador baixa **1,9 MB de three.js** e
+só então o jogo monta 21 unicórnios, 15 pistas e o mundo 3D — tempo
+suficiente, num celular, para uma criança achar que travou. Então a espera
+tem cara de jogo: a **Uni galopando** no mesmo céu que vai aparecer quando
+ela sumir dali.
+
+A Uni daqui é o **modelo 3D do jogo**, com o galope do jogo e o rastro de
+arco-íris do jogo — mas **gravada**, não tocada ao vivo. Rodar three.js na
+tela de carregamento seria esperar 1,9 MB de JavaScript justamente para
+cobrir a espera de 1,9 MB de JavaScript: a Uni só entraria em cena no fim da
+espera, que é quando ela não faz mais falta. E ela travaria junto com a
+thread principal, exatamente nos segundos em que o jogo monta o mundo.
+
+Gravada, ela corre **no primeiro quadro**, sem script nenhum, e continua
+correndo enquanto o jogo trava a thread para se montar — quem desenha é o
+decodificador de imagem do navegador, não o JavaScript. Pela mesma razão o
+resto da tela (céu, nome, barrinha e o chão passando) é HTML e CSS puros, no
+`index.html`: a animação do chão é `transform`, que roda no compositor.
+
+A tela sai quando as duas coisas já aconteceram: o navegador pintou a
+primeira tela de verdade **e** passaram **3 segundos** (umas duas voltas de
+passada da Uni). Com o jogo em cache ele abre em poucas centenas de
+milissegundos, e sem esse mínimo a animação só piscava: dava para ver que
+algo apareceu, não o quê. Quando o carregamento demora mais que isso —
+primeira visita, celular devagar —, a conta dá zero e ninguém espera um
+milissegundo a mais. O mínimo é o `ESPERA_MINIMA`, no `src/main.js`.
+
+### Regravar
+
+```bash
+npm run gravar-uni
+```
+
+O script abre `scripts/gravar-uni.html` num Chrome sem janela, põe o modelo
+para galopar, colhe uma volta inteira de passada quadro a quadro e junta
+tudo num WebP animado — `assets/loading/uni.webp`, 32 quadros a 24 fps,
+~140 KB. Para conferir antes de gravar, `npm start` e abrir
+`http://localhost:5173/scripts/gravar-uni.html`, onde ela fica correndo.
+
+A volta é exatamente `2π / 2.6` segundos — o ciclo de pernas do
+`animateUnicorn` —, então o primeiro quadro é a continuação do último e o
+laço não tem emenda. (Os balanços mais lentos, da cabeça, não fecham no
+mesmo período: a diferença na emenda é de uns 2°, dentro do que já varia de
+um quadro para o outro.) Mudou a câmera, a cadência ou o personagem? É só
+regravar.
 
 ## Publicar (Vercel)
 
@@ -662,8 +816,11 @@ manifest.webmanifest  dados do app instalável (nome, ícones, cores)
 sw.js                 service worker: guarda o jogo para rodar offline
 assets/logo.png       logo do jogo (dele saem todos os ícones)
 docs/prints/          capturas das pistas usadas aqui no README
+docs/prompts-historia.md  prompts para gerar as figuras da história no ChatGPT
 assets/icons/         PNGs do ícone para instalar no aparelho
 assets/emoji/         ícones Fluent Emoji 3D (Microsoft, MIT) usados na tela
+assets/story/         as nove ilustrações do livro da história (WebP)
+assets/loading/       a Uni galopando na tela de carregamento (WebP animado)
 fonts.css             fonte Fredoka hospedada localmente
 assets/fonts/         arquivos .woff2 da Fredoka (SIL Open Font License 1.1)
 server.js             servidor estático mínimo (sem dependências)
@@ -683,6 +840,7 @@ src/
     audio.js          efeitos sonoros gerados na hora (WebAudio)
     icons.js          troca os emoji do código pelos ícones de assets/emoji/
     speech.js         lê os nomes em voz alta, para quem ainda não lê
+    story.js          a história em nove páginas (texto, imagem e o SVG reserva)
     ui.js             ponte com o HUD e com as telas de escolha
   models/
     characters.js     os quatro personagens (cores, asas, marca, rastro, história)
@@ -698,6 +856,8 @@ src/
                       arco-íris, lua, estrelas, montanhas, o chão, as placas
                       de distância e a faixa do recorde
 scripts/smoke-test.js monta tudo fora do navegador (npm run check)
+scripts/gravar-uni.html  o modelo 3D da Uni galopando, quadro a quadro
+scripts/gravar-uni.js    grava esses quadros no WebP do carregamento
 ```
 
 Todos os modelos 3D são gerados por código a partir de formas simples

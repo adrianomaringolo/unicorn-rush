@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { createUnicorn, animateUnicorn } from '../src/models/unicorn.js';
 import { createHeart, createStar } from '../src/models/collectibles.js';
-import { createObstacle, createDecoration } from '../src/models/scenery.js';
+import { createObstacle, createDecoration, createStartLine } from '../src/models/scenery.js';
 import { CHARACTER_LIST } from '../src/models/characters.js';
 import { World } from '../src/game/world.js';
 import { MODES } from '../src/game/config.js';
@@ -28,6 +28,7 @@ for (const character of CHARACTER_LIST) {
 }
 
 console.log(`chave mágica: ${countMeshes(createKey())} peças`);
+console.log(`portal de partida: ${countMeshes(createStartLine())} peças`);
 
 // Modo Fases: cada fase fica mais difícil, as chaves são raras e a fase
 // inteira tem que caber num tempo razoável de corrida.

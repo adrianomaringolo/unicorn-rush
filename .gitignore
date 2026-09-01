@@ -6,3 +6,7 @@ node_modules/
 *.log
 .vscode/
 .idea/
+
+# originais (PNG, 13 MB) das figuras da história: só servem para gerar de
+# novo os .webp que o jogo carrega. Ficam na máquina, fora do repositório.
+assets/story/originais/

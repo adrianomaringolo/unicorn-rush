@@ -3,6 +3,9 @@
 // Nada de arquivo de áudio: as melodias são notas MIDI tocadas com
 // osciladores do WebAudio, num laço que fica se repetindo. Cada pista tem o
 // seu tema, com andamento, timbre e escala próprios.
+//
+// A única entrada que **não** é de uma pista é a `historia`: a música do
+// livro (ver STORY_THEME, no fim do arquivo).
 import { getContext, peekContext } from './audio.js';
 import { getSave, update } from './storage.js';
 
@@ -190,6 +193,25 @@ export const THEMES = {
     ],
     bass: [45, 45, 41, 41, 40, 40, 45, 43],
   },
+
+  // O livro da história. Não é de pista nenhuma: toca enquanto o livro está
+  // aberto e sai de cena quando ele fecha (ver Game.showStory).
+  //
+  // É a mais lenta e a mais quieta de todas de propósito — a criança está
+  // lendo (ou ouvindo a voz do aparelho ler), e a música só precisa segurar
+  // o clima de "era uma vez". Caixinha de música em fá maior: triângulo
+  // macio, uma nota por semínima e um baixo que anda de fá a si bemol.
+  historia: {
+    name: 'Era uma vez',
+    bpm: 80, wave: 'triangle', bassWave: 'sine', gain: 0.055,
+    melody: [
+      77, null, 81, null, 84, null, 81, null,
+      79, null, 84, null, 82, null, 79, null,
+      77, null, 81, null, 86, null, 84, null,
+      81, null, 79, null, 77, null, null, null,
+    ],
+    bass: [41, 48, 36, 43, 38, 45, 34, 41],
+  },
 };
 
 // Quando a aba sai de foco (a criança troca de app, minimiza, bloqueia a
@@ -355,3 +377,7 @@ export function isMuted() {
 export function themeName(trackId) {
   return THEMES[trackId]?.name || '';
 }
+
+// A música do livro da história. Fica aqui, e não solta no Game, para o
+// nome do tema e a tabela nunca saírem de sincronia.
+export const STORY_THEME = 'historia';
