@@ -1816,7 +1816,8 @@ export class Game {
     // de direção de vez em quando, então não dá para simplesmente compensar.
     // Ele mexe na posição, não na faixa escolhida — a criança continua no
     // controle, só tem de segurar o rumo.
-    if (this.track.sideWind) {
+    // `windproof` é o Relâmpago: nasceu no raio, o vento não o desvia.
+    if (this.track.sideWind && !this.character.windproof) {
       const lado = Math.sin(this.elapsed * 0.22) > 0 ? 1 : -1;
       const empurrao = this.track.sideWind * lado * dt;
       p.x = THREE.MathUtils.clamp(p.x + empurrao, LANES[0] - 0.9, LANES[LANES.length - 1] + 0.9);

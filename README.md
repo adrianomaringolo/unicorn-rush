@@ -18,8 +18,8 @@ de fora — dá até para instalar no celular e jogar offline.
 
 ## Personagens
 
-O elenco planejado é de **21 unicórnios**; **dezoito estão prontos** e os
-outros três aparecem na grade como espaço vazio, com um `?` e "em breve" — a criança
+O elenco planejado é de **21 unicórnios**; **dezenove estão prontos** e os
+outros dois aparecem na grade como espaço vazio, com um `?` e "em breve" — a criança
 vê que tem mais coisa vindo. A grade tem três colunas e rola por dentro do
 cartão; as pontas desbotam quando há mais para ver.
 
@@ -65,6 +65,7 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | 🔮 Violeta | `airGlide: 0.78` | fica **64 quadros no ar** contra 49 |
 | 💎 Cristal | `translucent: 0.72` | o **corpo** fica de vidro (crina, rabo, asas e marca ficam opacos, senão ela desaparecia) |
 | 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista** |
+| ⚡ Relâmpago | `windproof: true` | **ignora o vento lateral** da Tempestade: sem ele o vento empurra até a borda da pista (±3,1) em cerca de 2 s |
 
 O campo `power` de cada personagem é a frase que a **ficha mostra**, em
 linguagem de criança ("a primeira batida não machuca ele"), com o destaque
@@ -137,6 +138,7 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 💎 Cristal | **Caverna**, Geada | os cristais da caverna são parentes dela |
 | 🎩 Vovô | **Vilarejo**, Campo | o vilarejo é a rua onde ele cresceu |
 | 🦇 Sombra | **Caverna**, Vulcão | o subterrâneo é a casa dele |
+| ⚡ Relâmpago | **Tempestade**, Céu | nasceu no raio da tempestade, e mora nas nuvens do Céu |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
@@ -166,6 +168,7 @@ Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 | 🦇 | **Sombra** 🔑 72 | **preto puro**, sem o laranja do Brasa, com **asas de morcego** em vez de pena; **acende sozinho em qualquer pista** | Preto de verdade, sem um fiozinho de cor. Brilha por conta própria, então nunca corre no escuro. |
 | ☄️ | **Cometa** 🔑 42 | índigo com crina em ciano e rosa, **perna comprida e cabeça pequena**, asas em raios que lêem como cauda | Não sabe parar: desde que nasceu está atravessando o céu. Dizem que quem o acompanha ganha um pedido. |
 | 🌊 | **Onda** 🔑 32 | **turquesa** de corpo inteiro (puxa para o verde, ao contrário do azul do Floco), com **chifre e mecha de coral** como acento quente, **esguia e de pernas compridas**, asas de véu que lêem como nadadeira | Nasceu numa espuma de onda grande e nunca aprendeu a andar devagar; debaixo d'água é a mais rápida de todas. |
+| ⚡ | **Relâmpago** 🔑 78 | **azul-tempestade** escuro, crina elétrica em amarelo e branco, chifre e marca de raio na anca; **o vento da Tempestade não o desvia** | Nasceu no talho de um raio, numa noite de tempestade. Corta a Tempestade em linha reta, onde todo mundo é empurrado de lado. |
 
 Tudo isso é dado, não código: cada personagem é uma entrada em
 `src/models/characters.js` com as cores, o estilo do chifre, das asas
@@ -175,7 +178,7 @@ Tudo isso é dado, não código: cada personagem é uma entrada em
 (`scale`), as proporções (`proportions`: cabeça, olhos e pernas — é o que faz
 a Lulu parecer um bebê e o Brasa parecer adulto), o `fiery` (que acende a
 crina e o rabo em chamas) e a `voice`, que é o tom dos sons de coleta (1 é o
-normal; a Lulu usa 1,5, uma quinta acima). Para inventar o décimo nono
+normal; a Lulu usa 1,5, uma quinta acima). Para inventar o vigésimo
 basta acrescentar mais uma entrada lá — o modelo 3D se monta sozinho.
 
 ### A loja
@@ -197,7 +200,7 @@ com criança não funciona.
 
 | | Preço em chaves |
 | --- | --- |
-| Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 · Cereja 44 · Limão 48 · Violeta 54 · Cristal 60 · Vovô 66 · Sombra 72 |
+| Unicórnios | Sol 4 · Lua 6 · Estrela 9 · Lulu 12 · Brasa 16 · Chiclete 20 · Musgo 26 · Onda 32 · Floco 34 · Coco 38 · Cometa 42 · Cereja 44 · Limão 48 · Violeta 54 · Cristal 60 · Vovô 66 · Sombra 72 · Relâmpago 78 |
 | Pistas | Doces 5 · **Vilarejo 7** · Céu 8 · Frutas 12 · Praia 15 · Oceano 18 · Noite 22 · Geada 26 · Vulcão 30 · Parque 32 · Espaço 36 · Tempestade 40 · Bruma 46 · Caverna 54 |
 
 Os preços seguem o ritmo do modo Fases: a **fase 1 já dá as 3 chaves** que

@@ -337,11 +337,12 @@ export const CHARACTERS = {
     trail: { colors: [0xffffff, 0x8ce9ff, 0xc9a6ff, 0xff8fd8, 0x5fc4f0, 0xffd166], width: 0.95 },
   },
 
-  // --- Os seis com jeito próprio de correr -----------------------------------
+  // --- Os sete com jeito próprio de correr -----------------------------------
   //
   // Estes não mudam só de cor: cada um tem um campo que mexe em como se
-  // joga (`laneGrip`, `jumpBoost`, `airGlide`, `glow`, `translucent`), lido
-  // no Game.updatePlayer do mesmo jeito que as mecânicas de pista.
+  // joga (`laneGrip`, `jumpBoost`, `airGlide`, `glow`, `translucent`,
+  // `windproof`), lido no Game.updatePlayer do mesmo jeito que as mecânicas
+  // de pista.
 
   cereja: {
     id: 'cereja',
@@ -503,6 +504,35 @@ export const CHARACTERS = {
     fast: ['caverna', 'vulcao'],
     power: 'ele acende sozinho em qualquer pista',
     trail: { colors: [0xc9a6ff, 0x8c7ac9, 0x6b5fa8, 0x4a3f7a, 0x2f2a4a, 0xa98ee0], width: 0.8 },
+  },
+
+  relampago: {
+    id: 'relampago',
+    name: 'Relâmpago',
+    emoji: '⚡',
+    title: 'o unicórnio da tempestade',
+    story: 'Relâmpago nasceu no talho de um raio, numa noite de tempestade. '
+      + 'O vento que desgoverna todo mundo não desvia ele nem um pouco: corta a Tempestade em linha reta.',
+    price: 78,
+    // Azul-tempestade escuro, para não se confundir com o cinza do Vovô nem
+    // o índigo do Cometa — e crina de eletricidade, amarelo elétrico e branco.
+    body: 0x3d4a66,
+    hoof: 0x232c42,
+    muzzle: 0x5a6b94,
+    horn: { color: 0xfff44f, length: 0.7, radius: 0.09 },
+    hair: [0xfff44f, 0xffffff, 0xffe066, 0x8ecfff, 0xfff9c4],
+    // Asa em raios, que aqui lê como um relâmpago abrindo no céu.
+    wing: { style: 'ray', colors: [0xfff44f, 0xffe066, 0x8ecfff, 0x5a6b94, 0xffffff] },
+    mark: { shape: 'bolt', color: 0xfff44f },
+    voice: 1.05,
+    // nasceu no raio da Tempestade, e mora nas nuvens do Céu
+    fast: ['tempestade', 'ceu'],
+    // O vento lateral da Tempestade (`track.sideWind`) não mexe nele: ver o
+    // `if (this.track.sideWind && !this.character.windproof)` em
+    // Game.updatePlayer.
+    windproof: true,
+    power: 'o vento da Tempestade não desvia ele nem um pouco',
+    trail: { colors: [0xfff44f, 0xffe066, 0xffffff, 0x8ecfff, 0x5a6b94, 0xfff9c4], width: 0.75 },
   },
 };
 
