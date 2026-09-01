@@ -1,7 +1,7 @@
 // Núcleo do jogo: cena, câmera, estado do jogador e laço principal.
 import * as THREE from 'three';
 import {
-  LANES, LANE_CHANGE_SPEED, MODES, DEFAULT_MODE,
+  LANES, LANE_CHANGE_SPEED, MODES, DEFAULT_MODE, TUTORIAL_MODE,
   DIFFICULTIES, DIFFICULTY_LIST, DEFAULT_DIFFICULTY,
   JUMP_VELOCITY, DOUBLE_JUMP_VELOCITY, MAX_JUMPS, FLIP_TIME, RUSH_SPEED,
   GRAVITY, FLY_HEIGHT, START_LIVES, INVULNERABLE_TIME, HEART_POINTS,
@@ -29,6 +29,7 @@ import { canInstall, needsManualInstall, promptInstall, watchInstall } from './i
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
 import { STORY, STORY_PAGES, storyArt } from './story.js';
+import { lessonsFor } from './tutorial.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate } from './update.js';
 
@@ -39,6 +40,15 @@ const CAMERA = { height: 5.1, distance: 9.4, fov: 55 };
 // Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
 const REVEAL_TIME = 4600;
+
+// O que a lição diz quando a mesma aula já falhou umas vezes. Menos "tente
+// de novo" e mais "faça isto".
+const RETRY_HELP = {
+  esquerda: '⬅️ Toque na seta da esquerda',
+  direita: '➡️ Toque na seta da direita',
+  lado: '⬅️ ➡️ Toque numa das setas',
+  pular: '⬆️ Toque na seta de cima para pular',
+};
 
 // Libera a memória da GPU ao trocar de personagem.
 function disposeObject(root) {
@@ -622,6 +632,10 @@ export class Game {
     resetRainbowTrail(this.trail, 0, 0);
     this.world.reset(this.mode);
     this.ui.setMode(this.mode);
+    this.licao = null;
+    this.ui.setLesson('');
+    this.ui.setLessonHint(null);
+    this.ui.setLessonProgress(0, 0);
     this.ui.setScore(0);
     this.ui.setHearts(0);
     this.ui.setGoal(0, this.goal);
@@ -655,6 +669,9 @@ export class Game {
     this.state = STATE.READY;
     this.screen = 'home';
     this.ui.showPause(false);
+    // Quem sai da lição pela pausa passa por aqui: as escolhas voltam
+    // também nesse caminho, não só ao terminar.
+    this.restoreAfterTutorial();
     this.reset();
 
     const retratos = getPortraits(CHARACTER_LIST);
@@ -690,6 +707,7 @@ export class Game {
           <button class="mini-button historia" data-pick="story">📖 A história</button>
           <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
           <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
+          <button class="mini-button aprender" data-pick="tutorial">👆 Aprender</button>
           ${hasUpdate() ? '<button class="mini-button nova" data-pick="update">🔄 Atualizar</button>' : ''}
         </div>
       `,
@@ -701,6 +719,7 @@ export class Game {
       if (qual === 'character') return this.showCharacterPicker();
       if (qual === 'track') return this.showTrackPicker();
       if (qual === 'story') return this.showStory(0);
+      if (qual === 'tutorial') return this.startTutorial();
       if (qual === 'stats') return this.showStats();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
@@ -1285,13 +1304,41 @@ export class Game {
   closeStory() {
     if (!this.save.storySeen) update((save) => { save.storySeen = true; });
     music.play(this.track.id);      // fechou o livro, volta o tema da pista
-    this.showHome();
+    // Na primeira vez de todas, entre a história e o menu, o convite para a
+    // lição. Só aqui: quem reabre o livro pelo 📖 já conhece o jogo e não
+    // precisa ser perguntado de novo.
+    if (this.primeiraVez) {
+      this.primeiraVez = false;
+      return this.inviteTutorial();
+    }
+    return this.showHome();
+  }
+
+  // O convite para o modo Aprender, uma vez só, logo depois da história.
+  // Duas saídas do mesmo tamanho de importância: quem quer aprender aprende,
+  // quem já sabe vai jogar — ninguém fica preso numa aula que não pediu.
+  inviteTutorial() {
+    this.state = STATE.READY;
+    this.screen = 'invite';
+    this.ui.showPause(false);
+    this.ui.showOverlay({
+      title: 'Quer aprender a correr?',
+      text: 'A Uni mostra os comandos e os poderes numa corrida curtinha — '
+        + 'e aqui ninguém perde vida.',
+      buttons: [
+        { label: '👆 Vamos aprender!', huge: true, onClick: () => this.startTutorial() },
+        { label: '▶️ Já sei jogar', onClick: () => this.showHome(), secondary: true },
+      ],
+    });
   }
 
   // A primeira tela do jogo. Na primeira vez de todas é a história; depois
   // é o menu de sempre.
   showFirstScreen() {
-    return this.save.storySeen ? this.showHome() : this.showStory(0);
+    // Guardado antes de a história marcar `storySeen`: é o que diferencia
+    // "abriu o jogo pela primeira vez" de "reabriu a história pelo 📖".
+    this.primeiraVez = !this.save.storySeen;
+    return this.primeiraVez ? this.showStory(0) : this.showHome();
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
@@ -1482,16 +1529,20 @@ export class Game {
     sfx.resume();
     music.play(this.track.id);
     this.difficulty = DIFFICULTIES[difficultyId] || DIFFICULTIES[DEFAULT_DIFFICULTY];
-    this.mode = modeId === 'adventure'
-      ? this.adventureMode(this.difficulty)
-      : MODES[modeId] || MODES[DEFAULT_MODE];
-    update((save) => {
-      save.choices.mode = this.mode.id;
-      save.choices.difficulty = this.difficulty.id;
-      save.stats.runs += 1;
-      save.stats.plays[this.track.id] = (save.stats.plays[this.track.id] || 0) + 1;
-      save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
-    });
+    this.mode = modeId === 'tutorial' ? TUTORIAL_MODE
+      : modeId === 'adventure' ? this.adventureMode(this.difficulty)
+        : MODES[modeId] || MODES[DEFAULT_MODE];
+    // A lição não entra nas contas: não é uma corrida, e ver "1 corrida" só
+    // por ter aberto o tutorial confunde quem olha as estatísticas.
+    if (this.mode.id !== 'tutorial') {
+      update((save) => {
+        save.choices.mode = this.mode.id;
+        save.choices.difficulty = this.difficulty.id;
+        save.stats.runs += 1;
+        save.stats.plays[this.track.id] = (save.stats.plays[this.track.id] || 0) + 1;
+        save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
+      });
+    }
     this.reset();
     this.world.placeStart();     // o portal de partida, em toda corrida
     this.state = STATE.PLAYING;
@@ -1501,6 +1552,126 @@ export class Game {
     this.rush = false;
     this.rushLook = 0;
     this.ui.showRush(this.isFastHere(), false);
+    // A lição começa aqui: a aula do ⚡ só entra se o botão existir nesta
+    // combinação de unicórnio e pista.
+    if (this.mode.scripted) {
+      this.lessons = lessonsFor({ rapido: this.isFastHere() });
+      this.startLesson(0);
+    }
+  }
+
+  // A lição é sempre com a **Uni no Campo**: é a combinação que todo mundo
+  // tem desde o primeiro dia, e é para ela que as aulas foram escritas (a
+  // barreira do Campo, a pedra do Campo). Com outro unicórnio numa pista
+  // comprada, a mesma frase ensinaria outra coisa.
+  //
+  // A troca vale só para esta corrida — o save não é tocado. Quem estava com
+  // a Lua no Oceano a encontra intacta ao voltar, inclusive se fechar o jogo
+  // no meio da aula.
+  startTutorial() {
+    this.tutorialBack = { character: this.character.id, track: this.track.id };
+    this.applyForRun(DEFAULT_CHARACTER, DEFAULT_TRACK);
+    this.start('tutorial');
+  }
+
+  // Troca de unicórnio/pista sem passar pelo save (ao contrário de
+  // setCharacter e setTrack, que gravam a escolha da criança).
+  applyForRun(characterId, trackId) {
+    if (this.character.id !== characterId && CHARACTERS[characterId]) {
+      this.character = CHARACTERS[characterId];
+      this.buildCharacter();
+    }
+    if (this.track.id !== trackId && TRACKS[trackId]) {
+      this.track = TRACKS[trackId];
+      this.buildWorld();
+      this.level = Math.min(this.trackLevels().unlocked, LEVEL_COUNT);
+    }
+  }
+
+  // Devolve o que a criança tinha escolhido antes da lição.
+  restoreAfterTutorial() {
+    if (!this.tutorialBack) return;
+    const { character, track } = this.tutorialBack;
+    this.tutorialBack = null;
+    this.applyForRun(character, track);
+  }
+
+  // ---- A lição do modo Aprender ----------------------------------------
+  //
+  // A aula que **cobra um movimento** (`acao`) não passa sozinha: a seta fica
+  // piscando até a criança fazer, e aí vem o ✅ e o som. Se o que a aula
+  // soltou passar sem que ela tenha feito, a aula recomeça do zero — a lição
+  // é para aprender, e uma aula pulada não ensinou nada.
+  //
+  // As aulas de mostrar (os power-ups, a chave) não cobram nada: passam
+  // quando o item passa.
+  startLesson(indice, tentativa = 0) {
+    this.licao = { i: indice, acao: null, feito: false, tentativa };
+    const aula = this.lessons[indice];
+    if (!aula) return this.finishTutorial();
+
+    this.licao.acao = aula.acao || null;
+    this.ui.setLesson(aula.fala);
+    this.ui.setLessonProgress(indice, this.lessons.length);
+    this.ui.setLessonHint(aula.acao || null);
+    this.world.spawnLessonItems(aula);
+  }
+
+  // A criança fez o movimento que a aula pedia?
+  lessonAction(qual) {
+    const l = this.licao;
+    if (!l || !l.acao || l.feito) return;
+    // 'lado' aceita os dois: o que se ensina ali é sair da frente, e tanto
+    // faz para que lado.
+    const serve = l.acao === 'lado' ? (qual === 'esquerda' || qual === 'direita') : l.acao === qual;
+    if (!serve) return;
+
+    l.feito = true;
+    sfx.correct();
+    this.ui.setLessonHint(null);
+    this.ui.lessonCheck();
+  }
+
+  updateLesson() {
+    const l = this.licao;
+    if (!l) return;
+    if (this.world.lessonAhead) return;       // a aula ainda está acontecendo
+
+    // Cobrava movimento e não veio: limpa e repete a mesma aula. A cada
+    // tentativa o aviso fica mais explícito — na primeira basta "de novo",
+    // mas quem errou três vezes precisa ouvir o que fazer, não um incentivo.
+    if (l.acao && !l.feito) {
+      this.world.clearLessonItems();
+      sfx.deny();
+      this.ui.toast(l.tentativa >= 2 ? RETRY_HELP[l.acao] : 'Vamos tentar de novo 💗');
+      return this.startLesson(l.i, l.tentativa + 1);
+    }
+
+    return this.startLesson(l.i + 1);
+  }
+
+  finishTutorial() {
+    this.state = STATE.OVER;
+    this.licao = null;
+    this.restoreAfterTutorial();
+    this.ui.showPause(false);
+    this.ui.setLesson('');
+    this.ui.setLessonHint(null);
+    this.ui.setLessonProgress(0, 0);
+    // A lição não é uma brincadeira escolhida: devolve o modo que estava
+    // guardado, senão o hub ficaria mostrando "Aprender" e o botão JOGAR
+    // repetiria a aula.
+    this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
+    sfx.win();
+    this.ui.showOverlay({
+      title: 'Você aprendeu tudo! 🎉',
+      text: 'Já sabe desviar, pular, pegar as chaves e usar os power-ups. '
+        + 'Agora escolha uma brincadeira e corra de verdade.',
+      buttons: [
+        { label: '▶️ Quero correr', huge: true, onClick: () => this.showHome() },
+        { label: '🔁 Repetir a lição', onClick: () => this.startTutorial(), secondary: true },
+      ],
+    });
   }
 
   endRun({ title, text }) {
@@ -1571,7 +1742,11 @@ export class Game {
       return;
     }
     if (this.state !== STATE.PLAYING) return;
+    const antes = this.player.lane;
     this.player.lane = THREE.MathUtils.clamp(this.player.lane + dir, 0, LANES.length - 1);
+    // Só conta como movimento se ele realmente saiu do lugar: bater na
+    // parede da pista não é ter aprendido a mudar de faixa.
+    if (this.player.lane !== antes) this.lessonAction(dir < 0 ? 'esquerda' : 'direita');
   }
 
   // Pulo duplo: o primeiro sai do chão, o segundo é no ar mesmo — a asa
@@ -1590,6 +1765,7 @@ export class Game {
     p.vy = (primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY) * impulso;
     p.grounded = false;
     p.jumps += 1;
+    this.lessonAction('pular');
 
     if (primeiro) {
       sfx.jump();
@@ -1618,6 +1794,8 @@ export class Game {
       maxSpeed: difficulty.maxSpeed,
       speedRamp: difficulty.speedRamp,
       difficultyId: difficulty.id,
+      // O Devagarinho deixa a Bomba Arco-Íris tão comum quanto os outros.
+      powerWeights: difficulty.powerWeights,
     };
   }
 
@@ -1795,6 +1973,18 @@ export class Game {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;
     });
 
+    // Bomba Arco-Íris: a onda sai varrendo a pista e o mundo pisca colorido.
+    // Efeito na hora, sem tempo correndo no HUD — o que dura é a onda.
+    if (power.id === 'bomb') {
+      this.world.rainbowBlast();
+      this.ui.rainbowFlash();
+      this.ui.shake();
+      // Sem `sfx.win()` aqui de propósito: aquela fanfarra é a de fase
+      // concluída, e ouvi-la no meio da corrida faria a criança achar que
+      // acabou. O estouro visual já é o "uau"; o som é o de power-up mesmo.
+      return;
+    }
+
     if (power.id === 'life') {
       this.powers.flash = FLASH_TIME;
       if (this.lives < START_LIVES + (this.character.extraLives ?? 0)) {
@@ -1900,6 +2090,18 @@ export class Game {
       this.ui.toast('🥥 A casca aguentou!');
       return;
     }
+    // No modo Aprender ninguém perde: a trombada ainda pisca e sacode, para
+    // a criança entender que bateu, mas a lição continua.
+    if (this.mode.friendly) {
+      this.powers.dizzy = INVULNERABLE_TIME;
+      this.knockAway(entity);
+      sfx.hit();
+      this.ui.flash();
+      this.ui.shake();
+      this.ui.toast('Ops! Aqui não dói 💗');
+      return;
+    }
+
     this.powers.dizzy = INVULNERABLE_TIME;     // estrelinhas em volta da cabeça
     this.lives -= 1;
     this.speed = Math.max(this.mode.startSpeed, this.speed - 3);
@@ -1930,6 +2132,7 @@ export class Game {
       this.attractNearby(dt);
       this.updatePlayer(dt);
       this.checkCollisions();
+      if (this.mode.scripted) this.updateLesson();
     }
 
     const boosting = playing && this.powers.boost > 0;

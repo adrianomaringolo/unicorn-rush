@@ -39,6 +39,12 @@ export function createUI() {
   const speedValue = $('#speed-value');
   const speedBar = speedPanel.querySelector('.gauge-bar i');
   const toast = $('#toast');
+  const lesson = $('#lesson');
+  const lessonBox = $('#lesson-box');
+  const lessonDots = $('#lesson-dots');
+  const lessonHint = $('#lesson-hint');
+  const lessonOk = $('#lesson-ok');
+  const touch = $('#touch-controls');
   const flash = $('#flash');
   let toastTimer = null;
 
@@ -158,6 +164,64 @@ export function createUI() {
     // Avisinho no meio da tela ("Invencível!", "Mais uma vida!"…).
     toast: showToast,
 
+    // As bolinhas do progresso da lição: quantas aulas já passaram e quantas
+    // faltam. Mesma linguagem das páginas do livro da história.
+    setLessonProgress: (feitas, total) => {
+      if (!total) { lessonDots.hidden = true; return; }
+      lessonDots.textContent = '';
+      for (let i = 0; i < total; i++) {
+        const b = document.createElement('i');
+        b.className = i < feitas ? 'feita' : i === feitas ? 'agora' : '';
+        lessonDots.appendChild(b);
+      }
+      lessonDots.hidden = false;
+      lessonDots.setAttribute('aria-label', `Aula ${feitas + 1} de ${total}`);
+    },
+
+    // A seta do movimento que a aula pede. Aparece piscando e, no celular,
+    // acende também o próprio botão de toque: a criança não precisa traduzir
+    // a seta da tela para o botão do polegar.
+    setLessonHint: (acao) => {
+      touch?.querySelectorAll('button').forEach((b) => b.classList.remove('pedindo'));
+      if (!acao) { lessonHint.hidden = true; return; }
+      const setas = { left: '⬅️', jump: '⬆️', right: '➡️' };
+      const acoes = {
+        esquerda: ['left'], direita: ['right'], lado: ['left', 'right'], pular: ['jump'],
+      }[acao] || [];
+      // Cada casa da linha corresponde a um botão; só as pedidas se enchem.
+      for (const casa of lessonHint.children) {
+        const nome = casa.dataset.seta;
+        casa.innerHTML = acoes.includes(nome) ? withIcons(setas[nome]) : '';
+      }
+      lessonHint.hidden = false;
+      for (const nome of acoes) touch?.querySelector(`[data-action="${nome}"]`)?.classList.add('pedindo');
+    },
+
+    // O ✅ de "isso mesmo!", no meio da tela.
+    lessonCheck: () => {
+      lessonOk.hidden = false;
+      lessonOk.classList.remove('bate');
+      void lessonOk.offsetWidth;
+      lessonOk.classList.add('bate');
+      setTimeout(() => { lessonOk.hidden = true; }, 900);
+    },
+
+    // A faixa da lição, no modo Aprender. Fica na tela enquanto a aula
+    // dura — por isso não é o toast, que some sozinho.
+    setLesson: (texto) => {
+      // Quem aparece e some é a caixa: o CSS usa isso para empurrar o aviso
+      // do meio da tela para baixo enquanto há aula na tela.
+      if (!texto) { lessonBox.hidden = true; lesson.hidden = true; return; }
+      lessonBox.hidden = false;
+      if (lesson.dataset.texto === texto) return;   // a mesma aula: não repinta
+      lesson.dataset.texto = texto;
+      lesson.innerHTML = withIcons(texto);
+      lesson.hidden = false;
+      lesson.classList.remove('nova');
+      void lesson.offsetWidth;
+      lesson.classList.add('nova');
+    },
+
     pop: () => {
       const el = hearts.closest('.panel');
       el.classList.remove('pop');
@@ -169,6 +233,13 @@ export function createUI() {
       flash.classList.remove('hit');
       void flash.offsetWidth;
       flash.classList.add('hit');
+    },
+    // O clarão da Bomba Arco-Íris. É o mesmo elemento do clarão vermelho da
+    // batida, com outra classe: um é o "ai!", o outro é o "uau!".
+    rainbowFlash: () => {
+      flash.classList.remove('hit', 'arcoiris');
+      void flash.offsetWidth;
+      flash.classList.add('arcoiris');
     },
     shake: () => {
       stage.classList.remove('shake');

@@ -3,6 +3,15 @@
 // Cada um traz o próprio modelo 3D (formas simples, como o resto do jogo) e
 // os números do efeito. O jogo usa `POWERUPS` para saber quanto tempo dura
 // cada um e o que mostrar no HUD.
+//
+// O `weight` é o peso no sorteio (ver World.rollPowerup): todos valem 1,
+// menos a Bomba Arco-Íris, que vale menos — ela limpa a pista inteira, e o
+// que limpa a pista inteira não pode ser tão comum quanto o resto.
+//
+// `needsObstacles` e `needsLives` dizem de que o power-up depende para fazer
+// sentido. O modo Livre não tem nem obstáculo nem vidas, então quem depende
+// de um dos dois simplesmente não nasce lá — um Escudo numa pista sem nada
+// para atravessar é uma promessa vazia.
 import * as THREE from 'three';
 import { createGlow } from './collectibles.js';
 
@@ -16,6 +25,7 @@ export const POWERUPS = {
     emoji: '🛡️',
     color: 0x74c0fc,
     duration: 8,
+    needsObstacles: true,   // sem obstáculo não há de que se proteger
     message: 'Invencível!',
   },
   magnet: {
@@ -41,9 +51,26 @@ export const POWERUPS = {
     emoji: '💖',
     color: 0xff8fb1,
     duration: 0,          // efeito na hora, não dura
+    needsLives: true,     // no Livre não há vida para devolver
     message: 'Mais uma vida!',
   },
+  bomb: {
+    id: 'bomb',
+    name: 'Bomba Arco-Íris',
+    emoji: '🌈',
+    color: 0xff7b9d,      // uma cor só, para o halo e o brilho da pista
+    duration: 0,          // efeito na hora: a onda vai e acaba
+    // Peso do sorteio. Com os outros quatro valendo 1, 0,45 dá uma bomba a
+    // cada dez power-ups (0,45 / 4,45). No Devagarinho a velocidade sobe
+    // este peso para 1 (ver DIFFICULTIES.facil.powerWeights).
+    weight: 0.45,
+    needsObstacles: true,   // sem obstáculo não há o que desintegrar
+    message: 'Tudo pelos ares!',
+  },
 };
+
+// As cores da onda e da bomba, na ordem do arco-íris.
+export const ARCO_IRIS = [0xff7b9d, 0xffb26b, 0xffe36b, 0x8ce99a, 0x74c0fc, 0xc09cff];
 
 export const POWERUP_LIST = Object.values(POWERUPS);
 
@@ -162,7 +189,83 @@ function lifeModel() {
   return g;
 }
 
-const MODELS = { shield: shieldModel, magnet: magnetModel, boost: boostModel, life: lifeModel };
+// Bomba Arco-Íris: uma bola listrada de arco-íris com pavio aceso. As
+// listras são fatias de esfera (uma por cor), e não textura — o jogo inteiro
+// é feito assim.
+function bombModel() {
+  const g = new THREE.Group();
+  const R = 0.46;
+  const fatias = ARCO_IRIS.length;
+
+  for (let i = 0; i < fatias; i++) {
+    const faixa = new THREE.Mesh(
+      new THREE.SphereGeometry(R, 16, 3, 0, Math.PI * 2, (i / fatias) * Math.PI, Math.PI / fatias),
+      mat(ARCO_IRIS[i], { emissive: new THREE.Color(ARCO_IRIS[i]).multiplyScalar(0.14) })
+    );
+    faixa.castShadow = true;
+    g.add(faixa);
+  }
+
+  // Pavio, inclinado, com a fagulha na ponta.
+  const pavio = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.3, 6), mat(0x7a5c3a));
+  pavio.position.set(0.1, R + 0.12, 0);
+  pavio.rotation.z = -0.5;
+  g.add(pavio);
+
+  const fagulha = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.11, 0),
+    new THREE.MeshBasicMaterial({ color: 0xfff3c4 })
+  );
+  fagulha.position.set(0.21, R + 0.26, 0);
+  g.add(fagulha);
+  // Pequeno de propósito: maior, o brilho cobria as listras do topo.
+  g.add(createGlow(0xffd166, 0.2, 0.45).translateX(0.21).translateY(R + 0.26));
+
+  return g;
+}
+
+const MODELS = {
+  shield: shieldModel, magnet: magnetModel, boost: boostModel, life: lifeModel, bomb: bombModel,
+};
+
+// A onda de arco-íris que a bomba solta: uma cortina de faixas coloridas que
+// varre a pista para a frente.
+//
+// Nada de mistura aditiva aqui. A primeira versão tinha um halo aditivo por
+// trás e, contra o céu claro do jogo, tudo somava até o branco: virava um
+// domo leitoso e as cores sumiam. Faixas opacas, com uma borda branca na
+// frente, leem como arco-íris a qualquer distância.
+export function createRainbowWave() {
+  const g = new THREE.Group();
+  const LARGURA = 13;
+  const ALTURA = 0.62;
+
+  ARCO_IRIS.forEach((cor, i) => {
+    const faixa = new THREE.Mesh(
+      new THREE.BoxGeometry(LARGURA, ALTURA, 0.22),
+      new THREE.MeshBasicMaterial({
+        color: cor, transparent: true, opacity: 0.78, depthWrite: false, fog: false,
+      })
+    );
+    faixa.position.y = 0.3 + i * (ALTURA * 1.02);
+    g.add(faixa);
+  });
+
+  // Borda branca na frente da cortina: é o que dá a impressão de que ela
+  // está indo, e não parada.
+  const crista = new THREE.Mesh(
+    new THREE.BoxGeometry(LARGURA + 0.5, ARCO_IRIS.length * ALTURA * 1.02 + 0.5, 0.1),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.55, depthWrite: false, fog: false,
+    })
+  );
+  crista.position.set(0, 0.3 + (ARCO_IRIS.length - 1) * ALTURA * 0.51, -0.22);
+  g.add(crista);
+
+  g.renderOrder = 2;
+  g.traverse((o) => { if (o.material) o.material.userData = { base: o.material.opacity }; });
+  return g;
+}
 
 export function createPowerup(id) {
   const power = POWERUPS[id];

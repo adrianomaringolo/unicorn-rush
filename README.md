@@ -314,6 +314,97 @@ A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
 `src/game/config.js`. O recorde é guardado separado por modo.
 
+### 👆 Aprender (o tutorial)
+
+A lição é **sempre com a Uni no Campo**. É a combinação que todo mundo tem
+desde o primeiro dia, e é para ela que as aulas foram escritas: a barreira do
+Campo, a pedra do Campo. Com outro unicórnio numa pista comprada, a mesma
+frase ensinaria outra coisa — e o ⚡, que depende de quem corre onde, apareceria
+ou não sem razão aparente para quem está aprendendo.
+
+A troca vale **só para a corrida**: o save não é tocado. Quem estava com a Lua
+no Oceano a encontra intacta ao voltar, inclusive se fechar o jogo no meio da
+aula ou sair pela pausa (`Game.applyForRun` troca sem gravar, ao contrário de
+`setCharacter` e `setTrack`, que gravam a escolha da criança).
+
+**Como se chega nele:** pelo botão **👆 Aprender**, na tela inicial, ao lado
+do *Sobre*. Ele não é uma das brincadeiras do seletor — o seletor é onde se
+escolhe *como brincar*, e a lição não é uma brincadeira, é o caminho até
+elas. Por isso mora fora de `MODES`, como `TUTORIAL_MODE`.
+
+E, na **primeira vez que o jogo abre**, ele é oferecido sozinho: logo depois
+da história aparece a pergunta
+*"Quer aprender a correr?"*, com duas saídas do mesmo peso — **👆 Vamos
+aprender!** e **▶️ Já sei jogar**. Ninguém fica preso numa aula que não pediu.
+
+A pergunta acontece uma vez só. Quem reabre o livro pelo 📖 mais tarde já
+conhece o jogo e vai direto para o menu: o que distingue os dois casos é um
+`primeiraVez` guardado *antes* de a história marcar `storySeen`
+(`Game.showFirstScreen`), e não uma marca nova no save.
+
+É uma corrida de verdade — o mesmo mundo, o mesmo
+unicórnio, a mesma pista —, só que a pista **não é sorteada**: é uma lição de
+15 aulas, uma coisa de cada vez, cada uma com a sua frase numa faixa no alto
+da tela.
+
+A ordem ensina na ordem em que se precisa: primeiro andar de lado, depois o
+que dá para pegar, depois desviar, depois pular a barreira, a chave mágica, e
+só então os power-ups — do mais simples de entender (🛡️ Escudo) ao mais
+espetacular (🌈 Bomba, que fecha). O ⚡ RÁPIDO só entra na lição se o botão
+existir naquela combinação de unicórnio e pista: ensinar um botão que não está
+na tela seria pior do que não ensinar.
+
+### A lição cobra
+
+As aulas de **movimento** não passam sozinhas. Quando a aula pede um comando,
+aparece a **seta do que fazer**, bem em cima do botão de toque a que ela se
+refere — e o próprio botão acende e pulsa, para a criança não ter de traduzir
+a seta da tela para o botão embaixo do polegar. No teclado a seta é a mesma.
+
+- **Acertou**: um ✅ grande no meio da tela e um som curto subindo
+  (`sfx.correct`, criado para isto — a fanfarra de fase concluída diria
+  "acabou", que é outra coisa).
+- **Não fez**: quando o que a aula soltou passa sem o movimento, a pista é
+  limpa e **a mesma aula recomeça**. A partir da terceira tentativa o aviso
+  deixa de ser incentivo e passa a ser instrução: em vez de *"Vamos tentar de
+  novo"*, *"⬆️ Toque na seta de cima para pular"*.
+
+São quatro aulas que cobram: ir para a esquerda, ir para a direita, sair da
+frente de uma pedra (serve qualquer lado) e pular a barreira. Mudar de faixa
+só conta se o unicórnio **saiu do lugar** — bater na parede da pista não é
+ter aprendido a trocar de faixa.
+
+Embaixo da frase fica uma **bolinha por aula**: dourada a que já passou, rosa
+a de agora, branca a que falta. Mesma linguagem das páginas do livro da
+história.
+
+Três coisas fazem a lição funcionar:
+
+- **Ninguém perde.** O modo tem `friendly: true`: a trombada ainda pisca,
+  sacode e joga a pedra para o alto, para a criança entender que bateu, mas
+  não custa vida nem acaba a corrida (`Game.hit`).
+- **O relógio é a própria pista.** A aula seguinte só nasce quando tudo o que
+  a anterior soltou já passou pelo unicórnio. Assim nunca há duas coisas
+  novas ao mesmo tempo, e a lição se ajusta sozinha a quem joga devagar. Quem
+  faz tudo certo termina em ~80 s. Quem monta a pista é o `World`
+  (`spawnLessonItems`); quem decide se a aula passou, repetiu ou acabou é o
+  `Game` (`updateLesson`) — depende de a criança ter feito o movimento, que é
+  assunto de jogo, não de cenário.
+- **O que a aula ensina chega logo depois da frase.** O que a lição solta
+  nasce a 38 passos, e não a 90 como o resto do jogo: mais longe, a criança
+  lia a frase e esperava tempo demais até ver a coisa.
+
+Os power-ups que precisam de algo para enfrentar trazem esse algo junto: o
+Escudo vem seguido de três pedras, o Turbo de duas, a Bomba de três pedras
+mais uma barreira — o `depois` de cada aula, que nasce meio passo atrás para
+chegar depois do power-up, e não junto.
+
+A lição **não entra nas estatísticas** nem mexe em recordes, e **não vira a
+brincadeira escolhida**: ao terminar, o modo volta a ser o que estava
+guardado. Sem isso o hub ficaria mostrando "Aprender" e o botão JOGAR
+repetiria a aula. As aulas ficam em `src/game/tutorial.js`, em texto — acrescentar ou
+trocar uma é editar a lista.
+
 ### Fases por pista
 
 A tabela é uma só — a mesma curva de doze fases vale para todas as pistas —,
@@ -408,12 +499,66 @@ com uma argolinha girando em volta):
 | 🛡️ | **Escudo** | 8 segundos atravessando obstáculos sem perder vida. O unicórnio ganha uma **bolha de energia** em volta, com uma redinha brilhando. |
 | 🧲 | **Ímã** | 8 segundos puxando os corações e estrelas por perto. Três **argolas rosa** giram em volta do unicórnio. |
 | ⚡ | **Turbo** | 5 segundos de super velocidade: o unicórnio **decola e passa voando por cima dos obstáculos**, com **anéis dourados** escapando para trás e a câmera abrindo um pouco. Ao acabar, ele pousa sozinho. |
-| 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. Não aparece no modo Livre, que não tem vidas. |
+| 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. |
+| 🌈 | **Bomba Arco-Íris** | Uma bola listrada de arco-íris com pavio aceso. Ao pegar, **desintegra todos os obstáculos da pista à frente**. É o mais raro de todos. |
+
+No **modo Livre** só nascem o **Ímã** e o **Turbo**. Os outros três dependem
+de coisas que aquele modo não tem: o Escudo e a Bomba precisam de obstáculo
+(um escudo numa pista sem nada para atravessar é uma promessa vazia), e a
+vida extra precisa de vidas. Cada power-up diz do que depende, no próprio
+`powerups.js` (`needsObstacles`, `needsLives`), em vez de a regra do sorteio
+carregar uma lista de exceções.
 
 Enquanto está valendo, o power-up aparece no alto da tela com uma barrinha do
 tempo que falta — e o efeito no personagem **pisca no último segundo**,
 avisando que vai acabar. Os números (duração, velocidade do turbo) ficam em
 `src/models/powerups.js`, junto com o modelo 3D de cada um.
+
+### A Bomba Arco-Íris
+
+Ela limpa a pista inteira, então é a menos comum: cada power-up tem um
+`weight` no sorteio (ver `World.rollPowerup`), os outros valem 1 e ela vale
+**0,45** — uma bomba a cada dez power-ups.
+
+**Menos na Aventura 🐢 Devagarinho**, onde ela sai com a mesma frequência que
+os outros: é a velocidade em que a criança está aprendendo, e ver a pista
+limpar é a melhor parte. Quem faz isso é o `powerWeights` da velocidade
+(`DIFFICULTIES.facil`, em `src/game/config.js`), que sobrescreve o peso de um
+power-up sem mexer na regra do sorteio. Sorteando 60 mil vezes:
+
+| | bomba | cada um dos outros |
+| --- | --- | --- |
+| 🐢 Devagarinho | 20% | ~20% |
+| 🌞 Normal · ⚡ Voando · 🗺️ Fases | 10% | ~22% |
+
+O que acontece ao pegar:
+
+1. A tela clareia num **arco-íris que abre do meio para fora**, e a câmera
+   dá uma sacudida.
+2. Uma **cortina de faixas coloridas** nasce *atrás* do unicórnio, na altura
+   da câmera — a primeira coisa que a criança vê é ela passando por cima —,
+   e sai varrendo a pista para a frente a 55 passos por segundo, bem mais
+   rápido do que se corre.
+3. Cada obstáculo que a cortina alcança **desmancha**: estoura em faíscas na
+   cor dele mais um punhado de arco-íris, e some girando, encolhendo e
+   subindo em meio segundo. Vale também para as **barreiras** que atravessam
+   as três pistas, que são o que mais atrapalha.
+4. A cortina segue até o fim da pista visível e some.
+
+Duas coisas que precisaram de conserto no caminho, e o motivo de estarem
+como estão:
+
+- A cortina começou com **mistura aditiva** e um halo por trás. Contra o céu
+  claro do jogo tudo somava até o branco: virava um domo leitoso e as cores
+  sumiam. Agora são faixas translúcidas normais, com uma borda branca na
+  frente.
+- Ela também nascia **à frente** do unicórnio. Como corre a 55 passos por
+  segundo, saía do campo próximo em dois quadros e virava um risquinho no
+  horizonte. Nascendo atrás, atravessa a tela inteira antes de ir embora.
+
+Não há fanfarra de vitória aqui de propósito: aquele som é o de fase
+concluída, e ouvi-lo no meio da corrida faria a criança achar que acabou. O
+estouro visual já é o "uau".
 
 ## O que o jogo lembra
 
@@ -596,30 +741,33 @@ torre da neblina, o selo de preço, o caminho das doze fases).
 
 Antes de qualquer coisa aparecer, o navegador baixa **1,9 MB de three.js** e
 só então o jogo monta 21 unicórnios, 15 pistas e o mundo 3D — tempo
-suficiente, num celular, para uma criança achar que travou. Então a espera
-tem cara de jogo: a **Uni galopando** no mesmo céu que vai aparecer quando
-ela sumir dali.
+suficiente, num celular, para uma criança achar que travou.
 
-A Uni daqui é o **modelo 3D do jogo**, com o galope do jogo e o rastro de
-arco-íris do jogo — mas **gravada**, não tocada ao vivo. Rodar three.js na
-tela de carregamento seria esperar 1,9 MB de JavaScript justamente para
-cobrir a espera de 1,9 MB de JavaScript: a Uni só entraria em cena no fim da
-espera, que é quando ela não faz mais falta. E ela travaria junto com a
-thread principal, exatamente nos segundos em que o jogo monta o mundo.
+A espera é uma **barra de progresso, e quem a enche é a Uni**: ela galopa da
+esquerda para a direita e vai deixando o arco-íris atrás de si. Não é uma
+barra com um bichinho ao lado — o rastro colorido *é* o preenchimento, e ela
+é sempre a ponta dele.
+
+A Uni daqui é o **modelo 3D do jogo**, com o galope do jogo — mas **gravada**,
+não tocada ao vivo. Rodar three.js na tela de carregamento seria esperar
+1,9 MB de JavaScript justamente para cobrir a espera de 1,9 MB de
+JavaScript: ela só entraria em cena no fim da espera, que é quando não faz
+mais falta. E travaria junto com a thread principal, exatamente nos segundos
+em que o jogo monta o mundo.
 
 Gravada, ela corre **no primeiro quadro**, sem script nenhum, e continua
-correndo enquanto o jogo trava a thread para se montar — quem desenha é o
-decodificador de imagem do navegador, não o JavaScript. Pela mesma razão o
-resto da tela (céu, nome, barrinha e o chão passando) é HTML e CSS puros, no
-`index.html`: a animação do chão é `transform`, que roda no compositor.
+correndo enquanto o jogo trava a thread — quem desenha é o decodificador de
+imagem do navegador. Pelo mesmo motivo o resto (céu, nome, barra e o
+preenchimento) é HTML e CSS puros, no `index.html`: são animações de
+`transform` e `width`, que rodam no compositor.
 
 A tela sai quando as duas coisas já aconteceram: o navegador pintou a
-primeira tela de verdade **e** passaram **3 segundos** (umas duas voltas de
-passada da Uni). Com o jogo em cache ele abre em poucas centenas de
-milissegundos, e sem esse mínimo a animação só piscava: dava para ver que
-algo apareceu, não o quê. Quando o carregamento demora mais que isso —
-primeira visita, celular devagar —, a conta dá zero e ninguém espera um
-milissegundo a mais. O mínimo é o `ESPERA_MINIMA`, no `src/main.js`.
+primeira tela de verdade **e** passaram **3 segundos**. Com o jogo em cache
+ele abre em poucas centenas de milissegundos, e sem esse mínimo a animação só
+piscava: dava para ver que algo apareceu, não o quê. Quando o carregamento
+demora mais que isso — primeira visita, celular devagar —, a conta dá zero e
+ninguém espera um milissegundo a mais. O mínimo é o `ESPERA_MINIMA`, no
+`src/main.js`.
 
 ### Regravar
 
@@ -628,17 +776,29 @@ npm run gravar-uni
 ```
 
 O script abre `scripts/gravar-uni.html` num Chrome sem janela, põe o modelo
-para galopar, colhe uma volta inteira de passada quadro a quadro e junta
-tudo num WebP animado — `assets/loading/uni.webp`, 32 quadros a 24 fps,
-~140 KB. Para conferir antes de gravar, `npm start` e abrir
+para galopar, colhe uma volta inteira de passada quadro a quadro e junta tudo
+num WebP animado — `assets/loading/uni.webp`, 32 quadros a 24 fps, ~90 KB.
+Para conferir antes de gravar, `npm start` e abrir
 `http://localhost:5173/scripts/gravar-uni.html`, onde ela fica correndo.
 
 A volta é exatamente `2π / 2.6` segundos — o ciclo de pernas do
 `animateUnicorn` —, então o primeiro quadro é a continuação do último e o
-laço não tem emenda. (Os balanços mais lentos, da cabeça, não fecham no
-mesmo período: a diferença na emenda é de uns 2°, dentro do que já varia de
-um quadro para o outro.) Mudou a câmera, a cadência ou o personagem? É só
-regravar.
+laço não tem emenda. (Os balanços mais lentos, da cabeça, não fecham no mesmo
+período: a diferença na emenda é de uns 2°, dentro do que já varia de um
+quadro para o outro.)
+
+Duas escolhas do enquadramento, que existem por causa da barra:
+
+- a câmera fica do lado **direito** do modelo, para ela aparecer correndo
+  para a direita — o sentido em que uma barra enche;
+- a gravação **não tem o rastro de arco-íris** do jogo, porque quem marca o
+  caminho já percorrido é o preenchimento da barra. Dois arco-íris no mesmo
+  lugar brigavam.
+
+O CSS assenta a Uni na barra a partir de duas medidas do quadro gravado: os
+cascos ficam a **80%** da altura e o desenho começa a **13%**. É de onde saem
+o `bottom` dela e a margem que a barra reserva acima de si — se mudar o
+enquadramento, essas duas contas mudam junto.
 
 ## Publicar (Vercel)
 

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE, BARRIER } from './config.js';
 import { TRACKS, DEFAULT_TRACK } from './tracks.js';
 import { createHeart, createStar, createKey } from '../models/collectibles.js';
-import { createPowerup, POWERUP_LIST } from '../models/powerups.js';
+import { createPowerup, createRainbowWave, POWERUP_LIST, ARCO_IRIS } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
   createRainbow, createMountains, createMoon, createStars, createSun,
@@ -15,6 +15,27 @@ import {
 } from '../models/scenery.js';
 
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
+
+// A onda da Bomba Arco-Íris.
+//
+// Ela nasce **atrás** do unicórnio, na altura da câmera: assim a primeira
+// coisa que a criança vê é a cortina colorida passando por cima dela, e só
+// depois indo embora pista afora. Nascendo à frente, a onda saía do campo
+// próximo em dois quadros e virava um risquinho no horizonte.
+//
+// A velocidade é bem maior que a da corrida (senão não alcançaria nada), mas
+// não tanto a ponto de sumir antes de ser vista.
+// A que distância nasce o que a lição do modo Aprender manda para a pista.
+// Bem mais perto que o normal (-90): a criança precisa ver a coisa chegando
+// logo depois de ler a frase, senão a aula e o que ela ensina se separam. E
+// é isto que dá o ritmo da lição — a -46 ela levava 92 s, tempo demais para
+// quem tem quatro anos.
+const LESSON_SPAWN_Z = -38;
+
+const WAVE_START_Z = 9;
+const WAVE_SPEED = 55;
+const WAVE_TIME = 1.9;
+const DISSOLVE_TIME = 0.45;
 const MARKER_STEP = 100;      // de quantos em quantos passos vem uma placa
 // A que distância do zero fica o portal de partida. Não é em cima do
 // unicórnio: assim ele aparece inteiro no quadro, e a criança passa por
@@ -51,6 +72,7 @@ export class World {
     this.stripes = [];
     this.clouds = [];
     this.sparkles = [];
+    this.wave = null;              // a onda da bomba, quando há uma
     this.spawnTimer = 0;
     this.rowsSincePower = 0;      // espaça os power-ups na pista
     this.rowsSinceKey = 99;       // espaça as chaves mágicas do modo Fases
@@ -287,7 +309,75 @@ export class World {
     this.rowsSincePower = 0;
     this.rowsSinceBarrier = 0;
     this.barrierDone = false;
+    if (mode.scripted) this.clearLessonItems();
     for (const s of this.sparkles) { s.userData.life = 0; s.visible = false; }
+    this.clearWave();
+  }
+
+  // ---- Bomba Arco-Íris -------------------------------------------------
+  //
+  // Uma parede de luz colorida sai de junto do unicórnio e varre a pista
+  // para a frente, mais rápido do que se corre. Tudo o que ela alcança
+  // desmancha: o obstáculo gira, encolhe, sobe e vira faíscas.
+  //
+  // A onda é uma só de cada vez — pegar duas bombas seguidas recomeça a
+  // varredura em vez de acumular duas paredes.
+  rainbowBlast() {
+    this.clearWave();
+    const mesh = createRainbowWave();
+    mesh.position.z = WAVE_START_Z;
+    this.group.add(mesh);
+    this.wave = { mesh, z: WAVE_START_Z, idade: 0 };
+  }
+
+  clearWave() {
+    if (!this.wave) return;
+    this.group.remove(this.wave.mesh);
+    this.wave.mesh.traverse((o) => {
+      if (!o.isMesh) return;
+      o.geometry.dispose();
+      o.material.dispose();
+    });
+    this.wave = null;
+  }
+
+  // Marca para desmanchar tudo o que a onda já passou.
+  updateWave(dt) {
+    if (!this.wave) return;
+    const onda = this.wave;
+    onda.idade += dt;
+    onda.z -= WAVE_SPEED * dt;
+    onda.mesh.position.z = onda.z;
+    // Vai crescendo e sumindo conforme se afasta, para não virar uma parede
+    // sólida parada no horizonte.
+    const t = Math.min(1, onda.idade / WAVE_TIME);
+    onda.mesh.scale.set(1 + t * 0.55, 1 + t * 0.4, 1);
+    // Some só no fim: desbotar desde o começo tirava a cortina justamente na
+    // parte em que ela passa perto e aparece inteira.
+    const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
+    for (const faixa of onda.mesh.children) {
+      if (faixa.material) faixa.material.opacity = fade * (faixa.material.userData?.base ?? 0.9);
+    }
+
+    for (const e of this.entities) {
+      if (e.userData.kind !== 'obstacle') continue;
+      if (e.userData.knocked || e.userData.dissolving !== undefined) continue;
+      // A onda está mais à frente (z menor) do que o obstáculo: já passou
+      // por ele.
+      if (e.position.z < onda.z) continue;
+      this.dissolve(e);
+    }
+
+    if (t >= 1 || onda.z < SPAWN_DISTANCE) this.clearWave();
+  }
+
+  // O obstáculo desmancha: começa com um estouro de faíscas na cor dele e
+  // some girando.
+  dissolve(entity) {
+    entity.userData.dissolving = 0;
+    const cor = entity.children.find((c) => c.isMesh)?.material?.color?.getHex() ?? 0xffffff;
+    this.burst(entity.position.clone().setY(0.9), cor);
+    this.burst(entity.position.clone().setY(1.4), ARCO_IRIS[Math.floor(Math.random() * ARCO_IRIS.length)]);
   }
 
   // Um power-up a cada tantas linhas, e nunca dois seguidos.
@@ -296,10 +386,25 @@ export class World {
     if (this.rowsSincePower < 12) return null;
     if (Math.random() > 0.35) return null;
 
-    // No modo Livre não há vidas, então o coração extra não aparece.
-    const pool = POWERUP_LIST.filter((p) => this.mode.obstacles || p.id !== 'life');
+    // No modo Livre não há obstáculo nem vidas: fica de fora quem depende de
+    // um dos dois (ver `needsObstacles` e `needsLives` em powerups.js). Lá só
+    // nascem o Ímã e o Turbo, que são bons de qualquer jeito.
+    const pool = POWERUP_LIST.filter(
+      (p) => this.mode.obstacles || !(p.needsObstacles || p.needsLives)
+    );
     this.rowsSincePower = 0;
-    return pool[Math.floor(Math.random() * pool.length)].id;
+
+    // Sorteio por peso: quase todos valem 1, a Bomba Arco-Íris vale 0,2. A
+    // velocidade pode sobrescrever um peso (o Devagarinho põe a bomba em 1,
+    // ver DIFFICULTIES.facil.powerWeights).
+    const peso = (p) => this.mode.powerWeights?.[p.id] ?? p.weight ?? 1;
+    const total = pool.reduce((soma, p) => soma + peso(p), 0);
+    let ponto = Math.random() * total;
+    for (const p of pool) {
+      ponto -= peso(p);
+      if (ponto <= 0) return p.id;
+    }
+    return pool[pool.length - 1].id;
   }
 
   // Chave mágica: só depois de passar `keyGap` linhas, e ainda assim por
@@ -327,7 +432,67 @@ export class World {
     return true;
   }
 
+  // ---- A lição do modo Aprender ----------------------------------------
+  //
+  // Aqui o mundo só monta a pista da aula. Quem decide quando a aula acaba,
+  // se ela passou ou se precisa recomeçar é o Game (ver Game.updateLesson):
+  // isso depende de a criança ter feito o movimento pedido, que é assunto de
+  // jogo, não de cenário.
+  spawnLessonItems(aula) {
+    for (const item of aula.itens || []) this.addLessonItem(item, 0);
+    // O `depois` nasce meio passo atrás: é o que o power-up da aula serve
+    // para enfrentar, e precisa vir depois dele, não junto.
+    for (const item of aula.depois || []) this.addLessonItem(item, -16);
+  }
+
+  // Ainda tem coisa da aula a caminho do unicórnio?
+  get lessonAhead() {
+    return this.entities.some((e) => e.userData.licao && e.position.z < 3);
+  }
+
+  // Tira da pista o que sobrou da aula (para recomeçá-la do zero).
+  clearLessonItems() {
+    for (let i = this.entities.length - 1; i >= 0; i--) {
+      if (!this.entities[i].userData.licao) continue;
+      this.group.remove(this.entities[i]);
+      this.entities.splice(i, 1);
+    }
+  }
+
+  addLessonItem({ o, faixa = 1, altura }, recuo) {
+    const z = LESSON_SPAWN_Z + recuo;
+    let obj;
+    let y = altura ?? 1.15;
+
+    if (o === 'barrier') {
+      obj = createBarrier(this.track);
+      y = 0;
+      faixa = 1;
+    } else if (o === 'rock') {
+      obj = createObstacle(this.track);
+      y = 0;
+    } else if (o === 'key') {
+      obj = createKey();
+      y = altura ?? 1.2;
+    } else if (o === 'heart') {
+      obj = createHeart();
+    } else if (o === 'star') {
+      obj = createStar();
+    } else {
+      obj = createPowerup(o);
+      y = altura ?? 1.25;
+    }
+
+    obj.userData.licao = true;
+    obj.position.set(LANES[faixa], y, z);
+    this.group.add(obj);
+    this.entities.push(obj);
+  }
+
   spawnRow(difficulty) {
+    // Na lição quem manda na pista é o Game, uma aula por vez.
+    if (this.mode.scripted) return;
+
     // A barreira toma a linha inteira: nada mais nasce junto, fora o prêmio
     // de quem pula, flutuando na altura do salto.
     if (this.rollBarrier()) {
@@ -449,6 +614,21 @@ export class World {
       const e = this.entities[i];
       e.position.z += move;
 
+      // Obstáculo alcançado pela onda da bomba: gira, encolhe, sobe e some.
+      if (e.userData.dissolving !== undefined) {
+        e.userData.dissolving += dt;
+        const t = Math.min(1, e.userData.dissolving / DISSOLVE_TIME);
+        e.scale.setScalar(Math.max(0.001, 1 - t));
+        e.rotation.y += dt * 11;
+        e.rotation.x += dt * 5;
+        e.position.y += dt * 2.4;
+        if (t >= 1) {
+          this.group.remove(e);
+          this.entities.splice(i, 1);
+        }
+        continue;
+      }
+
       // Obstáculo que levou a trombada: sai girando pelos ares.
       if (e.userData.knocked) {
         e.userData.knock.y -= 22 * dt;
@@ -487,6 +667,8 @@ export class World {
       s.material.opacity = Math.max(0, s.userData.life / 0.6);
       if (s.userData.life <= 0) s.visible = false;
     }
+
+    this.updateWave(dt);
 
     if (this.backdrop) this.backdrop.rotation.z = Math.sin(elapsed * 0.2) * 0.03;
 

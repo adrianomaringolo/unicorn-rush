@@ -86,5 +86,17 @@ export const sfx = {
   // um toque que "não fez nada" parece defeito.
   tap: safe(() => blip(660, 0.07, 'sine', 0.07)),
   pick: safe(() => { blip(tom(784), 0.1); setTimeout(() => blip(tom(1175), 0.12), 60); }),
+  // "Acertou!" da lição: dois acordes curtos subindo, mais cheios que o
+  // `pick` do menu e mais curtos que a fanfarra de fase — este som só quer
+  // dizer "isso mesmo", sem parecer que acabou alguma coisa.
+  correct: safe(() => {
+    [[659, 0], [988, 70], [1319, 140]].forEach(([f, atraso]) => {
+      setTimeout(() => {
+        blip(tom(f), 0.16, 'triangle', 0.13);
+        blip(tom(f * 1.5), 0.13, 'sine', 0.06);
+      }, atraso);
+    });
+  }),
+
   deny: safe(() => { blip(300, 0.1, 'triangle', 0.09); setTimeout(() => blip(240, 0.14, 'triangle', 0.09), 90); }),
 };

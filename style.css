@@ -49,6 +49,8 @@ html, body {
 #hud[data-mode='baby'] .panel.keys,
 #hud[data-mode='adventure'] .panel.goal,
 #hud[data-mode='adventure'] .panel.level,
+#hud[data-mode='tutorial'] .panel.goal,
+#hud[data-mode='tutorial'] .panel.level,
 #hud[data-mode='levels'] .panel.goal,
 #hud[data-mode='levels'] .panel.hearts { display: none; }
 
@@ -112,6 +114,25 @@ html, body {
   background: radial-gradient(circle at 50% 60%, rgba(255, 60, 110, 0) 35%, rgba(255, 40, 90, .55) 100%);
 }
 #flash.hit { animation: flash .38s ease-out; }
+
+/* O clarão da Bomba Arco-Íris. O mesmo elemento do clarão da batida, com
+   outro fundo e outro tempo: aquele é o "ai!", este é o "uau!". Clareia do
+   meio para fora, na ordem do arco-íris, e sai devagar — a onda ainda está
+   varrendo a pista quando ele acaba. */
+#flash.arcoiris {
+  background:
+    radial-gradient(circle at 50% 62%, rgba(255, 255, 255, .85) 0%, rgba(255, 255, 255, 0) 26%),
+    conic-gradient(from 0deg at 50% 62%,
+      rgba(255, 123, 157, .5), rgba(255, 178, 107, .5), rgba(255, 227, 107, .5),
+      rgba(140, 233, 154, .5), rgba(116, 192, 252, .5), rgba(192, 156, 255, .5),
+      rgba(255, 123, 157, .5));
+  animation: flash-arcoiris .85s ease-out;
+}
+@keyframes flash-arcoiris {
+  0%   { opacity: 0; transform: scale(.7); }
+  18%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.35); }
+}
 @keyframes flash {
   0% { opacity: 0; }
   18% { opacity: 1; }
@@ -193,6 +214,12 @@ html, body {
   pointer-events: none;
   transition: opacity .2s, transform .2s;
 }
+/* Com a faixa da lição na tela, o aviso desce: os dois no meio se cobriam,
+   e no modo Aprender os avisos de power-up aparecem o tempo todo. Quem some
+   é a caixa inteira (#lesson-box), que é irmã do toast — o <p> de dentro
+   não é, e o seletor deixava de valer. */
+#lesson-box:not([hidden]) ~ #toast { top: 56%; }
+
 #toast.show {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
@@ -607,6 +634,17 @@ html, body {
   touch-action: manipulation;
 }
 .mini-button:active { transform: scale(.94); }
+/* O de aprender é o único da fileira que *faz* alguma coisa — os outros
+   abrem informação. Por isso é tingido e não desbotado: numa tela estreita
+   ele cai numa linha só para ele, e assim a quebra parece intenção, que é o
+   que é. */
+.mini-button.aprender {
+  border-color: #ffc9de;
+  background: #fff0f6;
+  color: var(--pink);
+  opacity: 1;
+}
+
 /* O de atualizar chama atenção, porque só existe quando há o que atualizar. */
 .mini-button.nova {
   border-color: #ffd166;
@@ -1377,12 +1415,14 @@ html, body {
 }
 
 /* --- Tela de carregamento --------------------------------------------- */
-/* Montar 21 unicórnios, 15 pistas e o mundo 3D leva alguns segundos num
-   celular — tempo suficiente para uma criança achar que o jogo travou. Então
-   a espera tem cara de jogo: a Uni galopando no mesmo céu que vai aparecer
-   quando ela sumir daqui. O bloco está no index.html, para pintar no
-   primeiro quadro; quem apaga é o src/main.js, quando a primeira tela está
-   de pé. */
+/* Montar o mundo leva alguns segundos num celular, e a espera é uma barra de
+   progresso — só que quem a enche é a Uni, correndo da esquerda para a
+   direita e deixando o arco-íris para trás. A figura dela é uma gravação do
+   modelo 3D do jogo (assets/loading/uni.webp); o resto é CSS.
+
+   As animações são todas de `transform` e `width`, e o `#loading` fica no
+   index.html: assim a tela pinta no primeiro quadro e continua andando
+   mesmo quando o JavaScript trava para montar o jogo. */
 #loading {
   position: fixed;
   inset: 0;
@@ -1391,31 +1431,19 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(2px, 1vw, 6px);
+  gap: clamp(14px, 4vw, 22px);
   background: linear-gradient(#bfe9ff, #ffe3f4);
   transition: opacity .45s ease-out;
+
+  --barra-largura: min(300px, 76vw);
+  --barra-altura: clamp(14px, 4vw, 18px);
+  --uni-altura: clamp(64px, 18vw, 84px);
+  /* A gravação é 300×260, então a largura sai da altura. */
+  --uni-largura: calc(var(--uni-altura) * 300 / 260);
+  --volta: 2.6s;                 /* uma travessia da barra, ponta a ponta */
 }
 #loading.pronto { opacity: 0; pointer-events: none; visibility: hidden; }
 
-/* O chão e a Uni ocupam o mesmo quadro 240×150: o SVG por baixo (aparece já
-   no primeiro pixel), o canvas 3D por cima (entra quando o three.js chega). */
-.load-palco {
-  position: relative;
-  width: min(340px, 78vw);
-  aspect-ratio: 240 / 150;
-}
-.load-chao-svg,
-.load-uni {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-/* A gravação é ~140 KB e chega bem antes do jogo; enquanto não chega, o que
-   se vê é o chão passando. Nada de `loading="lazy"` aqui: esta é a imagem
-   mais urgente da página. */
-.load-uni { object-fit: contain; }
 .load-brand {
   margin: 0;
   font-size: clamp(26px, 8vw, 40px);
@@ -1424,42 +1452,61 @@ html, body {
   text-shadow: 2px 3px 0 #fff, 4px 6px 0 rgba(122, 78, 199, .2);
 }
 .load-text {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: clamp(13px, 3.8vw, 16px);
   font-weight: 600;
   color: var(--purple);
   opacity: .8;
 }
-/* A barra não mede nada de verdade (não dá para saber quanto falta): ela só
-   diz "está acontecendo", e é por isso que vai e volta em vez de encher. */
-.load-bar {
-  margin-top: clamp(8px, 2.5vw, 14px);
-  width: min(180px, 46vw);
-  height: 10px;
+
+/* A pista: o sulco da barra, o arco-íris já percorrido e a Uni em cima. */
+.load-pista {
+  position: relative;
+  width: var(--barra-largura);
+  height: var(--barra-altura);
+  /* A Uni é posicionada em absoluto, então o flex não conta a altura dela e
+     ela subia por cima do nome do jogo. Isto reserva o que ela ocupa acima
+     da barra: da linha dos cascos (80% do quadro) até onde o desenho começa
+     de fato (13%). */
+  margin-top: calc(var(--uni-altura) * 0.68);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .65);
-  overflow: hidden;
+  background: rgba(255, 255, 255, .7);
+  box-shadow: inset 0 2px 0 rgba(122, 78, 199, .1);
 }
-.load-bar i {
-  display: block;
-  width: 42%;
-  height: 100%;
+/* O caminho já feito. O `background-size` é a barra inteira, e não o pedaço
+   pintado: assim as cores ficam paradas no lugar e o arco-íris vai sendo
+   revelado, em vez de espremido. */
+.load-feito {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #ff7b9d, #ffd166, #8ce99a, #74c0fc, #c09cff);
-  animation: load-vaivem 1.3s ease-in-out infinite;
+  background: linear-gradient(90deg, #ff7b9d, #ffb26b, #ffe36b, #8ce99a, #74c0fc, #c09cff);
+  background-size: var(--barra-largura) 100%;
+  animation: load-enche var(--volta) linear infinite;
+}
+/* Ela é sempre a ponta do que já foi feito: a barra vai até o meio dela. */
+@keyframes load-enche {
+  from { width: calc(var(--uni-largura) / 2); }
+  to   { width: calc(100% - var(--uni-largura) / 2); }
 }
 
-/* O chão anda para trás: quem corre é ela, mas quem se move é o mundo — do
-   mesmo jeito que na pista de verdade. Fica no CSS de propósito: animação de
-   `transform` roda no compositor, então ele continua andando mesmo nos
-   instantes em que o jogo trava a thread principal para montar o mundo. */
-.load-chao { animation: load-chao .5s linear infinite; }
-
-@keyframes load-chao { from { transform: translateX(0); } to { transform: translateX(-48px); } }
-@keyframes load-vaivem {
-  0%   { transform: translateX(-115%); }
-  100% { transform: translateX(240%); }
+.load-uni {
+  position: absolute;
+  left: 0;
+  /* Na gravação os cascos ficam a 80% da altura do quadro; descontando os
+     20% de sobra de baixo, ela pisa na beirada de cima da barra. */
+  bottom: calc(var(--barra-altura) - var(--uni-altura) * 0.2);
+  width: var(--uni-largura);
+  height: var(--uni-altura);
+  animation: load-corre var(--volta) linear infinite;
 }
+@keyframes load-corre {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(var(--barra-largura) - var(--uni-largura))); }
+}
+
 /* As reticências que aparecem uma a uma: dá o tique-taque da espera sem
    precisar de mais nada na tela. */
 .load-reticencias { animation: load-pontos 1.2s steps(1) infinite; }
@@ -1470,10 +1517,12 @@ html, body {
   100% { opacity: .25; }
 }
 
-/* Quem pediu menos movimento ao aparelho continua vendo a Uni — parada. */
+/* Quem pediu menos movimento ao aparelho vê a Uni parada no começo da barra:
+   a tela continua dizendo "estou carregando", sem nada correndo. */
 @media (prefers-reduced-motion: reduce) {
-  #loading *, #loading *::before { animation: none !important; }
-  /* O ⚡ para de pulsar, mas continua dourado quando ligado. */
+  #loading * { animation: none !important; }
+  .load-feito { width: calc(var(--uni-largura) / 2); }
+  /* O ⚡ do HUD para de pulsar, mas continua dourado quando ligado. */
   #hud-buttons #rush { animation: none; }
 }
 
@@ -1676,4 +1725,145 @@ html, body {
   .portal-porta.dir { transform: rotateY(105deg); }
   .portal-retrato { filter: none; transform: scale(1); }
   .portal-cadeado, .portal-faisca, .portal-luz { display: none; }
+}
+
+/* --- A faixa da lição (modo Aprender) --------------------------------- */
+/* Fica no alto, abaixo do HUD, e só troca quando a aula troca. É o único
+   texto que permanece durante a corrida: por isso é grande, curto e sai do
+   caminho do que está acontecendo na pista. */
+/* A caixa da lição: a frase e, embaixo, as bolinhas do progresso. Fica
+   abaixo do canto de controles do HUD (pause/som, ⚡ e velocímetro) — mais
+   acima, encostava no botão RÁPIDO. */
+#lesson-box[hidden] { display: none; }
+#lesson-box {
+  position: absolute;
+  left: 50%;
+  top: clamp(178px, 45vw, 224px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(6px, 1.8vw, 10px);
+  pointer-events: none;
+}
+
+#lesson {
+  margin: 0;
+  max-width: min(460px, 90vw);
+  padding: clamp(7px, 2.2vw, 11px) clamp(14px, 4vw, 22px);
+  border-radius: 999px;
+  border: 3px solid #fff;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 5px 0 rgba(122, 78, 199, .18);
+  color: var(--purple);
+  font-size: clamp(13px, 3.9vw, 18px);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+}
+#lesson[hidden] { display: none; }
+#lesson .fi { vertical-align: -0.18em; }
+/* Aula nova entra com um pulinho, para o olho perceber que mudou. */
+#lesson.nova { animation: licao-entra .45s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes licao-entra {
+  from { transform: scale(.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #lesson.nova { animation: none; }
+}
+
+/* --- Setas, ✅ e progresso da lição ----------------------------------- */
+/* O progresso: uma bolinha por aula, logo abaixo da faixa. É a mesma
+   linguagem das páginas do livro da história — quem já entendeu uma entende
+   a outra. */
+#lesson-dots {
+  display: flex;
+  gap: clamp(4px, 1.4vw, 7px);
+  pointer-events: none;
+}
+#lesson-dots[hidden] { display: none; }
+#lesson-dots i {
+  width: clamp(6px, 1.8vw, 9px);
+  height: clamp(6px, 1.8vw, 9px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .75);
+  box-shadow: 0 1px 0 rgba(122, 78, 199, .2);
+}
+#lesson-dots i.feita { background: #ffd166; }
+#lesson-dots i.agora { background: var(--pink); transform: scale(1.5); }
+
+/* A seta do movimento pedido. Fica acima dos botões de toque, grande e
+   pulando: é o único jeito de dizer "faça isto" para quem não lê. */
+#lesson-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  /* Mesmo espaçamento e mesma largura de casa dos #touch-controls: é isso
+     que faz cada seta cair em cima do seu botão, em vez de todas no meio
+     (onde ficavam em cima do próprio unicórnio). */
+  gap: clamp(14px, 6vw, 28px);
+  padding: 0 12px;
+  pointer-events: none;
+}
+#lesson-hint[hidden] { display: none; }
+#lesson-hint > span {
+  /* Exatamente a largura de um botão de toque. */
+  width: clamp(58px, 17vw, 78px);
+  display: flex;
+  justify-content: center;
+}
+#lesson-hint .fi {
+  width: clamp(38px, 11vw, 54px);
+  height: clamp(38px, 11vw, 54px);
+  filter: drop-shadow(0 4px 0 rgba(122, 78, 199, .3));
+  animation: seta-pede 1s ease-in-out infinite;
+}
+#lesson-hint .fi:nth-child(2) { animation-delay: .12s; }
+@keyframes seta-pede {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-10px) scale(1.12); }
+}
+
+/* No celular o próprio botão acende junto: assim a criança não precisa
+   traduzir a seta da tela para o botão embaixo do polegar. */
+#touch-controls button.pedindo {
+  border-color: var(--pink);
+  background: #fff0f6;
+  animation: botao-pede 1s ease-in-out infinite;
+}
+@keyframes botao-pede {
+  0%, 100% { box-shadow: 0 4px 0 rgba(122, 78, 199, .25), 0 0 0 0 rgba(255, 93, 143, .5); }
+  60%      { box-shadow: 0 4px 0 rgba(122, 78, 199, .25), 0 0 0 12px rgba(255, 93, 143, 0); }
+}
+
+/* O ✅ de "isso mesmo": grande, no meio, e sai rápido — é confirmação, não
+   comemoração. */
+#lesson-ok {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+#lesson-ok[hidden] { display: none; }
+#lesson-ok .fi {
+  width: clamp(70px, 22vw, 110px);
+  height: clamp(70px, 22vw, 110px);
+  filter: drop-shadow(0 6px 0 rgba(122, 78, 199, .25));
+}
+#lesson-ok.bate .fi { animation: acertou .85s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes acertou {
+  0%   { transform: scale(.2) rotate(-18deg); opacity: 0; }
+  35%  { transform: scale(1.15) rotate(4deg); opacity: 1; }
+  55%  { transform: scale(1) rotate(0); opacity: 1; }
+  100% { transform: scale(1.1) rotate(0); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lesson-hint .fi, #touch-controls button.pedindo, #lesson-ok.bate .fi { animation: none; }
 }

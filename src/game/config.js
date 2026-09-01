@@ -6,6 +6,25 @@ export const LANE_CHANGE_SPEED = 10;      // suavidade da troca de pista
 
 // Modos de jogo. O modo "Livre" não tem obstáculo nenhum: a criança só
 // precisa juntar uma quantidade fixa de itens para ganhar.
+// A lição. Devagar, sem acelerar e sem custar vida: aqui não se perde, se
+// aprende (ver src/game/tutorial.js e World.spawnLesson).
+export const TUTORIAL_MODE = {
+  id: 'tutorial',
+  name: 'Aprender',
+  emoji: '👆',
+  tagline: 'Os comandos e os power-ups, um de cada vez',
+  obstacles: true,
+  scripted: true,        // a pista vem da lição, não do sorteio
+  friendly: true,        // trombada não tira vida nem acaba a corrida
+  startSpeed: 8,
+  maxSpeed: 8,
+  speedRamp: 0,          // não acelera: a criança está aprendendo
+  spawnInterval: 0.3,    // o ritmo de verdade é o da lição
+  target: null,
+}
+
+// As brincadeiras que aparecem no seletor. A lição não está aqui: ela tem
+// botão próprio na tela inicial (ver Game.startTutorial).
 export const MODES = {
   baby: {
     id: 'baby',
@@ -75,6 +94,11 @@ export const DIFFICULTIES = {
     startSpeed: 10,
     maxSpeed: 20,
     speedRamp: 0.25,
+    // Pesos de sorteio que esta velocidade sobrescreve (ver
+    // World.rollPowerup). No Devagarinho a Bomba Arco-Íris sai com a mesma
+    // frequência que os outros power-ups, em vez de cinco vezes mais rara: aqui é
+    // onde a criança está aprendendo, e ver a pista limpar é a melhor parte.
+    powerWeights: { bomb: 1 },
   },
   medio: {
     id: 'medio',

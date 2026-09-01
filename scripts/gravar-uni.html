@@ -9,7 +9,7 @@
   { "imports": { "three": "../vendor/three.module.js", "three/": "../vendor/" } }
 </script>
 </head><body>
-<canvas id="palco" width="480" height="300"></canvas>
+<canvas id="palco" width="300" height="260"></canvas>
 <p>A Uni da tela de carregamento, quadro a quadro.<br>
    <code>npm run gravar-uni</code> transforma isto em <code>assets/loading/uni.webp</code>.</p>
 
@@ -27,10 +27,9 @@
 import * as THREE from 'three';
 import { createUnicorn, animateUnicorn } from '../src/models/unicorn.js';
 import { CHARACTERS } from '../src/models/characters.js';
-import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../src/models/rainbowTrail.js';
+
 
 const GALOPE = 2.6;          // mesma cadência do jogo
-const VELOCIDADE = 11;       // o quanto o rastro corre para trás
 export const QUADROS = 32;   // um ciclo de passada inteiro
 
 // Um ciclo de pernas fecha em 2π/GALOPE: gravando exatamente isso, o
@@ -49,33 +48,31 @@ sol.position.set(4, 6, 6);
 scene.add(sol);
 
 // De perfil, como nos retratos dos personagens — é de lado que se vê o
-// galope das quatro pernas e o rastro esticado atrás dela. A câmera olha um
-// pouco atrás do corpo, para o rastro caber no quadro junto com ela.
-const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 60);
-camera.position.set(-6.4, 2.85, 1.5);
-camera.lookAt(0, 1.15, 2.1);
+// galope das quatro pernas.
+//
+// A câmera fica do lado **direito** do modelo (+X): assim ela aparece
+// correndo para a direita na tela, que é o sentido de uma barra de progresso
+// enchendo. Do outro lado ela corria para a esquerda, e a tela de
+// carregamento lia ao contrário.
+// Enquadramento apertado nela: sem o rastro, não há mais o que caber ao
+// lado, e na barra de progresso ela aparece pequena — cada pixel conta.
+const camera = new THREE.PerspectiveCamera(38, canvas.width / canvas.height, 0.1, 60);
+camera.position.set(5.9, 2.5, 0.2);
+camera.lookAt(0, 1.2, 0.1);
 
 const uni = createUnicorn(CHARACTERS.uni);
 scene.add(uni);
-const rastro = createRainbowTrail(CHARACTERS.uni.trail);
-resetRainbowTrail(rastro, 0, 0);
-scene.add(rastro);
 
-// O rastro tem memória (guarda o caminho): antes de gravar, roda um tanto
-// em seco para ele já estar formado no primeiro quadro.
+// Sem o rastro de arco-íris aqui: na tela de carregamento quem marca o
+// caminho já percorrido é a barra que ela vai enchendo enquanto corre (ver
+// #loading no style.css). Dois arco-íris no mesmo lugar brigavam.
 const passo = CICLO / QUADROS;
-for (let i = 0; i < 240; i++) {
-  const t = i * passo;
-  animateUnicorn(uni, t, GALOPE, true);
-  updateRainbowTrail(rastro, passo, VELOCIDADE, 0, 0, t);
-}
 
 // Gera um quadro e devolve o PNG em base64. É o que o gravador headless
 // chama, um quadro por vez.
 window.quadro = (i) => {
-  const t = (240 + i) * passo;
+  const t = i * passo;
   animateUnicorn(uni, t, GALOPE, true);
-  updateRainbowTrail(rastro, passo, VELOCIDADE, 0, 0, t);
   renderer.render(scene, camera);
   return canvas.toDataURL('image/png').split(',')[1];
 };

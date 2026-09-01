@@ -23,28 +23,23 @@
        mundo 3D — tempo suficiente, num celular, para uma criança achar que
        travou.
 
-       A Uni daqui é o **modelo 3D do jogo**, mas gravada: rodar three.js
-       aqui seria esperar 1,9 MB de JavaScript justamente para cobrir a
-       espera de 1,9 MB de JavaScript. `npm run gravar-uni` põe o modelo para
-       galopar e salva a volta inteira num WebP animado de ~140 KB (ver
-       scripts/gravar-uni.html). Assim ela corre já no primeiro quadro, sem
-       script nenhum — e continua correndo nos instantes em que o jogo trava
-       a thread principal para montar o mundo. -->
+       A espera é uma barra de progresso, mas quem a enche é a Uni: ela corre
+       da esquerda para a direita e vai deixando o arco-íris para trás. É o
+       modelo 3D do jogo, gravado quadro a quadro (`npm run gravar-uni`, ver
+       scripts/gravar-uni.html) — rodar three.js aqui seria esperar 1,9 MB de
+       JavaScript justamente para cobrir a espera de 1,9 MB de JavaScript.
+
+       Tudo o que está aqui é HTML e CSS, para pintar no primeiro quadro e
+       continuar andando mesmo nos instantes em que o jogo trava a thread
+       principal para montar o mundo. -->
   <div id="loading" role="status" aria-label="Carregando o jogo">
-    <div class="load-palco">
-      <!-- o chão passando: a linha coincide com os cascos da gravação -->
-      <svg class="load-chao-svg" viewBox="0 0 240 150" aria-hidden="true">
-        <g class="load-chao" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".7">
-          <path d="M-20 116 L4 116"/><path d="M28 116 L52 116"/><path d="M76 116 L100 116"/>
-          <path d="M124 116 L148 116"/><path d="M172 116 L196 116"/><path d="M220 116 L244 116"/>
-        </g>
-      </svg>
-      <img class="load-uni" src="./assets/loading/uni.webp" alt="" width="480" height="300"
+    <p class="load-brand">UnicornRush</p>
+    <div class="load-pista">
+      <i class="load-feito"></i>
+      <img class="load-uni" src="./assets/loading/uni.webp" alt="" width="300" height="260"
            decoding="async" fetchpriority="high" draggable="false" />
     </div>
-    <p class="load-brand">UnicornRush</p>
     <p class="load-text">Preparando a pista<span class="load-reticencias">…</span></p>
-    <span class="load-bar"><i></i></span>
   </div>
 
   <div id="stage">
@@ -102,6 +97,23 @@
 
     <div id="flash"></div>
     <div id="powers"></div>
+    <!-- A frase da aula, no modo Aprender. Fica fixa enquanto a aula dura,
+         ao contrário do #toast, que passa (ver Game.updateLesson). -->
+    <!-- A frase da aula e, embaixo dela, uma bolinha por aula da lição. Vão
+         juntos numa caixa só para as bolinhas acompanharem a faixa quando
+         ela cresce para duas linhas. -->
+    <div id="lesson-box" hidden>
+      <p id="lesson" hidden></p>
+      <div id="lesson-dots" hidden></div>
+    </div>
+
+    <!-- A seta do movimento que a aula está pedindo. As três casas têm a
+         mesma largura e o mesmo espaçamento dos botões de toque, para cada
+         seta cair exatamente em cima do botão de que fala. -->
+    <div id="lesson-hint" hidden>
+      <span data-seta="left"></span><span data-seta="jump"></span><span data-seta="right"></span>
+    </div>
+    <div id="lesson-ok" hidden><img class="fi" src="./assets/emoji/check_mark_button.png" alt="✅" /></div>
     <div id="toast"></div>
 
     <div id="touch-controls">
