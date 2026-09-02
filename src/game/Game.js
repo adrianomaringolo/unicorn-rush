@@ -317,6 +317,15 @@ export class Game {
       };
   }
 
+  // A posição guardada da grade. Não se apaga ao ser lida: escolher um
+  // unicórnio na ficha redesenha a grade duas vezes (uma pelo `setCharacter`,
+  // outra pelo `voltar`), e apagar na primeira fazia a segunda pular de
+  // volta para o escolhido. Quem apaga é o `showHome`: chegar pela tela
+  // inicial começa a grade do zero.
+  gridScrollOrNull() {
+    return this.gridScroll ?? null;
+  }
+
   // Sem `price` vem liberado (só a Uni e o Campo); o resto, depois de trocado.
   // No modo teste tudo está liberado — sem escrever nada na loja, então
   // desligar o modo devolve as compras de verdade.
@@ -691,6 +700,7 @@ export class Game {
     // Quem sai da lição pela pausa passa por aqui: as escolhas voltam
     // também nesse caminho, não só ao terminar.
     this.restoreAfterTutorial();
+    this.gridScroll = null;      // a grade recomeça do zero vinda daqui
     this.reset();
 
     const retratos = getPortraits(CHARACTER_LIST);
@@ -919,6 +929,8 @@ export class Game {
       return;
     }
     sfx.tap();
+    // Onde a grade estava: quem fecha a ficha volta para a mesma fileira.
+    this.gridScroll = this.ui.extraScroll();
     this.showItemSheet(kind, id);
   }
 
@@ -945,6 +957,7 @@ export class Game {
       hint: true,
       title: 'Quem vai correr?',
       html: this.gridHtml('character'),
+      scroll: this.gridScrollOrNull(),
       buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
     });
@@ -1173,6 +1186,7 @@ export class Game {
       // rola: embaixo de 15 miniaturas ela nunca seria lida.
       text: this.trackLegend(),
       html: this.gridHtml('track'),
+      scroll: this.gridScrollOrNull(),
       buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
     });

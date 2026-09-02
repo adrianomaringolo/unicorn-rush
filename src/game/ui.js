@@ -300,7 +300,7 @@ export function createUI() {
     showOverlay: ({
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
-      book = false, hint = false, arrows = true,
+      book = false, hint = false, arrows = true, scroll = null,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -328,9 +328,16 @@ export function createUI() {
 
       extra.innerHTML = withIcons(html);
       extra.hidden = !html;
-      // As grades agora passam de uma tela (21 unicórnios, 15 pistas): abrir
-      // já mostrando o escolhido evita a criança achar que ele sumiu.
-      extra.querySelector('.escolhido')?.scrollIntoView({ block: 'nearest' });
+      // `scroll` é a posição que a grade tinha antes de abrir a ficha de um
+      // item: quem volta encontra a fileira onde deixou, em vez de ser
+      // jogado de volta para o escolhido (que pode estar lá em cima).
+      //
+      // Sem posição guardada, abre mostrando o escolhido — as grades passam
+      // de uma tela (22 unicórnios, 15 pistas) e, sem isso, a criança acha
+      // que o dela sumiu.
+      if (scroll === null) {
+        extra.querySelector('.escolhido')?.scrollIntoView({ block: 'nearest' });
+      }
       // Quando a grade passa da altura do cartão, o cartão avisa (o CSS
       // desbota as bordas): fileira cortada sem aviso parece defeito.
       card.classList.toggle('rola', extra.scrollHeight > extra.clientHeight + 1);
@@ -354,12 +361,22 @@ export function createUI() {
       buttons.hidden = list.length === 0;
       overlay.classList.remove('hidden');
       hud.classList.add('dim');
+
+      // A posição guardada da grade é devolvida aqui, no fim: só depois de
+      // o cartão inteiro estar montado (os botões de baixo mudam a altura
+      // útil da área que rola) o `scrollTop` "pega". Atribuir junto com o
+      // `innerHTML`, lá em cima, ficava preso em zero.
+      if (scroll !== null) extra.scrollTop = scroll;
     },
 
     hideOverlay: () => {
       overlay.classList.add('hidden');
       hud.classList.remove('dim');
     },
+
+    // Onde a grade está rolada agora — para poder voltar a ela depois de
+    // uma ida à ficha de um item.
+    extraScroll: () => extra.scrollTop,
 
     // Cliques dentro do bloco livre (grade de fases, grade de personagens…).
     // O som sai daqui para todo tile ter resposta, inclusive o trancado —
