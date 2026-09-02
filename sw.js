@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.17.1';
+const VERSION = 'unicornrush-v0.18.0';
 
 const SHELL = [
   './',
@@ -60,6 +60,8 @@ const SHELL = [
   './assets/story/7.webp',
   './assets/story/8.webp',
   './assets/story/9.webp',
+  './assets/story/10.webp',
+  './assets/story/11.webp',
   // Ícones do Fluent Emoji: sem eles no cache, o jogo instalado abriria
   // offline com buracos no lugar dos ícones.
   './assets/emoji/1st_place_medal.png',

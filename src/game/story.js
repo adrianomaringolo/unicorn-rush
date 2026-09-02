@@ -41,16 +41,20 @@ let proximoId = 0;
 function unicornio({
   x = 0, y = 0, s = 1, corpo = '#fffaff', focinho = '#ff9dc0',
   crina = ARCO, chifre = OURO, olhando = 1, triste = false, asa = null,
-  silhueta = null, opacidade = 1, correndo = false,
+  silhueta = null, opacidade = 1, correndo = false, invisivel = false,
 } = {}) {
   // Silhueta: a mesma forma pintada de uma cor só, sem contorno nem olho.
   // É como o amigo trancado aparece atrás da porta.
-  const cor = silhueta || corpo;
-  const traco = silhueta ? 'none' : TRACO;
-  const c = silhueta ? [silhueta, silhueta, silhueta, silhueta] : [
-    crina[0], crina[1] || crina[0], crina[2] || crina[0], crina[3] || crina[1] || crina[0],
-  ];
-  const larguraTraco = silhueta ? 0 : 1.7;
+  //
+  // Invisível: sem pintura nenhuma, só o contorno picotado. É o Eco antes de
+  // a alegria chegar — está ali o tempo todo, e ninguém vê.
+  const cor = invisivel ? 'none' : (silhueta || corpo);
+  const traco = invisivel ? 'rgba(255,255,255,.8)' : (silhueta ? 'none' : TRACO);
+  const c = invisivel ? Array(4).fill('rgba(255,255,255,.55)')
+    : silhueta ? [silhueta, silhueta, silhueta, silhueta] : [
+      crina[0], crina[1] || crina[0], crina[2] || crina[0], crina[3] || crina[1] || crina[0],
+    ];
+  const larguraTraco = invisivel ? 1.7 : (silhueta ? 0 : 1.7);
   // Uma perna galopando é uma linha grossa dobrada no joelho — desenhada
   // duas vezes, a de baixo mais larga, que é o contorno.
   const perna = (d) => (silhueta ? '' : `<path d="${d}" fill="none" stroke="${traco}"
@@ -69,7 +73,8 @@ function unicornio({
        <rect x="67" y="52" width="9" height="26" rx="4.5" fill="${cor}" stroke="${traco}" stroke-width="${larguraTraco}"/>`;
 
   return `
-  <g transform="translate(${x} ${y}) scale(${s * olhando} ${s})" opacity="${opacidade}">
+  <g transform="translate(${x} ${y}) scale(${s * olhando} ${s})" opacity="${opacidade}"
+     ${invisivel ? 'stroke-dasharray="4 3.5" fill="none"' : ''}>
     <!-- rabo, atrás de tudo -->
     <path d="M24 34 C8 34 2 52 8 70" stroke="${c[0]}" stroke-width="10" stroke-linecap="round" fill="none"/>
     <path d="M25 37 C12 38 7 52 13 68" stroke="${c[1]}" stroke-width="6.5" stroke-linecap="round" fill="none"/>
@@ -95,12 +100,14 @@ function unicornio({
     <path d="M82 6 C74 12 69 22 67 33" stroke="${c[3]}" stroke-width="2.6" stroke-linecap="round" fill="none"/>
     <!-- orelha e chifre, atrás da cabeça -->
     <path d="M83 0 L79 -12 L89 -4 Z" fill="${cor}" stroke="${traco}" stroke-width="${larguraTraco}" stroke-linejoin="round"/>
-    <path d="M91 -3 L96 -21 L100 -1 Z" fill="${silhueta || chifre}"
-          stroke="${silhueta ? 'none' : 'rgba(150,110,20,.45)'}" stroke-width="1.3" stroke-linejoin="round"/>
+    <path d="M91 -3 L96 -21 L100 -1 Z" fill="${invisivel ? 'none' : (silhueta || chifre)}"
+          stroke="${invisivel ? traco : silhueta ? 'none' : 'rgba(150,110,20,.45)'}"
+          stroke-width="1.3" stroke-linejoin="round"/>
     <!-- cabeça, por último: nada cobre o rosto -->
     <path d="M82 -1 C93 -6 105 -2 108 7 C111 16 106 23 97 24 C89 25 83 19 81 11 Z"
           fill="${cor}" stroke="${traco}" stroke-width="${larguraTraco}" stroke-linejoin="round"/>
-    <ellipse cx="105" cy="16" rx="6" ry="5" fill="${silhueta || focinho}" opacity="${silhueta ? 1 : 0.55}"/>
+    <ellipse cx="105" cy="16" rx="6" ry="5" fill="${invisivel ? 'none' : (silhueta || focinho)}"
+             stroke="${invisivel ? traco : 'none'}" stroke-width="1.2" opacity="${silhueta ? 1 : 0.55}"/>
     <!-- topete -->
     <path d="M87 -2 C93 2 96 6 96 11" stroke="${c[0]}" stroke-width="4" stroke-linecap="round" fill="none"/>
     ${silhueta ? '' : (triste
@@ -518,8 +525,8 @@ export const STORY = [
     title: 'Mas quem foi?',
     text: 'E ainda falta a Uni descobrir uma coisa: quem foi que trancou os '
       + 'amigos dela? Ninguém sabe. Dizem que a resposta mora lá em cima, na '
-      + 'torre da neblina — e que ela só abre para quem vencer todas as fases '
-      + 'do reino.',
+      + 'torre da neblina — e que ela só abre no dia em que o último amigo '
+      + 'sair de trás da porta dele.',
     art: () => moldura(`
       ${estrela(46, 34, 4.5, '#fff3b0', 0.75)}
       ${estrela(276, 26, 3.8, '#fff3b0', 0.6)}
@@ -573,6 +580,86 @@ export const STORY = [
     `),
   },
 ];
+
+
+// ---- O fim do livro ---------------------------------------------------
+//
+// Estas duas páginas **não vêm de graça**: só aparecem depois que a criança
+// termina as doze fases de alguma pista. É a resposta da página "Mas quem
+// foi?", e a torre da neblina só abre para quem chegou lá.
+export const STORY_END = [
+  {
+    id: 'eco',
+    image: './assets/story/10.webp',
+    title: 'O que ninguém via',
+    // A mais comprida do livro empurrava as bolinhas do progresso para fora
+    // do cartão; encurtada para a média das outras (~185 caracteres).
+    text: 'Lá dentro morava o Eco. Ele era invisível, e só a alegria podia '
+      + 'deixá-lo visível. Achou que, prendendo todo mundo, teria amigos — e '
+      + 'ficou mais triste ainda. Então espalhou as chaves, para a Uni, que é '
+      + 'a alegria em pessoa, encontrá-lo.',
+    art: () => moldura(`
+      ${estrela(40, 40, 4.5, '#fff3b0', 0.7)}
+      ${estrela(286, 32, 3.6, '#fff3b0', 0.55)}
+      ${nuvem(70, 44, 1, '#e8ddf7', 0.75)}
+      ${nuvem(250, 36, 0.85, '#e8ddf7', 0.65)}
+      <path d="M120 200 C142 122 186 96 226 96 C270 96 312 128 320 200 Z" fill="#9d90c8"/>
+      <path d="M140 200 C158 140 190 116 226 116 C264 116 296 148 302 200 Z" fill="#b3a7d8"/>
+      ${torre(228, 150, 0.86)}
+      <!-- A neblina fica entre ele e o mundo. -->
+      <g fill="#ffffff">
+        <ellipse cx="216" cy="140" rx="70" ry="7" opacity=".5"/>
+        <ellipse cx="262" cy="152" rx="50" ry="6" opacity=".4"/>
+      </g>
+      ${morros('#b9c9ba', '#a2b6a4')}
+      <!-- O Eco: está ali o tempo todo, e não dá para ver. -->
+      ${unicornio({ x: 26, y: 106, s: 0.86, invisivel: true, triste: true })}
+      <!-- As chaves que ele foi deixando pelo caminho. -->
+      ${chave(126, 150, 0.72, -18)}
+      ${chave(160, 166, 0.6, 12)}
+      ${chave(96, 168, 0.55, 24)}
+      <text x="52" y="72" font-size="17" fill="#7c8d99" opacity=".5"
+            font-family="Fredoka, sans-serif" font-weight="600">?</text>
+    `, '#b4c8f2', '#e8dfe6'),
+  },
+
+  {
+    id: 'alegria',
+    image: './assets/story/11.webp',
+    title: 'A alegria chegou',
+    text: 'A Uni abriu a última porta e chamou o Eco para correr. E aí, pela '
+      + 'primeira vez, ele sentiu alegria — e todo mundo pôde vê-lo! Hoje ele '
+      + 'corre com os outros pelas pistas do reino, e ninguém mais fica '
+      + 'sozinho por lá.',
+    art: () => moldura(`
+      ${arcoIris(160, 150, 104)}
+      ${nuvem(38, 26, 0.85)}
+      ${nuvem(286, 28, 0.8)}
+      ${estrela(300, 56, 6)}
+      ${estrela(22, 50, 5, '#ffe36b')}
+      ${morros()}
+      <!-- As portas ficaram abertas, todas. -->
+      ${porta(30, 176, 0.6, { aberta: true })}
+      ${porta(292, 176, 0.6, { aberta: true })}
+      <!-- O Eco, agora visível e colorido, correndo ao lado da Uni. -->
+      ${unicornio({ x: 92, y: 112, s: 0.72, corpo: '#f3eeff', focinho: '#c9bce8',
+        crina: ['#c09cff', '#ffffff', '#bcaef5', '#e3dcff'], chifre: '#e3dcff', correndo: true })}
+      ${unicornio({ x: 176, y: 108, s: 0.78, correndo: true })}
+      ${coracao(150, 68, 1.3)}
+      ${coracao(112, 88, 0.85, '#ffb4cd')}
+      ${coracao(214, 84, 0.75)}
+      ${brilho(76, 74, 0.9)}
+      ${brilho(252, 110, 0.7)}
+      ${estrela(132, 46, 5, '#ffe36b')}
+    `),
+  },
+];
+
+// O livro que a criança vê. As duas últimas páginas só entram depois das
+// doze fases (ver Game.storyBook).
+export function storyPages(comFim = false) {
+  return comFim ? [...STORY, ...STORY_END] : STORY;
+}
 
 export const STORY_PAGES = STORY.length;
 

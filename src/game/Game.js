@@ -29,7 +29,7 @@ import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
-import { STORY, STORY_PAGES, storyArt } from './story.js';
+import { storyPages, STORY_END } from './story.js';
 import { lessonsFor } from './tutorial.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate } from './update.js';
@@ -733,7 +733,7 @@ export class Game {
           </button>
         </div>
         <div class="extras">
-          <button class="mini-button historia" data-pick="story">📖 A história</button>
+          <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 A história${this.storyEndNew ? ' ✨' : ''}</button>
           <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
           <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
           <button class="mini-button aprender" data-pick="tutorial">👆 Aprender</button>
@@ -1222,6 +1222,30 @@ export class Game {
     promptInstall().then(() => this.showGrownUps());
   }
 
+  // As duas últimas páginas do livro — a resposta de "quem trancou?" — só
+  // existem quando **todos os unicórnios estiverem livres**. É a própria
+  // história que pede isso: o Eco só sente alegria quando não sobrou nenhum
+  // amigo trancado.
+  //
+  // As pistas não entram na conta de propósito: elas são lugares, não
+  // amigos. Quem já libertou os 21 merece o fim do livro mesmo que ainda
+  // vá comprar a Caverna depois.
+  get storyEndUnlocked() {
+    // `!c.earned` evita a volta em círculo: o Eco é conquistado *por* esta
+    // condição, então ele não pode fazer parte dela.
+    return CHARACTER_LIST.filter((c) => !c.earned)
+      .every((c) => this.isOwned('character', c.id));
+  }
+
+  // Ganhou o fim do livro e ainda não leu: o botão da tela inicial chama.
+  get storyEndNew() {
+    return this.storyEndUnlocked && !this.save.storyEndSeen;
+  }
+
+  get storyBook() {
+    return storyPages(this.storyEndUnlocked);
+  }
+
   // ---- O livro da história ---------------------------------------------
   //
   // Por que a Uni corre sozinha atrás de chaves? A resposta é uma história,
@@ -1235,10 +1259,11 @@ export class Game {
   showStory(pagina = 0) {
     this.state = STATE.READY;
     this.screen = 'story';
-    this.storyPage = Math.min(Math.max(0, pagina), STORY_PAGES - 1);
+    const livro = this.storyBook;
+    this.storyPage = Math.min(Math.max(0, pagina), livro.length - 1);
     const indice = this.storyPage;
-    const folha = STORY[indice];
-    const ultima = indice === STORY_PAGES - 1;
+    const folha = livro[indice];
+    const ultima = indice === livro.length - 1;
     this.ui.showPause(false);
     // O livro tem a música dele — mais lenta e mais quieta que a da pista,
     // porque aqui se lê (ou se ouve ler). Volta a da pista ao fechar.
@@ -1246,7 +1271,7 @@ export class Game {
 
     // As bolinhas embaixo: quantas páginas o livro tem e em qual estamos.
     // Também são botões — dá para pular direto para uma página.
-    const bolinhas = STORY.map((p, i) => (
+    const bolinhas = livro.map((p, i) => (
       `<button class="page-dot${i === indice ? ' agora' : ''}${i < indice ? ' lida' : ''}"`
       + ` data-pick="ir:${i}" aria-label="Página ${i + 1}"`
       + ` aria-current="${i === indice}"></button>`
@@ -1295,12 +1320,12 @@ export class Game {
     figura?.addEventListener('error', () => {
       const moldura = figura.closest('.book-art');
       figura.remove();
-      moldura?.insertAdjacentHTML('afterbegin', storyArt(indice));
+      moldura?.insertAdjacentHTML('afterbegin', folha.art());
     }, { once: true });
 
     // A próxima página já vai chegando: a virada fica instantânea, sem o
     // quadro em branco enquanto a imagem baixa.
-    if (!ultima) new Image().src = STORY[indice + 1].image;
+    if (!ultima) new Image().src = livro[indice + 1].image;
 
     // Para quem ainda não lê: a voz do aparelho conta a página em voz alta.
     speak(`${folha.title}. ${folha.text}`);
@@ -1309,7 +1334,7 @@ export class Game {
   turnPage(dir) {
     const proxima = this.storyPage + dir;
     // Bateu na capa ou na contracapa: chacoalha em vez de não fazer nada.
-    if (proxima < 0 || proxima >= STORY_PAGES) {
+    if (proxima < 0 || proxima >= this.storyBook.length) {
       sfx.deny();
       this.ui.shakeElement(document.querySelector('.book'));
       return;
@@ -1336,7 +1361,20 @@ export class Game {
   // não precisa vê-la de novo toda vez que abrir o jogo.
   closeStory() {
     if (!this.save.storySeen) update((save) => { save.storySeen = true; });
+    // Leu até a última página do livro completo: o 📖 para de piscar.
+    if (this.storyEndUnlocked && this.storyPage >= this.storyBook.length - 1
+        && !this.save.storyEndSeen) {
+      update((save) => { save.storyEndSeen = true; });
+    }
     music.play(this.track.id);      // fechou o livro, volta o tema da pista
+    // Alguém combinou o que vem depois do livro (hoje: o portal do Eco,
+    // quando a história acabou de ganhar o fim).
+    if (this.aposLivro) {
+      const seguir = this.aposLivro;
+      this.aposLivro = null;
+      return seguir();
+    }
+
     // Na primeira vez de todas, entre a história e o menu, o convite para a
     // lição. Só aqui: quem reabre o livro pelo 📖 já conhece o jogo e não
     // precisa ser perguntado de novo.

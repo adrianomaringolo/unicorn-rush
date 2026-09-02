@@ -806,12 +806,83 @@ A primeira vez que o jogo abre, ele não abre no menu: abre num **livro**.
 > mora na torre da neblina, que só abre para quem vencer todas as fases.
 
 São nove páginas, cada uma com uma figura grande em cima e duas ou três
-frases embaixo. É o que dá sentido a tudo o que a criança vai encontrar
+frases embaixo — **mais duas que não vêm de graça** (ver *O fim do livro*). É o que dá sentido a tudo o que a criança vai encontrar
 depois: por que se juntam chaves, por que os unicórnios e as pistas da loja
 estão trancados, por que cada um custa um número diferente — e por que vale a
-pena chegar até a fase 12. A última página é a única promessa que o jogo
-ainda não cumpre: a torre está lá no desenho, mas ainda não há nada para
-abrir ao fim das doze fases.
+pena chegar até a fase 12.
+
+### O fim do livro
+
+A página *"Mas quem foi?"* pergunta quem trancou os amigos. A resposta existe,
+mas só quando **os 21 unicórnios estiverem livres** — 743 chaves. Aí o livro
+ganha duas páginas no fim, e o botão 📖 da tela inicial pisca avisando.
+
+A condição é a própria história, não uma trava arbitrária: o Eco só sente
+alegria no dia em que não sobrou nenhum amigo trancado. É por isso que a
+página *"Mas quem foi?"* diz que a torre *"só abre no dia em que o último
+amigo sair de trás da porta dele"*.
+
+**As pistas não entram na conta**, de propósito: elas são lugares, não
+amigos. Quem libertou os 21 merece o fim do livro mesmo que ainda vá comprar
+a Caverna depois.
+
+Quem trancou foi o **Eco** — e não por maldade. Ele era **invisível**, e só a
+alegria podia deixá-lo visível; ninguém nunca o viu. Achou que, prendendo
+todo mundo, teria amigos, e só ficou mais triste. Então espalhou as chaves
+pelas pistas para que a **Uni, que é a alegria em pessoa**, o encontrasse.
+Na última página ela abre a porta, chama ele para correr, e é aí que ele
+fica visível pela primeira vez.
+
+### Os ecos que se veem
+
+O poder dele alcança as **duas** faixas vizinhas, então correm **dois ecos**,
+um de cada lado: cópias translúcidas dele, meio passo atrás. Sem elas, os
+itens da faixa ao lado sumiam sozinhos e ninguém entendia por quê.
+
+Não são cópias congeladas nem clones: são unicórnios montados pelo mesmo
+`createUnicorn`, animados pelo mesmo relógio. Como o `animateUnicorn` é
+determinístico no tempo, os três galopam em sincronia de graça — e os ecos
+recebem o tempo com **0,12 s de atraso**, que é o que faz parecerem eco e não
+gêmeos. A pintura some: as dezenas de cores do original dão lugar a **um
+material só**, translúcido, compartilhado pelos dois.
+
+Custam 200 malhas (100 cada) sobre as 126 do personagem, num cenário de
+~1100 — e só existem para um dos 22 unicórnios. Quem troca de personagem os
+descarta junto (`disposeEchoes`).
+
+### Quando o último amigo sai
+
+Comprar o 21º unicórnio não termina numa etiqueta de "comprado". A compra
+encadeia três momentos, sozinha: o portal daquele unicórnio abre como
+sempre; ao fechar, **o livro abre na página nova** (a resposta que faltava);
+e ao fechar o livro, **o portal do Eco abre**, com confete. Depois disso ele
+já é o unicórnio escolhido, e a criança cai na tela inicial correndo com ele.
+
+**E aí ele vira jogável.** O Eco é o 22º unicórnio e o único que **não se
+compra**: na grade ele aparece com um 🏆 no lugar do preço, e a ficha dele diz
+quantos amigos ainda faltam em vez de oferecer uma compra impossível.
+
+Até lá ele é **um mistério de verdade**, e não um cadeado com nome: na grade
+o retrato dele é uma **sombra escura** — bem diferente do desbotado que
+marca os outros trancados, onde ainda dá para ver quem é —, e a ficha não mostra nome (só `❓ ???`),
+nem história, nem poder, nem as pistas dele — só um recado dizendo que
+alguém espera na torre da neblina. A voz também não fala o nome. Seria
+estranho o jogo apresentar em detalhe justamente o unicórnio que ninguém
+consegue ver. Quem
+faz isso é o `earned: true` dos dados dele — sem esse caso, `isOwned` veria um
+personagem sem preço e o daria de graça no primeiro dia. E `storyEndUnlocked`
+ignora os `earned`, senão o Eco dependeria de si mesmo para existir.
+
+Isso responde a pergunta que o jogo nunca tinha respondido — **de onde vêm as
+chaves** — e dá um fim ao jogo inteiro, que antes simplesmente parava quando
+não havia mais o que comprar. As duas
+páginas ficam em `STORY_END` (`story.js`); quem decide se elas existem é o
+`Game.storyEndUnlocked`, e o `storyEndSeen` do save é o que faz o 📖 parar de
+piscar depois de lidas.
+
+As onze ilustrações estão em `assets/story/` — as duas últimas, 10 e 11,
+mostram o Eco em contorno luminoso na neblina e depois correndo visível ao
+lado da Uni entre os portais abertos.
 
 A história vive em `src/game/story.js` e a tela em `Game.showStory`:
 
@@ -837,7 +908,7 @@ A história vive em `src/game/story.js` e a tela em `Game.showStory`:
 
 ### As figuras
 
-As nove ilustrações estão em `assets/story/` (`1.webp` … `9.webp`, na ordem
+As onze ilustrações estão em `assets/story/` (`1.webp` … `11.webp`, na ordem
 das páginas). Foram geradas a partir dos prompts de
 `docs/prompts-historia.md` e depois **otimizadas**: de 1586×992 em PNG
 (13 MB no total) para 1280 px de largura em WebP, ~87 KB cada, **784 KB o

@@ -1,7 +1,13 @@
 # Prompts para gerar as imagens da história no ChatGPT
 
-As nove figuras do livro (`src/game/story.js`) foram geradas a partir destes
-prompts e vivem em `assets/story/1.webp` … `9.webp`. Este arquivo fica aqui
+As figuras do livro (`src/game/story.js`) foram geradas a partir destes
+prompts e vivem em `assets/story/1.webp` … `11.webp`.
+
+Ao acrescentar uma página nova: gere o PNG, guarde em
+`assets/story/originais/`, converta para WebP (ver *Depois de gerar*) **e só
+então** acrescente a linha no `SHELL` do `sw.js` — nunca antes, porque o
+cache offline se instala de uma vez só e falha inteiro se listar um arquivo
+que não existe. Este arquivo fica aqui
 para refazer uma página, ajustar uma cena ou gerar o livro inteiro de novo.
 
 (O `story.js` ainda tem as mesmas nove cenas desenhadas em SVG por código,
@@ -72,6 +78,12 @@ OBJETOS RECORRENTES
 - PORTA MÁGICA: portal em arco, moldura roxa (#5b3c96), interior escuro
   quando trancada, com um cadeado dourado grande na frente.
 - CORAÇÃO: coração rosa (#ff8fb1) chapado, flutuando.
+- ECO: o unicórnio **invisível**. Não se desenha o corpo dele: desenha-se
+  o **contorno** — uma silhueta de unicórnio feita só de linha branca
+  pontilhada, vazia por dentro, como um desenho a giz no ar. Só o olho
+  (fechado, triste) e uma lagriminha azul são de verdade. Quando ele fica
+  visível (última cena), aí sim é um unicórnio inteiro: corpo branco-lilás
+  (#f3eeff), crina em lilás e branco, chifre lilás pálido.
 - TORRE DA NEBLINA: torre estreita de pedra roxa (#5b4a86) com telhado
   pontudo mais escuro, bandeirinha roxa no topo, uma janelinha em arco
   acesa em dourado e uma portinha trancada com cadeado. Sempre longe, no
@@ -195,7 +207,8 @@ Sem personagens; a cena é sobre os lugares fechados esperando para abrir.
 
 > *"E ainda falta a Uni descobrir uma coisa: quem foi que trancou os amigos
 > dela? Ninguém sabe. Dizem que a resposta mora lá em cima, na torre da
-> neblina — e que ela só abre para quem vencer todas as fases do reino."*
+> neblina — e que ela só abre no dia em que o último amigo sair de trás da
+> porta dele."*
 
 ```
 Cena 8: fim de tarde, céu em azul-lilás (#b4c8f2) virando rosa (#ffd8e8),
@@ -229,6 +242,41 @@ festiva de todas: é o convite para jogar.
 ```
 
 ---
+
+## Página 10 — O que ninguém via
+
+> *"Lá dentro morava o Eco. Ele era invisível, e só a alegria podia deixá-lo
+> visível. Achou que, prendendo todo mundo, teria amigos — e ficou mais triste
+> ainda. Então espalhou as chaves, para a Uni, que é a alegria em pessoa,
+> encontrá-lo."*
+
+```
+Cena 10: fim de tarde melancólico, céu azul-lilás desbotando para um rosa
+acinzentado, grama sem viço. À direita, no alto de um morro roxo-acinzentado,
+a TORRE DA NEBLINA com a janelinha acesa. À esquerda, em primeiro plano, o
+ECO: uma silhueta de unicórnio feita só de contorno branco pontilhado, vazia
+por dentro — dá para ver a grama através dele. Cabeça baixa, olho fechado,
+uma lagriminha azul (a única coisa "sólida" nele). No chão, entre ele e a
+torre, três CHAVES MÁGICAS douradas que ele foi deixando pelo caminho. Um
+ponto de interrogação cinza pálido no céu. Tristeza silenciosa, nunca
+assustadora: ele não é um vilão, é alguém que ninguém enxergava.
+```
+
+## Página 11 — A alegria chegou
+
+> *"A Uni abriu a última porta e chamou o Eco para correr. E aí, pela primeira
+> vez, ele sentiu alegria — e todo mundo pôde vê-lo! Hoje ele corre com os
+> outros pelas pistas do reino, e ninguém mais fica sozinho por lá."*
+
+```
+Cena 11: a cena mais luminosa do livro. Arco-íris grande e vivo, grama verde
+brilhante, céu limpo. UNI galopando à direita, e ao lado dela o ECO —
+agora um unicórnio INTEIRO e visível, corpo branco-lilás, crina em lilás e
+branco, chifre lilás pálido — galopando junto pela primeira vez, com cara de
+espanto feliz. Nos dois cantos, PORTAS MÁGICAS abertas e vazias, com luz
+dourada saindo. Corações rosa e estrelas douradas subindo. Ninguém está
+sozinho na imagem.
+```
 
 ## Depois de gerar
 
