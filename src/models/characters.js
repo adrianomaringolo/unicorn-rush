@@ -43,7 +43,7 @@ export const CHARACTERS = {
     title: 'o unicórnio do amanhecer',
     story: 'Sol acorda antes de todo mundo para acender o dia. '
       + 'Quando ele galopa, deixa um rastro morninho de laranja e dourado que faz as flores abrirem.',
-    price: 4,
+    price: 3,
     body: 0xfff1d6,
     hoof: 0xffb570,
     muzzle: 0xffa96b,
@@ -67,7 +67,7 @@ export const CHARACTERS = {
     title: 'a unicórnia da noite',
     story: 'Lua só sai quando o céu escurece, para cuidar dos sonhos de quem dorme. '
       + 'Seu rastro é um pedacinho de céu estrelado, e ela conhece todos os atalhos da noite.',
-    price: 6,
+    price: 5,
     body: 0xe9e6ff,
     hoof: 0xb0a6f0,
     muzzle: 0xb9aef5,
@@ -91,7 +91,7 @@ export const CHARACTERS = {
     title: 'o unicórnio de fogo',
     story: 'Brasa é o maior da turma e corre tão rápido que a crina dele pega fogo. '
       + 'Onde ele passa fica um caminho de brasas quentinhas que some devagar.',
-    price: 16,
+    price: 14,
     body: 0x3a2f3f,
     hoof: 0xff8a3c,
     muzzle: 0xff6b3c,
@@ -121,7 +121,7 @@ export const CHARACTERS = {
     title: 'a unicórnia bebê',
     story: 'Lulu é a menorzinha do grupo e ainda está aprendendo a voar. '
       + 'Ela é branquinha como nuvem e deixa um fiozinho de brilho por onde passa.',
-    price: 12,
+    price: 10,
     body: 0xffffff,
     hoof: 0xffd9e8,
     muzzle: 0xffc2dc,
@@ -149,7 +149,7 @@ export const CHARACTERS = {
     title: 'a unicórnia que caiu do céu',
     story: 'Estrela caiu do céu numa noite de agosto e resolveu ficar para brincar. '
       + 'Ela brilha tanto que as estrelinhas da pista aparecem só para correr junto.',
-    price: 9,
+    price: 8,
     body: 0xfff8e6,
     hoof: 0xffe08a,
     muzzle: 0xffd9a8,
@@ -175,7 +175,7 @@ export const CHARACTERS = {
     title: 'a unicórnia de chiclete',
     story: 'Chiclete faz bolhas do tamanho da cabeça dela e sai quicando pela pista. '
       + 'Quando a bolha estoura, ela ri tanto que precisa parar para respirar.',
-    price: 20,
+    price: 18,
     body: 0xffb3d9,
     hoof: 0xff7ab8,
     muzzle: 0xff8ac4,
@@ -203,7 +203,7 @@ export const CHARACTERS = {
     title: 'o unicórnio da floresta',
     story: 'Musgo é o mais calmo da turma e conhece cada árvore pelo nome. '
       + 'Onde ele cochila de tarde, no dia seguinte nasce uma flor.',
-    price: 26,
+    price: 23,
     body: 0xdff0d2,
     hoof: 0x7fae62,
     muzzle: 0x9cc47f,
@@ -231,7 +231,7 @@ export const CHARACTERS = {
     title: 'a unicórnia do mar',
     story: 'Onda nasceu numa espuma de onda grande e nunca aprendeu a andar devagar. '
       + 'Debaixo d\'água ela é a mais rápida de todas, e adora aparecer de surpresa.',
-    price: 32,
+    price: 28,
     // Turquesa de água funda, não o azul claro do gelo — e o chifre e uma
     // mecha de coral, para ela ter um acento quente que o Floco não tem.
     body: 0x5fc9c4,
@@ -264,7 +264,7 @@ export const CHARACTERS = {
     title: 'o unicórnio de gelo',
     story: 'Floco dorme o verão inteiro e acorda no primeiro dia frio. '
       + 'Ele sopra baixinho e o ar vira purpurina de gelo atrás dele.',
-    price: 34,
+    price: 30,
     // Azul-gelo de verdade, não branco: o elenco já tem três claros (Uni,
     // Lulu e Estrela) e um quarto se perderia no meio deles. Contra a Onda,
     // que é turquesa (puxa para o verde), este puxa para o azul.
@@ -298,7 +298,7 @@ export const CHARACTERS = {
     title: 'o unicórnio da praia',
     story: 'Coco passou tanto tempo dormindo debaixo do coqueiro que ficou da cor da casca. '
       + 'Ele conhece o lugar exato onde a onda faz mais espuma.',
-    price: 38,
+    price: 34,
     // O único marrom do elenco.
     body: 0xb5875a,
     hoof: 0x7d5a38,
@@ -327,7 +327,7 @@ export const CHARACTERS = {
     title: 'o unicórnio do espaço',
     story: 'Cometa não sabe parar: desde que nasceu está atravessando o céu. '
       + 'Dizem que quem consegue acompanhá-lo ganha um pedido.',
-    price: 42,
+    price: 37,
     // Índigo — precisa ler como roxo, não como preto: no tamanho da grade um
     // corpo escuro demais se confunde com o do Brasa.
     body: 0x4a3f96,
@@ -365,7 +365,7 @@ export const CHARACTERS = {
     title: 'a unicórnia mais ligeira',
     story: 'Cereja não anda: ela desvia. Dizem que consegue trocar de pista '
       + 'duas vezes antes de a poeira do primeiro desvio assentar.',
-    price: 44,
+    price: 39,
     // O vermelho que faltava no elenco.
     body: 0xe03050,
     hoof: 0x8f1a30,
@@ -393,7 +393,7 @@ export const CHARACTERS = {
     title: 'o unicórnio elétrico',
     story: 'Limão é o menor depois da Lulu e não para quieto um segundo. '
       + 'Quando ele pula, dá até para ouvir um estalinho no ar.',
-    price: 48,
+    price: 43,
     // Amarelo-limão: o elenco tinha dourado (Sol), mas não amarelo.
     body: 0xf2e33a,
     hoof: 0xb8a800,
@@ -423,7 +423,7 @@ export const CHARACTERS = {
     title: 'a unicórnia de fumaça',
     story: 'Violeta é meio feita de fumaça: quando salta, demora para descer, '
       + 'como se o ar segurasse ela um pouquinho.',
-    price: 54,
+    price: 48,
     // Roxo saturado — a Lua é lilás pálido e o Cometa é índigo escuro.
     body: 0x8b3fd6,
     hoof: 0x5a1f96,
@@ -450,7 +450,7 @@ export const CHARACTERS = {
     title: 'a unicórnia de vidro',
     story: 'Cristal é transparente como uma janela de gelo, e dá para ver o '
       + 'arco-íris passar por dentro dela quando o sol bate de lado.',
-    price: 60,
+    price: 54,
     body: 0xdff4ff,
     hoof: 0x8fd0e8,
     muzzle: 0xeaf9ff,
@@ -476,7 +476,7 @@ export const CHARACTERS = {
     title: 'o unicórnio mais antigo',
     story: 'Vovô já correu em todas as pistas, algumas antes de elas terem nome. '
       + 'Ele não é rápido para desviar, mas o rastro dele cobre a pista inteira.',
-    price: 66,
+    price: 59,
     // O cinza/prata que faltava.
     body: 0x9aa0ad,
     hoof: 0x5c6270,
@@ -504,7 +504,7 @@ export const CHARACTERS = {
     title: 'o unicórnio da meia-noite',
     story: 'Sombra é preto de verdade, sem um fiozinho de cor. '
       + 'Ele brilha por conta própria, então nunca corre no escuro.',
-    price: 72,
+    price: 64,
     // Preto fosco, sem o laranja do Brasa.
     body: 0x22202b,
     hoof: 0x3d3a4a,
@@ -533,7 +533,7 @@ export const CHARACTERS = {
     title: 'o unicórnio da tempestade',
     story: 'Relâmpago nasceu no talho de um raio, numa noite de tempestade. '
       + 'O vento que desgoverna todo mundo não desvia ele nem um pouco: corta a Tempestade em linha reta.',
-    price: 78,
+    price: 70,
     // Azul-tempestade escuro, para não se confundir com o cinza do Vovô nem
     // o índigo do Cometa — e crina de eletricidade, amarelo elétrico e branco.
     body: 0x3d4a66,
@@ -564,7 +564,7 @@ export const CHARACTERS = {
     story: 'Pipoca mora onde a música nunca para: entre o carrossel do Parque e '
       + 'as ruas de pedra do Vilarejo. Onde ele passa cheira a manteiga, e todo '
       + 'coração que ele encontra vale por dois.',
-    price: 84,
+    price: 75,
     // Creme de pipoca com o vermelho da caixa listrada; a crina é o milho
     // estourando — branco, manteiga e um toque de caramelo.
     body: 0xfff4d6,
@@ -594,7 +594,7 @@ export const CHARACTERS = {
     story: 'Pérola cresceu dentro de uma concha, no escuro do fundo do mar. '
       + 'Enxerga onde ninguém enxerga — no Oceano e na Bruma — e por isso acha '
       + 'chaves mágicas que passariam despercebidas por qualquer outro.',
-    price: 90,
+    price: 81,
     // Branco-perolado com reflexo de madrepérola: rosa e azul no mesmo corpo.
     body: 0xfdf0f6,
     hoof: 0xe8c9de,
