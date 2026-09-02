@@ -48,6 +48,8 @@ const RETRY_HELP = {
   direita: '➡️ Toque na seta da direita',
   lado: '⬅️ ➡️ Toque numa das setas',
   pular: '⬆️ Toque na seta de cima para pular',
+  'pulo-duplo': '⬆️ Pule e, no ar, toque de novo',
+  rapido: '⚡ Toque no botão RÁPIDO, no canto de cima',
 };
 
 // Libera a memória da GPU ao trocar de personagem.
@@ -373,6 +375,9 @@ export class Game {
     this.ui.showRush(true, this.rush);
     sfx.pick();
     this.ui.toast(this.rush ? '⚡ Disparou!' : 'Voltou ao normal');
+    // Na lição, a aula do ⚡ só passa quando ele é **ligado** — desligar não
+    // ensina nada.
+    if (this.rush) this.lessonAction('rapido');
   }
 
   // Relâmpago da Tempestade: de vez em quando o céu clareia de uma vez e
@@ -1562,7 +1567,7 @@ export class Game {
 
   // A lição é sempre com a **Uni no Campo**: é a combinação que todo mundo
   // tem desde o primeiro dia, e é para ela que as aulas foram escritas (a
-  // barreira do Campo, a pedra do Campo). Com outro unicórnio numa pista
+  // barreira do Campo, o obstáculo do Campo). Com outro unicórnio numa pista
   // comprada, a mesma frase ensinaria outra coisa.
   //
   // A troca vale só para esta corrida — o save não é tocado. Quem estava com
@@ -1615,6 +1620,11 @@ export class Game {
     this.ui.setLessonProgress(indice, this.lessons.length);
     this.ui.setLessonHint(aula.acao || null);
     this.world.spawnLessonItems(aula);
+    // Aulas que mostram algo que normalmente leva muito tempo para acontecer.
+    if (aula.mostra === 'chave') {
+      this.showHeartsToKey();
+      sfx.key();
+    }
   }
 
   // A criança fez o movimento que a aula pedia?
@@ -1622,14 +1632,30 @@ export class Game {
     const l = this.licao;
     if (!l || !l.acao || l.feito) return;
     // 'lado' aceita os dois: o que se ensina ali é sair da frente, e tanto
-    // faz para que lado.
-    const serve = l.acao === 'lado' ? (qual === 'esquerda' || qual === 'direita') : l.acao === qual;
+    // faz para que lado. E 'pular' se dá por satisfeito com o pulo duplo —
+    // quem pulou duas vezes pulou.
+    const serve = l.acao === 'lado' ? (qual === 'esquerda' || qual === 'direita')
+      : l.acao === 'pular' ? (qual === 'pular' || qual === 'pulo-duplo')
+        : l.acao === qual;
     if (!serve) return;
 
     l.feito = true;
+    // O som sai já, no toque: é a resposta imediata ao comando. O ✅ fica
+    // para quando a aula fecha de verdade — antes ele aparecia no toque e,
+    // se a criança batesse logo depois, vinha um "bateu, de novo" logo atrás
+    // do certinho verde. Dois sinais opostos em meio segundo.
     sfx.correct();
     this.ui.setLessonHint(null);
-    this.ui.lessonCheck();
+  }
+
+  // Bateu no obstáculo da aula. Devolve `true` se isso reprovou a aula.
+  lessonMissed() {
+    const l = this.licao;
+    // A aula do ⚡ não é sobre desviar: bater nela não reprova nada.
+    if (!l || !l.acao || l.acao === 'rapido') return false;
+    l.feito = false;
+    l.bateu = true;
+    return true;
   }
 
   updateLesson() {
@@ -1643,10 +1669,18 @@ export class Game {
     if (l.acao && !l.feito) {
       this.world.clearLessonItems();
       sfx.deny();
-      this.ui.toast(l.tentativa >= 2 ? RETRY_HELP[l.acao] : 'Vamos tentar de novo 💗');
+      // Quem bateu já ouviu "bateu!" no toast da trombada; repetir aqui só
+      // atrapalha. Quem simplesmente não fez precisa do aviso.
+      if (!l.bateu) {
+        this.ui.toast(l.tentativa >= 2 ? RETRY_HELP[l.acao] : 'Vamos tentar de novo 💗');
+      }
       return this.startLesson(l.i, l.tentativa + 1);
     }
 
+    // Passou de verdade: o ✅ é das aulas que cobravam movimento, o confete
+    // é de toda aula vencida — inclusive as de só olhar.
+    if (l.acao) this.ui.lessonCheck();
+    this.ui.confetti();
     return this.startLesson(l.i + 1);
   }
 
@@ -1765,7 +1799,9 @@ export class Game {
     p.vy = (primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY) * impulso;
     p.grounded = false;
     p.jumps += 1;
-    this.lessonAction('pular');
+    // O segundo salto é um comando diferente do primeiro, e a lição precisa
+    // saber qual dos dois aconteceu.
+    this.lessonAction(p.jumps >= 2 ? 'pulo-duplo' : 'pular');
 
     if (primeiro) {
       sfx.jump();
@@ -1933,7 +1969,12 @@ export class Game {
     this.ui.setWallet(this.wallet, false);
     sfx.key();
     this.ui.toast(quantas > 1 ? `🔑 +${quantas} chaves!` : '🔑 Mais uma chave!');
+    this.showHeartsToKey();
+  }
 
+  // Só a animação, sem creditar nada. A lição usa isto para mostrar a regra
+  // dos 50 pontos sem ter de fazer a criança juntar 50 corações antes.
+  showHeartsToKey() {
     if (this.keyFx) {
       this.scene.remove(this.keyFx);
       disposeHeartsToKey(this.keyFx);
@@ -2099,7 +2140,10 @@ export class Game {
       sfx.hit();
       this.ui.flash();
       this.ui.shake();
-      this.ui.toast('Ops! Aqui não dói 💗');
+      // Numa aula de desviar ou pular, bater é errar: não adianta ter
+      // apertado o botão se apertou na hora errada. A aula recomeça.
+      const reprovou = this.lessonMissed();
+      this.ui.toast(reprovou ? 'Bateu! Vamos de novo 💗' : 'Ops! Aqui não dói 💗');
       return;
     }
 

@@ -459,8 +459,10 @@ export class World {
     }
   }
 
-  addLessonItem({ o, faixa = 1, altura }, recuo) {
-    const z = LESSON_SPAWN_Z + recuo;
+  addLessonItem({ o, faixa = 1, altura, recuo: proprio }, recuo) {
+    // O item pode dizer o próprio recuo, quando a aula depende da distância
+    // entre duas coisas (é o caso dos dois obstáculos do pulo duplo).
+    const z = LESSON_SPAWN_Z + (proprio ?? recuo);
     let obj;
     let y = altura ?? 1.15;
 

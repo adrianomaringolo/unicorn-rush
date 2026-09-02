@@ -483,6 +483,18 @@ html, body {
 #speed.cheio .gauge-bar i { background: linear-gradient(90deg, #ffd166, #ff5d5d); }
 
 /* Ligado ele fica aceso, para dar para ver de relance se está disparando. */
+/* A aula do ⚡ está pedindo: o botão ganha um anel rosa em volta do dourado,
+   diferente do pulso de "disponível" que ele já tem — quem pede é a lição,
+   não o jogo. */
+#hud-buttons #rush.pedindo {
+  border-color: var(--pink);
+  animation: rush-pedido .8s ease-in-out infinite;
+}
+@keyframes rush-pedido {
+  0%, 100% { box-shadow: 0 5px 0 rgba(191, 138, 20, .3), 0 0 0 0 rgba(255, 93, 143, .7); }
+  70%      { box-shadow: 0 5px 0 rgba(191, 138, 20, .3), 0 0 0 14px rgba(255, 93, 143, 0); }
+}
+
 /* Ligado: dourado cheio, a palavra em branco e o pulso mais rápido e mais
    forte — dá para ver que está ligado pelo canto do olho, correndo. */
 #hud-buttons #rush.ligado {
@@ -1824,6 +1836,10 @@ html, body {
   animation: seta-pede 1s ease-in-out infinite;
 }
 #lesson-hint .fi:nth-child(2) { animation-delay: .12s; }
+/* Duas setas na mesma casa (o pulo duplo): encolhem para caber na largura de
+   um botão, e a segunda pula depois — que é a ordem dos dois toques. */
+#lesson-hint > span.duplo .fi { width: clamp(26px, 8vw, 38px); height: clamp(26px, 8vw, 38px); }
+#lesson-hint > span.duplo { gap: 2px; }
 @keyframes seta-pede {
   0%, 100% { transform: translateY(0) scale(1); }
   50%      { transform: translateY(-10px) scale(1.12); }
@@ -1856,7 +1872,11 @@ html, body {
   height: clamp(70px, 22vw, 110px);
   filter: drop-shadow(0 6px 0 rgba(122, 78, 199, .25));
 }
-#lesson-ok.bate .fi { animation: acertou .85s cubic-bezier(.2, 1.6, .4, 1); }
+/* `forwards` é o que impede a segunda piscada: sem ele, o ícone volta ao
+   estado normal (opaco, tamanho cheio) no instante em que a animação acaba e
+   fica assim até o `hidden` chegar — meio segundo depois do certinho já ter
+   sumido, ele reaparecia. */
+#lesson-ok.bate .fi { animation: acertou .85s cubic-bezier(.2, 1.6, .4, 1) forwards; }
 @keyframes acertou {
   0%   { transform: scale(.2) rotate(-18deg); opacity: 0; }
   35%  { transform: scale(1.15) rotate(4deg); opacity: 1; }
@@ -1866,4 +1886,34 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   #lesson-hint .fi, #touch-controls button.pedindo, #lesson-ok.bate .fi { animation: none; }
+}
+
+
+/* --- Confete de aula concluída --------------------------------------- */
+/* Cada aula vencida solta um punhado de papelzinho colorido do meio da tela.
+   São elementos de verdade, criados e jogados fora a cada vez (uns 18, por
+   uns 1,3 s) — barato o bastante para acontecer 17 vezes numa lição. */
+#confetti {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+#confetti i {
+  position: absolute;
+  width: clamp(7px, 2vw, 10px);
+  height: clamp(10px, 2.8vw, 14px);
+  border-radius: 2px;
+  opacity: 0;
+  animation: confete 1.25s cubic-bezier(.15, .6, .35, 1) forwards;
+}
+@keyframes confete {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(0) scale(.6); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--giro)) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #confetti { display: none; }
 }

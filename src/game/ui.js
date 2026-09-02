@@ -44,9 +44,11 @@ export function createUI() {
   const lessonDots = $('#lesson-dots');
   const lessonHint = $('#lesson-hint');
   const lessonOk = $('#lesson-ok');
+  const confetti = $('#confetti');
   const touch = $('#touch-controls');
   const flash = $('#flash');
   let toastTimer = null;
+  let okTimer = null;
 
   const showToast = (message) => {
     toast.innerHTML = withIcons(message);
@@ -183,18 +185,52 @@ export function createUI() {
     // a seta da tela para o botão do polegar.
     setLessonHint: (acao) => {
       touch?.querySelectorAll('button').forEach((b) => b.classList.remove('pedindo'));
+      rushButton.classList.remove('pedindo');
       if (!acao) { lessonHint.hidden = true; return; }
-      const setas = { left: '⬅️', jump: '⬆️', right: '➡️' };
-      const acoes = {
-        esquerda: ['left'], direita: ['right'], lado: ['left', 'right'], pular: ['jump'],
-      }[acao] || [];
-      // Cada casa da linha corresponde a um botão; só as pedidas se enchem.
+      // O ⚡ não mora na fileira de toque, e sim no canto do HUD: a aula dele
+      // não tem seta embaixo, acende o próprio botão.
+      if (acao === 'rapido') {
+        lessonHint.hidden = true;
+        rushButton.classList.add('pedindo');
+        return;
+      }
+      // O que cada casa mostra. O pulo duplo leva duas setas na mesma casa:
+      // é o mesmo botão, tocado duas vezes.
+      const pedido = {
+        esquerda: { left: '⬅️' },
+        direita: { right: '➡️' },
+        lado: { left: '⬅️', right: '➡️' },
+        pular: { jump: '⬆️' },
+        'pulo-duplo': { jump: '⬆️⬆️' },
+      }[acao] || {};
       for (const casa of lessonHint.children) {
-        const nome = casa.dataset.seta;
-        casa.innerHTML = acoes.includes(nome) ? withIcons(setas[nome]) : '';
+        const seta = pedido[casa.dataset.seta];
+        casa.innerHTML = seta ? withIcons(seta) : '';
+        casa.classList.toggle('duplo', seta === '⬆️⬆️');
       }
       lessonHint.hidden = false;
-      for (const nome of acoes) touch?.querySelector(`[data-action="${nome}"]`)?.classList.add('pedindo');
+      for (const nome of Object.keys(pedido)) {
+        touch?.querySelector(`[data-action="${nome}"]`)?.classList.add('pedindo');
+      }
+    },
+
+    // Papelzinho colorido, do meio da tela para fora. Cada pedaço é um
+    // elemento que se joga fora sozinho quando termina.
+    confetti: () => {
+      const cores = ['#ff7b9d', '#ffb26b', '#ffe36b', '#8ce99a', '#74c0fc', '#c09cff'];
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('i');
+        const angulo = (Math.PI * 2 * i) / 18 + Math.random() * 0.4;
+        const raio = 90 + Math.random() * 110;
+        p.style.background = cores[i % cores.length];
+        p.style.setProperty('--x', `${(Math.cos(angulo) * raio).toFixed(0)}px`);
+        // Sobem menos do que descem: o papel cai, não flutua.
+        p.style.setProperty('--y', `${(Math.sin(angulo) * raio * 0.75 + 70).toFixed(0)}px`);
+        p.style.setProperty('--giro', `${Math.round((Math.random() - 0.5) * 720)}deg`);
+        p.style.animationDelay = `${(i % 5) * 0.03}s`;
+        confetti.appendChild(p);
+        setTimeout(() => p.remove(), 1500);
+      }
     },
 
     // O ✅ de "isso mesmo!", no meio da tela.
@@ -203,7 +239,12 @@ export function createUI() {
       lessonOk.classList.remove('bate');
       void lessonOk.offsetWidth;
       lessonOk.classList.add('bate');
-      setTimeout(() => { lessonOk.hidden = true; }, 900);
+      // Esconder exatamente quando a animação acaba (850 ms, não 900): os
+      // 50 ms de sobra eram uma janela em que o ✅ já tinha terminado de
+      // sumir e voltava a aparecer — a segunda piscada. O `forwards` no CSS
+      // fecha a mesma janela pelo outro lado.
+      clearTimeout(okTimer);
+      okTimer = setTimeout(() => { lessonOk.hidden = true; }, 850);
     },
 
     // A faixa da lição, no modo Aprender. Fica na tela enquanto a aula

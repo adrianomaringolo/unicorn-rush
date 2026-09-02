@@ -12,7 +12,11 @@
 //   `itens` — o que nasce na pista. `faixa` é 0, 1 ou 2 (esquerda, meio,
 //             direita) e `o` é o quê: 'heart', 'star', 'key', 'rock',
 //             'barrier' ou o id de um power-up.
-//   `acao`  — 'esquerda', 'direita' ou 'pular'. Quando existe, a aula **cobra**:
+//   `mostra` — uma demonstração que a aula dispara ao começar. Hoje só
+//             'chave': a animação dos corações virando chave, que na corrida
+//             de verdade só aparece a cada 50 pontos.
+//   `acao`  — 'esquerda', 'direita', 'lado', 'pular', 'pulo-duplo' ou
+//             'rapido'. Quando existe, a aula **cobra**:
 //             aparece a seta piscando, e ela só passa quando a criança faz o
 //             movimento. Se o item passar sem que ela tenha feito, a aula
 //             recomeça — ninguém avança sem ter aprendido.
@@ -42,22 +46,48 @@ export const LESSONS = [
     itens: [{ o: 'heart', faixa: 2 }],
   },
   {
-    fala: 'Corações viram chaves: a cada 50, uma chave 🔑',
-    itens: [{ o: 'heart', faixa: 0 }, { o: 'heart', faixa: 1 }, { o: 'heart', faixa: 2 }],
+    fala: '💗 Coração vale 1 ponto — ⭐ estrela vale 5!',
+    itens: [{ o: 'heart', faixa: 0 }, { o: 'star', faixa: 1 }, { o: 'heart', faixa: 2 }],
   },
   {
-    fala: 'Uma pedra! Saia da frente dela 🪨',
+    // A regra dos 50 pontos levaria a corrida inteira para acontecer
+    // sozinha: aqui a animação é disparada de propósito, para a criança ver
+    // do que se trata na hora em que ouve a frase.
+    fala: 'A cada 50 pontos eles viram uma chave 🔑',
+    mostra: 'chave',
+    itens: [{ o: 'heart', faixa: 1 }],
+  },
+  {
+    fala: 'Um obstáculo! Saia da frente dele 🪨',
     acao: 'lado',
     itens: [{ o: 'rock', faixa: 1 }],
   },
   {
-    fala: 'Duas pedras — sobrou uma pista livre',
+    fala: 'Dois obstáculos — sobrou uma pista livre',
     itens: [{ o: 'rock', faixa: 0 }, { o: 'rock', faixa: 2 }, { o: 'star', faixa: 1 }],
   },
   {
-    fala: 'Essa atravessa tudo: pule! ⬆️',
+    // Desviar já foi ensinado; aqui entra a outra saída para a mesma coisa.
+    fala: 'Um obstáculo também dá para pular! Toque em ⬆️',
+    acao: 'pular',
+    itens: [{ o: 'rock', faixa: 1 }, { o: 'heart', faixa: 1, altura: 1.9 }],
+  },
+  {
+    fala: 'Essa atravessa a pista toda: só dá pulando ⬆️',
     acao: 'pular',
     itens: [{ o: 'barrier' }, { o: 'heart', faixa: 1, altura: 1.75 }],
+  },
+  {
+    // O pulo duplo é o único comando que não se descobre sozinho: ninguém
+    // toca de novo no ar sem alguém dizer que dá.
+    //
+    // As duas barreiras vêm a **3 passos** uma da outra. A distância foi
+    // medida, não calculada: varrendo vão × tempo do primeiro pulo × tempo
+    // do segundo, com 3 passos metade das combinações passa pelas duas; a 8
+    // (onde estavam) nenhuma passava, e a aula ficava impossível.
+    fala: 'Duas seguidas! Pule e, no ar, toque de novo ⬆️⬆️',
+    acao: 'pulo-duplo',
+    itens: [{ o: 'barrier' }, { o: 'barrier', recuo: -3 }, { o: 'star', faixa: 1, altura: 1.9 }],
   },
   {
     fala: '🔑 A chave mágica: é ela que liberta os amigos',
@@ -101,8 +131,9 @@ export const LESSONS = [
 // se o unicórnio escolhido for rápido naquela pista. Ensinar um botão que
 // não está na tela seria pior do que não ensinar.
 const LICAO_RAPIDO = {
-  fala: 'Viu o botão ⚡ RÁPIDO? Toque para voar mais!',
-  itens: [{ o: 'star', faixa: 1 }],
+  fala: '⚡ Toque no RÁPIDO! Cada unicórnio só acelera nas pistas dele',
+  acao: 'rapido',
+  itens: [{ o: 'star', faixa: 1 }, { o: 'heart', faixa: 1, recuo: -10 }],
 };
 
 export function lessonsFor({ rapido = false } = {}) {

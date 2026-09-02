@@ -364,18 +364,91 @@ aparece a **seta do que fazer**, bem em cima do botão de toque a que ela se
 refere — e o próprio botão acende e pulsa, para a criança não ter de traduzir
 a seta da tela para o botão embaixo do polegar. No teclado a seta é a mesma.
 
-- **Acertou**: um ✅ grande no meio da tela e um som curto subindo
-  (`sfx.correct`, criado para isto — a fanfarra de fase concluída diria
-  "acabou", que é outra coisa).
+- **Acertou o comando**: um som curto subindo (`sfx.correct`, criado para
+  isto — a fanfarra de fase concluída diria "acabou", que é outra coisa) e a
+  seta some.
+- **Passou de verdade**: só quando a aula fecha é que vem o ✅ grande no meio
+  da tela, e um punhado de **confete** colorido do meio para fora. Ele já
+  saiu no toque, e dava para ver um certinho verde seguido, meio segundo
+  depois, de um *"bateu, de novo"* — dois sinais opostos quase juntos. O som
+  responde ao comando; o ✅ responde à aula. O confete vem em **toda** aula
+  vencida, inclusive nas de só olhar.
+- **Bateu**: nas aulas de desviar e de pular, **encostar no obstáculo
+  reprova**. Não adianta ter apertado o botão certo se apertou na hora
+  errada: a aula recomeça, com *"Bateu! Vamos de novo"*. (A trombada continua
+  não custando vida — o modo é `friendly`.)
 - **Não fez**: quando o que a aula soltou passa sem o movimento, a pista é
   limpa e **a mesma aula recomeça**. A partir da terceira tentativa o aviso
   deixa de ser incentivo e passa a ser instrução: em vez de *"Vamos tentar de
   novo"*, *"⬆️ Toque na seta de cima para pular"*.
 
-São quatro aulas que cobram: ir para a esquerda, ir para a direita, sair da
-frente de uma pedra (serve qualquer lado) e pular a barreira. Mudar de faixa
-só conta se o unicórnio **saiu do lugar** — bater na parede da pista não é
-ter aprendido a trocar de faixa.
+São sete aulas que cobram: ir para a esquerda, ir para a direita, sair da
+frente de um obstáculo (serve qualquer lado), pular por cima de um obstáculo,
+pular a barreira que atravessa a pista, o **pulo duplo** e o **⚡ RÁPIDO**.
+
+Mudar de faixa só conta se o unicórnio **saiu do lugar** — bater na parede da
+pista não é ter aprendido a trocar de faixa. E uma aula de pulo simples se dá
+por satisfeita com um pulo duplo (quem pulou duas vezes pulou), mas o
+contrário não: a aula do duplo só passa no segundo toque.
+
+### Quanto vale o que se pega
+
+Duas aulas seguidas dizem a conta inteira, que antes o jogo nunca explicava:
+
+- *"💗 Coração vale 1 ponto — ⭐ estrela vale 5!"*, com os dois na pista ao
+  mesmo tempo, para a diferença aparecer no HUD na hora.
+- *"A cada 50 pontos eles viram uma chave 🔑"* — e aqui a aula **dispara a
+  animação** dos corações se juntando e virando chave, a mesma que aparece
+  na corrida de verdade. Esperar 50 pontos para vê-la levaria a lição
+  inteira; o campo `mostra: 'chave'` da aula manda tocá-la na hora
+  (`Game.showHeartsToKey`, separado do `rewardKey` justamente para poder ser
+  usada sem creditar chave nenhuma).
+
+### O pulo e o pulo duplo
+
+São dois comandos, e o segundo é o único do jogo que **ninguém descobre
+sozinho** — não se toca de novo no ar sem que alguém diga que dá. Por isso
+cada um tem a sua aula, e cada uma mostra para que ele serve:
+
+| | serve para | o que a aula põe na pista |
+| --- | --- | --- |
+| ⬆️ Pulo | passar por cima de **um** obstáculo | um obstáculo no meio |
+| ⬆️⬆️ Pulo duplo | passar por **dois seguidos** | duas barreiras a 3 passos |
+
+Os 3 passos foram **medidos, não calculados**. A primeira versão punha as
+barreiras a 8, a partir de uma conta de tempo de voo — e a aula ficou
+impossível: a conta esquecia que só se passa por cima com o unicórnio acima
+de `y = 1.1`, e que a barreira tem profundidade. O tempo em que ele está
+*alto o bastante* é bem menor que o tempo em que está no ar.
+
+Varrendo vão × momento do primeiro pulo × momento do segundo, 20 combinações
+de tempo por vão:
+
+| vão entre as barreiras | combinações que passam |
+| --- | --- |
+| 2 passos | 13 de 20 |
+| **3 passos** | **10 de 20** |
+| 4 passos | 6 de 20 |
+| 5 passos | 4 de 20 |
+| 8 passos (a versão errada) | 0 de 20 |
+
+A 3, metade dos tempos funciona — folga suficiente para quem tem quatro anos,
+e ainda assim duas barreiras visivelmente separadas.
+
+A seta também distingue os dois: o pulo duplo mostra **duas setas** na casa
+do mesmo botão, porque é o mesmo botão tocado duas vezes.
+
+### A aula do ⚡
+
+Ela só passa quando a criança **liga** o RÁPIDO — desligar não ensina nada. E
+a frase diz a regra que o botão não consegue dizer sozinho: *"Cada unicórnio
+só acelera nas pistas dele"*. Sem isso, o botão que aparece aqui e some na
+pista seguinte pareceria defeito.
+
+O ⚡ não fica na fileira de botões de toque, e sim no canto do HUD — então
+esta aula não tem seta embaixo: **o próprio botão acende**, com um anel rosa
+em volta do dourado. Rosa porque quem está pedindo é a lição; o pulso dourado
+que ele já tem quer dizer outra coisa ("dá para usar").
 
 Embaixo da frase fica uma **bolinha por aula**: dourada a que já passou, rosa
 a de agora, branca a que falta. Mesma linguagem das páginas do livro da
