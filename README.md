@@ -253,15 +253,23 @@ As chaves vêm de dois lugares.
 a cada ~12 linhas, ~8 s de corrida); na Aventura são só moeda e saem **bem
 mais raras** — uma a cada ~27 linhas, perto de 15 s. Lá o HUD mostra só
 quantas saíram, sem meta, e cada uma vai direto para a carteira: mesmo que a
-corrida acabe no segundo seguinte, a chave fica. No modo **Livre** não nasce
-chave na pista.
+corrida acabe no segundo seguinte, a chave fica. No **Livre** ela também
+nasce, mais espaçada (~16 linhas), e é a renda principal de quem só joga
+lá: **~1,8 chaves já na primeira corrida**, e nenhuma corrida termina em
+zero — medido em 400 simulações por ajuste.
+
+Isso deixa o Livre em ~7 chaves por minuto contra ~10 das Fases, o que é
+mais perto do que se gostaria para uma pista **sem risco nenhum**. Foi uma
+escolha, não um descuido: a primeira corrida do Livre dura uns 16 s, e
+espaçar a chave o bastante para derrubar o rendimento traz de volta a
+corrida que acaba com a carteira em zero. Entre as duas, a criança de três
+anos que termina sem nada é o problema pior. O ajuste fica em
+`MODES.baby.keyGap`.
 
 **Dos corações**, em qualquer modo: **a cada 50 corações juntados** aparece
 uma chave. A contagem é somada entre corridas e fica no save
 (`stats.heartsToKey`), e a estrela, que vale 5, pode fechar a conta de uma
-vez. É por aqui que quem joga o modo **Livre** também consegue comprar
-alguma coisa — antes aquela pista não dava chave nenhuma, e é justamente a
-dos menores.
+vez. É a segunda fonte de quem joga o **Livre**, somada à chave da pista.
 
 E a regra se explica sozinha, sem texto: ao fechar os 50, **cinquenta
 corações aparecem em volta do unicórnio, giram para dentro encolhendo, e no

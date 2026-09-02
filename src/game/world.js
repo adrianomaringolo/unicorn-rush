@@ -546,11 +546,14 @@ export class World {
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
 
-    // Modo Livre: nada de obstáculo, só itens espalhados pelas pistas.
+    // Modo Livre: nada de obstáculo, só itens espalhados pelas pistas — e a
+    // chave, que antes era sorteada aqui em cima e jogada fora sem nunca
+    // nascer. Quem só joga no Livre não via chave nenhuma na pista.
     if (!this.mode.obstacles) {
       const powerLane = powerId === null ? -1 : Math.floor(Math.random() * LANES.length);
       for (let lane = 0; lane < LANES.length; lane++) {
-        if (lane === powerLane) this.addEntity(createPowerup(powerId), lane, 1.25);
+        if (lane === keyLane) this.addEntity(createKey(), lane, 1.2);
+        else if (lane === powerLane) this.addEntity(createPowerup(powerId), lane, 1.25);
         else if (Math.random() < 0.32) this.addEntity(this.makeCollectible(), lane, 1.15);
       }
       return;

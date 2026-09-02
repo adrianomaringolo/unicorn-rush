@@ -41,6 +41,23 @@ export const MODES = {
     target: 20,
     targetStep: 5,
     targetMax: 60,
+    // Chave mágica no Livre também. Sem isto a criança que só joga aqui não
+    // via chave nenhuma — nem na pista, nem na carteira: os 50 corações que
+    // viram uma chave não fechavam nas duas primeiras corridas (49 pontos,
+    // que arredondam para baixo), e ela terminava a corrida com zero.
+    //
+    // Medido: com isto a primeira corrida rende ~1,8 chaves e **nenhuma**
+    // corrida termina em zero (400 simuladas por ajuste).
+    //
+    // Não dá para afrouxar mais. O Livre rende ~7 chaves/min contra ~10 das
+    // Fases, o que é mais perto do que eu queria para uma pista sem risco
+    // nenhum — mas a primeira corrida dura só uns 16 s, e aumentar o `gap`
+    // o bastante para derrubar o rendimento faz voltar justamente a corrida
+    // que acaba em zero. Entre as duas coisas, a criança de três anos que
+    // termina sem nada é a pior. Se um dia o Livre virar o caminho bobo
+    // para juntar chave, é aqui que se mexe.
+    keyGap: 16,
+    keyChance: 0.5,
   },
   levels: {
     id: 'levels',
