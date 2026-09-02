@@ -637,7 +637,7 @@ export class Game {
     this.ui.showRush(this.isFastHere(), this.rush);
   }
 
-  // Grade das dez fases. A que ainda não abriu fica do mesmo tamanho das
+  // Grade das doze fases. A que ainda não abriu fica do mesmo tamanho das
   // outras (criança mira mal: tile pequeno colado num grande vira toque
   // errado) e responde ao toque com uma chacoalhada — toque que não faz
   // nada parece defeito.

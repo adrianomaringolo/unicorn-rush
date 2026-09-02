@@ -63,7 +63,7 @@ export const MODES = {
     id: 'levels',
     name: 'Fases',
     emoji: '🗺️',
-    tagline: '10 fases, cada uma com sua meta de chaves',
+    tagline: '12 fases, cada uma com sua meta de chaves',
     obstacles: true,
     // Velocidade, intervalo e chance de obstáculo vêm da fase
     // (ver src/game/levels.js e Game.levelMode).
