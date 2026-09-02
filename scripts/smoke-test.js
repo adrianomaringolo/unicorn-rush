@@ -218,18 +218,30 @@ for (const track of TRACK_LIST) {
 
 // --- O recorde é a distância de cada pista ---------------------------------
 {
-  const best = Object.getOwnPropertyDescriptor(Game.prototype, 'best').get;
-  const em = (pista, distances) => best.call({ save: { stats: { distances } }, track: { id: pista } });
-  const guardado = { campo: 250, oceano: 900 };
+  const dono = Object.getOwnPropertyDescriptor(Game.prototype, 'best');
+  const chave = Object.getOwnPropertyDescriptor(Game.prototype, 'recordKey').get;
+  const em = (pista, modo, distances) => {
+    const ctx = { save: { stats: { distances } }, track: { id: pista }, mode: { id: modo } };
+    Object.defineProperty(ctx, 'recordKey', { get: () => chave.call(ctx) });
+    return dono.get.call(ctx);
+  };
+  const guardado = { 'campo:baby': 250, 'campo:adventure': 1400, 'oceano:baby': 900 };
 
-  if (em('campo', guardado) !== 250) throw new Error('o recorde não é o da pista atual');
-  if (em('oceano', guardado) !== 900) throw new Error('o recorde não separa as pistas');
-  if (em('noite', guardado) !== 0) throw new Error('pista sem corrida devia dar zero');
-  // Save antigo guardava a distância por modo. Aquelas chaves não são id de
-  // pista, então o recorde recomeça do zero — e não pode quebrar.
-  if (em('campo', { baby: 700 }) !== 0) throw new Error('save antigo devia dar zero, não erro');
-  if (em('campo', undefined) !== 0) throw new Error('save sem distances devia dar zero');
-  console.log('recorde: distância, uma por pista');
+  if (em('campo', 'baby', guardado) !== 250) throw new Error('o recorde não é o desta pista nesta brincadeira');
+  if (em('campo', 'adventure', guardado) !== 1400) throw new Error('o recorde não separa as brincadeiras');
+  if (em('oceano', 'baby', guardado) !== 900) throw new Error('o recorde não separa as pistas');
+  if (em('noite', 'baby', guardado) !== 0) throw new Error('pista sem corrida devia dar zero');
+  // Uma corrida longa de Aventura não pode virar a marca do Livre: é a
+  // razão de a chave ter as duas partes.
+  if (em('campo', 'baby', { 'campo:adventure': 1400 }) !== 0) {
+    throw new Error('o recorde da Aventura vazou para o Livre');
+  }
+  // Saves antigos guardavam só o modo, e depois só a pista. Nenhuma das duas
+  // formas casa com esta: o recorde recomeça do zero, sem quebrar.
+  if (em('campo', 'baby', { baby: 700 }) !== 0) throw new Error('save por modo devia dar zero');
+  if (em('campo', 'baby', { campo: 700 }) !== 0) throw new Error('save por pista devia dar zero');
+  if (em('campo', 'baby', undefined) !== 0) throw new Error('save sem distances devia dar zero');
+  console.log('recorde: distância, uma por pista e brincadeira');
 }
 
 console.log('✅ tudo montou sem erros');

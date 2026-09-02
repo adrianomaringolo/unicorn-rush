@@ -584,7 +584,7 @@ export class Game {
     this.camera.updateProjectionMatrix();
   }
 
-  // O recorde é **a distância**, e é **de cada pista**.
+  // O recorde é **a distância**, e é **de cada pista em cada brincadeira**.
   //
   // Antes o painel "Recorde" mostrava pontos por modo enquanto a faixa no
   // chão marcava distância por modo: duas contas diferentes com o mesmo
@@ -592,9 +592,21 @@ export class Game {
   // a mesma, e na mesma unidade da caixinha "Distância" ao lado — dá para
   // comparar as duas de relance, correndo.
   //
-  // Por pista porque a marca é um lugar: o recorde do Campo é do Campo.
+  // Pista **e** modo, e não só pista: a marca é um lugar, mas o quanto se
+  // corre nele depende da brincadeira. Uma partida de Aventura no Campo vai
+  // muito mais longe que uma do Livre, que acaba assim que a meta de itens
+  // fecha — com uma marca só por pista, a do Livre nunca mais apareceria.
+  // As doze fases dividem um recorde só (`levels`), e não um por fase: o
+  // recorde é da brincadeira, não de cada etapa dela.
   get best() {
-    return this.save.stats.distances?.[this.track.id] || 0;
+    return this.save.stats.distances?.[this.recordKey] || 0;
+  }
+
+  // `campo:baby`, `oceano:levels`… Saves antigos guardavam só o modo, e
+  // depois só a pista; nenhuma das duas formas casa com esta, então os
+  // recordes recomeçam do zero em vez de quebrar.
+  get recordKey() {
+    return `${this.track.id}:${this.mode.id}`;
   }
 
   saveBest() {
@@ -604,10 +616,11 @@ export class Game {
       if (this.score > (save.stats.bests[this.mode.id] || 0)) {
         save.stats.bests[this.mode.id] = Math.floor(this.score);
       }
-      // A maior distância de cada pista vira a faixa dourada da próxima vez.
+      // A maior distância de cada pista, em cada brincadeira, vira a faixa
+      // dourada da próxima vez que se correr ali daquele jeito.
       save.stats.distances ??= {};
-      if (this.distance > (save.stats.distances[this.track.id] || 0)) {
-        save.stats.distances[this.track.id] = Math.floor(this.distance);
+      if (this.distance > (save.stats.distances[this.recordKey] || 0)) {
+        save.stats.distances[this.recordKey] = Math.floor(this.distance);
       }
     });
   }

@@ -745,14 +745,14 @@ Enquanto corre, o HUD mostra a **distância percorrida** em passos, e a cada
 300…) — ela nasce lá na frente já na posição certa, então cruza com o
 unicórnio exatamente no número dela.
 
-A maior distância já corrida **em cada pista** fica salva e vira a **marca
-do recorde**: uma faixa quadriculada **dourada** atravessando o chão, com
+A maior distância já corrida **em cada pista, em cada brincadeira**, fica
+salva e vira a **marca do recorde**: uma faixa quadriculada **dourada** atravessando o chão, com
 uma estrelinha de ouro em cada beira — rente ao chão, sem nada na altura dos
 olhos para atrapalhar a visão do caminho. Ao passar por ela aparece o aviso
 *"🏁 Novo recorde!"*. A maior distância de todas também virou um quadro na
 tela de estatísticas.
 
-### O recorde é de cada pista
+### O recorde é de cada pista e brincadeira
 
 E é **distância**, não pontos. Antes o painel *Recorde* do HUD mostrava a
 maior **pontuação** por modo enquanto a faixa no chão marcava a maior
@@ -762,16 +762,23 @@ na mesma unidade da caixinha *Distância* ao lado — dá para comparar as duas
 de relance, correndo.
 
 Por pista porque a marca é **um lugar**: o recorde do Campo é do Campo, e
-correr no Oceano não mexe nele.
+correr no Oceano não mexe nele. E por brincadeira porque o quanto se corre
+num lugar depende dela — uma partida de Aventura no Campo vai muito mais
+longe que uma do Livre, que acaba assim que a meta de itens fecha. Com uma
+marca só por pista, a marca do Livre nunca mais apareceria: a distância da
+Aventura ficaria lá na frente, fora de alcance.
+
+A chave é `${pista}:${modo}` — `campo:baby`, `oceano:levels`. As doze fases
+dividem **um** recorde (`levels`), e não um por fase: o recorde é da
+brincadeira, não de cada etapa dela.
 
 A pontuação continua guardada por modo, mas deixou de se chamar recorde: na
 tela de estatísticas o quadro virou *pontos na aventura*.
 
-**O que isso mistura:** a conta é por pista e não por pista *e* modo, então
-uma corrida longa de Aventura no Campo vira a marca que também aparece no
-Livre do Campo — onde a corrida acaba na meta de itens e nunca chega perto.
-Na prática a faixa some das brincadeiras mais curtas daquela pista. Trocar
-para `${pista}:${modo}` é uma linha em `Game.saveBest`, se um dia incomodar.
+Saves antigos guardavam a distância por modo (`baby`), e por um momento só
+por pista (`campo`). Nenhuma das duas formas casa com a chave nova, então
+os recordes recomeçam do zero em vez de quebrar — e o `npm run check` cobre
+os três formatos.
 
 
 ### Sem palavra escrita
