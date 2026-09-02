@@ -614,6 +614,42 @@ export const CHARACTERS = {
     aura: { kind: 'bolha', color: [0xffeef7, 0xd9e8ff, 0xffd9ec], count: 9, opacity: 0.7 },
     trail: { colors: [0xffd9ec, 0xe3f0ff, 0xffffff, 0xe6d4ff, 0xcfeff0, 0xffeef7], width: 0.78 },
   },
+  // O 22º, e o único que **não tem preço**: ele não é comprado, é
+  // encontrado. Aparece quando os outros 21 estiverem livres — que é o
+  // exato momento da história em que ele deixa de ser invisível
+  // (ver Game.storyEndUnlocked e as duas últimas páginas do livro).
+  eco: {
+    id: 'eco',
+    name: 'Eco',
+    emoji: '💫',
+    title: 'o unicórnio que ninguém via',
+    story: 'Eco era invisível, e só a alegria podia deixá-lo visível. De tanto '
+      + 'esperar sozinho na torre, achou que prendendo todo mundo teria amigos '
+      + '— e ficou mais triste ainda. Foi a Uni quem o encontrou. Agora ele '
+      + 'nunca mais corre sozinho: o eco dele corre ao lado.',
+    // Sem `price`: `earned` diz que ele se conquista (ver Game.isOwned).
+    earned: true,
+    // Branco-lilás de neblina, as cores que ele ganhou ao ficar visível —
+    // as mesmas da última página do livro.
+    body: 0xf3eeff,
+    hoof: 0xc9bce8,
+    muzzle: 0xd8ccf0,
+    horn: { color: 0xe3dcff, length: 0.66, radius: 0.088 },
+    hair: [0xc09cff, 0xffffff, 0xbcaef5, 0xe3dcff, 0xd8cff5],
+    // Véu: o que sobrou da neblina em que ele viveu.
+    wing: { style: 'veil', colors: [0xf3eeff, 0xe3dcff, 0xd8cff5] },
+    mark: { shape: 'heart', color: 0xc09cff },
+    voice: 1.0,
+    // A Bruma, onde ninguém enxerga, e o Vilarejo, onde há gente.
+    fast: ['bruma', 'vilarejo'],
+    // Nunca mais sozinho: o eco dele corre na faixa ao lado e pega o que
+    // tem lá também (ver Game.checkCollisions).
+    reach: 3.4,
+    power: 'o eco dele pega os itens da faixa ao lado',
+    aura: { kind: 'anel', color: [0xffffff, 0xe3dcff, 0xc09cff], count: 9, opacity: 0.75 },
+    trail: { colors: [0xc09cff, 0xe3dcff, 0xffffff, 0xbcaef5, 0xd8cff5, 0xf3eeff], width: 0.8 },
+  },
+
 };
 
 export const CHARACTER_LIST = Object.values(CHARACTERS);
@@ -624,7 +660,7 @@ export const characterPrice = (character) => character?.price || 0;
 
 // O tamanho final do elenco. A grade desenha um espaço vazio para cada
 // unicórnio que ainda falta criar.
-export const CHARACTER_SLOTS = 21;
+export const CHARACTER_SLOTS = 22;
 
 // Esse unicórnio corre mais rápido nesta pista?
 export const isFastOn = (character, trackId) =>

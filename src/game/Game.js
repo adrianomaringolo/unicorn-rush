@@ -334,6 +334,10 @@ export class Game {
     const item = loja.obter(id);
     if (!item) return false;
     if (isTestMode()) return true;
+    // O Eco não tem preço, mas também não vem de graça: ele aparece quando
+    // os outros forem todos libertados. Sem este caso ele contaria como
+    // "sem preço, logo é seu" e estaria disponível desde o primeiro dia.
+    if (item.earned) return this.storyEndUnlocked;
     if (!loja.preco(item)) return true;
     return (this.save.shop?.[loja.guardados] || []).includes(id);
   }
@@ -895,15 +899,22 @@ export class Game {
       // importa nele, e o retrato continua à vista para dar vontade.
       const rodape = meu
         ? `${item.emoji} ${item.name}`
-        : `<span class="cast-price">🔑 ${loja.preco(item)}</span>`;
+        // O que se conquista não mostra preço: mostra o troféu, senão
+        // pareceria de graça (preço zero) para quem olha a grade.
+        : item.earned
+          ? '<span class="cast-price conquista">🏆</span>'
+          : `<span class="cast-price">🔑 ${loja.preco(item)}</span>`;
       // Na grade de pistas, o ⚡ marca as que o unicórnio escolhido corre
       // mais rápido — inclusive nas trancadas, porque isso ajuda a decidir
       // qual comprar.
       const raio = kind === 'track' && isFastOn(this.character, item.id)
         ? `<span class="cast-fast" title="${this.character.name} corre mais rápido aqui">⚡</span>`
         : '';
+      // Quem se conquista aparece como sombra: o Eco é invisível na
+      // história, e a grade não pode entregar quem ele é antes da hora.
+      const sombra = !meu && item.earned ? ' sombra' : '';
       return `<button class="${classes}" data-pick="${item.id}" aria-pressed="${escolhido}">`
-        + `<img class="cast-face" src="${retratos[item.id]}" alt="" />`
+        + `<img class="cast-face${sombra}" src="${retratos[item.id]}" alt="" />`
         + `${meu ? '' : '<span class="cast-lock">🔒</span>'}`
         + raio
         + `<span class="cast-name">${rodape}</span></button>`;
@@ -983,13 +994,25 @@ export class Game {
     this.ui.showPause(false);
 
     const meu = this.isOwned(kind, id);
+    // Enquanto não for conquistado, ele é um mistério: nem nome, nem
+    // história, nem poder, nem as pistas dele. É o que a história pede — na
+    // página do livro ninguém sabe quem mora na torre.
+    const oculto = !meu && !!item.earned;
     const preco = loja.preco(item);
     const tenho = this.wallet;
     const falta = preco - tenho;
     this.ui.setWallet(tenho, !meu);
-    speak(item.name);
+    if (!oculto) speak(item.name);
 
-    const botao = meu
+    // Quem se conquista não tem botão de compra: tem o que falta fazer.
+    const botao = !meu && item.earned
+      ? {
+        label: '🏆 Liberte todos os amigos',
+        hint: `faltam ${this.missingFriends} unicórnio(s) para descobrir quem é`,
+        huge: true,
+        onClick: () => loja.voltar(),
+      }
+      : meu
       ? {
         label: '✅ Escolher esse',
         hint: item.id === loja.atual().id ? 'já é o escolhido' : loja.chamada(item),
@@ -1012,13 +1035,13 @@ export class Game {
 
     // A característica especial dele. É o que responde "por que escolher
     // este?", então vem antes das pistas rápidas, que são o complemento.
-    const poder = kind === 'character' && item.power
+    const poder = !oculto && kind === 'character' && item.power
       ? `<p class="shop-power"><b>✨ ${item.power}</b></p>`
       : '';
 
     // As pistas em que ele corre mais rápido: é o que diferencia um
     // unicórnio do outro além da cor, então aparece na ficha.
-    const rapidas = kind === 'character' && item.fast?.length
+    const rapidas = !oculto && kind === 'character' && item.fast?.length
       ? `<p class="shop-fast">⚡ Corre mais rápido em `
         + item.fast.map((t) => `<b>${TRACKS[t]?.emoji || ''} ${TRACKS[t]?.name || t}</b>`).join(' e ')
         + '</p>'
@@ -1028,17 +1051,24 @@ export class Game {
     // música, que é o outro jeito de reconhecer o cenário.
     const rodape = meu
       ? (kind === 'track' ? `<p class="shop-note">🎵 ${music.themeName(item.id)}</p>` : '')
-      : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
-        + `Custa <b>🔑 ${preco}</b> · você tem <b>🔑 ${tenho}</b></p>`;
+      : item.earned
+        ? '<p class="shop-price falta">Ele não se compra: aparece quando '
+          + '<b>todos os amigos estiverem livres</b></p>'
+        : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
+          + `Custa <b>🔑 ${preco}</b> · você tem <b>🔑 ${tenho}</b></p>`;
 
     this.ui.showOverlay({
       picker: true,
-      title: `${item.emoji} ${item.name}`,
+      title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
       html: `
         <div class="shop">
-          <img class="shop-face" src="${loja.retratos()[item.id]}" alt="" />
-          ${loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
-          <p class="shop-story">${loja.descricao(item)}</p>
+          <img class="shop-face${oculto ? ' sombra' : ''}" src="${loja.retratos()[item.id]}" alt="" />
+          ${!oculto && loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
+          <p class="shop-story">${oculto
+            ? 'Ninguém sabe quem é. Dizem que alguém espera na torre da '
+              + 'neblina, e que só aparece no dia em que o último amigo sair '
+              + 'de trás da porta dele.'
+            : loja.descricao(item)}</p>
           ${poder}
           ${rapidas}
           ${rodape}
@@ -1047,6 +1077,11 @@ export class Game {
       buttons: [botao],
       back: () => loja.voltar(),
     });
+  }
+
+  // Quantos unicórnios ainda faltam libertar (para a ficha do Eco).
+  get missingFriends() {
+    return CHARACTER_LIST.filter((c) => !c.earned && !this.isOwned('character', c.id)).length;
   }
 
   // Faltou chave: em vez de um beco sem saída, leva direto para onde elas
@@ -1061,6 +1096,9 @@ export class Game {
     const loja = this.shopOf(kind);
     const item = loja.obter(id);
     const preco = loja.preco(item);
+    // Guardado *antes* da compra: é o que diz se foi esta que libertou o
+    // último amigo.
+    const faltavaAlguem = !this.storyEndUnlocked;
     // Confere de novo na hora de debitar: a tela pode ter ficado aberta.
     if (!item || this.isOwned(kind, id) || this.wallet < preco) {
       sfx.deny();
@@ -1076,9 +1114,31 @@ export class Game {
     // Festa: o que foi comprado já entra em cena, atrás do portal que abre.
     loja.aplicar(id);
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
+    // Esta compra fechou o elenco? Então a história ganhou o fim, e ele se
+    // conta sozinho: o livro abre na página nova assim que o portal deste
+    // fechar, e o Eco aparece quando o livro fechar.
+    const fechouOElenco = faltavaAlguem && this.storyEndUnlocked;
+
     this.revealUnlock(kind, item, () => {
       this.ui.toast(`${item.emoji} ${item.name} é sua!`);
-      loja.voltar();
+      if (!fechouOElenco) return loja.voltar();
+      this.aposLivro = () => this.revealEco();
+      return this.showStory(this.storyBook.length - STORY_END.length);
+    });
+  }
+
+  // O Eco chegando: o mesmo portal das outras conquistas, mas com confete —
+  // é o último unicórnio do jogo, e o fim da história.
+  revealEco() {
+    const eco = CHARACTER_LIST.find((c) => c.earned);
+    if (!eco) return this.showHome();
+    // Já escolhido antes de o portal abrir: quando ele fechar, é o Eco que
+    // está na pista.
+    this.setCharacter(eco.id);
+    this.ui.confetti();
+    return this.revealUnlock('character', eco, () => {
+      this.ui.toast(`${eco.emoji} ${eco.name} veio correr com você!`);
+      this.showHome();
     });
   }
 
@@ -1973,7 +2033,13 @@ export class Game {
       const e = this.world.entities[i];
       if (Math.abs(e.position.z) > 1.0) continue;
       // A barreira ocupa as três pistas; o resto pega só a faixa em volta.
-      if (Math.abs(e.position.x - p.x) > (e.userData.halfWidth ?? 1.1)) continue;
+      //
+      // `reach` é o Eco: o eco dele corre na faixa vizinha e pega o que tem
+      // lá. Vale só para o que se **pega** — obstáculo continua com o
+      // alcance normal, senão ele apanharia da pista do lado.
+      const alcance = e.userData.halfWidth
+        ?? (e.userData.kind === 'obstacle' ? 1.1 : 1.1 * (this.character.reach ?? 1));
+      if (Math.abs(e.position.x - p.x) > alcance) continue;
 
       if (e.userData.kind === 'obstacle') {
         if (e.userData.knocked) continue;      // esse já foi lá para cima

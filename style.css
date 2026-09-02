@@ -1917,3 +1917,32 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   #confetti { display: none; }
 }
+
+/* O que se conquista em vez de comprar (o Eco): troféu dourado no lugar da
+   etiqueta de preço, para não parecer que custa zero. */
+.cast-price.conquista {
+  background: #fff6dd;
+  border-color: #ffd166;
+  color: #b07a12;
+}
+
+/* O retrato de quem ainda é mistério (o Eco): silhueta em vez do desenho.
+   Ele é invisível na história — a lista não pode entregar quem ele é antes
+   de a criança chegar lá.
+
+   O `filter` pinta o elemento inteiro, fundo incluído: sem tirar o branco do
+   `.shop-face`, a silhueta virava um retângulo cinza em vez do contorno do
+   unicórnio. */
+/* O seletor precisa ser mais específico que `.cast-card.trancado
+   .cast-face`, que já desbota todo trancado — aquele tem três classes e
+   vencia este, e a sombra saía apenas pálida em vez de preta. */
+.cast-card.trancado .cast-face.sombra,
+.shop-face.sombra {
+  filter: brightness(0) opacity(.55);
+}
+/* E sem o desbote do trancado por cima: a sombra já é a informação. */
+.cast-card.trancado .cast-face.sombra { opacity: .8; }
+.shop-face.sombra {
+  background: none;
+  border-color: transparent;
+}

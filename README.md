@@ -93,6 +93,7 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista** |
 | ⚡ Relâmpago | `windproof: true` | **ignora o vento lateral** da Tempestade: sem ele o vento empurra até a borda da pista (±3,1) em cerca de 2 s |
 | 🍿 Pipoca | `heartValue: 2` | **cada coração vale 2** — o par que faltava para a Estrela, que dobra as ⭐ e deixava os 💗 em 1 |
+| 💫 Eco | `reach: 3.4` | **pega os itens das faixas ao lado** — os ecos dele correm lá, e dá para vê-los. Vale só para o que se pega: obstáculo continua com o alcance normal, senão ele apanharia da pista vizinha |
 | 🐚 Pérola | `keyLuck: 1.8` | **as chaves nascem mais**: a chance sobe 80% e a espera mínima entre uma e outra encurta na mesma medida. Medido nas Fases, 3 min de corrida: 15 chaves com qualquer um, **26 com ela** (1,73×) |
 
 O campo `power` de cada personagem é a frase que a **ficha mostra**, em
@@ -169,6 +170,7 @@ corrida. Fora das pistas dele o botão nem aparece.
 | ⚡ Relâmpago | **Tempestade**, Céu | nasceu no raio da tempestade, e mora nas nuvens do Céu |
 | 🍿 Pipoca | **Parque**, Vilarejo | as duas pistas de gente, onde a música não para |
 | 🐚 Pérola | **Oceano**, Bruma | as duas de pouca visibilidade: ela enxerga onde ninguém enxerga |
+| 💫 Eco | **Bruma**, Vilarejo | a neblina onde ele viveu invisível, e o lugar com mais gente |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
