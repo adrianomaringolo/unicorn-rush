@@ -12,6 +12,10 @@ const DEFAULTS = {
   // `null` = ainda não escolheu. É o que faz a tela de idioma aparecer uma
   // vez só, na primeira abertura (ver Game.showFirstScreen).
   idioma: null,
+  // A versão que a pessoa mandou ignorar no convite de atualização. Guardar
+  // *qual* (e não só "ignorou") é o que faz o convite voltar quando sair
+  // uma versão mais nova ainda.
+  updateIgnorada: null,
   muted: false,
   speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
   testMode: false,       // modo teste: tudo liberado e nada é guardado

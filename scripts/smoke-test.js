@@ -6,6 +6,7 @@ import { createHeart, createStar } from '../src/models/collectibles.js';
 import { createObstacle, createDecoration, createStartLine } from '../src/models/scenery.js';
 import { CHARACTER_LIST } from '../src/models/characters.js';
 import { World } from '../src/game/world.js';
+import { Game } from '../src/game/Game.js';
 import { MODES } from '../src/game/config.js';
 import { TRACK_LIST } from '../src/game/tracks.js';
 import { POWERUP_LIST, createPowerup } from '../src/models/powerups.js';
@@ -213,6 +214,22 @@ for (const track of TRACK_LIST) {
     console.log(`   ⚠️  ${orfas.size} chave(s) do dicionário não batem com texto nenhum:`);
     for (const o of orfas) console.log(`      ${o.slice(0, 70)}`);
   }
+}
+
+// --- O recorde é a distância de cada pista ---------------------------------
+{
+  const best = Object.getOwnPropertyDescriptor(Game.prototype, 'best').get;
+  const em = (pista, distances) => best.call({ save: { stats: { distances } }, track: { id: pista } });
+  const guardado = { campo: 250, oceano: 900 };
+
+  if (em('campo', guardado) !== 250) throw new Error('o recorde não é o da pista atual');
+  if (em('oceano', guardado) !== 900) throw new Error('o recorde não separa as pistas');
+  if (em('noite', guardado) !== 0) throw new Error('pista sem corrida devia dar zero');
+  // Save antigo guardava a distância por modo. Aquelas chaves não são id de
+  // pista, então o recorde recomeça do zero — e não pode quebrar.
+  if (em('campo', { baby: 700 }) !== 0) throw new Error('save antigo devia dar zero, não erro');
+  if (em('campo', undefined) !== 0) throw new Error('save sem distances devia dar zero');
+  console.log('recorde: distância, uma por pista');
 }
 
 console.log('✅ tudo montou sem erros');

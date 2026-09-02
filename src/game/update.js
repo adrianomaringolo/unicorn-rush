@@ -12,12 +12,21 @@
 // recarregamento.
 let registro = null;
 let esperando = null;
+let versaoEsperando = null;
 let aviso = () => {};
 let recarregando = false;
 
 // Existe versão nova instalada, esperando para assumir?
 export function hasUpdate() {
   return !!esperando;
+}
+
+// Qual é ela. Vem por mensagem do próprio worker que espera, então demora
+// um instante depois de `hasUpdate()` virar verdade — enquanto for `null`,
+// quem quer oferecer a troca ainda não sabe o que está oferecendo, e o
+// `onUpdate` é chamado de novo quando a resposta chega.
+export function updateVersion() {
+  return versaoEsperando;
 }
 
 // Chamado quando uma atualização aparece, para a tela se redesenhar.
@@ -50,18 +59,23 @@ export function watchUpdates() {
     // que acabou de entrar não é "atualização" — é a instalação.
     if (!navigator.serviceWorker.controller) return;
 
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.tipo !== 'versao') return;
+      versaoEsperando = event.data.versao || null;
+      aviso();                    // agora dá para oferecer sabendo qual é
+    });
+
+    const anotar = (worker) => {
+      esperando = worker;
+      worker.postMessage({ tipo: 'versao' });
+      aviso();
+    };
+
     const marcar = (worker) => {
       if (!worker) return;
-      if (worker.state === 'installed') {
-        esperando = worker;
-        aviso();
-        return;
-      }
+      if (worker.state === 'installed') return anotar(worker);
       worker.addEventListener('statechange', () => {
-        if (worker.state === 'installed') {
-          esperando = worker;
-          aviso();
-        }
+        if (worker.state === 'installed') anotar(worker);
       });
     };
 

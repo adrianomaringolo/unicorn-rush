@@ -33,7 +33,7 @@ import { storyPages, STORY_END } from './story.js';
 import { IDIOMAS, idioma, idiomaSugerido, setIdioma, t, traduzItens } from './i18n.js';
 import { lessonsFor } from './tutorial.js';
 import { VERSION } from './version.js';
-import { hasUpdate, applyUpdate, onUpdate } from './update.js';
+import { hasUpdate, applyUpdate, onUpdate, updateVersion } from './update.js';
 
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
@@ -157,7 +157,11 @@ export class Game {
     setSpeech(this.save.speech);
     // Versão nova esperando: redesenha a tela para o botão aparecer sem
     // precisar sair e voltar.
-    onUpdate(() => { if (this.state === STATE.READY) this.render(); });
+    onUpdate(() => {
+      if (this.state !== STATE.READY) return;   // correndo: fica para o menu
+      this.render();
+      this.maybeOfferUpdate();
+    });
     watchInstall(() => {
       // O convite de instalar mora no cantinho dos adultos; se ele aparecer
       // enquanto a tela está aberta, é só redesenhar.
@@ -580,19 +584,30 @@ export class Game {
     this.camera.updateProjectionMatrix();
   }
 
+  // O recorde é **a distância**, e é **de cada pista**.
+  //
+  // Antes o painel "Recorde" mostrava pontos por modo enquanto a faixa no
+  // chão marcava distância por modo: duas contas diferentes com o mesmo
+  // nome, e a que a criança via na pista não era a que via no HUD. Agora é
+  // a mesma, e na mesma unidade da caixinha "Distância" ao lado — dá para
+  // comparar as duas de relance, correndo.
+  //
+  // Por pista porque a marca é um lugar: o recorde do Campo é do Campo.
   get best() {
-    return this.save.stats.bests[this.mode.id] || 0;
+    return this.save.stats.distances?.[this.track.id] || 0;
   }
 
   saveBest() {
     update((save) => {
+      // Os pontos continuam guardados por modo — eles aparecem nas
+      // estatísticas, mas não são mais "o recorde".
       if (this.score > (save.stats.bests[this.mode.id] || 0)) {
         save.stats.bests[this.mode.id] = Math.floor(this.score);
       }
-      // A maior distância já corrida vira a faixa do recorde da próxima vez.
+      // A maior distância de cada pista vira a faixa dourada da próxima vez.
       save.stats.distances ??= {};
-      if (this.distance > (save.stats.distances[this.mode.id] || 0)) {
-        save.stats.distances[this.mode.id] = Math.floor(this.distance);
+      if (this.distance > (save.stats.distances[this.track.id] || 0)) {
+        save.stats.distances[this.track.id] = Math.floor(this.distance);
       }
     });
   }
@@ -718,7 +733,7 @@ export class Game {
     this.collected = 0;
     this.keys = 0;
     this.distance = 0;
-    this.recordDistance = this.save.stats.distances?.[this.mode.id] || 0;
+    this.recordDistance = this.best;
     this.beatRecord = false;
     // `extraLives` é a Lulu, que é bebê e corre com uma vida a mais.
     this.lives = START_LIVES + (this.character.extraLives ?? 0);
@@ -836,6 +851,48 @@ export class Game {
       if (qual === 'idioma') return this.showLanguagePicker();
       if (qual === 'update') return this.applyUpdate();
       return this.showModePicker();
+    });
+
+    // Se a versão nova chegou no meio de uma corrida, o convite esperou até
+    // aqui: só se oferece troca com o jogo parado no menu.
+    this.maybeOfferUpdate();
+  }
+
+  // Versão nova esperando: vale a pena interromper para perguntar?
+  //
+  // Só no menu — nunca no meio de uma corrida, nem por cima de uma escolha
+  // de unicórnio —, e só uma vez por versão: quem disse "agora não" não é
+  // perguntado de novo pela mesma, nem depois de fechar e abrir o jogo. O
+  // botão 🔄 do menu continua ali para quem mudar de ideia.
+  maybeOfferUpdate() {
+    if (!hasUpdate() || this.screen !== 'home') return false;
+    const versao = updateVersion();
+    // Ainda não sabemos qual versão é (a resposta do worker vem por
+    // mensagem). Quando chegar, o `onUpdate` chama isto de novo.
+    if (!versao || this.save.updateIgnorada === versao) return false;
+    this.showUpdateOffer(versao);
+    return true;
+  }
+
+  showUpdateOffer(versao) {
+    this.state = STATE.READY;
+    this.screen = 'update';
+    this.ui.showPause(false);
+    this.ui.showOverlay({
+      title: t('✨ Chegou versão nova!'),
+      text: t('O jogo recarrega num instante e volta para cá. Nada do que você juntou se perde.'),
+      buttons: [
+        { label: t('🔄 Atualizar agora'), huge: true, onClick: () => this.applyUpdate() },
+        {
+          label: t('Agora não'),
+          secondary: true,
+          onClick: () => {
+            update((save) => { save.updateIgnorada = versao; });
+            this.save = getSave();
+            this.showHome();
+          },
+        },
+      ],
     });
   }
 
@@ -1682,7 +1739,7 @@ export class Game {
         ${tile(stats.runs, t('corridas'), '🏃')}
         ${tile(stats.hearts, t('corações'), '💗')}
         ${tile(stats.items, t('itens pegos'), '✨')}
-        ${tile(Math.floor(stats.bests.adventure || 0), t('recorde aventura'), '🥇')}
+        ${tile(Math.floor(stats.bests.adventure || 0), t('pontos na aventura'), '🥇')}
         ${tile(stats.keys || 0, t('chaves mágicas'), '🔑')}
         ${tile(Math.floor(Math.max(0, ...Object.values(stats.distances || { x: 0 }))), t('maior distância'), '🏁')}
         ${tile(`${this.levelsDone()}/${LEVEL_COUNT * TRACK_LIST.length}`, t('fases feitas'), '🗺️')}

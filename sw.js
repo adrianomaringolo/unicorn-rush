@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.21.1';
+const VERSION = 'unicornrush-v0.22.0';
 
 const SHELL = [
   './',
@@ -157,6 +157,13 @@ self.addEventListener('install', (event) => {
 // É o jogo que pede a troca, quando o adulto toca em Atualizar.
 self.addEventListener('message', (event) => {
   if (event.data?.tipo === 'assumir') self.skipWaiting();
+
+  // Quem pergunta é o convite de atualização: ele guarda **qual** versão a
+  // pessoa mandou ignorar, para não voltar a perguntar pela mesma. Sem isto
+  // o "agora não" duraria só até a próxima abertura do jogo.
+  if (event.data?.tipo === 'versao') {
+    event.source?.postMessage({ tipo: 'versao', versao: VERSION });
+  }
 });
 
 self.addEventListener('activate', (event) => {

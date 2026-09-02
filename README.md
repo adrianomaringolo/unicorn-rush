@@ -366,7 +366,8 @@ um som que se afasta (`ruido()` em `src/game/audio.js`).
 
 A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
-`src/game/config.js`. O recorde é guardado separado por modo.
+`src/game/config.js`. O recorde é a **distância**, e é guardado por pista
+(ver *O recorde é de cada pista*).
 
 ### 👆 Aprender (o tutorial)
 
@@ -701,7 +702,8 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
 - **escolhas**: personagem, pista e último modo jogado;
 - **nível do modo Livre**, que define a meta da próxima partida;
 - **progresso das fases**: até qual fase foi liberada e quais já estão feitas;
-- **recordes** de pontuação, um por modo;
+- **recorde de distância**, um por pista — é o que vira a faixa dourada;
+- **pontuação** máxima, uma por modo (aparece nas estatísticas);
 - **contagens**: vitórias, corridas jogadas, corações e itens coletados no
   total, quantas corridas em cada pista e com cada unicórnio, e quantos
   power-ups de cada tipo;
@@ -743,11 +745,33 @@ Enquanto corre, o HUD mostra a **distância percorrida** em passos, e a cada
 300…) — ela nasce lá na frente já na posição certa, então cruza com o
 unicórnio exatamente no número dela.
 
-A maior distância já corrida em cada modo fica salva e vira a **marca do
-recorde**: uma faixa quadriculada **dourada** atravessando o chão, com uma
-estrelinha de ouro em cada beira — rente ao chão, sem nada na altura dos
-olhos para atrapalhar a visão do caminho. Ao passar por ela aparece o aviso *"🏁 Novo recorde!"*. A maior
-distância de todas também virou um quadro na tela de estatísticas.
+A maior distância já corrida **em cada pista** fica salva e vira a **marca
+do recorde**: uma faixa quadriculada **dourada** atravessando o chão, com
+uma estrelinha de ouro em cada beira — rente ao chão, sem nada na altura dos
+olhos para atrapalhar a visão do caminho. Ao passar por ela aparece o aviso
+*"🏁 Novo recorde!"*. A maior distância de todas também virou um quadro na
+tela de estatísticas.
+
+### O recorde é de cada pista
+
+E é **distância**, não pontos. Antes o painel *Recorde* do HUD mostrava a
+maior **pontuação** por modo enquanto a faixa no chão marcava a maior
+**distância** por modo: duas contas diferentes com o mesmo nome, e a que a
+criança via na pista não era a que ela via no painel. Agora são a mesma, e
+na mesma unidade da caixinha *Distância* ao lado — dá para comparar as duas
+de relance, correndo.
+
+Por pista porque a marca é **um lugar**: o recorde do Campo é do Campo, e
+correr no Oceano não mexe nele.
+
+A pontuação continua guardada por modo, mas deixou de se chamar recorde: na
+tela de estatísticas o quadro virou *pontos na aventura*.
+
+**O que isso mistura:** a conta é por pista e não por pista *e* modo, então
+uma corrida longa de Aventura no Campo vira a marca que também aparece no
+Livre do Campo — onde a corrida acaba na meta de itens e nunca chega perto.
+Na prática a faixa some das brincadeiras mais curtas daquela pista. Trocar
+para `${pista}:${modo}` é uma linha em `Game.saveBest`, se um dia incomodar.
 
 
 ### Sem palavra escrita
@@ -768,9 +792,9 @@ mudou de rosa para **ouro**, que é a cor que o jogo já usa para recorde no
 🏆 e no 🥇, e ganhou as duas estrelinhas; e o travessão da partida, que sem
 a palavra virava uma barra rosa vazia, ganhou a fileira de bandeirolas.
 
-Em telas estreitas o HUD mostra só o essencial de cada modo (o recorde de
-pontos e, nas fases, os pontos e a distância saem de cena) para tudo caber
-numa linha só.
+Em telas estreitas o HUD mostra só o essencial de cada modo (o recorde e,
+nas fases, os pontos e a distância saem de cena) para tudo caber numa linha
+só.
 
 ## Pausa
 
