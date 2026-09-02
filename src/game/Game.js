@@ -21,6 +21,7 @@ import { POWERUPS, POWERUP_LIST } from '../models/powerups.js';
 import { createGlow } from '../models/collectibles.js';
 import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../models/keyReward.js';
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
+import { createCharacterAura, updateCharacterAura } from '../models/characterAura.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
 import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.js';
@@ -40,6 +41,10 @@ const CAMERA = { height: 5.1, distance: 9.4, fov: 55 };
 // Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
 const REVEAL_TIME = 4600;
+
+// Carência depois da Bomba Arco-Íris: o tempo que a onda leva para sair de
+// trás do unicórnio e cobrir o campo próximo.
+const BOMB_GRACE = 0.6;
 
 // O que a lição diz quando a mesma aula já falhou umas vezes. Menos "tente
 // de novo" e mais "faça isto".
@@ -223,6 +228,11 @@ export class Game {
     this.unicorn = createUnicorn(this.character);
     this.auras = createAuras();          // bolha, argolas e anéis de turbo
     this.unicorn.add(this.auras);
+
+    // O jeito deste unicórnio: raios, folhinhas, gelo… (characterAura.js).
+    // Vai dentro do próprio unicórnio, então some junto com ele na troca.
+    this.charAura = createCharacterAura(this.character);
+    if (this.charAura) this.unicorn.add(this.charAura);
 
     // Halo que só acende nas pistas escuras.
     this.nightGlow = createGlow(0xbfe9ff, 1.8, 0.085);
@@ -635,6 +645,9 @@ export class Game {
     this.unicorn.visible = true;
     this.setBodyVisible(true);
     resetRainbowTrail(this.trail, 0, 0);
+    // `keyLuck` é a Pérola: com ela a chave nasce mais vezes. Vai por aqui
+    // porque quem sorteia é o mundo, que não conhece o personagem.
+    this.world.keyLuck = this.character.keyLuck ?? 1;
     this.world.reset(this.mode);
     this.ui.setMode(this.mode);
     this.licao = null;
@@ -1911,6 +1924,9 @@ export class Game {
 
       if (e.userData.kind === 'obstacle') {
         if (e.userData.knocked) continue;      // esse já foi lá para cima
+        // A onda da Bomba Arco-Íris já o pegou: ele está encolhendo e subindo,
+        // não machuca mais ninguém.
+        if (e.userData.dissolving !== undefined) continue;
         // Pulou alto o bastante — ou está de escudo/turbo? Passa ileso.
         if (p.y > 1.1 || p.invulnerable > 0 || this.powers.shield > 0 || this.powers.boost > 0) continue;
         this.hit(e);
@@ -1928,8 +1944,9 @@ export class Game {
   collect(entity, index) {
     const isStar = entity.userData.kind === 'star';
     // `starValue` é a Estrela: as estrelinhas da pista são parentes dela.
+    // `heartValue` é a Pipoca, o par que faltava: ela dobra os corações.
     const valorEstrela = 5 * (this.character.starValue ?? 1);
-    const vale = isStar ? valorEstrela : 1;
+    const vale = isStar ? valorEstrela : (this.character.heartValue ?? 1);
     this.hearts += vale;
     this.collected += 1;
     this.score += HEART_POINTS * vale;
@@ -2021,6 +2038,10 @@ export class Game {
       this.world.rainbowBlast();
       this.ui.rainbowFlash();
       this.ui.shake();
+      // A onda nasce atrás do unicórnio e leva uns instantes para varrer o
+      // que está bem na frente dele. Sem esta carência, um obstáculo colado
+      // ainda batia no intervalo entre pegar a bomba e a onda chegar nele.
+      this.player.invulnerable = Math.max(this.player.invulnerable, BOMB_GRACE);
       // Sem `sfx.win()` aqui de propósito: aquela fanfarra é a de fase
       // concluída, e ouvi-la no meio da corrida faria a criança achar que
       // acabou. O estouro visual já é o "uau"; o som é o de power-up mesmo.
@@ -2213,6 +2234,7 @@ export class Game {
     this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
     animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded);
     updateAuras(this.auras, this.powers, this.elapsed);
+    updateCharacterAura(this.charAura, dt, this.elapsed, worldSpeed);
     if (this.nightGlow.visible) {
       this.nightGlow.scale.setScalar(1.8 * (1 + Math.sin(this.elapsed * 2.2) * 0.05));
     }

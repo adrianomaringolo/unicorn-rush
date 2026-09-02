@@ -1435,31 +1435,165 @@ function circusTent() {
 function ferrisWheel() {
   const g = new THREE.Group();
   const cor = pick([0xff4d5e, 0x4dc3ff, 0xffd166]);
-  for (const lado of [-0.3, 0.3]) {
-    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 2.4, 5), mat(0xb9c2d6));
-    perna.position.set(lado, 1.2, 0);
-    perna.rotation.z = -lado * 0.25;
-    perna.castShadow = true;
-    g.add(perna);
+  const clara = 0xffffff;
+  const RAIO = 1.85;
+  const EIXO = 3.1;
+  const CABINES = 12;
+
+  // Pé em A dos dois lados, com uma travessa ligando — antes eram duas
+  // pernas soltas, e a roda parecia flutuar.
+  for (const z of [-0.45, 0.45]) {
+    for (const lado of [-1, 1]) {
+      const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.11, EIXO * 1.08, 6), mat(0xb9c2d6));
+      perna.position.set(lado * 0.62, EIXO / 2, z);
+      perna.rotation.z = -lado * 0.38;
+      perna.castShadow = true;
+      g.add(perna);
+    }
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.09), mat(0xd6dcea));
+    travessa.position.set(0, EIXO * 0.42, z);
+    g.add(travessa);
   }
-  const aro = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.07, 6, 20), mat(cor));
-  aro.position.y = 2.6;
-  aro.castShadow = true;
-  g.add(aro);
-  // Raios e cabines: oito de cada, alternando a cor.
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const raio = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3, 0.06), mat(0xe8ecf5));
-    raio.position.y = 2.6;
+
+  // Eixo central, ligando os dois lados.
+  const eixo = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.1, 8), mat(0xe8ecf5));
+  eixo.rotation.x = Math.PI / 2;
+  eixo.position.y = EIXO;
+  g.add(eixo);
+  const cubo = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), mat(cor));
+  cubo.position.y = EIXO;
+  g.add(cubo);
+
+  // A roda é um grupo próprio: dois aros (um de cada lado), os raios e as
+  // cabines penduradas. Fica em `userData.roda` para poder girar (ver
+  // World.update).
+  const roda = new THREE.Group();
+  roda.position.y = EIXO;
+
+  for (const z of [-0.42, 0.42]) {
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(RAIO, 0.075, 6, 28), mat(cor));
+    aro.position.z = z;
+    aro.castShadow = true;
+    roda.add(aro);
+    // Aro interno fino, que dá a impressão de estrutura de verdade.
+    const interno = new THREE.Mesh(new THREE.TorusGeometry(RAIO * 0.55, 0.04, 5, 20), mat(clara));
+    interno.position.z = z;
+    roda.add(interno);
+  }
+
+  for (let i = 0; i < CABINES; i++) {
+    const a = (i / CABINES) * Math.PI * 2;
+    const raio = new THREE.Mesh(new THREE.BoxGeometry(0.05, RAIO * 2, 0.05), mat(clara));
     raio.rotation.z = a;
-    g.add(raio);
-    const cabine = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.28, 0.24), mat(i % 2 ? 0xffffff : cor));
-    cabine.position.set(Math.cos(a) * 1.5, 2.6 + Math.sin(a) * 1.5, 0);
-    cabine.castShadow = true;
-    g.add(cabine);
+    roda.add(raio);
+
+    // A cabine pendura de um braço curto e é contrapesada: assim, quando a
+    // roda gira, ela pode ficar sempre em pé (ver a animação).
+    const braco = new THREE.Group();
+    braco.position.set(Math.cos(a) * RAIO, Math.sin(a) * RAIO, 0);
+    const gancho = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.04), mat(0xd6dcea));
+    gancho.position.y = -0.08;
+    braco.add(gancho);
+
+    const corCabine = i % 3 === 0 ? clara : i % 3 === 1 ? cor : 0xffd166;
+    const cesta = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.32), mat(corCabine));
+    cesta.position.y = -0.31;
+    cesta.castShadow = true;
+    braco.add(cesta);
+    // Capota arredondada em cima da cesta.
+    const capota = new THREE.Mesh(
+      new THREE.SphereGeometry(0.19, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2),
+      mat(corCabine === clara ? cor : clara)
+    );
+    capota.position.y = -0.16;
+    capota.scale.set(1, 0.62, 0.95);
+    braco.add(capota);
+
+    braco.userData.pendurada = true;
+    roda.add(braco);
   }
+
+  g.add(roda);
+  g.userData.roda = roda;
+
+  // Bandeirinha no topo, como toda roda-gigante de parque tem.
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 5), mat(0xd6dcea));
+  mastro.position.y = EIXO + RAIO + 0.3;
+  g.add(mastro);
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.03), mat(0xff4d5e));
+  bandeira.position.set(0.18, EIXO + RAIO + 0.45, 0);
+  g.add(bandeira);
+
   return g;
 }
+
+// Carrossel: o outro brinquedo que todo parque tem. Um toldo listrado com
+// bandeirinhas, e cavalinhos em barras douradas que sobem e descem.
+function carousel() {
+  const g = new THREE.Group();
+  const corA = pick([0xff4d5e, 0x7a4ec7, 0x2f8fd6]);
+  const RAIO = 1.15;
+  const ALTURA = 1.5;
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(RAIO + 0.12, RAIO + 0.2, 0.22, 16), mat(0xfff0d6));
+  base.position.y = 0.11;
+  base.castShadow = true;
+  g.add(base);
+
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, ALTURA, 8), mat(0xffd166));
+  mastro.position.y = ALTURA / 2 + 0.2;
+  g.add(mastro);
+
+  // Toldo em gomos, alternando as cores — é o que faz ler como carrossel.
+  const gomos = 10;
+  for (let i = 0; i < gomos; i++) {
+    const gomo = new THREE.Mesh(
+      new THREE.ConeGeometry(RAIO + 0.18, 0.62, 4, 1, true,
+        (i / gomos) * Math.PI * 2, (Math.PI * 2) / gomos),
+      mat(i % 2 ? corA : 0xfff6fb, { side: THREE.DoubleSide })
+    );
+    gomo.position.y = ALTURA + 0.5;
+    g.add(gomo);
+  }
+  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mat(0xffd166));
+  ponta.position.y = ALTURA + 0.9;
+  g.add(ponta);
+
+  // Os cavalinhos: barra dourada e um corpo simples, em alturas diferentes.
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const x = Math.cos(a) * RAIO * 0.78;
+    const z = Math.sin(a) * RAIO * 0.78;
+    const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 1.1, 5), mat(0xffd166));
+    barra.position.set(x, ALTURA * 0.62, z);
+    g.add(barra);
+
+    const cavalo = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.16),
+      mat(i % 2 ? 0xffffff : 0xffd9ec));
+    cavalo.position.set(x, 0.62 + Math.sin(i * 1.7) * 0.16, z);
+    cavalo.rotation.y = -a;
+    cavalo.castShadow = true;
+    g.add(cavalo);
+    const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.12),
+      mat(i % 2 ? 0xffffff : 0xffd9ec));
+    cabeca.position.set(x + Math.cos(-a) * 0.17, cavalo.position.y + 0.13, z + Math.sin(-a) * 0.17);
+    cabeca.rotation.y = -a;
+    g.add(cabeca);
+  }
+
+  // Bandeirinhas na beirada do toldo.
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const flâmula = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.02),
+      mat(i % 2 ? 0xffd166 : corA));
+    flâmula.position.set(Math.cos(a) * (RAIO + 0.16), ALTURA + 0.16, Math.sin(a) * (RAIO + 0.16));
+    flâmula.rotation.y = -a;
+    g.add(flâmula);
+  }
+
+  return g;
+}
+
 
 function cottonCandy() {
   const g = new THREE.Group();
@@ -1797,7 +1931,7 @@ const DECORATIONS = {
   planet, asteroid, asteroidChunk, ufo,
   parasol, sandcastle, palmTree, beachChair,
   boat, surfboard, buoy,
-  circusTent, ferrisWheel, cottonCandy,
+  circusTent, ferrisWheel, cottonCandy, carousel,
   windmill, lightningRod, puddle,
   ghostTree, floatingLantern, mossRock,
   crystalVein, stalagmite, glowPool,
@@ -2687,10 +2821,50 @@ export function createRaindrop() {
   return pingo;
 }
 
+// Nota musical: a cabeça oval deitada, a haste e a bandeirinha. É o que
+// voa no Parque, onde a música nunca para.
+function musicNote() {
+  const g = new THREE.Group();
+  const cor = pick([0xff4d5e, 0x7a4ec7, 0x2f8fd6, 0xffffff]);
+  const material = mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.2) });
+
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), material);
+  cabeca.scale.set(1.25, 0.85, 0.7);
+  cabeca.rotation.z = -0.35;
+  g.add(cabeca);
+
+  const haste = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.5, 0.045), material);
+  haste.position.set(0.14, 0.26, 0);
+  g.add(haste);
+
+  // A bandeirinha, que é o que faz a colcheia ser reconhecível de longe.
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.04), material);
+  bandeira.position.set(0.23, 0.42, 0);
+  bandeira.rotation.z = -0.5;
+  g.add(bandeira);
+
+  g.userData.parts = { cor };
+  return g;
+}
+
+// Confete: um papelzinho chapado que roda enquanto cai.
+function confetti() {
+  const cor = pick([0xff4d5e, 0xffd166, 0x4dc3ff, 0x8ce99a, 0xff8fc4, 0xffffff]);
+  const papel = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.24, 0.34),
+    new THREE.MeshLambertMaterial({ color: cor, side: THREE.DoubleSide, flatShading: true })
+  );
+  const g = new THREE.Group();
+  g.add(papel);
+  g.userData.parts = { papel };
+  return g;
+}
+
 const AMBIENCE = {
   firefly: createFirefly, butterfly, bee, bird, fish, bubble, ant,
   spark: createSpark, smoke: createSmoke, snow: createSnowflake,
   seagull: createSeagull, meteorite: createMeteorite, rain: createRaindrop,
+  note: musicNote, confetti,
 };
 
 // Cria um bichinho do tipo pedido pela pista.
@@ -2723,6 +2897,25 @@ export function animateAmbience(item, elapsed) {
     for (const wing of parts.wings) wing.rotation.y = wing.userData.side * (0.5 + bate * 0.5);
     item.rotation.z = Math.sin(t * 1.6) * 0.3;
     return { x: Math.sin(t * 1.2) * 1.6, y: Math.sin(t * 2.1) * 0.9 };
+  }
+
+  // A nota sobe girando devagar, como se a música estivesse subindo.
+  if (kind === 'note') {
+    item.rotation.y = t * 1.4;
+    item.rotation.z = Math.sin(t * 1.8) * 0.35;
+    return { x: Math.sin(t * 0.9) * 1.8, y: Math.sin(t * 0.7) * 1.5 };
+  }
+
+  // O confete cai rodopiando e vai de um lado para o outro, como papel no ar.
+  if (kind === 'confetti') {
+    parts.papel.rotation.x = t * 4.2;
+    parts.papel.rotation.y = t * 2.6;
+    // Uma descida contínua que reinicia em cima: papel que cai, e não flutua.
+    const queda = 3.2;
+    return {
+      x: Math.sin(t * 1.5) * 1.4,
+      y: queda / 2 - ((elapsed * (0.9 + speed) + phase * 3) % queda),
+    };
   }
 
   if (kind === 'bee') {

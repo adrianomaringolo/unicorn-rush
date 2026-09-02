@@ -32,6 +32,32 @@ chaves** para quem está à venda e você tem chaves, e **🗺️ Buscar chaves*
 quando faltam (esse leva direto para as fases). A ficha da pista mostra a
 música dela no lugar do preço.
 
+### O que voa em volta de cada um
+
+Correndo, cada unicórnio solta o **seu** punhado de coisinhas: o Relâmpago
+larga raios, o Musgo perde folhinhas, o Floco deixa cair gelo, a Violeta vai
+fumaçando. Não é o rastro (esse é o arco-íris no chão) nem as auras de
+power-up (essas vêm e vão): é o jeito dele, sempre ligado, e é o que faz dar
+para reconhecer quem está correndo mesmo de longe ou de costas.
+
+São sete formas, todas desenhadas por código como o resto — faísca, raio,
+folha, floco, bolha, anel e morcego —, recombinadas com as cores de cada um:
+
+| | | | |
+| --- | --- | --- | --- |
+| ⚡ Relâmpago · 🍋 Limão | raios | 🍃 Musgo · 🍒 Cereja · 🥥 Coco | folhas |
+| 🧊 Floco | flocos de gelo | 🫧 Chiclete · 🌊 Onda · 🤍 Lulu · 🍿 Pipoca · 🐚 Pérola | bolhas |
+| 🔮 Violeta · 🎩 Vovô | anéis que abrem | 🦇 Sombra | morceguinhos |
+| os outros sete | faíscas | | |
+
+Cada personagem descreve o seu numa linha em `characters.js`
+(`aura: { kind, color, count }`), e quem anima é `characterAura.js`: as peças
+nascem junto ao corpo, saem andando para trás — mais depressa quanto mais
+rápida a corrida — e somem. Cada forma some do seu jeito: o raio **pisca**
+(que é o que raio faz), o anel **abre** enquanto desaparece e o morcego bate
+asa. A fumaça começou como esferinhas translúcidas e foi trocada pelos anéis:
+de perto, esfera cheia lia como bolha de gás, não como fumaça.
+
 ### O jeito de correr de cada um
 
 **Todo unicórnio, menos a Uni, tem uma característica que muda como se
@@ -66,6 +92,8 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | 💎 Cristal | `translucent: 0.72` | o **corpo** fica de vidro (crina, rabo, asas e marca ficam opacos, senão ela desaparecia) |
 | 🦇 Sombra | `glow` | acende e ganha halo **em qualquer pista** |
 | ⚡ Relâmpago | `windproof: true` | **ignora o vento lateral** da Tempestade: sem ele o vento empurra até a borda da pista (±3,1) em cerca de 2 s |
+| 🍿 Pipoca | `heartValue: 2` | **cada coração vale 2** — o par que faltava para a Estrela, que dobra as ⭐ e deixava os 💗 em 1 |
+| 🐚 Pérola | `keyLuck: 1.8` | **as chaves nascem mais**: a chance sobe 80% e a espera mínima entre uma e outra encurta na mesma medida. Medido nas Fases, 3 min de corrida: 15 chaves com qualquer um, **26 com ela** (1,73×) |
 
 O campo `power` de cada personagem é a frase que a **ficha mostra**, em
 linguagem de criança ("a primeira batida não machuca ele"), com o destaque
@@ -139,6 +167,8 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 🎩 Vovô | **Vilarejo**, Campo | o vilarejo é a rua onde ele cresceu |
 | 🦇 Sombra | **Caverna**, Vulcão | o subterrâneo é a casa dele |
 | ⚡ Relâmpago | **Tempestade**, Céu | nasceu no raio da tempestade, e mora nas nuvens do Céu |
+| 🍿 Pipoca | **Parque**, Vilarejo | as duas pistas de gente, onde a música não para |
+| 🐚 Pérola | **Oceano**, Bruma | as duas de pouca visibilidade: ela enxerga onde ninguém enxerga |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
@@ -169,6 +199,8 @@ Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 | ☄️ | **Cometa** 🔑 42 | índigo com crina em ciano e rosa, **perna comprida e cabeça pequena**, asas em raios que lêem como cauda | Não sabe parar: desde que nasceu está atravessando o céu. Dizem que quem o acompanha ganha um pedido. |
 | 🌊 | **Onda** 🔑 32 | **turquesa** de corpo inteiro (puxa para o verde, ao contrário do azul do Floco), com **chifre e mecha de coral** como acento quente, **esguia e de pernas compridas**, asas de véu que lêem como nadadeira | Nasceu numa espuma de onda grande e nunca aprendeu a andar devagar; debaixo d'água é a mais rápida de todas. |
 | ⚡ | **Relâmpago** 🔑 78 | **azul-tempestade** escuro, crina elétrica em amarelo e branco, chifre e marca de raio na anca; **o vento da Tempestade não o desvia** | Nasceu no talho de um raio, numa noite de tempestade. Corta a Tempestade em linha reta, onde todo mundo é empurrado de lado. |
+| 🍿 | **Pipoca** 🔑 84 | **creme de pipoca** com o vermelho da caixa listrada, crina de milho estourando, estrela vermelha na anca; **cada coração vale 2** | Mora onde a música nunca para, entre o carrossel do Parque e as pedras do Vilarejo. Onde ele passa cheira a manteiga. |
+| 🐚 | **Pérola** 🔑 90 | **branco-perolado** com reflexo rosa e azul, asa de véu, concha na anca; **acha mais chaves mágicas** | Cresceu dentro de uma concha, no escuro do fundo do mar. Enxerga onde ninguém enxerga — e acha chaves que passariam despercebidas. |
 
 Tudo isso é dado, não código: cada personagem é uma entrada em
 `src/models/characters.js` com as cores, o estilo do chifre, das asas
@@ -277,7 +309,7 @@ mais espaço vazio. Só o **Campo** vem liberado — as outras são trocadas por
 | ❄️ | **Geada** | Tudo branco e azul-gelo: pinheiros nevados, iglus, cristais de gelo e bonecos de neve, com **neve caindo de verdade** (o único bichinho do jogo que desce em vez de subir). O chão é **escorregadio** — trocar de faixa demora mais que o dobro para pegar. |
 | 🌋 | **Vulcão** | A pista do Brasa: chão de basalto quase preto, caminho cor de lava, **poças de lava** nas laterais (crosta escura em volta, miolo mais quente e uma bolha saindo do meio), pedras com veios acesos, chaminés soltando brasa e árvores queimadas. No ar, **faíscas de fogo subindo** por toda a volta e **fumaça** em alguns pontos, mais alta e mais lenta que as faíscas. Aqui o unicórnio **não** ganha aura: quem ilumina a cena é o chão, e um halo em volta dele competiria com a lava. |
 | 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
-| 🎪 | **Parque** | Tendas listradas de circo, roda-gigante girando com as cabines coloridas, algodão-doce e balões, com borboletas no ar e arco-íris no fundo. Aqui os obstáculos vêm em **fila apertada** — é a pista da Cereja, que desvia mais rápido que todos. |
+| 🎪 | **Parque** | Tendas listradas de circo, **roda-gigante** de verdade — pé em A, eixo, aro duplo e doze cabines com capota que ficam **sempre em pé** enquanto a roda gira —, **carrossel** com toldo de gomos, cavalinhos em barras douradas e bandeirinhas, algodão-doce e balões. No ar não voam bichos: voam **cifras de música**, que sobem girando, e **confete**, que cai rodopiando. A fila de obstáculos é a mais apertada do jogo. |
 | 🚀 | **Espaço** | **Não tem chão, nem serra no horizonte, nem nuvem** — só a faixa da pista flutuando no vazio, e é isso que dá a sensação de voo. As **estrelas ficam em cima e embaixo** da linha da pista, então dá para vê-las por baixo. Em volta, **discos voadores** com cúpula de vidro, luzinhas e facho apontando para baixo, muito **cascalho e pedaços de asteroide** espalhados, e — raros, mais ou menos um em dez enfeites — **planetas**, que saem em quatro tipos sorteados: listrado como Júpiter, de anéis múltiplos, cheio de crateras ou com lua e órbita próprias; atravessando o campo de visão, **meteoritos** com núcleo de pedra irregular, a frente em brasa, cauda de três camadas que pulsa e fagulhas tremendo na esteira. O unicórnio acende e ganha halo, e a **gravidade é baixa**: o pulo sobe 1,85× e desce devagar. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
@@ -620,6 +652,12 @@ O que acontece ao pegar:
    subindo em meio segundo. Vale também para as **barreiras** que atravessam
    as três pistas, que são o que mais atrapalha.
 4. A cortina segue até o fim da pista visível e some.
+
+Nada do que a onda alcançou machuca mais: o obstáculo que está desmanchando
+sai da conta de colisão no mesmo instante em que é marcado. E, como a onda
+nasce **atrás** do unicórnio e leva um instante para cobrir o que está bem na
+frente dele, pegar a bomba dá 0,6 s de carência — sem isso, um obstáculo
+colado ainda batia no intervalo entre pegar a bomba e a onda chegar nele.
 
 Duas coisas que precisaram de conserto no caminho, e o motivo de estarem
 como estão:

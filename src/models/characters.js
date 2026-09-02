@@ -1,7 +1,9 @@
 // Os unicórnios jogáveis.
 //
 // Cada personagem descreve as cores do corpo, o estilo do chifre, das asas e
-// da marca na anca, as cores da crina e do rastro que ele deixa na pista.
+// da marca na anca, as cores da crina, o rastro que ele deixa na pista e a
+// `aura` — o que fica voando em volta dele enquanto corre (raios no
+// Relâmpago, folhinhas no Musgo, gelo no Floco; ver characterAura.js).
 // O modelo 3D é o mesmo código (src/models/unicorn.js) montado com estes
 // valores — por isso dá para inventar um personagem novo só acrescentando
 // uma entrada aqui.
@@ -30,6 +32,7 @@ export const CHARACTERS = {
     mark: { shape: 'rainbow', color: 0xff8fb1 },
     // o arco-íris do Campo é dela
     fast: ['campo'],
+    aura: { kind: 'faisca', color: [0xff7b9d, 0xffe36b, 0x8ce99a, 0x74c0fc, 0xc09cff], count: 10 },
     trail: { colors: [0xff7b9d, 0xffb26b, 0xffe36b, 0x8ce99a, 0x74c0fc, 0xc09cff], width: 0.8 },
   },
 
@@ -53,6 +56,7 @@ export const CHARACTERS = {
     // O dia dele é mais longo: os power-ups duram metade a mais.
     powerTime: 1.5,
     power: 'os power-ups duram mais tempo com ele',
+    aura: { kind: 'faisca', color: [0xffd75e, 0xffb02e, 0xfff3c4], count: 9 },
     trail: { colors: [0xfff0b0, 0xffd75e, 0xffb02e, 0xff9433, 0xff7a3c, 0xffc46b], width: 0.8 },
   },
 
@@ -76,6 +80,7 @@ export const CHARACTERS = {
     // Conhece os atalhos: os itens vêm um pouquinho até ela, sempre.
     magnetRange: 3.4,
     power: 'os corações chegam mais perto dela sozinhos',
+    aura: { kind: 'faisca', color: [0xe3dcff, 0xbcaef5, 0xfff6bf], count: 8 },
     trail: { colors: [0xe3dcff, 0xbcaef5, 0x9a7ae0, 0x6d7fe0, 0x5b6bd6, 0x8ea3ff], width: 0.75 },
   },
 
@@ -105,6 +110,7 @@ export const CHARACTERS = {
     // depressa. Mais ponto por segundo, e mais obstáculo também.
     speedRamp: 1.6,
     power: 'ele ganha velocidade muito mais rápido',
+    aura: { kind: 'faisca', color: [0xff7a3c, 0xffb02e, 0xff4d2e], count: 10, scale: 0.9 },
     trail: { colors: [0xfff3c4, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f, 0xff2f0f], width: 1.05 },
   },
 
@@ -132,6 +138,7 @@ export const CHARACTERS = {
     power: 'ela corre com uma vidinha extra',
     // branquinha como as nuvens do Céu
     fast: ['ceu'],
+    aura: { kind: 'bolha', color: [0xffe3f4, 0xffffff], count: 7, opacity: 0.55 },
     trail: { colors: [0xffffff, 0xfff2f8, 0xffe4f1, 0xeaf3ff, 0xfff8e6, 0xfdefff], width: 0.3 },
   },
 
@@ -155,6 +162,7 @@ export const CHARACTERS = {
     // As estrelinhas da pista são parentes dela: valem o dobro.
     starValue: 2,
     power: 'as estrelas ⭐ valem o dobro para ela',
+    aura: { kind: 'faisca', color: [0xfff3c4, 0xffe066, 0xffffff], count: 11, scale: 1.15 },
     trail: { colors: [0xffffff, 0xfff8dd, 0xfff3b0, 0xffe066, 0xffd166, 0xfff0f6], width: 0.7 },
   },
 
@@ -184,6 +192,7 @@ export const CHARACTERS = {
     // A bolha de chiclete protege: ela começa cada corrida de escudo.
     startShield: 5,
     power: 'começa cada corrida dentro de uma bolha',
+    aura: { kind: 'bolha', color: [0xffb3d9, 0xff8fc4, 0xffe3f4], count: 8, opacity: 0.6 },
     trail: { colors: [0xfff0f6, 0xffd9ef, 0xffabd9, 0xff5d8f, 0xff9ecb, 0xffc2e4], width: 0.65 },
   },
 
@@ -211,6 +220,7 @@ export const CHARACTERS = {
     // O mais calmo: a velocidade sobe bem devagar. É o mais fácil de guiar.
     speedRamp: 0.55,
     power: 'a corrida dele acelera bem devagarinho',
+    aura: { kind: 'folha', color: [0x6fcf7f, 0x8ce99a, 0x4fa862], count: 9 },
     trail: { colors: [0xe6f7d9, 0xc4ebaa, 0xa8d98a, 0x7fc45a, 0x4f9d3a, 0xd9f0c4], width: 0.85 },
   },
 
@@ -241,6 +251,7 @@ export const CHARACTERS = {
     // A mais rápida de todas: ela passa do teto de velocidade da pista.
     topSpeed: 1.14,
     power: 'ela corre mais rápido do que a pista deixa',
+    aura: { kind: 'bolha', color: [0x74c0fc, 0xa5daff, 0xdff6ff], count: 9, opacity: 0.65 },
     trail: { colors: [0xffffff, 0xcaf0f8, 0x90e0ef, 0x48cae4, 0x00b4d8, 0x0077b6], width: 0.7 },
   },
 
@@ -276,6 +287,7 @@ export const CHARACTERS = {
     // da pista).
     steady: true,
     power: 'não escorrega no gelo da Geada',
+    aura: { kind: 'floco', color: [0xdff6ff, 0xffffff, 0xa5daff], count: 9 },
     trail: { colors: [0xffffff, 0xdff4ff, 0xbfe9ff, 0x9ed8f5, 0x5fc4f0, 0x2f9bff], width: 0.7 },
   },
 
@@ -304,6 +316,7 @@ export const CHARACTERS = {
     // Casca dura: a primeira batida de cada corrida não custa vida.
     firstHitFree: true,
     power: 'a primeira batida não machuca ele',
+    aura: { kind: 'folha', color: [0x8ce99a, 0xffe3a8, 0xb0855e], count: 8 },
     trail: { colors: [0xfff0c9, 0xffe3a8, 0xd9f0c4, 0xa8d98a, 0x7fc45a, 0xffd9ef], width: 0.8 },
   },
 
@@ -334,6 +347,7 @@ export const CHARACTERS = {
     // Não sabe parar: pula uma terceira vez no ar.
     extraJump: 1,
     power: 'ele pula três vezes no ar',
+    aura: { kind: 'faisca', color: [0xc09cff, 0xffffff, 0x74c0fc], count: 11, scale: 1.1 },
     trail: { colors: [0xffffff, 0x8ce9ff, 0xc9a6ff, 0xff8fd8, 0x5fc4f0, 0xffd166], width: 0.95 },
   },
 
@@ -368,6 +382,7 @@ export const CHARACTERS = {
     laneGrip: 1.5,
     fast: ['parque', 'doces'],
     power: 'ela desvia de pista muito mais rápido',
+    aura: { kind: 'folha', color: [0xff8fb1, 0xffc9de, 0xff5d8f], count: 9 },
     trail: { colors: [0xffd9e0, 0xff9eb0, 0xe03050, 0x5faf46, 0x2f7a26, 0xff7a90], width: 0.6 },
   },
 
@@ -397,6 +412,7 @@ export const CHARACTERS = {
     jumpBoost: 1.12,
     fast: ['tempestade', 'frutas'],
     power: 'ele pula mais alto que os outros',
+    aura: { kind: 'raio', color: [0xfff44f, 0xffe066], count: 7 },
     trail: { colors: [0xffffff, 0xfffbc9, 0xf2e33a, 0xc4e832, 0x8fd420, 0xfff08a], width: 0.55 },
   },
 
@@ -423,6 +439,7 @@ export const CHARACTERS = {
     airGlide: 0.78,
     fast: ['bruma', 'noite'],
     power: 'ela demora para descer do pulo',
+    aura: { kind: 'anel', color: [0xe3dcff, 0xc09cff, 0xbca6ff], count: 8, opacity: 0.7 },
     trail: { colors: [0xf0d9ff, 0xd9a6ff, 0xb87ae8, 0x8b3fd6, 0x6b28b0, 0xe6c9ff], width: 0.85 },
   },
 
@@ -448,6 +465,7 @@ export const CHARACTERS = {
     voice: 1.2,
     fast: ['caverna', 'geada'],
     power: 'ela é de vidro: dá para ver através dela',
+    aura: { kind: 'faisca', color: [0xffffff, 0xdff6ff, 0xbfe9ff], count: 10 },
     trail: { colors: [0xffffff, 0xeaf9ff, 0x8ce9ff, 0x5fd0f0, 0xbfe9ff, 0xd9f4ff], width: 0.7 },
   },
 
@@ -475,6 +493,7 @@ export const CHARACTERS = {
     laneGrip: 0.6,
     fast: ['vilarejo', 'campo'],
     power: 'vira devagar, mas deixa o rastro mais largo',
+    aura: { kind: 'anel', color: [0xffe9a8, 0xf2e6c8, 0xffffff], count: 7, opacity: 0.6 },
     trail: { colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4, 0x9aa0ad], width: 1.5 },
   },
 
@@ -503,6 +522,7 @@ export const CHARACTERS = {
     voice: 0.85,
     fast: ['caverna', 'vulcao'],
     power: 'ele acende sozinho em qualquer pista',
+    aura: { kind: 'morcego', color: [0x4a3d6b, 0x2c1c50, 0x6d5a9c], count: 7, opacity: 0.85 },
     trail: { colors: [0xc9a6ff, 0x8c7ac9, 0x6b5fa8, 0x4a3f7a, 0x2f2a4a, 0xa98ee0], width: 0.8 },
   },
 
@@ -532,7 +552,67 @@ export const CHARACTERS = {
     // Game.updatePlayer.
     windproof: true,
     power: 'o vento da Tempestade não desvia ele nem um pouco',
+    aura: { kind: 'raio', color: [0xfff44f, 0xffffff, 0x8ecfff], count: 9 },
     trail: { colors: [0xfff44f, 0xffe066, 0xffffff, 0x8ecfff, 0x5a6b94, 0xfff9c4], width: 0.75 },
+  },
+
+  pipoca: {
+    id: 'pipoca',
+    name: 'Pipoca',
+    emoji: '🍿',
+    title: 'o unicórnio do parque',
+    story: 'Pipoca mora onde a música nunca para: entre o carrossel do Parque e '
+      + 'as ruas de pedra do Vilarejo. Onde ele passa cheira a manteiga, e todo '
+      + 'coração que ele encontra vale por dois.',
+    price: 84,
+    // Creme de pipoca com o vermelho da caixa listrada; a crina é o milho
+    // estourando — branco, manteiga e um toque de caramelo.
+    body: 0xfff4d6,
+    hoof: 0xe0503f,
+    muzzle: 0xffd9a8,
+    horn: { color: 0xe0503f, length: 0.58, radius: 0.1 },
+    hair: [0xffffff, 0xffe9a8, 0xffd166, 0xe0503f, 0xfff4d6],
+    // Asa de pena, fofa como um punhado de pipoca.
+    wing: { style: 'feather', colors: [0xffffff, 0xfff4d6, 0xffe9a8, 0xffd9a8, 0xffe0b0] },
+    mark: { shape: 'star', color: 0xe0503f },
+    voice: 1.08,
+    // as duas pistas de gente: o Parque e o Vilarejo
+    fast: ['parque', 'vilarejo'],
+    // O par que faltava para a Estrela, que dobra as ⭐ e deixava os 💗 em 1.
+    // Lido no Game.collect, do mesmo jeito que o `starValue`.
+    heartValue: 2,
+    power: 'cada coração vale 2 com ele',
+    aura: { kind: 'bolha', color: [0xffffff, 0xfff4d6, 0xffe9a8], count: 9, opacity: 0.85 },
+    trail: { colors: [0xffffff, 0xfff4d6, 0xffe9a8, 0xffd166, 0xe0503f, 0xffd9a8], width: 0.82 },
+  },
+
+  perola: {
+    id: 'perola',
+    name: 'Pérola',
+    emoji: '🐚',
+    title: 'a unicórnia do fundo do mar',
+    story: 'Pérola cresceu dentro de uma concha, no escuro do fundo do mar. '
+      + 'Enxerga onde ninguém enxerga — no Oceano e na Bruma — e por isso acha '
+      + 'chaves mágicas que passariam despercebidas por qualquer outro.',
+    price: 90,
+    // Branco-perolado com reflexo de madrepérola: rosa e azul no mesmo corpo.
+    body: 0xfdf0f6,
+    hoof: 0xe8c9de,
+    muzzle: 0xf3cede,
+    horn: { color: 0xffeef7, length: 0.68, radius: 0.085 },
+    hair: [0xffd9ec, 0xd9e8ff, 0xffffff, 0xe6d4ff, 0xcfeff0],
+    // Véu, que é o que mais parece o brilho de dentro de uma concha.
+    wing: { style: 'veil', colors: [0xffeef7, 0xe3f0ff, 0xf7e3ff] },
+    mark: { shape: 'shell', color: 0xffb3d9 },
+    voice: 1.02,
+    // as duas pistas de pouca visibilidade: o Oceano e a Bruma
+    fast: ['oceano', 'bruma'],
+    // Multiplica a chance de a chave nascer numa linha (ver World.rollKeyLane).
+    // É o poder que ajuda a comprar todos os outros.
+    keyLuck: 1.8,
+    power: 'as chaves mágicas aparecem mais com ela',
+    aura: { kind: 'bolha', color: [0xffeef7, 0xd9e8ff, 0xffd9ec], count: 9, opacity: 0.7 },
+    trail: { colors: [0xffd9ec, 0xe3f0ff, 0xffffff, 0xe6d4ff, 0xcfeff0, 0xffeef7], width: 0.78 },
   },
 };
 

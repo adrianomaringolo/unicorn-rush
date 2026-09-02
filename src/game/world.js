@@ -412,8 +412,11 @@ export class World {
   rollKeyLane() {
     if (!this.mode.keyChance) return -1;
     this.rowsSinceKey += 1;
-    if (this.rowsSinceKey < (this.mode.keyGap || 10)) return -1;
-    if (Math.random() > this.mode.keyChance) return -1;
+    // `keyLuck` é a Pérola (ver Game.reset): com ela a chave sai mais vezes,
+    // e a espera mínima entre uma e outra encurta um pouco.
+    const sorte = this.keyLuck ?? 1;
+    if (this.rowsSinceKey < (this.mode.keyGap || 10) / sorte) return -1;
+    if (Math.random() > this.mode.keyChance * sorte) return -1;
     this.rowsSinceKey = 0;
     return Math.floor(Math.random() * LANES.length);
   }
@@ -486,6 +489,7 @@ export class World {
     }
 
     obj.userData.licao = true;
+    obj.userData.baseY = y;
     obj.position.set(LANES[faixa], y, z);
     this.group.add(obj);
     this.entities.push(obj);
@@ -555,6 +559,10 @@ export class World {
 
   addEntity(obj, lane, y) {
     obj.position.set(LANES[lane], y, SPAWN_DISTANCE);
+    // A altura com que ele nasceu é dele: sem isto o balanço abaixo puxava
+    // todo colecionável para uma altura fixa por tipo, e o prêmio que fica
+    // **em cima da barreira** (a 1,75) caía para 1,15 — dentro dela.
+    obj.userData.baseY = y;
     this.group.add(obj);
     this.entities.push(obj);
   }
@@ -579,6 +587,17 @@ export class World {
     for (const deco of this.decorations) {
       deco.position.z += move;
       if (deco.position.z > DESPAWN_DISTANCE + 6) this.placeDecoration(deco, SPAWN_DISTANCE - Math.random() * 20);
+      // A roda-gigante gira, e as cabines penduradas ficam sempre em pé —
+      // é o giro contrário que faz isso, o mesmo truque de uma roda de
+      // verdade (ver ferrisWheel em scenery.js).
+      const roda = deco.userData.roda;
+      if (roda) {
+        roda.rotation.z = elapsed * 0.35;
+        for (const braco of roda.children) {
+          if (braco.userData.pendurada) braco.rotation.z = -roda.rotation.z;
+        }
+      }
+
       // O que flutua balança na água em vez de ficar parado.
       if (deco.userData.side && this.track.shore && deco.userData.side === -this.track.shore.side) {
         deco.position.y = -0.12 + Math.sin(elapsed * 1.6 + deco.position.z * 0.35) * 0.09;
@@ -645,8 +664,10 @@ export class World {
       }
       if (e.userData.kind !== 'obstacle') {
         e.rotation.y += dt * 2.2;
-        const base = e.userData.kind === 'powerup' ? 1.3
-          : e.userData.kind === 'key' ? 1.2 : 1.15;
+        // `baseY` é onde ele foi posto; os padrões por tipo só valem para o
+        // que nasceu sem altura dita (nada, hoje).
+        const base = e.userData.baseY ?? (e.userData.kind === 'powerup' ? 1.3
+          : e.userData.kind === 'key' ? 1.2 : 1.15);
         e.position.y = base + Math.sin(elapsed * 3 + e.position.z * 0.2) * 0.12;
         // O brilho respira junto com o item.
         const glow = e.userData.glow;

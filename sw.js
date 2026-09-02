@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.14.0';
+const VERSION = 'unicornrush-v0.16.1';
 
 const SHELL = [
   './',
@@ -40,6 +40,7 @@ const SHELL = [
   './src/game/ui.js',
   './src/game/world.js',
   './src/models/auras.js',
+  './src/models/characterAura.js',
   './src/models/characters.js',
   './src/models/collectibles.js',
   './src/models/powerups.js',
@@ -91,6 +92,7 @@ const SHELL = [
   './assets/emoji/musical_note.png',
   './assets/emoji/muted_speaker.png',
   './assets/emoji/octopus.png',
+  './assets/emoji/popcorn.png',
   './assets/emoji/open_book.png',
   './assets/emoji/party_popper.png',
   './assets/emoji/pause_button.png',
@@ -131,6 +133,7 @@ const SHELL = [
   './assets/emoji/rocket.png',
   './assets/emoji/beach_with_umbrella.png',
   './assets/emoji/volcano.png',
+  './assets/emoji/spiral_shell.png',
   './assets/emoji/water_wave.png',
   './assets/emoji/white_heart.png',
   './assets/emoji/world_map.png',

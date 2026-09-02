@@ -287,9 +287,11 @@ export const TRACKS = {
     backdrop: 'rainbow',
     cloud: 0xffffff,
     mountains: [0xff9ecb, 0xffd166, 0x9be7ff],
-    decorations: ['circusTent', 'ferrisWheel', 'cottonCandy', 'circusTent', 'balloon', 'cottonCandy'],
+    decorations: ['circusTent', 'ferrisWheel', 'cottonCandy', 'carousel', 'balloon', 'circusTent'],
     obstacles: ['popcornBox', 'gumdrop', 'donut'],
-    ambience: [{ kind: 'butterfly', count: 22 }],
+    // No Parque não voam bichos: voa música. As notas sobem girando e o
+    // confete cai rodopiando, como se a festa não parasse nunca.
+    ambience: [{ kind: 'note', count: 16 }, { kind: 'confetti', count: 20 }],
     // Fila apertada: aqui é preciso desviar sem parar — é a pista da Cereja.
     obstacleChance: 0.58,
     spawnInterval: 0.5,
