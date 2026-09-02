@@ -32,14 +32,14 @@
        Tudo o que está aqui é HTML e CSS, para pintar no primeiro quadro e
        continuar andando mesmo nos instantes em que o jogo trava a thread
        principal para montar o mundo. -->
-  <div id="loading" role="status" aria-label="Carregando o jogo">
+  <div id="loading" role="status" aria-label="Carregando o jogo" data-t>
     <p class="load-brand">UnicornRush</p>
     <div class="load-pista">
       <i class="load-feito"></i>
       <img class="load-uni" src="./assets/loading/uni.webp" alt="" width="300" height="260"
            decoding="async" fetchpriority="high" draggable="false" />
     </div>
-    <p class="load-text">Preparando a pista<span class="load-reticencias">…</span></p>
+    <p class="load-text"><span data-t>Preparando a pista</span><span class="load-reticencias">…</span></p>
   </div>
 
   <div id="stage">
@@ -47,43 +47,43 @@
 
     <div id="hud">
       <div class="panel score">
-        <span class="label">Pontos</span>
+        <span class="label" data-t>Pontos</span>
         <span id="score">0</span>
       </div>
       <div class="panel hearts">
-        <span class="label">Corações</span>
+        <span class="label" data-t>Corações</span>
         <span><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /> <span id="hearts">0</span></span>
       </div>
       <div class="panel goal">
-        <span class="label">Meta</span>
+        <span class="label" data-t>Meta</span>
         <span id="goal">0/25</span>
       </div>
       <div class="panel level">
-        <span class="label">Fase</span>
+        <span class="label" data-t>Fase</span>
         <span id="level">1</span>
       </div>
       <div class="panel keys">
-        <span class="label">Chaves</span>
+        <span class="label" data-t>Chaves</span>
         <span><img class="fi" src="./assets/emoji/key.png" alt="🔑" draggable="false" /> <span id="keys">0/3</span></span>
       </div>
       <div class="panel lives">
-        <span class="label">Vidas</span>
+        <span class="label" data-t>Vidas</span>
         <span id="lives"><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /></span>
       </div>
       <div class="panel distance">
-        <span class="label">Distância</span>
+        <span class="label" data-t>Distância</span>
         <span id="distance">0</span>
       </div>
       <div class="panel best">
-        <span class="label">Recorde</span>
+        <span class="label" data-t>Recorde</span>
         <span id="best">0</span>
       </div>
       <div id="hud-buttons">
-        <button id="pause" class="panel mute" aria-label="Pausar o jogo" hidden><img class="fi" src="./assets/emoji/pause_button.png" alt="⏸️" draggable="false" /></button>
-        <button id="mute" class="panel mute" aria-label="Ligar ou desligar a música"><img class="fi" src="./assets/emoji/speaker_high_volume.png" alt="🔊" draggable="false" /></button>
-        <button id="rush" class="panel mute" aria-label="Correr mais rápido" aria-pressed="false" hidden><img class="fi" src="./assets/emoji/high_voltage.png" alt="⚡" draggable="false" /><span class="rush-label">RÁPIDO</span></button>
+        <button id="pause" class="panel mute" aria-label="Pausar o jogo" data-t hidden><img class="fi" src="./assets/emoji/pause_button.png" alt="⏸️" draggable="false" /></button>
+        <button id="mute" class="panel mute" aria-label="Ligar ou desligar a música" data-t><img class="fi" src="./assets/emoji/speaker_high_volume.png" alt="🔊" draggable="false" /></button>
+        <button id="rush" class="panel mute" aria-label="Correr mais rápido" data-t aria-pressed="false" hidden><img class="fi" src="./assets/emoji/high_voltage.png" alt="⚡" draggable="false" /><span class="rush-label" data-t>RÁPIDO</span></button>
         <div id="speed" class="panel gauge" hidden>
-          <span class="label">Velocidade</span>
+          <span class="label" data-t>Velocidade</span>
           <span id="speed-value">0</span>
           <span class="gauge-bar"><i></i></span>
         </div>
@@ -118,19 +118,19 @@
     <div id="toast"></div>
 
     <div id="touch-controls">
-      <button data-action="left" aria-label="Ir para a esquerda"><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
-      <button data-action="jump" aria-label="Pular"><img class="fi" src="./assets/emoji/up_arrow.png" alt="⬆️" draggable="false" /></button>
-      <button data-action="right" aria-label="Ir para a direita"><img class="fi" src="./assets/emoji/right_arrow.png" alt="➡️" draggable="false" /></button>
+      <button data-action="left" aria-label="Ir para a esquerda" data-t><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
+      <button data-action="jump" aria-label="Pular obstáculo" data-t><img class="fi" src="./assets/emoji/up_arrow.png" alt="⬆️" draggable="false" /></button>
+      <button data-action="right" aria-label="Ir para a direita" data-t><img class="fi" src="./assets/emoji/right_arrow.png" alt="➡️" draggable="false" /></button>
     </div>
 
     <div id="overlay">
       <div class="card">
-        <button id="overlay-back" class="corner-button back" aria-label="Voltar" hidden><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
-        <button id="overlay-grown" class="corner-button grown" aria-label="Cantinho dos adultos (segure o dedo)" hidden><img class="fi" src="./assets/emoji/crown.png" alt="👑" draggable="false" /></button>
+        <button id="overlay-back" class="corner-button back" aria-label="Voltar" data-t hidden><img class="fi" src="./assets/emoji/left_arrow.png" alt="⬅️" draggable="false" /></button>
+        <button id="overlay-grown" class="corner-button grown" aria-label="Cantinho dos adultos (segure o dedo)" data-t hidden><img class="fi" src="./assets/emoji/crown.png" alt="👑" draggable="false" /></button>
         <p class="brand">
           <img class="brand-mark" src="./assets/icons/icon-64.png" alt="" width="26" height="26" />UnicornRush
-          <span id="wallet" class="wallet" title="chaves mágicas guardadas" hidden></span>
-          <span id="test-badge" class="test-badge" title="modo teste ligado: nada está sendo guardado" hidden><img class="fi" src="./assets/emoji/test_tube.png" alt="🧪" draggable="false" /> teste</span>
+          <span id="wallet" class="wallet" title="chaves mágicas guardadas" data-t hidden></span>
+          <span id="test-badge" class="test-badge" title="modo teste ligado: nada está sendo guardado" data-t hidden><img class="fi" src="./assets/emoji/test_tube.png" alt="🧪" draggable="false" /> <span data-t>teste</span></span>
         </p>
         <h1 id="overlay-title"></h1>
         <p id="overlay-text"></p>
@@ -138,12 +138,10 @@
         <div id="overlay-buttons"></div>
         <p class="hint">
           <span class="hint-keyboard">
-            <span class="hint-arrows"><b>Setas</b> para escolher · </span>
-            <b>Enter</b> para o botão grande
+            <span class="hint-arrows" data-t>Setas para escolher · </span>
+            <span data-t>Enter para o botão grande</span>
           </span>
-          <span class="hint-touch">
-            Toque na figura que você quiser
-          </span>
+          <span class="hint-touch" data-t>Toque na figura que você quiser</span>
         </p>
       </div>
     </div>

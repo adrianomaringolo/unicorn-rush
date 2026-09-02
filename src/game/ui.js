@@ -3,6 +3,7 @@
 // É aqui que os emoji do código viram os ícones do jogo: todo texto que vai
 // para a tela passa por `withIcons` (ver src/game/icons.js).
 import { sfx } from './audio.js';
+import { t } from './i18n.js';
 import { withIcons } from './icons.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -85,7 +86,7 @@ export function createUI() {
       cancelHold();
       if (event === 'pointerup') {
         sfx.deny();
-        showToast('Segure o dedo aqui 👆');
+        showToast(t('Segure o dedo aqui 👆'));
       }
     });
   }

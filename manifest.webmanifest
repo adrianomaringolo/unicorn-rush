@@ -1,8 +1,7 @@
 {
   "name": "UnicornRush",
   "short_name": "UnicornRush",
-  "description": "Jogo infantil de corrida com unicórnios: junte corações e chaves mágicas voando pela pista.",
-  "lang": "pt-BR",
+  "description": "Jogo infantil de corrida com unicórnios: junte corações e chaves mágicas. · A little unicorn running game for kids: collect hearts and magic keys.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

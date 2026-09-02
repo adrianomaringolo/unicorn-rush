@@ -11,6 +11,13 @@ import { TRACK_LIST } from '../src/game/tracks.js';
 import { POWERUP_LIST, createPowerup } from '../src/models/powerups.js';
 import { LEVELS, levelData } from '../src/game/levels.js';
 import { createKey } from '../src/models/collectibles.js';
+import { readFileSync } from 'node:fs';
+import { EN } from '../src/game/i18n-en.js';
+import { setIdioma } from '../src/game/i18n.js';
+import { THEMES } from '../src/game/music.js';
+import { storyPages } from '../src/game/story.js';
+import { lessonsFor } from '../src/game/tutorial.js';
+import { TUTORIAL_MODE } from '../src/game/config.js';
 
 const countMeshes = (obj) => {
   let n = 0;
@@ -106,6 +113,106 @@ for (const track of TRACK_LIST) {
   world.burst(new THREE.Vector3(0, 1, 0));
   world.reset();
   if (world.entities.length) throw new Error('reset deixou item para trás');
+}
+
+// --- Tradução: nada pode cair em português sem querer -----------------------
+//
+// A chave do dicionário é a própria frase em português, então um acento
+// trocado faz a tradução sumir **em silêncio** — o jogo continua rodando e
+// mostra o português. Este teste é o que torna isso visível.
+{
+  const IGUAIS = new Set(['Uni', 'Lulu', 'Coco']);   // nomes iguais nos dois
+  const semTraducao = [];
+  const orfas = new Set(Object.keys(EN));
+  const ver = (o, campos, onde) => {
+    for (const campo of campos) {
+      const texto = o?.[campo];
+      if (typeof texto !== 'string' || !texto.trim()) continue;
+      orfas.delete(texto);
+      if (!IGUAIS.has(texto) && !EN[texto]) semTraducao.push(`${onde}.${campo}: ${texto.slice(0, 60)}`);
+    }
+  };
+
+  CHARACTER_LIST.forEach((c) => ver(c, ['name', 'title', 'story', 'power'], `unicórnio/${c.id}`));
+  TRACK_LIST.forEach((t) => ver(t, ['name', 'tagline'], `pista/${t.id}`));
+  storyPages(true).forEach((p) => ver(p, ['title', 'text'], `livro/${p.id}`));
+  lessonsFor({ rapido: true }).forEach((l, i) => ver(l, ['fala'], `lição/${i + 1}`));
+  POWERUP_LIST.forEach((p) => ver(p, ['name', 'message'], `power-up/${p.id}`));
+  [...Object.values(MODES), TUTORIAL_MODE].forEach((m) => ver(m, ['name', 'tagline'], `modo/${m.id}`));
+  Object.entries(THEMES).forEach(([id, tema]) => ver(tema, ['name'], `música/${id}`));
+
+  if (semTraducao.length) {
+    throw new Error(`sem tradução em inglês:\n   ${semTraducao.join('\n   ')}`);
+  }
+  console.log(`inglês: ${Object.keys(EN).length} frases, nenhuma faltando`);
+  // As frases da interface: tudo que passa por `t('…')` no código, mais o
+  // que está marcado com `data-t` no index.html.
+  const fonte = ['src/game/Game.js', 'src/game/ui.js']
+    .map((f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8')).join('\n');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+
+  const daInterface = new Set();
+  for (const m of fonte.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) {
+    daInterface.add(m[1].replace(/\\'/g, "'"));
+  }
+  for (const m of html.matchAll(/<[^>]*\bdata-t\b[^>]*>([^<]*)</g)) {
+    if (m[1].trim()) daInterface.add(m[1]);
+  }
+  for (const m of html.matchAll(/(?:aria-label|title)="([^"]+)" data-t/g)) daInterface.add(m[1]);
+
+  // O RETRY_HELP é traduzido no ponto de uso — `t(RETRY_HELP[acao])` —, então
+  // as frases dele não aparecem como literal dentro de um `t('…')`.
+  const ajuda = fonte.slice(fonte.indexOf('const RETRY_HELP'));
+  for (const m of ajuda.slice(0, ajuda.indexOf('};')).matchAll(/'((?:[^'\\]|\\.)*)'/g)) {
+    if (/\s/.test(m[1])) daInterface.add(m[1]);
+  }
+
+  // Para o aviso de chave órfã, vale qualquer literal do código: há frases
+  // que chegam ao `t()` por dentro de um ternário — `t(x ? 'a' : 'b')` — e
+  // não casam com a busca por `t('…')`. Elas são traduzidas na mesma, e não
+  // podem ser acusadas de órfãs.
+  for (const m of fonte.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) orfas.delete(m[1].replace(/\\'/g, "'"));
+  for (const f of daInterface) orfas.delete(f);
+  const semIngles = [...daInterface].filter((f) => !EN[f] && f !== '🌍 Idioma · Language');
+  if (semIngles.length) {
+    throw new Error(`interface sem tradução:\n   ${semIngles.join('\n   ')}`);
+  }
+  console.log(`   interface: ${daInterface.size} frases, nenhuma faltando`);
+
+  // Chave repetida no dicionário é o erro que não dá erro: a segunda
+  // simplesmente apaga a primeira quando o objeto é montado. Só dá para
+  // ver lendo o arquivo como texto.
+  const dic = readFileSync(new URL('../src/game/i18n-en.js', import.meta.url), 'utf8');
+  const vistas = new Set(); const repetidas = [];
+  for (const m of dic.matchAll(/^\s+('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"):/gm)) {
+    if (vistas.has(m[1])) repetidas.push(m[1]);
+    vistas.add(m[1]);
+  }
+  if (repetidas.length) throw new Error(`chave repetida no dicionário: ${repetidas.join(', ')}`);
+
+  // Ida e volta: trocar de idioma duas vezes tem de devolver o português
+  // exato. É o que o WeakMap dos originais garante — sem ele, o segundo
+  // `aplicaIdioma` traduziria em cima do já traduzido e o original sumiria
+  // para sempre, dentro da sessão de quem está jogando.
+  {
+    const alvo = CHARACTER_LIST.find((c) => c.id === 'relampago');
+    const antes = { nome: alvo.name, historia: alvo.story };
+    setIdioma('en', { salvar: false });
+    if (alvo.name !== 'Lightning') throw new Error('trocar para inglês não traduziu o personagem');
+    setIdioma('pt', { salvar: false });
+    if (alvo.name !== antes.nome || alvo.story !== antes.historia) {
+      throw new Error('voltar ao português não devolveu o texto original');
+    }
+    setIdioma('en', { salvar: false });
+    setIdioma('pt', { salvar: false });
+    if (alvo.name !== antes.nome) throw new Error('o original se perdeu depois de várias trocas');
+    console.log('   troca de idioma: ida e volta preserva o português');
+  }
+
+  if (orfas.size) {
+    console.log(`   ⚠️  ${orfas.size} chave(s) do dicionário não batem com texto nenhum:`);
+    for (const o of orfas) console.log(`      ${o.slice(0, 70)}`);
+  }
 }
 
 console.log('✅ tudo montou sem erros');

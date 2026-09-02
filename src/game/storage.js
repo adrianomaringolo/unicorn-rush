@@ -9,6 +9,9 @@ const KEY = 'unicornrush-save';
 const DEFAULTS = {
   version: 1,
   choices: { character: 'uni', track: 'campo', mode: 'baby', difficulty: 'medio' },
+  // `null` = ainda não escolheu. É o que faz a tela de idioma aparecer uma
+  // vez só, na primeira abertura (ver Game.showFirstScreen).
+  idioma: null,
   muted: false,
   speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
   testMode: false,       // modo teste: tudo liberado e nada é guardado

@@ -1004,6 +1004,87 @@ cascos ficam a **80%** da altura e o desenho começa a **13%**. É de onde saem
 o `bottom` dela e a margem que a barra reserva acima de si — se mudar o
 enquadramento, essas duas contas mudam junto.
 
+## Dois idiomas
+
+O jogo fala **português e inglês**. Na primeira abertura ele pergunta, antes
+de qualquer outra coisa — antes até da história, que é o primeiro texto que
+a criança encontra e não pode sair no idioma errado. Depois disso a troca
+mora no botão 🌍 do menu, e a escolha fica no save.
+
+O botão do idioma que o aparelho sugere já vem em destaque, mas quem decide
+é quem está jogando: `navigator.language` diz a língua do celular, não a da
+casa. E a tela de escolha é a única do jogo escrita **nos dois idiomas ao
+mesmo tempo**, cada botão no seu — ela não pode depender de o leitor
+entender o idioma em que ela está.
+
+### A chave é a própria frase
+
+O costume em tradução é dar um código a cada texto (`menu.jogar`) e guardar
+as duas versões numa tabela. Aqui a chave é **o texto em português**:
+
+```js
+t('Vamos correr?')                              // → "Shall we run?"
+t('Faltaram {n} chaves na fase {fase}.', { n, fase })
+```
+
+Duas razões:
+
+1. **o código continua legível.** `t('Vamos correr?')` diz o que aparece na
+   tela; `t('menu.correr')` não diz nada sem abrir outro arquivo;
+2. **frase sem tradução cai no português**, e não num código cru na tela de
+   uma criança. Um unicórnio novo funciona no dia em que é escrito e espera
+   a tradução sem quebrar nada.
+
+O preço: mudar a redação em português *perde* a tradução daquela frase, que
+volta a aparecer em português até alguém atualizar o dicionário. É visível
+na hora — melhor do que silencioso.
+
+Os buracos `{assim}` existem porque a ordem das palavras muda de um idioma
+para o outro; o número nem sempre cai no mesmo lugar da frase.
+
+### Os nomes são traduzidos
+
+**Relâmpago** vira **Lightning**, não "Relampago". O nome é a primeira coisa
+que conta quem é cada unicórnio, e um nome em português não conta nada para
+uma criança inglesa. Ficam iguais só os que já são nome próprio nos dois
+idiomas — Uni, Lulu, Coco.
+
+O mesmo vale para as pistas (Geada → Frost, Parque → Carnival) e para os
+nomes das músicas (Valsa de açúcar → Sugar waltz).
+
+### Onde cada texto mora
+
+| Onde | Como troca |
+| --- | --- |
+| Prosa dentro dos dados (`name`, `story`, `tagline`, `fala`…) | `traduzItens()` reescreve os campos **uma vez**, na troca de idioma |
+| Frases da interface (`Game.js`, `ui.js`) | `t('…')` no lugar |
+| Texto já escrito no `index.html` | marcado com `data-t`; `traduzHtml()` troca no DOM |
+| A voz que lê em voz alta | `speech.js` segue o idioma (`pt-BR` / `en-US`) e escolhe outra voz |
+
+Traduzir os dados **mutando as listas** foi o que evitou espalhar `t()` por
+dezenas de lugares que leem `personagem.name`: o resto do jogo continua sem
+saber que existe tradução. O português original de cada objeto fica guardado
+num `WeakMap` antes da primeira troca — sem isso, ir e voltar de idioma
+traduziria em cima do já traduzido e o original sumiria.
+
+### O que o `npm run check` cobre
+
+Como a chave é a própria frase, **um acento trocado faz a tradução sumir em
+silêncio**: o jogo continua rodando e mostra o português. Por isso o teste
+verifica, e falha:
+
+- todo texto dos dados e da interface tem tradução (326 frases);
+- nenhuma chave do dicionário deixou de bater com algum texto;
+- **nenhuma chave repetida** — a segunda apaga a primeira quando o objeto é
+  montado, e isso não dá erro nenhum. Foi assim que se descobriu que
+  `'Pular'` era ao mesmo tempo o `aria-label` do botão de pulo e o botão de
+  pular a história: em inglês um é *Jump* e o outro é *Skip*;
+- ida e volta pt → en → pt devolve o português exato.
+
+O `manifest.webmanifest` é a única coisa que fica de fora: o navegador o lê
+antes de o jogo abrir, então não há como escolher o idioma dele. A descrição
+está nos dois.
+
 ## Publicar (Vercel)
 
 O jogo é estático — não tem build, e o three.js já está em `vendor/`. Na

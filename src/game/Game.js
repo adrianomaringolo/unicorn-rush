@@ -30,6 +30,7 @@ import { canInstall, needsManualInstall, promptInstall, watchInstall } from './i
 import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
 import { storyPages, STORY_END } from './story.js';
+import { IDIOMAS, idioma, idiomaSugerido, setIdioma, t, traduzItens } from './i18n.js';
 import { lessonsFor } from './tutorial.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate } from './update.js';
@@ -376,7 +377,7 @@ export class Game {
         // a de cima fica vazia em vez de repetir a mesma coisa.
         subtitulo: () => '',
         descricao: (item) => item.tagline,
-        chamada: () => 'é para lá que a corrida vai',
+        chamada: () => t('é para lá que a corrida vai'),
       }
       : {
         kind, guardados: 'characters', lista: CHARACTER_LIST, slots: CHARACTER_SLOTS,
@@ -387,7 +388,7 @@ export class Game {
         voltar: () => this.showCharacterPicker(),
         subtitulo: (item) => item.title,
         descricao: (item) => item.story,
-        chamada: (item) => `${item.name} vem correr com você`,
+        chamada: (item) => t('{nome} vem correr com você', { nome: item.name }),
       };
   }
 
@@ -471,7 +472,7 @@ export class Game {
     this.rush = !this.rush;
     this.ui.showRush(true, this.rush);
     sfx.pick();
-    this.ui.toast(this.rush ? '⚡ Disparou!' : 'Voltou ao normal');
+    this.ui.toast(this.rush ? t('⚡ Disparou!') : t('Voltou ao normal'));
     // Na lição, a aula do ⚡ só passa quando ele é **ligado** — desligar não
     // ensina nada.
     if (this.rush) this.lessonAction('rapido');
@@ -662,7 +663,7 @@ export class Game {
     this.ui.showOverlay({
       // O nome da pista no título: cada pista tem o seu caminho de fases, e
       // é preciso ficar claro em qual delas a criança está.
-      title: `Fases · ${this.track.emoji} ${this.track.name}`,
+      title: t('Fases · {emoji} {pista}', { emoji: this.track.emoji, pista: this.track.name }),
       html: `<div class="levels-grid">${tiles}</div>`,
       back: () => this.showModePicker(),
     });
@@ -671,7 +672,7 @@ export class Game {
       if (n > unlocked) {
         sfx.deny();
         this.ui.shakeElement(tile);
-        this.ui.toast('Essa ainda não abriu 🔒');
+        this.ui.toast(t('Essa ainda não abriu 🔒'));
         return;
       }
       sfx.pick();
@@ -697,14 +698,16 @@ export class Game {
     this.saveBest();
     this.ui.setBest(this.best);
     this.ui.showOverlay({
-      title: `Fase ${number} completa! 🎉`,
+      title: t('Fase {n} completa! 🎉', { n: number }),
       text: hasNext
-        ? `${this.character.name} juntou as ${this.mode.keys} chaves. A fase ${number + 1} abriu!`
-        : `${this.character.name} terminou as ${LEVEL_COUNT} fases do ${this.track.name}! Que corrida!`,
+        ? t('{nome} juntou as {chaves} chaves. A fase {proxima} abriu!',
+          { nome: this.character.name, chaves: this.mode.keys, proxima: number + 1 })
+        : t('{nome} terminou as {total} fases do {pista}! Que corrida!',
+          { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name }),
       buttons: [
-        ...(hasNext ? [{ label: '▶️ Próxima fase', onClick: () => this.startLevel(number + 1) }] : []),
-        { label: '🔁 Jogar de novo', onClick: () => this.startLevel(number), secondary: hasNext },
-        { label: '🗺️ Escolher fase', onClick: () => this.showLevels(), secondary: true },
+        ...(hasNext ? [{ label: t('▶️ Próxima fase'), onClick: () => this.startLevel(number + 1) }] : []),
+        { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: hasNext },
+        { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
       ],
     });
   }
@@ -794,31 +797,32 @@ export class Game {
       picker: true,
       hint: true,
       arrows: false,        // no hub as setas não têm o que percorrer
-      title: 'Vamos correr?',
+      title: t('Vamos correr?'),
       html: `
         <div class="picks">
-          <button class="pick" data-pick="character" aria-label="Trocar de unicórnio">
+          <button class="pick" data-pick="character" aria-label="${t('Trocar de unicórnio')}">
             <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
             <span class="pick-name">${this.character.name}</span>
           </button>
-          <button class="pick" data-pick="track" aria-label="Trocar de pista">
+          <button class="pick" data-pick="track" aria-label="${t('Trocar de pista')}">
             <img class="pick-face" src="${cenarios[this.track.id]}" alt="" />
             <span class="pick-name">${this.track.name}</span>
           </button>
-          <button class="pick" data-pick="mode" aria-label="Trocar de brincadeira">
+          <button class="pick" data-pick="mode" aria-label="${t('Trocar de brincadeira')}">
             <span class="pick-emoji">${modo.emoji}${selo}</span>
             <span class="pick-name">${modo.name}</span>
           </button>
         </div>
         <div class="extras">
-          <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 A história${this.storyEndNew ? ' ✨' : ''}</button>
-          <button class="mini-button" data-pick="stats">📊 Estatísticas</button>
-          <button class="mini-button" data-pick="about">ℹ️ Sobre</button>
-          <button class="mini-button aprender" data-pick="tutorial">👆 Aprender</button>
-          ${hasUpdate() ? '<button class="mini-button nova" data-pick="update">🔄 Atualizar</button>' : ''}
+          <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 ${t('A história')}${this.storyEndNew ? ' ✨' : ''}</button>
+          <button class="mini-button" data-pick="stats">📊 ${t('Estatísticas')}</button>
+          <button class="mini-button" data-pick="about">ℹ️ ${t('Sobre')}</button>
+          <button class="mini-button" data-pick="idioma">🌍 ${t('Idioma')}</button>
+          <button class="mini-button aprender" data-pick="tutorial">👆 ${t('Aprender')}</button>
+          ${hasUpdate() ? `<button class="mini-button nova" data-pick="update">🔄 ${t('Atualizar')}</button>` : ''}
         </div>
       `,
-      buttons: [{ label: '▶️ JOGAR', huge: true, onClick: () => this.playNow() }],
+      buttons: [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
       grown: () => this.showGrownUps(),
     });
     this.ui.bindExtra((qual) => {
@@ -829,6 +833,7 @@ export class Game {
       if (qual === 'tutorial') return this.startTutorial();
       if (qual === 'stats') return this.showStats();
       if (qual === 'about') return this.showAbout();
+      if (qual === 'idioma') return this.showLanguagePicker();
       if (qual === 'update') return this.applyUpdate();
       return this.showModePicker();
     });
@@ -864,9 +869,10 @@ export class Game {
       adventure: '<span class="mode-strip">🌵 💗 🪨 ⭐</span>',
     };
     const legenda = {
-      baby: 'sem nada no caminho',
-      levels: `${this.track.name}: ${unlocked} de ${LEVEL_COUNT} fases`,
-      adventure: 'com coisas no caminho e 3 vidas',
+      baby: t('sem nada no caminho'),
+      levels: t('{pista}: {feitas} de {total} fases',
+        { pista: this.track.name, feitas: unlocked, total: LEVEL_COUNT }),
+      adventure: t('com coisas no caminho e 3 vidas'),
     };
 
     const cards = Object.values(MODES).map((m) => {
@@ -891,9 +897,9 @@ export class Game {
 
     this.ui.showOverlay({
       hint: true,
-      title: 'Como vamos brincar?',
+      title: t('Como vamos brincar?'),
       html: `<div class="mode-list">${cards}</div>`,
-      buttons: [{ label: '▶️ JOGAR', huge: true, onClick: () => this.playNow() }],
+      buttons: [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
       back: () => this.showHome(),
     });
     this.ui.bindExtra((valor) => {
@@ -930,17 +936,17 @@ export class Game {
     this.screen = 'grown';
     this.ui.showPause(false);
     this.ui.showOverlay({
-      title: '👑 Dos adultos',
+      title: t('👑 Dos adultos'),
       buttons: [
-        { label: '⬅️ Voltar ao jogo', onClick: () => this.showHome() },
+        { label: t('⬅️ Voltar ao jogo'), onClick: () => this.showHome() },
         ...(canSpeak() ? [{
-          label: speechOn() ? '🔊 Voz: ligada' : '🔈 Voz: desligada',
-          hint: 'lê em voz alta o nome do que a criança toca',
+          label: speechOn() ? t('🔊 Voz: ligada') : t('🔈 Voz: desligada'),
+          hint: t('lê em voz alta o nome do que a criança toca'),
           onClick: () => this.toggleSpeech(),
           secondary: true,
         }] : []),
         ...(canInstall() ? [{
-          label: '📲 Instalar',
+          label: t('📲 Instalar'),
           onClick: () => this.installApp(),
           secondary: true,
         }] : []),
@@ -952,7 +958,7 @@ export class Game {
   toggleSpeech() {
     const ligado = setSpeech(!speechOn());
     update((save) => { save.speech = ligado; });
-    if (ligado) speak('Pronto, agora eu falo');
+    if (ligado) speak(t('Pronto, agora eu falo'));
     this.showGrownUps();
   }
 
@@ -995,9 +1001,9 @@ export class Game {
     });
 
     for (let i = loja.lista.length; i < loja.slots; i++) {
-      cartoes.push('<button class="cast-card vazio" data-pick="vazio" aria-label="ainda não existe">'
+      cartoes.push(`<button class="cast-card vazio" data-pick="vazio" aria-label="${t('ainda não existe')}">`
         + '<span class="cast-soon">?</span>'
-        + '<span class="cast-name">em breve</span></button>');
+        + `<span class="cast-name">${t('em breve')}</span></button>`);
     }
 
     return `<div class="cast-grid">${cartoes.join('')}</div>`;
@@ -1010,7 +1016,7 @@ export class Game {
     if (id === 'vazio') {
       sfx.deny();
       this.ui.shakeElement(tile);
-      this.ui.toast('Esse ainda está sendo feito ✨');
+      this.ui.toast(t('Esse ainda está sendo feito ✨'));
       return;
     }
     sfx.tap();
@@ -1024,7 +1030,7 @@ export class Game {
   // legenda — quem quiser saber quem é cada um abre a ficha dele.
   trackLegend() {
     return this.character.fast?.length
-      ? `⚡ ${this.character.name} corre mais rápido nas pistas marcadas`
+      ? t('⚡ {nome} corre mais rápido nas pistas marcadas', { nome: this.character.name })
       : this.track.tagline;
   }
 
@@ -1040,10 +1046,10 @@ export class Game {
     this.ui.showOverlay({
       picker: true,
       hint: true,
-      title: 'Quem vai correr?',
+      title: t('Quem vai correr?'),
       html: this.gridHtml('character'),
       scroll: this.gridScrollOrNull(),
-      buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
+      buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
     });
     this.ui.bindExtra((id, tile) => this.pickItem('character', id, tile));
@@ -1081,27 +1087,31 @@ export class Game {
     // Quem se conquista não tem botão de compra: tem o que falta fazer.
     const botao = !meu && item.earned
       ? {
-        label: '🏆 Liberte todos os amigos',
-        hint: `faltam ${this.missingFriends} unicórnio(s) para descobrir quem é`,
+        label: t('🏆 Liberte todos os amigos'),
+        hint: t(this.missingFriends === 1
+          ? 'falta 1 unicórnio para descobrir quem é'
+          : 'faltam {n} unicórnios para descobrir quem é', { n: this.missingFriends }),
         huge: true,
         onClick: () => loja.voltar(),
       }
       : meu
       ? {
-        label: '✅ Escolher esse',
-        hint: item.id === loja.atual().id ? 'já é o escolhido' : loja.chamada(item),
+        label: t('✅ Escolher esse'),
+        hint: item.id === loja.atual().id ? t('já é o escolhido') : loja.chamada(item),
         huge: true,
         onClick: () => { loja.aplicar(id); loja.voltar(); },
       }
       : falta > 0
         ? {
-          label: '🗺️ Buscar chaves',
-          hint: `ainda falta${falta > 1 ? 'm' : ''} ${falta} · as chaves aparecem nas Fases`,
+          label: t('🗺️ Buscar chaves'),
+          hint: t(falta === 1
+            ? 'ainda falta {n} · as chaves aparecem nas Fases'
+            : 'ainda faltam {n} · as chaves aparecem nas Fases', { n: falta }),
           huge: true,
           onClick: () => this.goFindKeys(),
         }
         : {
-          label: `🔑 Trocar ${preco} chaves`,
+          label: t('🔑 Trocar {preco} chaves', { preco }),
           hint: loja.chamada(item),
           huge: true,
           onClick: () => this.buyItem(kind, id),
@@ -1126,10 +1136,9 @@ export class Game {
     const rodape = meu
       ? (kind === 'track' ? `<p class="shop-note">🎵 ${music.themeName(item.id)}</p>` : '')
       : item.earned
-        ? '<p class="shop-price falta">Ele não se compra: aparece quando '
-          + '<b>todos os amigos estiverem livres</b></p>'
+        ? `<p class="shop-price falta">${t('Ele não se compra: aparece quando <b>todos os amigos estiverem livres</b>')}</p>`
         : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
-          + `Custa <b>🔑 ${preco}</b> · você tem <b>🔑 ${tenho}</b></p>`;
+          + `${t('Custa <b>🔑 {preco}</b> · você tem <b>🔑 {tenho}</b>', { preco, tenho })}</p>`;
 
     this.ui.showOverlay({
       picker: true,
@@ -1139,9 +1148,7 @@ export class Game {
           <img class="shop-face${oculto ? ' sombra' : ''}" src="${loja.retratos()[item.id]}" alt="" />
           ${!oculto && loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
           <p class="shop-story">${oculto
-            ? 'Ninguém sabe quem é. Dizem que alguém espera na torre da '
-              + 'neblina, e que só aparece no dia em que o último amigo sair '
-              + 'de trás da porta dele.'
+            ? t('Ninguém sabe quem é. Dizem que alguém espera na torre da neblina, e que só aparece no dia em que o último amigo sair de trás da porta dele.')
             : loja.descricao(item)}</p>
           ${poder}
           ${rapidas}
@@ -1194,7 +1201,7 @@ export class Game {
     const fechouOElenco = faltavaAlguem && this.storyEndUnlocked;
 
     this.revealUnlock(kind, item, () => {
-      this.ui.toast(`${item.emoji} ${item.name} é sua!`);
+      this.ui.toast(`${item.emoji} ${t('{nome} é sua!', { nome: item.name })}`);
       if (!fechouOElenco) return loja.voltar();
       this.aposLivro = () => this.revealEco();
       return this.showStory(this.storyBook.length - STORY_END.length);
@@ -1211,7 +1218,7 @@ export class Game {
     this.setCharacter(eco.id);
     this.ui.confetti();
     return this.revealUnlock('character', eco, () => {
-      this.ui.toast(`${eco.emoji} ${eco.name} veio correr com você!`);
+      this.ui.toast(`${eco.emoji} ${t('{nome} veio correr com você!', { nome: eco.name })}`);
       this.showHome();
     });
   }
@@ -1272,7 +1279,7 @@ export class Game {
     // fanfarra quando o retrato aparece.
     const chave = setTimeout(() => sfx.key(), 800);      // o cadeado cede
     const fanfarra = setTimeout(() => sfx.win(), 1450);   // o retrato aparece
-    const fala = setTimeout(() => speak(`${item.name} é sua!`), 2100);
+    const fala = setTimeout(() => speak(t('{nome} é sua!', { nome: item.name })), 2100);
 
     // Sai sozinho, ou no primeiro toque de quem já viu (e vai ver de novo a
     // cada compra — impaciência aqui é justa).
@@ -1315,13 +1322,13 @@ export class Game {
     this.ui.showOverlay({
       picker: true,
       hint: true,
-      title: 'Por onde vamos?',
+      title: t('Por onde vamos?'),
       // A legenda vai no `text`, que fica acima da grade e fora da área que
       // rola: embaixo de 15 miniaturas ela nunca seria lida.
       text: this.trackLegend(),
       html: this.gridHtml('track'),
       scroll: this.gridScrollOrNull(),
-      buttons: [{ label: '✅ Pronto', huge: true, onClick: () => this.showHome() }],
+      buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
     });
     this.ui.bindExtra((id, tile) => this.pickItem('track', id, tile));
@@ -1332,15 +1339,13 @@ export class Game {
   installApp() {
     if (needsManualInstall()) {
       this.ui.showOverlay({
-        title: '📲 Instalar no iPhone',
+        title: t('📲 Instalar no iPhone'),
         html: `
           <div class="about">
-            <p class="about-text">
-              No iPhone a instalação é pelo Safari, em dois toques:
-            </p>
+            <p class="about-text">${t('No iPhone a instalação é pelo Safari, em dois toques:')}</p>
             <ol class="install-steps">
-              <li>Toque em <b>Compartilhar</b> <span aria-hidden="true">􀈂</span> na barra de baixo</li>
-              <li>Escolha <b>Adicionar à Tela de Início</b></li>
+              <li>${t('Toque em <b>Compartilhar</b> {icone} na barra de baixo', { icone: '<span aria-hidden="true">􀈂</span>' })}</li>
+              <li>${t('Escolha <b>Adicionar à Tela de Início</b>')}</li>
             </ol>
             <p class="about-note">
               Depois disso o jogo abre em tela cheia, com o ícone próprio e
@@ -1348,7 +1353,7 @@ export class Game {
             </p>
           </div>
         `,
-        buttons: [{ label: '⬅️ Voltar', onClick: () => this.showGrownUps() }],
+        buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showGrownUps() }],
       });
       return;
     }
@@ -1418,7 +1423,7 @@ export class Game {
         <div class="book">
           <div class="book-art"${ultima ? '' : ' data-pick="proxima"'}>
             <img class="book-img" src="${folha.image}" alt="" draggable="false" />
-            ${ultima ? '' : '<button class="book-skip" data-pick="pular">Pular</button>'}
+            ${ultima ? '' : `<button class="book-skip" data-pick="pular">${t('Pular')}</button>`}
           </div>
           <div class="book-page">
             <h2 class="book-title">${folha.title}</h2>
@@ -1434,8 +1439,8 @@ export class Game {
         </div>
       `,
       buttons: [ultima
-        ? { label: '▶️ VAMOS!', huge: true, onClick: () => this.closeStory() }
-        : { label: 'Virar a página', huge: true, onClick: () => this.turnPage(1) }],
+        ? { label: t('▶️ VAMOS!'), huge: true, onClick: () => this.closeStory() }
+        : { label: t('Virar a página'), huge: true, onClick: () => this.turnPage(1) }],
       back: () => this.closeStory(),
     });
     this.ui.bindExtra((valor) => {
@@ -1527,22 +1532,60 @@ export class Game {
     this.screen = 'invite';
     this.ui.showPause(false);
     this.ui.showOverlay({
-      title: 'Quer aprender a correr?',
-      text: 'A Uni mostra os comandos e os poderes numa corrida curtinha — '
-        + 'e aqui ninguém perde vida.',
+      title: t('Quer aprender a correr?'),
+      text: t('A Uni mostra os comandos e os poderes numa corrida curtinha — e aqui ninguém perde vida.'),
       buttons: [
-        { label: '👆 Vamos aprender!', huge: true, onClick: () => this.startTutorial() },
-        { label: '▶️ Já sei jogar', onClick: () => this.showHome(), secondary: true },
+        { label: t('👆 Vamos aprender!'), huge: true, onClick: () => this.startTutorial() },
+        { label: t('▶️ Já sei jogar'), onClick: () => this.showHome(), secondary: true },
       ],
     });
   }
 
   // A primeira tela do jogo. Na primeira vez de todas é a história; depois
   // é o menu de sempre.
+  // Em que idioma vamos brincar?
+  //
+  // Aparece sozinha na primeira abertura, antes da história — a história é
+  // a primeira coisa que a criança lê, e não dá para contá-la no idioma
+  // errado. Depois disso mora no botão 🌍 do menu.
+  //
+  // Os dois botões são escritos **cada um no seu idioma**, com a bandeira:
+  // é a única tela do jogo que não pode depender de o leitor entender o
+  // idioma em que ela está.
+  showLanguagePicker({ primeira = false } = {}) {
+    this.state = STATE.READY;
+    this.screen = 'idioma';
+    this.ui.showPause(false);
+
+    const escolher = (id) => {
+      setIdioma(id);
+      this.save = getSave();
+      // O menu e a história são remontados: os nomes dos unicórnios, das
+      // pistas e os textos já saem no idioma novo.
+      this.render();
+      return primeira ? this.showStory(0) : this.showHome();
+    };
+
+    const sugerido = this.save.idioma || idiomaSugerido();
+    this.ui.showOverlay({
+      title: t('🌍 Idioma · Language'),
+      buttons: Object.values(IDIOMAS).map((lang) => ({
+        label: `${lang.bandeira} ${lang.nome}`,
+        huge: true,
+        secondary: lang.id !== sugerido,
+        onClick: () => escolher(lang.id),
+      })),
+      back: primeira ? null : () => this.showHome(),
+    });
+  }
+
   showFirstScreen() {
     // Guardado antes de a história marcar `storySeen`: é o que diferencia
     // "abriu o jogo pela primeira vez" de "reabriu a história pelo 📖".
     this.primeiraVez = !this.save.storySeen;
+    // Idioma primeiro: sem ele a história sairia no idioma que o aparelho
+    // adivinhou, que pode não ser o da casa.
+    if (!this.save.idioma) return this.showLanguagePicker({ primeira: this.primeiraVez });
     return this.primeiraVez ? this.showStory(0) : this.showHome();
   }
 
@@ -1552,16 +1595,12 @@ export class Game {
     this.screen = 'about';
     this.ui.showPause(false);
     this.ui.showOverlay({
-      title: 'Sobre o jogo',
+      title: t('Sobre o jogo'),
       html: `
         <div class="about">
           <img class="about-logo" src="./assets/icons/icon-192.png" alt="" width="84" height="84" />
-          <p class="about-text">
-            <b>UnicornRush</b> é um joguinho de corrida para crianças, feito em
-            3D com <b>three.js</b> — todos os unicórnios, pistas e enfeites são
-            desenhados por código, sem nenhuma imagem pronta.
-          </p>
-          <p class="about-text">Criado por <b>Adriano Maringolo</b></p>
+          <p class="about-text">${t('<b>UnicornRush</b> é um joguinho de corrida para crianças, feito em 3D com <b>three.js</b> — todos os unicórnios, pistas e enfeites são desenhados por código, sem nenhuma imagem pronta.')}</p>
+          <p class="about-text">${t('Criado por <b>Adriano Maringolo</b>')}</p>
           <div class="about-links">
             <a class="about-link" href="https://adrianomaringolo.dev" target="_blank" rel="noopener">
               🌐 adrianomaringolo.dev
@@ -1570,26 +1609,23 @@ export class Game {
               🐙 github.com/adrianomaringolo
             </a>
             <a class="about-link" href="https://github.com/adrianomaringolo/unicorn-rush" target="_blank" rel="noopener">
-              🦄 código do jogo
+              🦄 ${t('código do jogo')}
             </a>
           </div>
-          <p class="about-version">versão ${VERSION}</p>
-          <p class="about-note">
-            Feito com three.js · fonte Fredoka (SIL Open Font License) ·
-            ícones Fluent Emoji, da Microsoft (MIT)
-          </p>
+          <p class="about-version">${t('versão {v}', { v: VERSION })}</p>
+          <p class="about-note">${t('Feito com three.js · fonte Fredoka (SIL Open Font License) · ícones Fluent Emoji, da Microsoft (MIT)')}</p>
         </div>
       `,
       buttons: [
         // O botão de atualizar mora aqui, ao lado da versão: é onde já se
         // olha para saber o que está instalado.
         ...(hasUpdate() ? [{
-          label: '🔄 Atualizar o jogo',
-          hint: 'tem versão nova esperando — o jogo recarrega',
+          label: t('🔄 Atualizar o jogo'),
+          hint: t('tem versão nova esperando — o jogo recarrega'),
           huge: true,
           onClick: () => this.applyUpdate(),
         }] : []),
-        { label: '⬅️ Voltar', onClick: () => this.showHome() },
+        { label: t('⬅️ Voltar'), onClick: () => this.showHome() },
       ],
     });
   }
@@ -1597,8 +1633,8 @@ export class Game {
   // Troca para a versão nova. O recarregamento acontece quando o service
   // worker novo assume de verdade (ver src/game/update.js).
   applyUpdate() {
-    this.ui.toast('🔄 Atualizando…');
-    if (!applyUpdate()) this.ui.toast('Já está na versão mais nova ✨');
+    this.ui.toast(t('🔄 Atualizando…'));
+    if (!applyUpdate()) this.ui.toast(t('Já está na versão mais nova ✨'));
   }
 
   // Liga e desliga o modo teste. Recarrega de propósito: ao ligar, para a
@@ -1606,7 +1642,7 @@ export class Game {
   // durante o teste, que só existia na memória.
   toggleTestMode() {
     const ligado = setTestMode(!isTestMode());
-    this.ui.toast(ligado ? '🧪 Modo teste ligado' : '🧪 Modo teste desligado');
+    this.ui.toast(ligado ? t('🧪 Modo teste ligado') : t('🧪 Modo teste desligado'));
     setTimeout(() => location.reload(), 500);
   }
 
@@ -1641,41 +1677,41 @@ export class Game {
 
     const html = `
       <div class="stats-grid">
-        ${tile(stats.wins, 'vitórias', '🏆')}
-        ${tile(this.save.babyLevel, `nível · meta ${this.goalFor(MODES.baby)}`, '🍼')}
-        ${tile(stats.runs, 'corridas', '🏃')}
-        ${tile(stats.hearts, 'corações', '💗')}
-        ${tile(stats.items, 'itens pegos', '✨')}
-        ${tile(Math.floor(stats.bests.adventure || 0), 'recorde aventura', '🥇')}
-        ${tile(stats.keys || 0, 'chaves mágicas', '🔑')}
-        ${tile(Math.floor(Math.max(0, ...Object.values(stats.distances || { x: 0 }))), 'maior distância', '🏁')}
-        ${tile(`${this.levelsDone()}/${LEVEL_COUNT * TRACK_LIST.length}`, 'fases feitas', '🗺️')}
+        ${tile(stats.wins, t('vitórias'), '🏆')}
+        ${tile(this.save.babyLevel, t('nível · meta {meta}', { meta: this.goalFor(MODES.baby) }), '🍼')}
+        ${tile(stats.runs, t('corridas'), '🏃')}
+        ${tile(stats.hearts, t('corações'), '💗')}
+        ${tile(stats.items, t('itens pegos'), '✨')}
+        ${tile(Math.floor(stats.bests.adventure || 0), t('recorde aventura'), '🥇')}
+        ${tile(stats.keys || 0, t('chaves mágicas'), '🔑')}
+        ${tile(Math.floor(Math.max(0, ...Object.values(stats.distances || { x: 0 }))), t('maior distância'), '🏁')}
+        ${tile(`${this.levelsDone()}/${LEVEL_COUNT * TRACK_LIST.length}`, t('fases feitas'), '🗺️')}
       </div>
-      <p class="stats-title">Corridas em cada pista</p>
+      <p class="stats-title">${t('Corridas em cada pista')}</p>
       <div class="stats-rows">${bars(TRACK_LIST, stats.plays)}</div>
-      <p class="stats-title">Corridas com cada unicórnio</p>
+      <p class="stats-title">${t('Corridas com cada unicórnio')}</p>
       <div class="stats-rows">${bars(CHARACTER_LIST, stats.chars)}</div>
-      <p class="stats-title">Power-ups pegos</p>
+      <p class="stats-title">${t('Power-ups pegos')}</p>
       <div class="stats-rows">${bars(POWERUP_LIST, stats.powers)}</div>
     `;
 
     this.ui.showOverlay({
-      title: '📊 Estatísticas',
+      title: t('📊 Estatísticas'),
       html,
       buttons: [
-        { label: '⬅️ Voltar', onClick: () => this.showHome() },
+        { label: t('⬅️ Voltar'), onClick: () => this.showHome() },
         {
-          label: isTestMode() ? '🧪 Modo teste: ligado' : '🧪 Modo teste: desligado',
+          label: isTestMode() ? t('🧪 Modo teste: ligado') : t('🧪 Modo teste: desligado'),
           hint: isTestMode()
-            ? 'tudo liberado e nada é guardado · o jogo recarrega ao desligar'
-            : 'libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega',
+            ? t('tudo liberado e nada é guardado · o jogo recarrega ao desligar')
+            : t('libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega'),
           secondary: true,
           onClick: () => this.toggleTestMode(),
         },
         confirmingReset
           ? {
-            label: '⚠️ Apagar mesmo?',
-            hint: 'toque de novo para zerar tudo',
+            label: t('⚠️ Apagar mesmo?'),
+            hint: t('toque de novo para zerar tudo'),
             secondary: true,
             onClick: () => {
               resetSave();
@@ -1687,7 +1723,7 @@ export class Game {
               this.showStats();
             },
           }
-          : { label: '🧹 Recomeçar do zero', onClick: () => this.showStats(true), secondary: true },
+          : { label: t('🧹 Recomeçar do zero'), onClick: () => this.showStats(true), secondary: true },
       ],
     });
   }
@@ -1705,18 +1741,18 @@ export class Game {
     this.ui.showPause(false);
     const naFase = this.mode.id === 'levels';
     this.ui.showOverlay({
-      title: 'Pausa ⏸️',
+      title: t('Pausa ⏸️'),
       text: naFase
-        ? `Fase ${this.level} · 🔑 ${this.keys}/${this.mode.keys}`
+        ? t('Fase {n} · 🔑 {tem}/{precisa}', { n: this.level, tem: this.keys, precisa: this.mode.keys })
         : `${this.track.emoji} ${this.track.name} · ${this.character.emoji} ${this.character.name}`,
       buttons: [
-        { label: '▶️ Continuar', onClick: () => this.resume() },
+        { label: t('▶️ Continuar'), onClick: () => this.resume() },
         {
-          label: '🔁 Começar de novo',
+          label: t('🔁 Começar de novo'),
           onClick: () => (naFase ? this.startLevel(this.level) : this.start(this.mode.id)),
           secondary: true,
         },
-        { label: '🏠 Sair para o menu', onClick: () => this.showHome(), secondary: true },
+        { label: t('🏠 Sair para o menu'), onClick: () => this.showHome(), secondary: true },
       ],
     });
   }
@@ -1872,7 +1908,7 @@ export class Game {
       // Quem bateu já ouviu "bateu!" no toast da trombada; repetir aqui só
       // atrapalha. Quem simplesmente não fez precisa do aviso.
       if (!l.bateu) {
-        this.ui.toast(l.tentativa >= 2 ? RETRY_HELP[l.acao] : 'Vamos tentar de novo 💗');
+        this.ui.toast(t(l.tentativa >= 2 ? RETRY_HELP[l.acao] : 'Vamos tentar de novo 💗'));
       }
       return this.startLesson(l.i, l.tentativa + 1);
     }
@@ -1898,12 +1934,11 @@ export class Game {
     this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
     sfx.win();
     this.ui.showOverlay({
-      title: 'Você aprendeu tudo! 🎉',
-      text: 'Já sabe desviar, pular, pegar as chaves e usar os power-ups. '
-        + 'Agora escolha uma brincadeira e corra de verdade.',
+      title: t('Você aprendeu tudo! 🎉'),
+      text: t('Já sabe desviar, pular, pegar as chaves e usar os power-ups. Agora escolha uma brincadeira e corra de verdade.'),
       buttons: [
-        { label: '▶️ Quero correr', huge: true, onClick: () => this.showHome() },
-        { label: '🔁 Repetir a lição', onClick: () => this.startTutorial(), secondary: true },
+        { label: t('▶️ Quero correr'), huge: true, onClick: () => this.showHome() },
+        { label: t('🔁 Repetir a lição'), onClick: () => this.startTutorial(), secondary: true },
       ],
     });
   }
@@ -1917,8 +1952,8 @@ export class Game {
       title,
       text,
       buttons: [
-        { label: '🔁 Jogar de novo', huge: true, onClick: () => this.start() },
-        { label: '🏠 Início', onClick: () => this.showHome(), secondary: true },
+        { label: t('🔁 Jogar de novo'), huge: true, onClick: () => this.start() },
+        { label: t('🏠 Início'), onClick: () => this.showHome(), secondary: true },
       ],
     });
   }
@@ -1931,20 +1966,27 @@ export class Game {
       this.ui.showPause(false);
       this.saveBest();
       this.ui.showOverlay({
-        title: 'Quase!',
-        text: `Faltaram ${this.mode.keys - this.keys} chave(s) na fase ${this.level}.`,
+        title: t('Quase!'),
+        text: t(this.mode.keys - this.keys === 1
+          ? 'Faltou 1 chave na fase {fase}.'
+          : 'Faltaram {n} chaves na fase {fase}.',
+        { n: this.mode.keys - this.keys, fase: this.level }),
         buttons: [
-          { label: '🔁 Tentar de novo', onClick: () => this.startLevel(this.level) },
-          { label: '🗺️ Escolher fase', onClick: () => this.showLevels(), secondary: true },
+          { label: t('🔁 Tentar de novo'), onClick: () => this.startLevel(this.level) },
+          { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
         ],
       });
       return;
     }
 
     this.endRun({
-      title: 'Fim da corrida!',
-      text: `${this.character.name} correu ${Math.floor(this.distance)} passos, `
-        + `juntou ${this.hearts} coração(ões) e fez ${Math.floor(this.score)} pontos.`,
+      title: t('Fim da corrida!'),
+      text: t('{nome} correu {passos} passos, juntou {coracoes} coração(ões) e fez {pontos} pontos.', {
+        nome: this.character.name,
+        passos: Math.floor(this.distance),
+        coracoes: this.hearts,
+        pontos: Math.floor(this.score),
+      }),
     });
   }
 
@@ -1960,9 +2002,9 @@ export class Game {
     const next = this.goal;
 
     this.endRun({
-      title: 'Você conseguiu! 🎉',
-      text: `${this.character.name} juntou os ${done} itens da pista mágica!`
-        + `<br><span class="muted">Nível ${this.save.babyLevel}: a próxima meta é ${next} itens.</span>`,
+      title: t('Você conseguiu! 🎉'),
+      text: t('{nome} juntou os {itens} itens da pista mágica!', { nome: this.character.name, itens: done })
+        + `<br><span class="muted">${t('Nível {nivel}: a próxima meta é {meta} itens.', { nivel: this.save.babyLevel, meta: next })}</span>`,
     });
   }
 
@@ -2178,7 +2220,7 @@ export class Game {
   rewardKey(quantas = 1) {
     this.ui.setWallet(this.wallet, false);
     sfx.key();
-    this.ui.toast(quantas > 1 ? `🔑 +${quantas} chaves!` : '🔑 Mais uma chave!');
+    this.ui.toast(quantas > 1 ? t('🔑 +{n} chaves!', { n: quantas }) : t('🔑 Mais uma chave!'));
     this.showHeartsToKey();
   }
 
@@ -2343,7 +2385,7 @@ export class Game {
       sfx.hit();
       this.ui.flash();
       this.ui.shake();
-      this.ui.toast('🥥 A casca aguentou!');
+      this.ui.toast(t('🥥 A casca aguentou!'));
       return;
     }
     // No modo Aprender ninguém perde: a trombada ainda pisca e sacode, para
@@ -2357,7 +2399,7 @@ export class Game {
       // Numa aula de desviar ou pular, bater é errar: não adianta ter
       // apertado o botão se apertou na hora errada. A aula recomeça.
       const reprovou = this.lessonMissed();
-      this.ui.toast(reprovou ? 'Bateu! Vamos de novo 💗' : 'Ops! Aqui não dói 💗');
+      this.ui.toast(reprovou ? t('Bateu! Vamos de novo 💗') : t('Ops! Aqui não dói 💗'));
       return;
     }
 
@@ -2420,7 +2462,7 @@ export class Game {
       if (this.recordDistance && !this.beatRecord && this.distance > this.recordDistance) {
         this.beatRecord = true;
         sfx.star();
-        this.ui.toast('🏁 Novo recorde!');
+        this.ui.toast(t('🏁 Novo recorde!'));
       }
     }
 
