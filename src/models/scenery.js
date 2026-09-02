@@ -429,32 +429,68 @@ function orangeTree() {
   return g;
 }
 
-function bananaBunch() {
-  const g = new THREE.Group();
+// Bananas caídas no chão, junto das outras frutas do pomar.
+//
+// Antes isto era uma "bananeira": um caule verde de 1,2 m com a penca no
+// alto e um capuz. De longe não lia como bananeira nenhuma — lia como um
+// cabo de vassoura com bananas presas na ponta. A bananeira de verdade é
+// uma touceira de folhas enormes, que não cabe no vocabulário chapado do
+// resto do cenário. Então as bananas descem para o chão, que é onde as
+// outras frutas deste pomar já estavam (ver orangePile, kiwi, grapes), e a
+// altura do lugar passa a ser feita pelas árvores.
+function banana() {
+  const berco = new THREE.Group();
 
-  const caule = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 1.2, 6), mat(0x7a8f4a));
-  caule.position.y = 0.6;
-  caule.castShadow = true;
-  g.add(caule);
+  // Uma malha só, não uma fileira de bolinhas. Tentei com esferas em fila:
+  // com poucas elas aparecem uma a uma e a fruta lê como lagarta, e com as
+  // ~16 que seriam precisas para o corpo ficar liso cada penca custaria 60
+  // malhas — caro demais para enfeite de beira de pista.
+  //
+  // Então: uma esfera de poucos gomos, esticada em fuso (que já dá o
+  // afunilamento das duas pontas de graça) e depois entortada deslocando
+  // os vértices. É o mesmo custo de uma pedra.
+  const COMPRIMENTO = 0.86, GROSSURA = 0.17, CURVA = 0.26;
+  const geo = new THREE.SphereGeometry(0.5, 9, 6);
+  geo.scale(COMPRIMENTO, GROSSURA, GROSSURA);
 
-  // Penca: bananas viradas para o mesmo lado, em leque.
-  for (let i = 0; i < 5; i++) {
-    const banana = new THREE.Mesh(
-      new THREE.TorusGeometry(0.42, 0.12, 6, 10, Math.PI * 0.75),
-      mat(0xffd93d)
-    );
-    banana.rotation.set(Math.PI / 2, (i - 2) * 0.22, 0);
-    banana.position.set((i - 2) * 0.14, 1.2 - Math.abs(i - 2) * 0.06, 0.1);
-    banana.castShadow = true;
-    g.add(banana);
+  const meio = COMPRIMENTO / 2;
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    // Arco raso: zero nas pontas, máximo no meio.
+    pos.setZ(i, pos.getZ(i) + CURVA * (1 - (x / meio) ** 2));
   }
+  geo.computeVertexNormals();
 
-  const capuz = new THREE.Mesh(new THREE.SphereGeometry(0.26, 7, 6), mat(0x7a8f4a));
-  capuz.scale.y = 0.6;
-  capuz.position.y = 1.34;
-  g.add(capuz);
+  const corpo = new THREE.Mesh(geo, mat(pick([0xffd93d, 0xffe266, 0xf5c518])));
+  corpo.position.y = GROSSURA / 2;
+  corpo.castShadow = true;
+  berco.add(corpo);
+
+  // O cabinho escuro numa das pontas: é ele que fecha a leitura.
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.032, 0.11, 5), mat(0x8a6b2f));
+  cabo.position.set(meio - 0.01, GROSSURA / 2, 0);
+  cabo.rotation.z = -Math.PI / 2.5;
+  berco.add(cabo);
+
+  berco.rotation.y = Math.random() * Math.PI * 2;
+  return berco;
+}
+
+function bananaPile() {
+  const g = new THREE.Group();
+  const quantas = 3 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < quantas; i++) {
+    const b = banana();
+    // Espalhadas num arco, para não se atravessarem.
+    const a = (i / quantas) * Math.PI * 2 + Math.random() * 0.6;
+    b.position.set(Math.cos(a) * 0.4, 0, Math.sin(a) * 0.34);
+    g.add(b);
+  }
   return g;
 }
+
+
 
 // --- Frutas caídas no chão, para encher o pomar ----------------------------
 
@@ -571,28 +607,60 @@ function watermelon() {
 function pineapple() {
   const g = new THREE.Group();
 
-  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.52, 10, 10), mat(0xffb02e));
-  corpo.scale.set(1, 1.35, 1);
-  corpo.position.y = 0.75;
+  // A casca vem do próprio corpo, não de escamas coladas por cima. Antes
+  // eram 10 octaedros grudados na superfície, e eles liam como espinhos de
+  // cacto — o abacaxi virava uma batata espetada. O losango do abacaxi não
+  // é relevo isolado: é a superfície inteira quadriculada.
+  //
+  // Então o corpo é um cilindro de poucos gomos com os vértices empurrados
+  // para dentro e para fora em xadrez. Com `flatShading` cada quadrinho
+  // pega uma luz diferente e o losango aparece sozinho, numa malha só.
+  // Gomos ímpares de propósito: com número par o xadrez vira listra
+  // vertical, e com ímpar ele fecha em espiral — que é como a casca do
+  // abacaxi de verdade se organiza.
+  const GOMOS = 9, ANEIS = 4, ALTURA = 1.3;
+  const geo = new THREE.CylinderGeometry(0.34, 0.42, ALTURA, GOMOS, ANEIS);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const raio = Math.hypot(x, z);
+    if (raio < 0.05) continue;                      // centro das tampas
+    const coluna = Math.round((Math.atan2(z, x) / (Math.PI * 2)) * GOMOS);
+    const linha = Math.round(((y + ALTURA / 2) / ALTURA) * ANEIS);
+    // Barriga: o abacaxi é mais gordo no meio que nas pontas.
+    const barriga = 1 + 0.16 * Math.sin((linha / ANEIS) * Math.PI);
+    const bossa = (coluna + linha) % 2 ? 1.08 : 0.94;
+    const k = barriga * bossa;
+    pos.setX(i, x * k);
+    pos.setZ(i, z * k);
+  }
+  geo.computeVertexNormals();
+
+  const corpo = new THREE.Mesh(geo, mat(0xf0a52a));
+  corpo.position.y = 0.72;
   corpo.castShadow = true;
   g.add(corpo);
 
-  // Casquinha: dois anéis de escamas, o bastante para dar a textura.
-  for (let anel = 0; anel < 2; anel++) {
-    const alt = 0.6 + anel * 0.42;
-    for (let i = 0; i < 5; i++) {
-      const escama = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), mat(0xd98a1f));
-      const a = (i / 5) * Math.PI * 2 + anel * 0.6;
-      escama.position.set(Math.cos(a) * 0.5, alt, Math.sin(a) * 0.5);
-      escama.scale.set(1, 0.8, 0.5);
-      g.add(escama);
+  // A coroa é um buquê de folhas pontudas abrindo para fora. O cone liso de
+  // antes lia como chapéu de festa — é a silhueta recortada que faz
+  // reconhecer abacaxi de longe, mais até que a casca.
+  const BASE = 0.72 + ALTURA / 2;
+  for (const [quantas, raio, tamanho, abertura] of [[7, 0.15, 0.85, 0.66], [4, 0.06, 0.6, 0.24]]) {
+    for (let i = 0; i < quantas; i++) {
+      const a = (i / quantas) * Math.PI * 2 + Math.random() * 0.3;
+      const comprimento = tamanho * (0.8 + Math.random() * 0.45);
+      const folha = new THREE.Mesh(
+        new THREE.ConeGeometry(0.075, comprimento, 4),
+        mat(pick([0x4f9e5c, 0x5cb06a, 0x43884f]))
+      );
+      folha.position.set(Math.cos(a) * raio, BASE + comprimento * 0.42, Math.sin(a) * raio);
+      folha.rotation.z = -Math.cos(a) * abertura;
+      folha.rotation.x = Math.sin(a) * abertura;
+      folha.castShadow = true;
+      g.add(folha);
     }
   }
 
-  const coroa = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.85, 6), mat(0x4f9e5c));
-  coroa.position.y = 1.75;
-  coroa.castShadow = true;
-  g.add(coroa);
   return g;
 }
 
@@ -1924,7 +1992,7 @@ const DECORATIONS = {
   tree, pineTree, mushroom, glowMushroom, crystal, flower, flowerPatch,
   lollipop, cupcake, candyCane, sprinkles, chocolate,
   cloudHill, balloon, rainbowArch,
-  strawberry, orangeTree, bananaBunch, watermelonPatch, orangePile, grapes, kiwi,
+  strawberry, orangeTree, bananaPile, watermelonPatch, orangePile, grapes, kiwi,
   coral, seaweed, starfish,
   lavaRock, emberVent, charredTree, lavaPool,
   snowPine, igloo, iceCrystal, snowman,

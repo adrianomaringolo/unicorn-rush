@@ -125,10 +125,14 @@ export const TRACKS = {
     backdrop: 'rainbow',
     cloud: 0xffffff,
     mountains: [0x9bd88a, 0xffc46b, 0xff8f8f],
+    // A lista é um saquinho de sorteio: repetir um nome deixa ele mais
+    // comum. A `tree` é a mesma árvore frondosa do Campo, que já nasce com
+    // frutinhas na copa — é ela que dá altura ao pomar agora que a banana
+    // ficou no chão.
     decorations: [
-      'strawberry', 'orangeTree', 'bananaBunch',
-      'watermelonPatch', 'orangePile', 'grapes', 'kiwi',
-      'strawberry', 'orangePile', 'grapes',
+      'tree', 'strawberry', 'orangeTree', 'bananaPile',
+      'watermelonPatch', 'tree', 'orangePile', 'grapes', 'kiwi',
+      'strawberry', 'orangePile', 'grapes', 'tree',
     ],
     decorationCount: 58,          // pomar cheio dos dois lados
     obstacles: ['watermelon', 'pineapple', 'coconutPile'],
