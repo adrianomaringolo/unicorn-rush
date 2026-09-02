@@ -3385,13 +3385,20 @@ export function createStartLine() {
   travessao.castShadow = true;
   gate.add(travessao);
 
-  // A palavra fica dos dois lados: quem passa por baixo e olha para trás
-  // (a câmera vai atrás do unicórnio) continua lendo.
-  for (const frente of [1, -1]) {
-    const placa = labelPlate('PARTIDA', 6.4, 0.72, '#ffffff', '#ff5d8f');
-    placa.position.set(0, ALTURA - 0.2, frente * 0.16);
-    placa.rotation.y = frente === 1 ? 0 : Math.PI;
-    gate.add(placa);
+  // Bandeirinhas penduradas no travessão, no lugar da palavra "PARTIDA"
+  // que ficava escrita aqui. Palavra escrita não serve: metade de quem joga
+  // ainda não lê, e a que lia estava num idioma só. O portal com bandeirola
+  // diz "começa aqui" sem depender de ninguém saber ler — e a faixa
+  // quadriculada no chão, logo abaixo, já dizia isso antes da palavra.
+  for (let i = -4; i <= 4; i++) {
+    const bandeirola = new THREE.Mesh(
+      new THREE.ConeGeometry(0.3, 0.62, 3),
+      mat(i % 2 === 0 ? 0xffd166 : 0xfff0fb)
+    );
+    bandeirola.rotation.x = Math.PI;      // ponta para baixo
+    bandeirola.scale.z = 0.18;            // achatada, como pano
+    bandeirola.position.set(i * 1.02, ALTURA - 0.92, 0);
+    gate.add(bandeirola);
   }
 
   gate.userData.kind = 'start';
@@ -3401,29 +3408,41 @@ export function createStartLine() {
 export function createRecordBanner() {
   const banner = new THREE.Group();
 
+  // Dourada, e não rosa como era. Tirada a palavra "RECORDE" que ficava
+  // escrita aqui, uma faixa rosa quadriculada no chão viraria a mesma coisa
+  // que a faixa da partida — e as duas dizem coisas opostas. O ouro é o que
+  // separa: é a cor do 🏆 e do 🥇 que o jogo já usa para recorde.
   const faixa = new THREE.Mesh(
     new THREE.PlaneGeometry(8.4, 1.1),
-    new THREE.MeshBasicMaterial({ color: 0xff5d8f, transparent: true, opacity: 0.75 })
+    new THREE.MeshBasicMaterial({ color: 0xffb703, transparent: true, opacity: 0.72 })
   );
   faixa.rotation.x = -Math.PI / 2;
   faixa.position.y = 0.06;
   banner.add(faixa);
 
-  // Quadradinhos claros dentro da faixa, tipo linha de chegada.
   for (let i = -3; i <= 3; i++) {
     const quadro = new THREE.Mesh(
       new THREE.PlaneGeometry(0.55, 0.5),
-      new THREE.MeshBasicMaterial({ color: 0xfff0f6, transparent: true, opacity: 0.85 })
+      new THREE.MeshBasicMaterial({ color: 0xfff3c4, transparent: true, opacity: 0.9 })
     );
     quadro.rotation.x = -Math.PI / 2;
     quadro.position.set(i * 1.15, 0.07, i % 2 === 0 ? 0.24 : -0.24);
     banner.add(quadro);
   }
 
-  const plate = labelPlate('RECORDE', 4.4, 0.9, '#ffffff', '#ff5d8f');
-  plate.rotation.x = -Math.PI / 2;
-  plate.position.set(0, 0.07, 1.6);
-  banner.add(plate);
+  // Duas estrelinhas douradas em pé, uma de cada lado, fora do caminho do
+  // unicórnio: dizem "isto é uma marca sua", que é o que a palavra dizia.
+  for (const lado of [-1, 1]) {
+    const estrela = new THREE.Mesh(new THREE.OctahedronGeometry(0.34, 0), mat(0xffd166));
+    estrela.scale.set(1, 1.35, 0.4);
+    estrela.position.set(lado * 3.9, 0.62, 0);
+    estrela.castShadow = true;
+    banner.add(estrela);
+
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.62, 5), mat(0xfff0fb));
+    haste.position.set(lado * 3.9, 0.31, 0);
+    banner.add(haste);
+  }
 
   banner.userData.kind = 'record';
   return banner;

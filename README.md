@@ -729,8 +729,8 @@ salvo.
 ## Partida, distância e recorde na pista
 
 Toda corrida começa passando por um **portal de partida**: uma faixa
-quadriculada atravessando o chão, dois postes e um travessão rosa escrito
-*PARTIDA*, com bandeirinhas douradas no alto. Ele nasce a sete passos do
+quadriculada atravessando o chão, dois postes, um travessão rosa com uma
+fileira de bandeirolas penduradas e bandeirinhas douradas no alto. Ele nasce a sete passos do
 zero — não em cima do unicórnio, para caber inteiro no quadro —, e a criança
 passa por baixo dele no primeiro segundo. Vale para os três modos: quem o
 planta é o `World.placeStart`, chamado pelo `Game.start` e pelo
@@ -744,10 +744,29 @@ Enquanto corre, o HUD mostra a **distância percorrida** em passos, e a cada
 unicórnio exatamente no número dela.
 
 A maior distância já corrida em cada modo fica salva e vira a **marca do
-recorde**: uma faixa quadriculada rosa atravessando o chão da pista, com a
-palavra deitada logo antes dela — tudo rente ao chão, sem nada na altura dos
+recorde**: uma faixa quadriculada **dourada** atravessando o chão, com uma
+estrelinha de ouro em cada beira — rente ao chão, sem nada na altura dos
 olhos para atrapalhar a visão do caminho. Ao passar por ela aparece o aviso *"🏁 Novo recorde!"*. A maior
 distância de todas também virou um quadro na tela de estatísticas.
+
+
+### Sem palavra escrita
+
+O portal dizia *PARTIDA* no travessão e a marca do recorde dizia *RECORDE*
+ao lado. As duas saíram, e o que ficou é só a figura.
+
+Palavra escrita na pista não servia por dois motivos. O primeiro é que boa
+parte de quem joga tem três, quatro anos e **ainda não lê** — a palavra era
+enfeite para eles. O segundo apareceu quando o jogo ganhou inglês: eram
+letras desenhadas num canvas dentro do 3D, não texto de tela, então ficaram
+para trás na tradução sem ninguém notar.
+
+Tirar as palavras criou um problema que elas escondiam: sem *PARTIDA* e sem
+*RECORDE*, as duas marcas viravam a mesma coisa — uma faixa quadriculada
+deitada no chão —, e elas dizem coisas **opostas**. Por isso o recorde
+mudou de rosa para **ouro**, que é a cor que o jogo já usa para recorde no
+🏆 e no 🥇, e ganhou as duas estrelinhas; e o travessão da partida, que sem
+a palavra virava uma barra rosa vazia, ganhou a fileira de bandeirolas.
 
 Em telas estreitas o HUD mostra só o essencial de cada modo (o recorde de
 pontos e, nas fases, os pontos e a distância saem de cena) para tudo caber
