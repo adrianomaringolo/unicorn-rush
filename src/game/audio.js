@@ -23,6 +23,34 @@ function ensure() {
   return ctx;
 }
 
+// Ruído branco filtrado — o que um oscilador não faz. É com isto que o
+// trovão estala: um estouro de banda larga que fecha o filtro enquanto
+// desaparece, como um som que se afasta.
+function ruido(duracao, corte, volume) {
+  const ac = ensure();
+  if (!ac) return;
+  const amostras = Math.floor(ac.sampleRate * duracao);
+  const buffer = ac.createBuffer(1, amostras, ac.sampleRate);
+  const dados = buffer.getChannelData(0);
+  for (let i = 0; i < amostras; i++) dados[i] = Math.random() * 2 - 1;
+
+  const fonte = ac.createBufferSource();
+  fonte.buffer = buffer;
+
+  const filtro = ac.createBiquadFilter();
+  filtro.type = 'lowpass';
+  filtro.frequency.setValueAtTime(corte, ac.currentTime);
+  filtro.frequency.exponentialRampToValueAtTime(Math.max(80, corte * 0.12), ac.currentTime + duracao);
+
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(volume, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + duracao);
+
+  fonte.connect(filtro).connect(gain).connect(ac.destination);
+  fonte.start();
+  fonte.stop(ac.currentTime + duracao);
+}
+
 function blip(freq, duration, type = 'sine', volume = 0.12) {
   const ac = ensure();
   if (!ac) return;
@@ -76,10 +104,16 @@ export const sfx = {
   resume: safe(() => ensure()),
 
   // Trovão da Tempestade: um estrondo baixo e arrastado.
+  // Trovão. A primeira versão era só grave (55–90 Hz) e sumia em
+  // alto-falante de celular, que não reproduz essas frequências: dava para
+  // ver o clarão e não ouvir nada. Agora tem duas partes — o **estalo**, um
+  // ruído com corpo médio, que é o que se ouve em qualquer aparelho, e o
+  // **rugido** grave que vem depois e some rolando.
   thunder: safe(() => {
-    blip(70, 0.7, 'sawtooth', 0.1);
-    setTimeout(() => blip(55, 0.9, 'triangle', 0.09), 90);
-    setTimeout(() => blip(90, 0.5, 'sawtooth', 0.05), 220);
+    ruido(0.5, 1800, 0.22);                       // o estalo, logo de cara
+    setTimeout(() => ruido(1.5, 420, 0.16), 70);  // e o rugido se afastando
+    blip(88, 0.8, 'sawtooth', 0.07);
+    setTimeout(() => blip(62, 1.1, 'triangle', 0.06), 120);
   }),
 
   // Sons dos menus. Criança precisa ouvir que o toque funcionou: sem isso,

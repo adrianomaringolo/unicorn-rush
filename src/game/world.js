@@ -10,7 +10,7 @@ import { createHeart, createStar, createKey } from '../models/collectibles.js';
 import { createPowerup, createRainbowWave, POWERUP_LIST, ARCO_IRIS } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
-  createRainbow, createMountains, createMoon, createStars, createSun,
+  createRainbow, createMountains, createMoon, createStars, createSun, createLightningBolt,
   createDistanceMarker, createRecordBanner, createStartLine, createAmbience, animateAmbience,
 } from '../models/scenery.js';
 
@@ -123,11 +123,43 @@ export class World {
       return;
     }
 
+    // Na Tempestade também cai raio: um só, guardado, que reaparece em
+    // outro lugar do céu a cada trovão.
+    if (this.track.lightning) {
+      this.bolt = createLightningBolt();
+      this.root.add(this.bolt);
+      this.boltLife = 0;
+    }
+
     if (this.track.backdrop === 'rainbow') {
       const rainbow = createRainbow();
       rainbow.position.set(0, -2, -78);
       this.root.add(rainbow);
       this.backdrop = rainbow;
+    }
+  }
+
+  // Cai um raio: nasce num ponto qualquer do céu, do tamanho que der, e
+  // fica no ar por um instante. Quem chama é o Game, junto com o clarão e o
+  // trovão (ver Game.applyLightning).
+  flashBolt() {
+    if (!this.bolt) return;
+    this.bolt.position.set(-30 + Math.random() * 60, 26 + Math.random() * 6, -70 - Math.random() * 14);
+    this.bolt.scale.setScalar(0.8 + Math.random() * 0.6);
+    this.bolt.rotation.z = (Math.random() - 0.5) * 0.4;
+    this.bolt.visible = true;
+    this.boltLife = 0.42;
+  }
+
+  // Ele não some de uma vez: pisca duas vezes e apaga, como raio de verdade.
+  updateBolt(dt) {
+    if (!this.bolt || this.boltLife <= 0) return;
+    this.boltLife -= dt;
+    if (this.boltLife <= 0) { this.bolt.visible = false; return; }
+    const t = this.boltLife / 0.42;
+    this.bolt.visible = Math.sin(t * 34) > -0.35;
+    for (const parte of this.bolt.children) {
+      if (parte.material) parte.material.opacity = Math.min(1, t * 1.5) * 0.95;
     }
   }
 
@@ -692,6 +724,8 @@ export class World {
     }
 
     this.updateWave(dt);
+
+    this.updateBolt(dt);
 
     if (this.backdrop) this.backdrop.rotation.z = Math.sin(elapsed * 0.2) * 0.03;
 

@@ -3041,6 +3041,56 @@ export function createCloud(color = 0xffffff) {
   return cloud;
 }
 
+// O raio da Tempestade: um risco quebrado do alto do céu até perto do
+// horizonte, com um segundo risco mais fino saindo dele. Fica escondido e
+// aparece por um instante quando cai (ver World.flashBolt).
+//
+// É desenhado como um traço em zigue-zague e não como imagem: assim cada
+// raio pode nascer com um caminho diferente, e nenhum é igual ao anterior.
+export function createLightningBolt() {
+  const g = new THREE.Group();
+  const mat_ = () => new THREE.MeshBasicMaterial({
+    color: 0xfff9c4, transparent: true, opacity: 0.95, fog: false, side: THREE.DoubleSide,
+  });
+
+  // Caminho principal: desce em degraus, cambaleando de lado.
+  const passos = 7;
+  let x = 0;
+  let y = 0;
+  for (let i = 0; i < passos; i++) {
+    const proximoX = x + (Math.random() - 0.5) * 5;
+    const proximoY = y - (3 + Math.random() * 2.4);
+    const dx = proximoX - x;
+    const dy = proximoY - y;
+    const comprimento = Math.hypot(dx, dy);
+    const trecho = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.85 - i * 0.08, comprimento),
+      mat_()
+    );
+    trecho.position.set((x + proximoX) / 2, (y + proximoY) / 2, 0);
+    trecho.rotation.z = Math.atan2(dy, dx) - Math.PI / 2;
+    g.add(trecho);
+
+    // Uma ramificação no meio do caminho.
+    if (i === 3) {
+      const ramo = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 4.5), mat_());
+      ramo.position.set(proximoX + 1.6, proximoY - 1.8, 0);
+      ramo.rotation.z = 0.7;
+      g.add(ramo);
+    }
+    x = proximoX;
+    y = proximoY;
+  }
+
+  // Sem halo por trás. A primeira versão tinha um disco com mistura
+  // aditiva, e num céu de tempestade ele virava uma bola branca sólida —
+  // borda dura, mais forte que o próprio raio. Quem acende o céu já é o
+  // clarão da cena inteira (Game.applyLightning); aqui basta o risco.
+
+  g.visible = false;
+  return g;
+}
+
 export function createRainbow() {
   const rainbow = new THREE.Group();
   const colors = [0xff7b7b, 0xffb26b, 0xffe66b, 0x8ce99a, 0x74c0fc, 0xb197fc];

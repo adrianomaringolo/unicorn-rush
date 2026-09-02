@@ -402,6 +402,7 @@ export class Game {
     if (this.nextBolt <= 0) {
       this.nextBolt = 2.5 + Math.random() * 5;
       this.flashBoost = 1;
+      this.world.flashBolt();     // o risco no céu
       sfx.thunder();
     }
     if (!this.flashBoost) return;

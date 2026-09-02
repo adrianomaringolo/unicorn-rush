@@ -338,6 +338,14 @@ Quando a aba sai de foco — a criança troca de app ou bloqueia a tela — o
 perder vida enquanto está fora.
 As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
 
+O **trovão** da Tempestade é o único som que não sai de um oscilador: ele
+precisa de ruído. A primeira versão era só grave (55–90 Hz) e sumia em
+alto-falante de celular, que não reproduz essas frequências — dava para ver
+o clarão e não ouvir nada. Agora são duas partes: o **estalo**, um ruído
+branco filtrado com corpo médio, que se ouve em qualquer aparelho, e o
+**rugido** grave que vem depois e vai fechando o filtro enquanto some, como
+um som que se afasta (`ruido()` em `src/game/audio.js`).
+
 ## Modos de jogo
 
 | Modo | Como é |
@@ -571,7 +579,7 @@ aprende a desviar, e pular vem depois. Os números ficam em `BARRIER`, em
 
 | | Pista | O que tem |
 | --- | --- | --- |
-| ⚡ | **Tempestade** | Céu de chumbo, chuva caindo de verdade, poças refletindo, moinhos e para-raios com a ponta acesa. O **vento empurra de lado** e troca de direção, e de vez em quando um **relâmpago clareia a cena inteira**, com trovão. |
+| ⚡ | **Tempestade** | Céu de chumbo, chuva caindo de verdade, poças refletindo, moinhos e para-raios com a ponta acesa. O **vento empurra de lado** e troca de direção, e a cada 2,5–7,5 s cai um **raio**: um risco quebrado que aparece num ponto qualquer do céu e pisca duas vezes, o **clarão** que acende a cena inteira e o **trovão**. |
 | 🌫️ | **Bruma** | Névoa fechada: sem chão longe, sem serra, sem nuvem — árvores fantasmas, lampiões flutuando e pedras cobertas de musgo pálido aparecem **na hora**. A névoa fecha em 14 e engole tudo em 34, contra os 38–108 das outras. |
 | 💎 | **Caverna** | Subterrâneo roxo escuro: veios de cristal acesos, estalagmites e poças que brilham. O **unicórnio acende**, como na Noite. |
 
