@@ -42,6 +42,12 @@ const CAMERA = { height: 5.1, distance: 9.4, fov: 55 };
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
 const REVEAL_TIME = 4600;
 
+// Os ecos do Eco: a que distância de lado eles correm (uma faixa), o quanto
+// ficam para trás e o atraso do galope deles.
+const LANE_WIDTH = 2.2;
+const ECHO_LAG_Z = 0.35;
+const ECHO_LAG = 0.12;
+
 // Carência depois da Bomba Arco-Íris: o tempo que a onda leva para sair de
 // trás do unicórnio e cobrir o campo próximo.
 const BOMB_GRACE = 0.6;
@@ -184,6 +190,72 @@ export class Game {
     music.play(this.track.id);   // cada pista tem o seu tema
   }
 
+  // Os dois ecos do Eco: cópias translúcidas dele, uma em cada faixa
+  // vizinha. Existem porque o poder dele **já** alcança os dois lados
+  // (`reach`, em Game.checkCollisions) — sem elas, os itens da faixa ao lado
+  // sumiam sozinhos e ninguém entendia por quê.
+  //
+  // São unicórnios de verdade, montados pelo mesmo `createUnicorn`, e não
+  // cópias congeladas: `animateUnicorn` é determinístico no tempo, então
+  // basta animá-los com o mesmo relógio para galoparem em sincronia. O que
+  // muda é a pintura — um material só, translúcido, no lugar das dezenas de
+  // cores do original.
+  buildEchoes() {
+    this.disposeEchoes();
+    if (!this.character.reach) return;
+
+    this.echoMaterial = new THREE.MeshBasicMaterial({
+      color: 0xe9e2ff, transparent: true, opacity: 0.45, depthWrite: false, fog: false,
+    });
+
+    this.echoes = [-1, 1].map((lado) => {
+      const eco = createUnicorn(this.character);
+      eco.traverse((o) => {
+        if (!o.isMesh) return;
+        // A pintura original vai embora: um eco não tem cor própria.
+        const antigo = o.material;
+        Array.isArray(antigo) ? antigo.forEach((m) => m.dispose()) : antigo.dispose();
+        o.material = this.echoMaterial;
+        o.castShadow = false;
+        o.receiveShadow = false;
+      });
+      eco.renderOrder = 1;
+      eco.userData.lado = lado;
+      eco.visible = false;
+      this.scene.add(eco);
+      return eco;
+    });
+  }
+
+  disposeEchoes() {
+    for (const eco of this.echoes || []) {
+      this.scene.remove(eco);
+      eco.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+    }
+    this.echoMaterial?.dispose();
+    this.echoes = null;
+    this.echoMaterial = null;
+  }
+
+  // Eles seguem o unicórnio uma faixa para cada lado, meio passo atrás — um
+  // eco chega sempre um instante depois do som.
+  updateEchoes(worldSpeed) {
+    if (!this.echoes) return;
+    const visivel = this.state === STATE.PLAYING;
+    for (const eco of this.echoes) {
+      eco.visible = visivel;
+      if (!visivel) continue;
+      eco.position.set(
+        this.unicorn.position.x + eco.userData.lado * LANE_WIDTH,
+        this.unicorn.position.y,
+        this.unicorn.position.z + ECHO_LAG_Z
+      );
+      eco.rotation.copy(this.unicorn.rotation);
+      // O atraso no tempo é o que faz parecer eco, e não gêmeo.
+      animateUnicorn(eco, this.elapsed - ECHO_LAG, worldSpeed * 0.14, this.player.grounded);
+    }
+  }
+
   // Céu, neblina e luz mudam junto com a pista.
   applyTrackLook() {
     const track = this.track;
@@ -216,6 +288,7 @@ export class Game {
 
   // Monta (ou remonta) o unicórnio e o rastro do personagem escolhido.
   buildCharacter() {
+    this.disposeEchoes();
     if (this.unicorn) {
       this.scene.remove(this.unicorn);
       disposeObject(this.unicorn);
@@ -259,6 +332,7 @@ export class Game {
     this.unicorn.userData.head.add(this.headBubble);
 
     this.scene.add(this.unicorn);
+    this.buildEchoes();
 
     sfx.setPitch(this.character.voice);
     this.trail = createRainbowTrail(this.character.trail);
@@ -2352,6 +2426,7 @@ export class Game {
 
     this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
     animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded);
+    this.updateEchoes(worldSpeed);
     updateAuras(this.auras, this.powers, this.elapsed);
     updateCharacterAura(this.charAura, dt, this.elapsed, worldSpeed);
     if (this.nightGlow.visible) {

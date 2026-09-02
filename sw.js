@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.19.0';
+const VERSION = 'unicornrush-v0.20.1';
 
 const SHELL = [
   './',
@@ -50,7 +50,9 @@ const SHELL = [
   './src/models/trackPortraits.js',
   './src/models/scenery.js',
   './src/models/unicorn.js',
-  // As nove figuras do livro da história (~780 KB no total).
+  // As onze figuras do livro da história (~1 MB no total). As duas últimas
+  // só aparecem para quem libertou todos os amigos, mas entram no cache
+  // junto: o service worker instala tudo de uma vez.
   './assets/story/1.webp',
   './assets/story/2.webp',
   './assets/story/3.webp',
