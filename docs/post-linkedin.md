@@ -3,10 +3,6 @@
 Em inglês, para publicar com a imagem `assets/anuncio/unicornrush-campo.png`
 (ou a noturna, `unicornrush-noite.png`).
 
-⚠️ **Falta o endereço do jogo.** Onde está `COLE-AQUI-O-ENDERECO`, ponha a
-URL da Vercel — não há nenhuma gravada no repositório, então não tinha como
-eu preencher.
-
 ---
 
 I built a 3D game for my kids. Then they started finding the bugs I couldn't.
@@ -42,7 +38,7 @@ minutes, the things I'd been guessing about for weeks.
 
 👉 **Want to let your kids have a go?** It's free, runs in any browser and
 installs like an app — no store, no account, no ads:
-COLE-AQUI-O-ENDERECO
+https://unicorn-rush-ten.vercel.app
 
 And if something breaks, or a four-year-old gets stuck somewhere I didn't
 plan for, please tell me. Every good fix in this project started with a child

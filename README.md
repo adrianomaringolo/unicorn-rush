@@ -1,9 +1,12 @@
 # 🦄 UnicornRush
 
-Jogo infantil de corrida feito com [three.js](https://threejs.org/): seis
-unicórnios correm por pistas mágicas juntando corações e chaves, desviando de
-obstáculos e pegando power-ups. Roda no navegador, sem build e sem nada vindo
-de fora — dá até para instalar no celular e jogar offline.
+**Jogar: <https://unicorn-rush-ten.vercel.app>**
+
+Jogo infantil de corrida feito com [three.js](https://threejs.org/): vinte e
+dois unicórnios correm por quinze pistas mágicas juntando corações e chaves,
+desviando de obstáculos e pegando power-ups. Fala português e inglês, e lê as
+fichas em voz alta para quem ainda não lê. Roda no navegador, sem build e sem
+nada vindo de fora — dá até para instalar no celular e jogar offline.
 
 ## As pistas
 
@@ -1290,6 +1293,17 @@ antes de o jogo abrir, então não há como escolher o idioma dele. A descriçã
 está nos dois.
 
 ## Publicar (Vercel)
+
+Está no ar em **<https://unicorn-rush-ten.vercel.app>**, e a Vercel publica
+sozinha a cada push na `main` — não há passo manual depois do primeiro
+deploy. Para conferir o que está lá fora sem abrir o navegador:
+
+```bash
+curl -s https://unicorn-rush-ten.vercel.app/src/game/version.js | grep -o "'[0-9.]*'"
+```
+
+Se o número não bater com o do `package.json`, o deploy ainda não terminou (ou
+falhou).
 
 O jogo é estático — não tem build, e o three.js já está em `vendor/`. Na
 Vercel: *Add New… → Project* → importar o repositório e mandar **Deploy**.
