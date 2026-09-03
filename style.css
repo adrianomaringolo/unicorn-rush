@@ -2065,6 +2065,46 @@ html, body {
 .ouvir:active { transform: translateY(1px); }
 
 
+/* --- A lista de ajustes do cantinho dos adultos -------------------------- */
+/*
+   Linha compacta, e não botão-pílula: são seis ajustes, e com um botão
+   grande para cada um a fileira passava da tela do celular. Além de caber,
+   linha é o que esta tela é — aqui não se joga, se configura.
+*/
+.ajustes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.ajuste {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 2px solid #f3dcef;
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  color: var(--purple);
+  text-align: left;
+  cursor: pointer;
+}
+.ajuste:active { transform: translateY(1px); }
+.ajuste.aviso { border-color: #ffb3c8; background: #fff4f7; }
+.ajuste-icone { font-size: 1.05rem; line-height: 1; }
+.ajuste-icone .fi { width: 20px; height: 20px; }
+.ajuste-nome { font-weight: 600; font-size: .95rem; }
+.ajuste-valor {
+  font-size: .82rem;
+  color: #a98bc4;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* --- Escolher a voz, no cantinho dos adultos ----------------------------- */
 
 .voz-lista {

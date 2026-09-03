@@ -430,14 +430,23 @@ export const EN = {
 
   // --- O cantinho dos adultos -----------------------------------------------
   '👑 Dos adultos': '👑 Grown-ups',
+
+  // A lista de ajustes: nome curto de um lado, estado do outro.
+  'Voz': 'Voice',
+  'ligada': 'on',
+  'desligada': 'off',
+  'Trocar a voz': 'Change the voice',
+  'Instalar': 'Install',
+  'Modo teste': 'Test mode',
+  'ligado': 'on',
+  'desligado': 'off',
+  'Recomeçar do zero': 'Start from scratch',
+  'Apagar mesmo?': 'Really erase it?',
+  'toque de novo': 'tap again',
   '⬅️ Voltar ao jogo': '⬅️ Back to the game',
-  '🔊 Voz: ligada': '🔊 Voice: on',
   '🗣️ Trocar a voz': '🗣️ Change the voice',
   'toque numa voz para ouvir': 'tap a voice to hear it',
-  '🔈 Voz: desligada': '🔈 Voice: off',
-  'lê em voz alta o nome do que a criança toca': 'reads out the name of whatever your child taps',
   'Pronto, agora eu falo': 'There we go, now I can talk',
-  '📲 Instalar': '📲 Install',
   '📲 Instalar no iPhone': '📲 Install on iPhone',
   'No iPhone a instalação é pelo Safari, em dois toques:':
     'On iPhone you install it from Safari, in two taps:',
@@ -467,17 +476,8 @@ export const EN = {
   'Corridas em cada pista': 'Runs on each track',
   'Corridas com cada unicórnio': 'Runs with each unicorn',
   'Power-ups pegos': 'Power-ups picked up',
-  '🧪 Modo teste: ligado': '🧪 Test mode: on',
-  '🧪 Modo teste: desligado': '🧪 Test mode: off',
   '🧪 Modo teste ligado': '🧪 Test mode on',
   '🧪 Modo teste desligado': '🧪 Test mode off',
-  'tudo liberado e nada é guardado · o jogo recarrega ao desligar':
-    'everything unlocked and nothing saved · the game reloads when you switch it off',
-  'libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega':
-    'unlocks every unicorn and track without saving anything · the game reloads',
-  '🧹 Recomeçar do zero': '🧹 Start from scratch',
-  '⚠️ Apagar mesmo?': '⚠️ Really erase it?',
-  'toque de novo para zerar tudo': 'tap again to wipe everything',
   '⬅️ Voltar': '⬅️ Back',
 
   // --- Sobre ----------------------------------------------------------------

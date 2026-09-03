@@ -1018,65 +1018,83 @@ export class Game {
     this.state = STATE.READY;
     this.screen = 'grown';
     this.ui.showPause(false);
+
+    // Uma lista de ajustes, e não sete botões-pílula.
+    //
+    // Com um botão grande para cada coisa, a fileira passava da tela do
+    // celular e os últimos ficavam cortados. Fazer a fileira rolar resolvia
+    // o alcance mas não o problema: ajuste cortado parece defeito, e quem
+    // abre esta tela quer ver **tudo o que dá para mexer** de uma vez.
+    //
+    // Linha compacta é também o que esta tela é: aqui não se joga, se
+    // configura — e quem configura é um adulto, com o dedo de adulto. Os
+    // botões grandes ficam onde há decisão de criança.
+    const linhas = [
+      canSpeak() && {
+        id: 'voz',
+        icone: speechOn() ? '🔊' : '🔈',
+        nome: t('Voz'),
+        valor: speechOn() ? t('ligada') : t('desligada'),
+      },
+      // Trocar a voz só faz sentido com ela ligada e com mais de uma
+      // instalada — em aparelho que só tem uma, não há o que oferecer.
+      canSpeak() && speechOn() && vozesDoIdioma().length > 1 && {
+        id: 'trocar-voz', icone: '🗣️', nome: t('Trocar a voz'), valor: nomeDaVoz(),
+      },
+      // O idioma mora aqui, e não no menu: é escolha de quem instala o jogo,
+      // feita uma vez. No menu da criança era um botão que trocava o jogo
+      // inteiro de língua com um toque sem querer.
+      {
+        id: 'idioma',
+        icone: idiomaInfo().bandeira,
+        nome: t('Idioma'),
+        valor: idiomaInfo().nome,
+      },
+      canInstall() && { id: 'instalar', icone: '📲', nome: t('Instalar'), valor: '' },
+      {
+        id: 'teste',
+        icone: '🧪',
+        nome: t('Modo teste'),
+        valor: isTestMode() ? t('ligado') : t('desligado'),
+        aviso: isTestMode(),
+      },
+      confirmandoApagar
+        ? { id: 'apagar-mesmo', icone: '⚠️', nome: t('Apagar mesmo?'), valor: t('toque de novo'), aviso: true }
+        : { id: 'apagar', icone: '🧹', nome: t('Recomeçar do zero'), valor: '' },
+    ].filter(Boolean);
+
+    const html = `<div class="ajustes">${linhas.map((l) => `
+      <button class="ajuste${l.aviso ? ' aviso' : ''}" data-pick="${l.id}">
+        <span class="ajuste-icone">${l.icone}</span>
+        <span class="ajuste-nome">${l.nome}</span>
+        <span class="ajuste-valor">${l.valor}</span>
+      </button>`).join('')}</div>`;
+
     this.ui.showOverlay({
       title: t('👑 Dos adultos'),
-      buttons: [
-        { label: t('⬅️ Voltar ao jogo'), onClick: () => this.showHome() },
-        ...(canSpeak() ? [{
-          label: speechOn() ? t('🔊 Voz: ligada') : t('🔈 Voz: desligada'),
-          hint: t('lê em voz alta o nome do que a criança toca'),
-          onClick: () => this.toggleSpeech(),
-          secondary: true,
-        }] : []),
-        // Trocar a voz só faz sentido com ela ligada e com mais de uma
-        // instalada — em aparelho que só tem uma, o botão não teria o que
-        // oferecer.
-        ...(canSpeak() && speechOn() && vozesDoIdioma().length > 1 ? [{
-          label: t('🗣️ Trocar a voz'),
-          hint: nomeDaVoz(),
-          onClick: () => this.showVoicePicker(),
-          secondary: true,
-        }] : []),
-        {
-          // O idioma mora aqui, e não no menu: é escolha de quem instala o
-          // jogo, feita uma vez. No menu da criança, era um botão que
-          // trocava o jogo inteiro de língua com um toque sem querer.
-          label: `${idiomaInfo().bandeira} ${t('Idioma')}`,
-          hint: idiomaInfo().nome,
-          onClick: () => this.showLanguagePicker({ voltarPara: 'grown' }),
-          secondary: true,
-        },
-        ...(canInstall() ? [{
-          label: t('📲 Instalar'),
-          onClick: () => this.installApp(),
-          secondary: true,
-        }] : []),
-        {
-          label: isTestMode() ? t('🧪 Modo teste: ligado') : t('🧪 Modo teste: desligado'),
-          hint: isTestMode()
-            ? t('tudo liberado e nada é guardado · o jogo recarrega ao desligar')
-            : t('libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega'),
-          secondary: true,
-          onClick: () => this.toggleTestMode(),
-        },
-        confirmandoApagar
-          ? {
-            label: t('⚠️ Apagar mesmo?'),
-            hint: t('toque de novo para zerar tudo'),
-            secondary: true,
-            onClick: () => {
-              resetSave();
-              this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
-              this.character = CHARACTERS[this.save.choices.character];
-              this.track = TRACKS[this.save.choices.track];
-              this.buildWorld();
-              this.buildCharacter();
-              this.showGrownUps();
-            },
-          }
-          : { label: t('🧹 Recomeçar do zero'), onClick: () => this.showGrownUps({ confirmandoApagar: true }), secondary: true },
-      ],
+      html,
+      buttons: [{ label: t('⬅️ Voltar ao jogo'), huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
+    });
+
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual === 'voz') return this.toggleSpeech();
+      if (qual === 'trocar-voz') return this.showVoicePicker();
+      if (qual === 'idioma') return this.showLanguagePicker({ voltarPara: 'grown' });
+      if (qual === 'instalar') return this.installApp();
+      if (qual === 'teste') return this.toggleTestMode();
+      if (qual === 'apagar') return this.showGrownUps({ confirmandoApagar: true });
+      if (qual === 'apagar-mesmo') {
+        resetSave();
+        this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
+        this.character = CHARACTERS[this.save.choices.character];
+        this.track = TRACKS[this.save.choices.track];
+        this.buildWorld();
+        this.buildCharacter();
+        return this.showGrownUps();
+      }
+      return undefined;
     });
   }
 
