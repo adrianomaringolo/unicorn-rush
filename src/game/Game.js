@@ -1235,7 +1235,7 @@ export class Game {
             ultima: nomes[nomes.length - 1],
           })
           : nomes[0];
-        return `<p class="shop-fast">${t('⚡ Corre mais rápido em {pistas}', { pistas: lista })}</p>`;
+        return t('⚡ Corre mais rápido em {pistas}', { pistas: lista });
       })()
       : '';
 
@@ -1761,12 +1761,35 @@ export class Game {
     this.ui.showPause(false);
 
     const escolher = (id) => {
-      setIdioma(id);
-      this.save = getSave();
-      // O menu e a história são remontados: os nomes dos unicórnios, das
-      // pistas e os textos já saem no idioma novo.
-      this.render();
-      return primeira ? this.showStory(0) : this.showHome();
+      const seguir = () => (primeira ? this.showStory(0) : this.showHome());
+      if (id === idioma()) return seguir();
+
+      // Trocar de idioma "recarrega" o jogo.
+      //
+      // A tela de carregamento volta por um instante e o jogo reaparece no
+      // idioma novo. Não é enfeite: a troca reescreve os nomes dos 22
+      // unicórnios, das 15 pistas e todos os textos de uma vez, e sem uma
+      // cortina por cima isso acontece à vista, item por item. Com ela, a
+      // criança vê o jogo "começar de novo" — que é exatamente o que
+      // aconteceu, do ponto de vista dela.
+      //
+      // É de mentira de propósito: um `location.reload()` de verdade daria o
+      // mesmo efeito, mas jogaria fora o service worker já aquecido e faria
+      // o jogo baixar tudo outra vez em quem está no 3G.
+      const cortina = document.getElementById('loading');
+      cortina?.classList.remove('pronto');
+
+      setTimeout(() => {
+        setIdioma(id);
+        this.save = getSave();
+        // Remonta tudo: os nomes já saem no idioma novo.
+        this.render();
+        seguir();
+        // Um quadro depois, para a tela nova estar pintada antes de a
+        // cortina começar a abrir — senão dá para ver o menu antigo por
+        // baixo, no meio da transição.
+        requestAnimationFrame(() => cortina?.classList.add('pronto'));
+      }, 620);
     };
 
     const sugerido = this.save.idioma || idiomaSugerido();
