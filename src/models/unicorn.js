@@ -580,6 +580,41 @@ export function createUnicorn(character = CHARACTERS.uni) {
     // onde a luz bateria. É o que separa "olho" de "botão de casaco" — e
     // custa uma peça, não as três de um olho montado em camadas.
     const fora = new THREE.Vector3(side * 0.22, 0.06, -0.2).normalize();
+    // Cílios, nas meninas: três espetinhos na borda de cima do olho,
+    // abrindo para fora. É o traço que as ilustrações do livro usam para
+    // diferenciar, e num modelo de poucas faces ele cabe em três peças.
+    //
+    // Ficam num grupo virado para fora do crânio (o mesmo `fora` do brilho),
+    // e não presos ao eixo Z: assim eles acompanham a curva da cabeça e não
+    // saem tortos quando o bicho é visto de perfil.
+    if (character.menina) {
+      const cilios = new THREE.Group();
+      cilios.position.copy(eye.position);
+      cilios.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), fora);
+      // Escuros em quem é claro; da cor do olho em quem é escuro, senão
+      // sumiriam no corpo (o Sombra é preto de verdade).
+      const corCilio = luminancia(character.body) < 0.34 ? corDoOlho(character) : 0x2a1f33;
+      for (let k = 0; k < 3; k++) {
+        // Compridos: com o tamanho do raio do olho eles liam como dois
+        // pontinhos em cima da pálpebra. Cílio precisa passar da borda para
+        // aparecer na silhueta.
+        const ang = Math.PI / 2 + (k - 1) * side * 0.58;
+        const cilio = new THREE.Mesh(
+          new THREE.ConeGeometry(raioOlho * 0.13, raioOlho * (1.9 - Math.abs(k - 1) * 0.35), 4),
+          mat(corCilio)
+        );
+        cilio.position.set(
+          Math.cos(ang) * raioOlho * 1.15,
+          Math.sin(ang) * raioOlho * 1.15,
+          raioOlho * 0.32
+        );
+        cilio.rotation.z = ang - Math.PI / 2;   // aponta para fora do olho
+        cilio.rotation.x = -0.3;                // e um tico para a frente
+        cilios.add(cilio);
+      }
+      head.add(cilios);
+    }
+
     // Pequeno e bem em cima do olho. Maior, e afastado para a borda, ele
     // parava de ler como luz e virava uma bolinha grudada — o que só ficou
     // evidente quando o olho ganhou cor.

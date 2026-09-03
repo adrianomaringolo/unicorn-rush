@@ -415,6 +415,18 @@ ilustração), o âmbar do Brasa, o amarelo do Relâmpago, o lilás do Sombra �
 quem não declarar nada e for escuro ganha um olho claro automaticamente, para
 nenhum personagem novo nascer sem cara.
 
+**As meninas têm cílios**: três espetinhos na borda de cima do olho, abrindo
+para fora. É o traço que as ilustrações usam para diferenciar, e num modelo
+de poucas faces ele cabe em três peças.
+
+Quem é menina vem de um campo próprio (`menina: true`), e não do texto do
+título. Dava para deduzir de "**a** unicórnia…", mas o título é traduzido — e
+em inglês "the rainbow unicorn" não tem gênero nenhum. Um campo explícito não
+depende do idioma.
+
+Os cílios são escuros em quem tem o corpo claro e **da cor do olho** em quem
+tem o corpo escuro, pela mesma razão do olho: preto sobre preto não existe.
+
 **As orelhas** são baixas e largas, com o rosa por dentro. Cones altos, ao
 lado do chifre, viravam um segundo chifre — três pontas na mesma cabeça.
 

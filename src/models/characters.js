@@ -20,6 +20,7 @@ export const CHARACTERS = {
     id: 'uni',
     name: 'Uni',
     emoji: '🌈',
+    menina: true,
     eye: 0x2f6fd4,   // azul, como na ilustração do livro
     // Um tico mais infantil que os adultos: cabeça e olho maiores, perna
     // mais curta. Não chega perto da Lulu, que é o bebê de verdade.
@@ -68,6 +69,7 @@ export const CHARACTERS = {
     id: 'lua',
     name: 'Lua',
     emoji: '🌙',
+    menina: true,
     title: 'a unicórnia da noite',
     story: 'Lua só sai quando o céu escurece, para cuidar dos sonhos de quem dorme. '
       + 'Seu rastro é um pedacinho de céu estrelado, e ela conhece todos os atalhos da noite.',
@@ -123,6 +125,7 @@ export const CHARACTERS = {
     id: 'lulu',
     name: 'Lulu',
     emoji: '🤍',
+    menina: true,
     title: 'a unicórnia bebê',
     story: 'Lulu é a menorzinha do grupo e ainda está aprendendo a voar. '
       + 'Ela é branquinha como nuvem e deixa um fiozinho de brilho por onde passa.',
@@ -151,6 +154,7 @@ export const CHARACTERS = {
     id: 'estrela',
     name: 'Estrela',
     emoji: '⭐',
+    menina: true,
     title: 'a unicórnia que caiu do céu',
     story: 'Estrela caiu do céu numa noite de agosto e resolveu ficar para brincar. '
       + 'Ela brilha tanto que as estrelinhas da pista aparecem só para correr junto.',
@@ -177,6 +181,7 @@ export const CHARACTERS = {
     id: 'chiclete',
     name: 'Chiclete',
     emoji: '🫧',
+    menina: true,
     title: 'a unicórnia de chiclete',
     story: 'Chiclete faz bolhas do tamanho da cabeça dela e sai quicando pela pista. '
       + 'Quando a bolha estoura, ela ri tanto que precisa parar para respirar.',
@@ -233,6 +238,7 @@ export const CHARACTERS = {
     id: 'onda',
     name: 'Onda',
     emoji: '🌊',
+    menina: true,
     title: 'a unicórnia do mar',
     story: 'Onda nasceu numa espuma de onda grande e nunca aprendeu a andar devagar. '
       + 'Debaixo d\'água ela é a mais rápida de todas, e adora aparecer de surpresa.',
@@ -368,6 +374,7 @@ export const CHARACTERS = {
     id: 'cereja',
     name: 'Cereja',
     emoji: '🍒',
+    menina: true,
     eye: 0xffe9a8,   // creme quente no vermelho
     title: 'a unicórnia mais ligeira',
     story: 'Cereja não anda: ela desvia. Dizem que consegue trocar de pista '
@@ -427,6 +434,7 @@ export const CHARACTERS = {
     id: 'violeta',
     name: 'Violeta',
     emoji: '🔮',
+    menina: true,
     eye: 0xffe0ff,   // quase branco, na fumaça roxa
     title: 'a unicórnia de fumaça',
     story: 'Violeta é meio feita de fumaça: quando salta, demora para descer, '
@@ -455,6 +463,7 @@ export const CHARACTERS = {
     id: 'cristal',
     name: 'Cristal',
     emoji: '💎',
+    menina: true,
     title: 'a unicórnia de vidro',
     story: 'Cristal é transparente como uma janela de gelo, e dá para ver o '
       + 'arco-íris passar por dentro dela quando o sol bate de lado.',
@@ -600,6 +609,7 @@ export const CHARACTERS = {
     id: 'perola',
     name: 'Pérola',
     emoji: '🐚',
+    menina: true,
     title: 'a unicórnia do fundo do mar',
     story: 'Pérola cresceu dentro de uma concha, no escuro do fundo do mar. '
       + 'Enxerga onde ninguém enxerga — no Oceano e na Bruma — e por isso acha '
