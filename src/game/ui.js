@@ -86,7 +86,10 @@ export function createUI() {
       cancelHold();
       if (event === 'pointerup') {
         sfx.deny();
-        showToast(t('Segure o dedo aqui 👆'));
+        // Diz o que acontece se segurar, e não só "segure": quem tocou aqui
+        // por engano fica sabendo que existe um cantinho dos adultos, e quem
+        // veio procurando por ele descobre como entrar.
+        showToast(t('👆 Segure para abrir o controle dos adultos'));
       }
     });
   }

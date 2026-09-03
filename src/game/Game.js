@@ -853,7 +853,6 @@ export class Game {
           <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 ${t('A história')}${this.storyEndNew ? ' ✨' : ''}</button>
           <button class="mini-button" data-pick="stats">📊 ${t('Estatísticas')}</button>
           <button class="mini-button" data-pick="about">ℹ️ ${t('Sobre')}</button>
-          <button class="mini-button" data-pick="idioma">🌍 ${t('Idioma')}</button>
           <button class="mini-button aprender" data-pick="tutorial">👆 ${t('Aprender')}</button>
           ${hasUpdate() ? `<button class="mini-button nova" data-pick="update">🔄 ${t('Atualizar')}</button>` : ''}
         </div>
@@ -869,7 +868,6 @@ export class Game {
       if (qual === 'tutorial') return this.startTutorial();
       if (qual === 'stats') return this.showStats();
       if (qual === 'about') return this.showAbout();
-      if (qual === 'idioma') return this.showLanguagePicker();
       if (qual === 'update') return this.applyUpdate();
       return this.showModePicker();
     });
@@ -1032,6 +1030,15 @@ export class Game {
           onClick: () => this.showVoicePicker(),
           secondary: true,
         }] : []),
+        {
+          // O idioma mora aqui, e não no menu: é escolha de quem instala o
+          // jogo, feita uma vez. No menu da criança, era um botão que
+          // trocava o jogo inteiro de língua com um toque sem querer.
+          label: `${idiomaInfo().bandeira} ${t('Idioma')}`,
+          hint: idiomaInfo().nome,
+          onClick: () => this.showLanguagePicker({ voltarPara: 'grown' }),
+          secondary: true,
+        },
         ...(canInstall() ? [{
           label: t('📲 Instalar'),
           onClick: () => this.installApp(),
@@ -1812,13 +1819,14 @@ export class Game {
   // Os dois botões são escritos **cada um no seu idioma**, com a bandeira:
   // é a única tela do jogo que não pode depender de o leitor entender o
   // idioma em que ela está.
-  showLanguagePicker({ primeira = false } = {}) {
+  showLanguagePicker({ primeira = false, voltarPara = 'home' } = {}) {
     this.state = STATE.READY;
     this.screen = 'idioma';
     this.ui.showPause(false);
 
     const escolher = (id) => {
-      const seguir = () => (primeira ? this.showStory(0) : this.showHome());
+      const seguir = () => (primeira ? this.showStory(0)
+        : voltarPara === 'grown' ? this.showGrownUps() : this.showHome());
       if (id === idioma()) return seguir();
 
       // Trocar de idioma "recarrega" o jogo.
@@ -1858,7 +1866,7 @@ export class Game {
         secondary: lang.id !== sugerido,
         onClick: () => escolher(lang.id),
       })),
-      back: primeira ? null : () => this.showHome(),
+      back: primeira ? null : () => (voltarPara === 'grown' ? this.showGrownUps() : this.showHome()),
     });
   }
 

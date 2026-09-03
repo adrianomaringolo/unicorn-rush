@@ -311,7 +311,7 @@ export const EN = {
   'Setas para escolher · ': 'Arrows to choose · ',
   'Enter para o botão grande': 'Enter for the big button',
   'Toque na figura que você quiser': 'Tap whichever picture you like',
-  'Segure o dedo aqui 👆': 'Hold your finger here 👆',
+  '👆 Segure para abrir o controle dos adultos': "👆 Hold to open the grown-ups' controls",
 
   // --- Menu -----------------------------------------------------------------
   'Vamos correr?': 'Shall we run?',
