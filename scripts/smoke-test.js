@@ -135,7 +135,7 @@ for (const track of TRACK_LIST) {
   };
 
   CHARACTER_LIST.forEach((c) => ver(c, ['name', 'title', 'story', 'power'], `unicórnio/${c.id}`));
-  TRACK_LIST.forEach((t) => ver(t, ['name', 'tagline'], `pista/${t.id}`));
+  TRACK_LIST.forEach((t) => ver(t, ['name', 'tagline', 'story'], `pista/${t.id}`));
   storyPages(true).forEach((p) => ver(p, ['title', 'text'], `livro/${p.id}`));
   lessonsFor({ rapido: true }).forEach((l, i) => ver(l, ['fala'], `lição/${i + 1}`));
   POWERUP_LIST.forEach((p) => ver(p, ['name', 'message'], `power-up/${p.id}`));

@@ -157,6 +157,40 @@ export const EN = {
   'Névoa fechada: o caminho aparece na hora': 'Thick fog: the path shows up just in time',
   'Cristais acesos no escuro e poças que brilham': 'Crystals glowing in the dark and puddles that shine',
 
+  // --- Pistas: a descrição da ficha ----------------------------------------
+  "Onde tudo começou. A grama é macia, o arco-íris encosta no chão e há flores e cogumelos por toda parte — é a pista mais calma do reino.":
+    "Where it all began. The grass is soft, the rainbow touches the ground and there are flowers and mushrooms everywhere — the calmest track in the kingdom.",
+  "Um lugar feito de sobremesa: pirulitos do tamanho de árvore, bolinhos com cobertura e granulado caindo do céu. Cuidado com as balas de goma no caminho.":
+    "A place made of dessert: lollipops the size of trees, frosted cupcakes and sprinkles falling from the sky. Watch out for the gumdrops in the way.",
+  "Ruas de pedra entre casinhas de telhado torto, com lampiões acesos e um poço no meio. Aqui se corre devagar e se cumprimenta todo mundo.":
+    "Cobbled streets between little houses with crooked roofs, lit lanterns and a well in the middle. Here you run slowly and say hello to everybody.",
+  "Em cima das nuvens, tão perto do sol que dá para sentir o calor. Balões passam do lado e arcos de arco-íris viram portais no caminho.":
+    "On top of the clouds, so close to the sun you can feel the warmth. Balloons drift past and rainbow arches turn into gateways along the way.",
+  "Um pomar sem fim: laranjeiras carregadas, morangos do tamanho de arbusto e bananas caídas na grama. Cheira a fruta madura o tempo todo.":
+    "An orchard with no end: orange trees heavy with fruit, strawberries the size of bushes and bananas fallen in the grass. It smells of ripe fruit all the time.",
+  "Areia quentinha, guarda-sóis listrados e castelinhos que alguém esqueceu de terminar. O mar fica ali do lado, fazendo barulho.":
+    "Warm sand, striped parasols and little castles somebody forgot to finish. The sea is right there, making its noise.",
+  "Um caminho de areia no fundo do mar, entre corais e algas que balançam. Os peixes param para ver quem passa.":
+    "A sandy path along the bottom of the sea, between corals and swaying seaweed. The fish stop to watch whoever goes by.",
+  "A floresta depois que todo mundo dorme. Os cogumelos acendem sozinhos, as estrelas ficam bem baixas e o silêncio faz companhia.":
+    "The forest after everybody has gone to sleep. The mushrooms light up on their own, the stars hang very low and the silence keeps you company.",
+  "Neve caindo devagar, pinheiros brancos e um boneco de neve que ninguém sabe quem fez. O chão escorrega: é preciso cuidado.":
+    "Snow falling slowly, white pine trees and a snowman nobody knows who made. The ground is slippery: careful.",
+  "Pedra preta e rachaduras acesas por baixo. Sai brasa do chão e o ar treme de calor — só os corajosos correm aqui.":
+    "Black rock with lit cracks underneath. Embers come up from the ground and the air shimmers with heat — only the brave run here.",
+  "O parque nunca fecha: tendas listradas, roda-gigante girando e cheiro de algodão-doce. A música do carrossel toca o tempo inteiro.":
+    "The fair never closes: striped tents, the big wheel turning and the smell of cotton candy. The carousel music plays the whole time.",
+  "Sem chão e quase sem peso — o pulo demora a descer. Planetas passam de longe e um disco voador espia de vez em quando.":
+    "No ground and almost no weight — a jump takes its time coming down. Planets drift by far away and a flying saucer peeks in now and then.",
+  "Chuva de lado, poças refletindo o céu de chumbo e um moinho girando sozinho. De vez em quando um raio rasga tudo.":
+    "Rain coming in sideways, puddles reflecting a lead-grey sky and a windmill turning by itself. Every so often a bolt tears through everything.",
+  "A névoa é tão fechada que o caminho só aparece na hora. Lanternas flutuam sem ninguém segurando, e dizem que há uma torre em algum lugar lá dentro.":
+    "The fog is so thick that the path only shows up just in time. Lanterns float with nobody holding them, and they say there is a tower somewhere inside.",
+  "O fundo da terra, onde os cristais acendem sozinhos e as poças brilham. Cada passo ecoa duas vezes.":
+    "Deep underground, where the crystals light up on their own and the puddles shine. Every step echoes twice.",
+
+  '⚡ Correm mais rápido aqui: {unicornios}': '⚡ These run faster here: {unicornios}',
+
   // --- Power-ups ------------------------------------------------------------
   'Escudo': 'Shield',
   'Ímã': 'Magnet',

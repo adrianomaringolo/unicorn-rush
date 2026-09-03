@@ -381,7 +381,9 @@ export class Game {
         // A pista só tem uma frase (`tagline`), e ela vai na linha de baixo:
         // a de cima fica vazia em vez de repetir a mesma coisa.
         subtitulo: () => '',
-        descricao: (item) => item.tagline,
+        // Na ficha cabe a descrição longa; a `tagline` continua sendo a
+        // linha curta da grade e do rodapé do menu, onde não cabe parágrafo.
+        descricao: (item) => item.story || item.tagline,
         chamada: () => t('é para lá que a corrida vai'),
       }
       : {
@@ -1194,13 +1196,35 @@ export class Game {
     // A característica especial dele. É o que responde "por que escolher
     // este?", então vem antes das pistas rápidas, que são o complemento.
     const poder = !oculto && kind === 'character' && item.power
-      ? `<p class="shop-power"><b>✨ ${item.power}</b></p>`
+      ? `<b>✨ ${item.power}</b>`
       : '';
 
     // As pistas em que ele corre mais rápido: é o que diferencia um
     // unicórnio do outro além da cor, então aparece na ficha.
     // (O parâmetro se chamava `t` e sombreava a função de tradução — foi por
     // isso que esta frase ficou em português no jogo em inglês.)
+    // Na ficha da pista, o contrário: quem corre mais rápido **nela**. É a
+    // mesma informação vista do outro lado, e é o que responde "por que
+    // comprar esta?" — sem ela a pista era só uma paisagem.
+    //
+    // O Eco fica de fora enquanto for mistério: ele corre rápido na Bruma e
+    // no Vilarejo, e o nome dele ali entregaria que existe um 22º.
+    const rapidasDaPista = kind === 'track'
+      ? (() => {
+        const donos = CHARACTER_LIST.filter((c) => c.fast?.includes(item.id))
+          .filter((c) => !c.earned || this.isOwned('character', c.id));
+        if (!donos.length) return '';
+        const nomes = donos.map((c) => `<b>${c.emoji} ${c.name}</b>`);
+        const lista = nomes.length > 1
+          ? t('{primeiras} e {ultima}', {
+            primeiras: nomes.slice(0, -1).join(', '),
+            ultima: nomes[nomes.length - 1],
+          })
+          : nomes[0];
+        return t('⚡ Correm mais rápido aqui: {unicornios}', { unicornios: lista });
+      })()
+      : '';
+
     const rapidas = !oculto && kind === 'character' && item.fast?.length
       ? (() => {
         const nomes = item.fast.map((pista) =>
