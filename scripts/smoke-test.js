@@ -231,9 +231,18 @@ for (const track of TRACK_LIST) {
   // para sempre, dentro da sessão de quem está jogando.
   {
     const alvo = CHARACTER_LIST.find((c) => c.id === 'relampago');
+    // A lição entra aqui porque ela **não** é uma lista solta: vem de uma
+    // função. Ter a tradução no dicionário não bastava — as falas do
+    // Aprender ficaram em português por versões, com o dicionário completo,
+    // porque ninguém as aplicava. Este teste olha o que o jogo lê, não o que
+    // o dicionário guarda.
+    const licaoAntes = lessonsFor({ rapido: true })[0].fala;
     const antes = { nome: alvo.name, historia: alvo.story };
     setIdioma('en', { salvar: false });
     if (alvo.name !== 'Lightning') throw new Error('trocar para inglês não traduziu o personagem');
+    if (lessonsFor({ rapido: true })[0].fala === licaoAntes) {
+      throw new Error('as falas do modo Aprender não trocam de idioma');
+    }
     setIdioma('pt', { salvar: false });
     if (alvo.name !== antes.nome || alvo.story !== antes.historia) {
       throw new Error('voltar ao português não devolveu o texto original');
@@ -241,6 +250,9 @@ for (const track of TRACK_LIST) {
     setIdioma('en', { salvar: false });
     setIdioma('pt', { salvar: false });
     if (alvo.name !== antes.nome) throw new Error('o original se perdeu depois de várias trocas');
+    if (lessonsFor({ rapido: true })[0].fala !== licaoAntes) {
+      throw new Error('a fala da lição não voltou ao português');
+    }
     console.log('   troca de idioma: ida e volta preserva o português');
   }
 

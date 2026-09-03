@@ -136,6 +136,15 @@ const LICAO_RAPIDO = {
   itens: [{ o: 'star', faixa: 1 }, { o: 'heart', faixa: 1, recuo: -10 }],
 };
 
+// Todas as lições que existem, para o i18n poder traduzi-las de uma vez.
+//
+// O `lessonsFor` devolve **referências** a estes objetos, e não cópias — é
+// por isso que traduzir a lista aqui basta, e traduzir o resultado da função
+// não bastaria (ela é chamada a cada tutorial, e quem esquecesse de traduzir
+// o retorno deixaria a lição em português sem ninguém notar; foi o que
+// aconteceu).
+export const TODAS_AS_LICOES = [...LESSONS, LICAO_RAPIDO];
+
 export function lessonsFor({ rapido = false } = {}) {
   if (!rapido) return LESSONS;
   // Entra logo antes do encerramento.

@@ -21,6 +21,7 @@ import { STORY, STORY_END } from './story.js';
 import { POWERUP_LIST } from '../models/powerups.js';
 import { MODES, TUTORIAL_MODE } from './config.js';
 import { THEMES } from './music.js';
+import { TODAS_AS_LICOES } from './tutorial.js';
 
 export const IDIOMAS = {
   pt: { id: 'pt', nome: 'Português', bandeira: '🇧🇷', fala: 'pt-BR', html: 'pt-BR' },
@@ -100,6 +101,7 @@ function aplicaIdioma() {
   traduzItens(Object.values(MODES));
   traduzItens([TUTORIAL_MODE]);
   traduzItens(Object.values(THEMES));   // os nomes das músicas, na ficha da pista
+  traduzItens(TODAS_AS_LICOES);         // as falas do modo Aprender
 }
 
 // --- Os textos que já estão escritos no index.html ------------------------
