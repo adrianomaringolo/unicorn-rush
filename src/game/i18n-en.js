@@ -432,6 +432,8 @@ export const EN = {
   '👑 Dos adultos': '👑 Grown-ups',
   '⬅️ Voltar ao jogo': '⬅️ Back to the game',
   '🔊 Voz: ligada': '🔊 Voice: on',
+  '🗣️ Trocar a voz': '🗣️ Change the voice',
+  'toque numa voz para ouvir': 'tap a voice to hear it',
   '🔈 Voz: desligada': '🔈 Voice: off',
   'lê em voz alta o nome do que a criança toca': 'reads out the name of whatever your child taps',
   'Pronto, agora eu falo': 'There we go, now I can talk',

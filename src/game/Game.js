@@ -28,10 +28,13 @@ import { sfx } from './audio.js';
 import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
-import { speak, canSpeak, isOn as speechOn, setOn as setSpeech } from './speech.js';
+import {
+  speak, canSpeak, isOn as speechOn, setOn as setSpeech,
+  vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes,
+} from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
 import { storyPages, STORY_END } from './story.js';
-import { IDIOMAS, idioma, idiomaSugerido, setIdioma, t, traduzItens } from './i18n.js';
+import { IDIOMAS, idioma, idiomaInfo, idiomaSugerido, setIdioma, t } from './i18n.js';
 import { lessonsFor } from './tutorial.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate, updateVersion } from './update.js';
@@ -102,6 +105,7 @@ export class Game {
     this.state = STATE.READY;
     this.handheld = isHandheld();
     this.save = getSave();
+    restaurarVozes(this.save.vozes);
     this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
     // Um save antigo pode apontar para algo que hoje está trancado.
     this.character = this.isOwned('character', this.save.choices.character)
@@ -1019,6 +1023,15 @@ export class Game {
           onClick: () => this.toggleSpeech(),
           secondary: true,
         }] : []),
+        // Trocar a voz só faz sentido com ela ligada e com mais de uma
+        // instalada — em aparelho que só tem uma, o botão não teria o que
+        // oferecer.
+        ...(canSpeak() && speechOn() && vozesDoIdioma().length > 1 ? [{
+          label: t('🗣️ Trocar a voz'),
+          hint: nomeDaVoz(),
+          onClick: () => this.showVoicePicker(),
+          secondary: true,
+        }] : []),
         ...(canInstall() ? [{
           label: t('📲 Instalar'),
           onClick: () => this.installApp(),
@@ -1026,6 +1039,50 @@ export class Game {
         }] : []),
       ],
       back: () => this.showHome(),
+    });
+  }
+
+  // Escolher a voz, no cantinho dos adultos.
+  //
+  // A voz padrão de português costuma ser a pior instalada, e quase todo
+  // aparelho tem mais de uma. A lista vem já ordenada pelo speech.js — a
+  // primeira é a melhor aposta —, e tocar em qualquer uma a experimenta na
+  // hora, com o nome do unicórnio escolhido: é ouvindo que se decide.
+  showVoicePicker() {
+    this.state = STATE.READY;
+    this.screen = 'voz';
+    this.ui.showPause(false);
+
+    const lista = vozesDoIdioma();
+    const atual = nomeDaVoz();
+    const linhas = lista.map((v, i) => `
+      <button class="voz-item${v.name === atual ? ' escolhida' : ''}" data-pick="${i}">
+        <span class="voz-nome">${v.name}</span>
+        <span class="voz-marca">${v.name === atual ? '✅' : (i === 0 ? '⭐' : '')}</span>
+      </button>`).join('');
+
+    this.ui.showOverlay({
+      picker: true,
+      title: t('🗣️ Trocar a voz'),
+      html: `<div class="voz-lista">${linhas}</div>`
+        + `<p class="viewer-dica">${t('toque numa voz para ouvir')}</p>`,
+      buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showGrownUps() }],
+      back: () => this.showGrownUps(),
+    });
+
+    this.ui.bindExtra((qual) => {
+      const v = lista[Number(qual)];
+      if (!v) return;
+      sfx.tap();
+      const nome = escolherVoz(v.name);
+      update((save) => {
+        save.vozes = { ...(save.vozes || {}), [idiomaInfo().fala]: nome };
+      });
+      this.save = getSave();
+      // A amostra é o unicórnio escolhido: é a frase que a criança mais vai
+      // ouvir, então é por ela que a voz tem de ser julgada.
+      speak(`${this.character.name}. ${this.character.title || ''}`);
+      this.showVoicePicker();
     });
   }
 

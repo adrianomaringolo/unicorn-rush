@@ -2026,3 +2026,35 @@ html, body {
 .ouvir .fi { width: 20px; height: 20px; }
 .ouvir:hover { background: #fdf4ff; }
 .ouvir:active { transform: translateY(1px); }
+
+
+/* --- Escolher a voz, no cantinho dos adultos ----------------------------- */
+
+.voz-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.voz-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 2px solid #f3dcef;
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  font-size: .92rem;
+  color: #7a4ec7;
+  text-align: left;
+  cursor: pointer;
+}
+.voz-item.escolhida {
+  border-color: var(--pink);
+  background: #fff4fa;
+  font-weight: 600;
+}
+.voz-item:active { transform: translateY(1px); }
+.voz-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voz-marca .fi { width: 16px; height: 16px; }

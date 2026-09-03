@@ -18,6 +18,9 @@ const DEFAULTS = {
   updateIgnorada: null,
   muted: false,
   speech: false,         // ler os nomes em voz alta (para quem ainda não lê)
+  // A voz escolhida pelo adulto, por idioma: { 'pt-BR': 'Luciana' }. Vazio
+  // = a melhor que o aparelho tiver (ver speech.js).
+  vozes: {},
   testMode: false,       // modo teste: tudo liberado e nada é guardado
   storySeen: false,      // a história já foi contada uma vez?
   storyEndSeen: false,   // e o fim dela, que só abre depois das 12 fases?
