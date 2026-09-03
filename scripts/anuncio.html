@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../fonts.css" />
+<style>body { margin: 0; background: #bfe9ff; }</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.js"}}</script>
+</head>
+<body>
+<canvas id="cena"></canvas>
+<canvas id="final" hidden></canvas>
+<div id="png" hidden></div>
+<div id="medida" hidden></div>
+<script type="module">
+import * as THREE from 'three';
+import { createUnicorn, animateUnicorn, WING_SCALE } from '../src/models/unicorn.js';
+import { createRainbowTrail, updateRainbowTrail } from '../src/models/rainbowTrail.js';
+import { createHeart, createStar, createKey } from '../src/models/collectibles.js';
+import { CHARACTER_LIST } from '../src/models/characters.js';
+import {
+  createRainbow, createCloud, createMountains, createSun, createMoon,
+  createStars, createDecoration,
+} from '../src/models/scenery.js';
+import { TRACK_LIST } from '../src/game/tracks.js';
+
+const params = new URLSearchParams(location.search);
+const [LARG, ALT] = (params.get('tamanho') || '2400x1350').split('x').map(Number);
+
+// A cena empresta o céu, o chão e os enfeites de uma pista do jogo — então
+// dá quatro anúncios diferentes de graça: `?pista=noite`, `?pista=ceu`…
+const pista = TRACK_LIST.find((t) => t.id === (params.get('pista') || 'campo')) || TRACK_LIST[0];
+const noturna = ['noite', 'espaco', 'caverna', 'bruma'].includes(pista.id);
+
+// O letreiro usa a fonte do jogo: `load` força o download antes de pintar,
+// porque `ready` sozinho não busca uma fonte que ainda ninguém usou.
+await document.fonts.load('600 200px Fredoka');
+await document.fonts.ready;
+const temFonte = document.fonts.check('600 200px Fredoka');
+
+const tela = document.getElementById('cena');
+tela.width = LARG; tela.height = ALT;
+
+const renderer = new THREE.WebGLRenderer({ canvas: tela, antialias: true });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(pista.fog?.color ?? 0xd9f0ff, 46, 150);
+
+// Céu: o degradê da própria pista, pintado num canvas.
+{
+  const c = document.createElement('canvas');
+  c.width = 4; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  const [alto, baixo] = pista.sky;
+  g.addColorStop(0, alto);
+  g.addColorStop(1, baixo);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 4, 256);
+  scene.background = new THREE.CanvasTexture(c);
+}
+
+// Câmera baixa e perto: é o que faz o grupo encher o quadro em vez de ficar
+// pequenininho lá no meio da grama.
+const cam = new THREE.PerspectiveCamera(47, LARG / ALT, 0.1, 300);
+// Fora do eixo da pista de propósito. Com a câmera bem no meio e a Uni bem
+// no meio, **tudo o que está reto atrás dela cai dentro da silhueta dela** —
+// o rastro sumia inteiro, por mais comprido que fosse. Deslocada, a pista
+// foge para o lado e o rastro aparece ao lado do corpo sem precisar torcer.
+cam.position.set(-2.9, 3.7, 13.4);
+cam.lookAt(-0.5, 2.75, -4);
+
+scene.add(new THREE.HemisphereLight(0xffffff, noturna ? 0x24306b : 0xbfe0b8, noturna ? 0.72 : 1.08));
+const sol = new THREE.DirectionalLight(noturna ? 0xc9d4ff : 0xfff6e5, noturna ? 0.85 : 1.5);
+sol.position.set(7, 17, 12);
+sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048);
+sol.shadow.camera.left = -18; sol.shadow.camera.right = 18;
+sol.shadow.camera.top = 14; sol.shadow.camera.bottom = -10;
+sol.shadow.camera.far = 60;
+scene.add(sol);
+
+// --- A pista -------------------------------------------------------------
+//
+// É a mesma do jogo — mesmas cores de asfalto, meio-fio e faixa —, só que
+// larga: a do jogo tem 7,6 de largura, que dá três faixas de corrida e não
+// caberia uma turma de 22 lado a lado.
+const LARGURA = 23, MEIO_FIO = LARGURA / 2 + 0.35;
+
+const chao = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400),
+  new THREE.MeshLambertMaterial({ color: pista.ground ?? 0x8ec36a })
+);
+chao.rotation.x = -Math.PI / 2;
+chao.receiveShadow = true;
+scene.add(chao);
+
+const asfalto = new THREE.Mesh(
+  new THREE.PlaneGeometry(LARGURA, 400),
+  new THREE.MeshLambertMaterial({ color: pista.path, flatShading: true })
+);
+asfalto.rotation.x = -Math.PI / 2;
+asfalto.position.set(0, 0.02, -140);
+asfalto.receiveShadow = true;
+scene.add(asfalto);
+
+for (const lado of [-1, 1]) {
+  const fio = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.34, 400),
+    new THREE.MeshLambertMaterial({ color: pista.kerb, flatShading: true })
+  );
+  fio.position.set(lado * MEIO_FIO, 0.17, -140);
+  fio.castShadow = true;
+  scene.add(fio);
+}
+
+// As faixas do chão, que são o que dá a sensação de que a pista corre.
+{
+  const geo = new THREE.PlaneGeometry(LARGURA - 2.2, 1.7);
+  const mat = new THREE.MeshBasicMaterial({
+    color: pista.stripe,
+    transparent: true,
+    opacity: pista.stripeOpacity ?? 0.4,
+  });
+  for (let i = 0; i < 26; i++) {
+    const faixa = new THREE.Mesh(geo, mat);
+    faixa.rotation.x = -Math.PI / 2;
+    faixa.position.set(0, 0.04, 8 - i * 4.6);
+    scene.add(faixa);
+  }
+}
+
+// --- Fundo ---------------------------------------------------------------
+const serra = createMountains(pista);
+serra.position.z = -24;
+scene.add(serra);
+
+if (noturna) {
+  const lua = createMoon();
+  lua.position.set(-13, 12, -40);
+  scene.add(lua);
+  scene.add(createStars(120));
+} else {
+  const astro = createSun();
+  astro.position.set(-21, 13.5, -58);
+  astro.scale.setScalar(0.72);
+  scene.add(astro);
+  if (pista.backdrop === 'rainbow' || pista.id === 'campo') {
+    const arco = createRainbow();
+    arco.position.set(0, 0, -52);
+    arco.scale.setScalar(0.66);
+    scene.add(arco);
+  }
+}
+
+for (const [x, y, z, s] of [[-16, 9.5, -30, 1.3], [13, 11, -33, 1.5], [21, 8, -27, 1.1],
+                            [-23, 12, -35, 1.2], [4, 13, -38, 1.0]]) {
+  const nuvem = createCloud(pista.cloud ?? 0xffffff);
+  nuvem.position.set(x, y, z);
+  nuvem.scale.setScalar(s);
+  scene.add(nuvem);
+}
+
+// Enfeites da pista nas laterais e no fundo, para o chão não ficar pelado.
+for (let i = 0; i < 16; i++) {
+  const enfeite = createDecoration(pista);
+  const lado = i % 2 === 0 ? -1 : 1;
+  enfeite.position.set(
+    lado * (MEIO_FIO + 2 + Math.random() * 12),
+    0,
+    -14 + Math.random() * 20
+  );
+  enfeite.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  scene.add(enfeite);
+}
+
+// --- A turma vindo em disparada -------------------------------------------
+//
+// Uma cunha: a Uni na frente e no meio, mais perto da câmera que todo mundo,
+// e o resto abrindo para trás em três fileiras. É o arranjo que faz ler
+// "bando correndo para cá" em vez de "grupo posando".
+const porId = Object.fromEntries(CHARACTER_LIST.map((c) => [c.id, c]));
+
+const RESTO = [
+  'sol', 'lua', 'brasa', 'lulu', 'estrela', 'chiclete', 'musgo', 'onda',
+  'floco', 'coco', 'cometa', 'cereja', 'limao', 'violeta', 'cristal',
+  'vovo', 'sombra', 'relampago', 'pipoca', 'perola', 'eco',
+];
+const fila = [...RESTO.filter((id) => porId[id] && id !== 'uni'),
+              ...CHARACTER_LIST.map((c) => c.id).filter((id) => id !== 'uni' && !RESTO.includes(id))];
+
+// Três faixas de **altura**, não três fileiras no chão.
+//
+// Foi medido: com todo mundo no chão, dez dos 22 apareciam com menos de
+// 2000 pixels e a Pipoca aparecia com 73 — estavam atrás de alguém. Quem
+// está mais atrás sobe mais, e cada faixa entra deslocada de meio vão, de
+// modo que ninguém fique na sombra de ninguém.
+const POSTOS = [
+  // A Uni, à frente de todas, no ⚡.
+  // x=-1.27 e não 0: com a câmera deslocada, o meio do **quadro** deixa de
+  // ser o meio da pista. É a conta do raio que sai da câmera e passa pelo
+  // ponto para onde ela olha, na profundidade dela.
+  { id: 'uni', x: -1.27, z: 1.6, escala: 1.22, y: 1.5, ar: true, rapida: true },
+
+  // No chão, abrindo dos dois lados dela.
+  ...[-9.5, -6.4, -3.4, 3.4, 6.4, 9.5].map((x) => ({ x, z: -0.8, escala: 1.14 })),
+
+  // Meia altura, deslocados para caírem nos vãos da fileira de baixo.
+  ...[-10.3, -7.5, -4.7, -1.8, 1.8, 4.7, 7.5, 10.3].map((x) => ({
+    x, z: -4.6, escala: 1.12, y: 2.4, ar: true,
+  })),
+
+  // Bem no alto, contra o céu.
+  ...[-9.3, -6.2, -3.1, 0, 3.1, 6.2, 9.3].map((x) => ({
+    x, z: -8.2, escala: 1.1, y: 4.85, ar: true,
+  })),
+];
+
+let n = 0;
+let naFoto = 0;
+let proximo = 0;
+const postados = [];
+for (const posto of POSTOS) {
+  const id = posto.id || fila[proximo++];
+  if (!porId[id]) continue;
+  const uni = createUnicorn(porId[id]);
+
+  // Quem voa está marcado no posto; o resto galopa no chão, com um saltinho
+  // aqui e ali só para o bando não virar fileira de estátuas.
+  const voando = !!posto.ar;
+  const pulinho = !voando && n % 4 === 2 ? 0.24 : 0;
+
+  uni.position.set(posto.x, (posto.y || 0) + pulinho, posto.z);
+  // Viradas para a câmera (no jogo correm para longe dela), cada uma com um
+  // meio giro próprio, e inclinadas para a frente como quem corre.
+  uni.rotation.y = Math.PI + Math.sin(n * 2.7) * 0.3;
+  uni.rotation.x = -0.05 - (voando ? 0.12 : 0);
+  uni.scale.setScalar(posto.escala);
+
+  // A pose: cada um num instante diferente do galope. O `animateUnicorn` é
+  // determinístico no tempo, então 22 poses saem de graça, sem animação
+  // nenhuma rodando — e a velocidade alta deixa a passada bem aberta.
+  animateUnicorn(uni, n * 0.41 + 0.3, 3.1 + (n % 4) * 0.5, !voando && !pulinho);
+
+  // Asas abertas, mas nem tanto: soltas como o jogo faz, elas ficam
+  // horizontais e viram barras atravessando a cara do vizinho, porque aqui
+  // a câmera está de frente e não atrás. Este meio-termo mantém a envergadura
+  // à vista sem que uma invada a outra.
+  uni.userData.wings.children.forEach((asa, k) => {
+    const lado = k === 0 ? 1 : -1;
+    if (posto.rapida) {
+      // As asas dela apontam para **baixo**: no ⚡ elas são grandes, e
+      // abertas para cima viravam duas orelhas brancas ao lado da cabeça.
+      asa.rotation.set(0.12, -lado * 0.52, -lado * 0.20);
+    } else {
+      asa.rotation.set(voando ? -0.16 : -0.05, -lado * (voando ? 0.34 : 0.46), lado * (voando ? 0.52 : 0.36));
+    }
+
+    if (posto.rapida) {
+      // As asas do ⚡: no jogo elas crescem metade e acendem enquanto o
+      // RÁPIDO está ligado (ver Game.updateRushLook). É a marca de que
+      // aquele ali está disparado, e só a Uni tem na foto.
+      asa.scale.setScalar(WING_SCALE * 1.5);
+      asa.traverse((o) => {
+        if (o.isMesh && o.material?.emissive) {
+          o.material.emissive.copy(o.material.color).multiplyScalar(0.8);
+        }
+      });
+    } else {
+      asa.scale.setScalar(0.95);
+    }
+  });
+
+  // E o rastro, também só dela. É a mesma fita do jogo, na largura do ⚡ —
+  // adiantada uns quadros para o histórico encher e a fita sair reta.
+  if (posto.rapida) {
+    const fita = createRainbowTrail(porId[id].trail);
+    // Na altura do peito dela, para a fita passar por cima das costas de
+    // quem corre no chão em vez de ficar rastejando na grama.
+    for (let q = 0; q < 150; q++) {
+      updateRainbowTrail(fita, 1 / 60, 22, 0, 1.1, q / 60, true);
+    }
+    // No jogo a fita fica atrás de quem corre, que é o lado da câmera; aqui
+    // eles vêm para cá, então ela tem de ir para o outro lado.
+    const suporte = new THREE.Group();
+    // Reta, alinhada com a pista: é de onde ela veio. Antes ia enviesada só
+    // para escapar do corpo dela, e ficava parecendo que tinha feito a
+    // curva. O que resolve de verdade é **comprimento** — a fita nasce com
+    // 10 unidades, que acabam bem onde o bando está; esticada, ela sai por
+    // cima de todo mundo e vai sumindo lá no fundo, que é o que faz ler
+    // "vem de longe".
+    suporte.rotation.y = Math.PI;
+    suporte.scale.z = 3.8;
+    suporte.position.set(posto.x, 0, posto.z);
+    suporte.add(fita);
+    scene.add(suporte);
+  }
+
+  uni.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  uni.userData.quem = id;
+  postados.push(uni);
+  scene.add(uni);
+  n += 1; naFoto += 1;
+}
+
+// --- Os itens da pista ----------------------------------------------------
+//
+// Corações, estrelas e chaves espalhados na pista, como numa corrida de
+// verdade. Ficam no vão **debaixo dos que voam**: as faixas do alto estão a
+// 2,4 e 4,9 de altura, então o chão sob elas continua à vista — é ali que
+// um item aparece, e não lá no fundo atrás de todo mundo.
+const itens = [];
+{
+  const FAIXAS = [-8.6, -5.8, -3.0, 0.4, 3.2, 6.0, 8.8];
+  let z = -5.5;
+  for (let linha = 0; z > -24; linha += 1) {
+    const usadas = new Set();
+    for (let k = 0; k < (linha % 2 === 0 ? 3 : 2); k++) {
+      let faixa;
+      do { faixa = Math.floor(Math.random() * FAIXAS.length); } while (usadas.has(faixa));
+      usadas.add(faixa);
+
+      // Uma em cada quatro é chave: é o item que move o jogo inteiro, então
+      // aparece bem mais do que a raridade dela na pista de verdade.
+      const sorte = Math.random();
+      const item = sorte < 0.26 ? createKey() : sorte < 0.6 ? createStar() : createHeart();
+      item.position.set(FAIXAS[faixa] + (Math.random() - 0.5) * 0.8,
+                        1.2 + Math.sin(linha * 1.7) * 0.14, z);
+      item.rotation.y = linha * 0.6 + faixa;
+      item.scale.setScalar(1.3);
+      scene.add(item);
+      itens.push(item);
+    }
+    z -= 2.3 + Math.random() * 1.2;
+  }
+}
+
+renderer.render(scene, cam);
+
+// --- Quem está mesmo aparecendo? -----------------------------------------
+//
+// Olhar a imagem e contar não funciona: um unicórnio escondido atrás de
+// outro parece "estar lá". Então cada um é repintado de uma cor sólida só
+// dele, a cena inteira vira preta, e conta-se quantos pixels sobraram de
+// cada um depois de todos se taparem.
+if (params.has('medir')) {
+  const guardadas = new Map();
+  scene.traverse((o) => {
+    if (o.isMesh) { guardadas.set(o, o.material); o.material = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false }); }
+  });
+  postados.forEach((uni, i) => {
+    const cor = new THREE.Color(`rgb(${(i + 1) * 11}, 0, 0)`);
+    uni.traverse((o) => { if (o.isMesh) o.material = new THREE.MeshBasicMaterial({ color: cor, fog: false }); });
+  });
+  // Os itens vão no canal verde, para não se confundirem com os unicórnios.
+  itens.forEach((item) => {
+    item.traverse((o) => { if (o.isMesh) o.material = new THREE.MeshBasicMaterial({ color: 0x00ff00, fog: false }); });
+  });
+  const fundo = scene.background; scene.background = new THREE.Color(0x000000);
+  const bruma = scene.fog; scene.fog = null;
+  renderer.render(scene, cam);
+
+  const leitor = document.createElement('canvas');
+  leitor.width = LARG; leitor.height = ALT;
+  const lx = leitor.getContext('2d', { willReadFrequently: true });
+  lx.drawImage(tela, 0, 0);
+  const dados = lx.getImageData(0, 0, LARG, ALT).data;
+  const conta = new Map();
+  let pixelsDeItem = 0;
+  for (let i = 0; i < dados.length; i += 4) {
+    if (dados[i + 1] > 200 && !dados[i]) { pixelsDeItem += 1; continue; }   // verde = item
+    if (dados[i + 1] || dados[i + 2] || !dados[i]) continue;                // vermelho = unicórnio
+    conta.set(dados[i], (conta.get(dados[i]) || 0) + 1);
+  }
+  // Quem toca a moldura está sendo cortado — e cortado não conta como
+  // "aparecendo", por mais pixels que tenha.
+  const naBorda = new Set();
+  const marca = (i) => { if (dados[i] && !dados[i + 1] && !dados[i + 2]) naBorda.add(dados[i]); };
+  for (let y = 0; y < ALT; y++) {
+    for (const c of [0, 1, LARG - 2, LARG - 1]) marca((y * LARG + c) * 4);
+  }
+  for (let c = 0; c < LARG; c++) {
+    for (const y of [0, 1, ALT - 2, ALT - 1]) marca((y * LARG + c) * 4);
+  }
+  document.getElementById('medida').textContent = `ITENS:${pixelsDeItem} ` + postados
+    .map((uni, i) => `${uni.userData.quem}:${conta.get((i + 1) * 11) || 0}${naBorda.has((i + 1) * 11) ? ':CORTADO' : ''}`)
+    .join(' ');
+
+  scene.background = fundo; scene.fog = bruma;
+  for (const [malha, material] of guardadas) malha.material = material;
+  renderer.render(scene, cam);
+}
+
+// --- O letreiro, por cima ------------------------------------------------
+//
+// Desenhado em 2D sobre a imagem já renderizada, não como placa dentro da
+// cena: é assim que ele fica legível em qualquer fundo e não tapa ninguém
+// de corpo inteiro.
+const final = document.getElementById('final');
+final.width = LARG; final.height = ALT;
+const x2 = final.getContext('2d');
+x2.drawImage(tela, 0, 0);
+
+const meio = LARG / 2;
+const base = ALT * 0.845;
+const corpo = Math.round(LARG * 0.092);
+x2.font = `600 ${corpo}px Fredoka, system-ui, sans-serif`;
+x2.textAlign = 'center';
+x2.textBaseline = 'middle';
+x2.lineJoin = 'round';
+x2.miterLimit = 2;
+
+const NOME = 'UnicornRush';
+
+// Sombra macia, para o nome descolar do fundo.
+x2.save();
+x2.shadowColor = 'rgba(60, 20, 80, 0.35)';
+x2.shadowBlur = corpo * 0.22;
+x2.shadowOffsetY = corpo * 0.07;
+x2.lineWidth = corpo * 0.34;
+x2.strokeStyle = '#ffffff';
+x2.strokeText(NOME, meio, base);
+x2.restore();
+
+// Contorno branco grosso, depois um fio rosa-escuro, e o miolo em degradê.
+x2.lineWidth = corpo * 0.30;
+x2.strokeStyle = '#ffffff';
+x2.strokeText(NOME, meio, base);
+x2.lineWidth = corpo * 0.075;
+x2.strokeStyle = '#d63a6d';
+x2.strokeText(NOME, meio, base);
+
+const tinta = x2.createLinearGradient(0, base - corpo * 0.6, 0, base + corpo * 0.6);
+tinta.addColorStop(0, '#ff8fb8');
+tinta.addColorStop(0.52, '#ff5d8f');
+tinta.addColorStop(1, '#f04b86');
+x2.fillStyle = tinta;
+x2.fillText(NOME, meio, base);
+
+if (params.has('exportar')) {
+  document.getElementById('png').textContent = final.toDataURL('image/png').split(',')[1];
+}
+
+// Os dois jeitos de esta imagem sair errada sem parecer errada: a fonte do
+// jogo não carregar (aí o nome sai numa letra qualquer) e um unicórnio novo
+// ficar de fora da foto.
+document.title = `fonte:${temFonte ? 'ok' : 'FALTOU'} unicornios:${naFoto}/${CHARACTER_LIST.length}`;
+</script>
+</body>
+</html>
