@@ -40,6 +40,7 @@ export function createUI() {
   const speedValue = $('#speed-value');
   const speedBar = speedPanel.querySelector('.gauge-bar i');
   const toast = $('#toast');
+  const contagem = $('#contagem');
   const lesson = $('#lesson');
   const lessonBox = $('#lesson-box');
   const lessonDots = $('#lesson-dots');
@@ -371,6 +372,18 @@ export function createUI() {
       // útil da área que rola) o `scrollTop` "pega". Atribuir junto com o
       // `innerHTML`, lá em cima, ficava preso em zero.
       if (scroll !== null) extra.scrollTop = scroll;
+    },
+
+    // O número gigante da largada. `null` apaga.
+    setCountdown: (texto) => {
+      if (!texto) { contagem.hidden = true; contagem.classList.remove('pop'); return; }
+      contagem.hidden = false;
+      contagem.textContent = texto;
+      // Reinicia a animação: sem forçar o cálculo do layout no meio, o
+      // navegador junta o remove e o add num só quadro e o "2" não pula.
+      contagem.classList.remove('pop');
+      void contagem.offsetWidth;
+      contagem.classList.add('pop');
     },
 
     hideOverlay: () => {

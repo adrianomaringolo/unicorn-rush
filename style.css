@@ -2149,3 +2149,35 @@ html, body {
 .voz-item:active { transform: translateY(1px); }
 .voz-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .voz-marca .fi { width: 16px; height: 16px; }
+
+
+/* --- A contagem antes de largar (3, 2, 1, Vai!) -------------------------- */
+
+#contagem {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  translate: -50% -50%;
+  z-index: 17;              /* acima do HUD, abaixo do toast e do cartão */
+  pointer-events: none;
+  font-size: clamp(64px, 22vw, 130px);
+  font-weight: 700;
+  color: var(--pink);
+  /* O mesmo contorno do letreiro do jogo: legível em qualquer pista, da
+     grama clara do Campo ao roxo escuro da Noite. */
+  text-shadow:
+    3px 4px 0 #fff, -3px 4px 0 #fff, 3px -2px 0 #fff, -3px -2px 0 #fff,
+    5px 8px 0 rgba(122, 78, 199, .3);
+}
+#contagem.pop { animation: contagem-pop .5s ease-out; }
+
+@keyframes contagem-pop {
+  0% { opacity: 0; scale: 1.6; }
+  22% { opacity: 1; scale: 1; }
+  75% { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: .82; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #contagem.pop { animation: none; }
+}

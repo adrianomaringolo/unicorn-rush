@@ -129,6 +129,13 @@ export const sfx = {
     });
   }),
 
+  // A largada: três toques iguais e um último que sobe. É o mesmo desenho
+  // de qualquer contagem — o que muda no fim avisa que acabou.
+  contagem: safe(() => blip(tom(620), 0.16, 'triangle', 0.13)),
+  vai: safe(() => {
+    [880, 1320].forEach((f, i) => setTimeout(() => blip(tom(f), 0.24, 'triangle', 0.15), i * 90));
+  }),
+
   gameOver: safe(() => [440, 350, 260].forEach((f, i) => setTimeout(() => blip(f, 0.3, 'triangle'), i * 160))),
 
   // Fase completa: uma fanfarra curta subindo (dó–mi–sol–dó) com a última

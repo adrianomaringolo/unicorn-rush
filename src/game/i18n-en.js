@@ -317,6 +317,7 @@ export const EN = {
   'Vamos correr?': 'Shall we run?',
   '▶️ JOGAR': '▶️ PLAY',
   '▶️ VAMOS!': "▶️ LET'S GO!",
+  'Vai!': 'Go!',
   'A história': 'The story',
   'Estatísticas': 'Stats',
   '📊 Estatísticas': '📊 Stats',

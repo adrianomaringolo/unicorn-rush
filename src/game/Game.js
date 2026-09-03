@@ -153,6 +153,7 @@ export class Game {
     this.ui.onPause(() => this.togglePause());
     this.rush = false;                       // o ⚡ está apertado?
     this.rushLook = 0;                       // 0…1: o quanto as asas já cresceram
+    this.contando = false;                   // a contagem da largada está no ar?
     this.ui.onRush(() => this.toggleRush());
 
     this.setupMuteButton();
@@ -663,7 +664,6 @@ export class Game {
     this.world.placeStart();     // o portal de partida, em toda corrida
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
-    this.ui.showPause(true);
     // O ⚡ vale nas Fases também: correr mais rápido junta as chaves antes,
     // ao preço de mais obstáculo por segundo. E ele **atravessa a troca de
     // fase**: quem escolheu correr rápido não aperta de novo a cada fase —
@@ -671,6 +671,8 @@ export class Game {
     this.rush = this.rush && this.isFastHere();
     if (!this.rush) this.rushLook = 0;
     this.ui.showRush(this.isFastHere(), this.rush);
+
+    this.largar(() => this.ui.showPause(true));
   }
 
   // Grade das doze fases. A que ainda não abriu fica do mesmo tamanho das
@@ -811,6 +813,7 @@ export class Game {
   // O cantinho de onde tudo sai e para onde tudo volta.
   showHome() {
     this.fecharViewer();
+    this.pararContagem();
     this.state = STATE.READY;
     this.screen = 'home';
     this.ui.showPause(false);
@@ -2048,7 +2051,9 @@ export class Game {
   // Esc/P ou tocando em "Continuar".
   togglePause() {
     if (this.state === STATE.PAUSED) { this.resume(); return; }
-    if (this.state !== STATE.PLAYING) return;
+    // Pausar no meio da contagem deixaria os tempos dela rodando por trás
+    // do cartão, e a corrida largaria sozinha.
+    if (this.state !== STATE.PLAYING || this.contando) return;
     this.pause();
   }
 
@@ -2104,17 +2109,66 @@ export class Game {
     this.world.placeStart();     // o portal de partida, em toda corrida
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
-    this.ui.showPause(true);
     // O ⚡ só aparece se este unicórnio for rápido nesta pista.
     this.rush = false;
     this.rushLook = 0;
     this.ui.showRush(this.isFastHere(), false);
-    // A lição começa aqui: a aula do ⚡ só entra se o botão existir nesta
-    // combinação de unicórnio e pista.
-    if (this.mode.scripted) {
-      this.lessons = lessonsFor({ rapido: this.isFastHere() });
-      this.startLesson(0);
-    }
+
+    this.largar(() => {
+      this.ui.showPause(true);
+      // A lição começa aqui: a aula do ⚡ só entra se o botão existir nesta
+      // combinação de unicórnio e pista.
+      if (this.mode.scripted) {
+        this.lessons = lessonsFor({ rapido: this.isFastHere() });
+        this.startLesson(0);
+      }
+    });
+  }
+
+  // Corta a contagem no meio (voltar ao menu, recomeçar).
+  pararContagem() {
+    clearTimeout(this.timerContagem);
+    this.contando = false;
+    this.ui.setCountdown(null);
+  }
+
+  // 3, 2, 1, Vai! — antes de toda corrida.
+  //
+  // A pista já corre devagar por baixo (é o mesmo mundo parado das telas de
+  // menu), então a criança vê para onde vai antes de precisar reagir. O que
+  // a contagem impede é o movimento: sem ela, quem largava com o dedo já na
+  // seta trocava de faixa antes de ver o primeiro obstáculo.
+  //
+  // O botão de pausa e a lição só entram depois — pausar no meio da contagem
+  // deixaria os tempos rodando por trás do cartão.
+  largar(aoTerminar) {
+    const passos = ['3', '2', '1', t('Vai!')];
+    let i = 0;
+    this.contando = true;
+    clearTimeout(this.timerContagem);
+
+    const passo = () => {
+      // Saiu da corrida no meio da contagem (voltou para o menu): abandona.
+      if (this.state !== STATE.PLAYING) {
+        this.contando = false;
+        this.ui.setCountdown(null);
+        return;
+      }
+      const ultimo = i === passos.length - 1;
+      this.ui.setCountdown(passos[i]);
+      if (ultimo) sfx.vai(); else sfx.contagem();
+      i += 1;
+
+      this.timerContagem = setTimeout(() => {
+        if (i < passos.length) return passo();
+        this.ui.setCountdown(null);
+        this.contando = false;
+        if (this.state === STATE.PLAYING) aoTerminar?.();
+        return undefined;
+      }, ultimo ? 420 : 520);
+    };
+
+    passo();
   }
 
   // A lição é sempre com a **Uni no Campo**: é a combinação que todo mundo
@@ -2333,7 +2387,7 @@ export class Game {
       else if (this.screen === 'story') this.turnPage(dir);
       return;
     }
-    if (this.state !== STATE.PLAYING) return;
+    if (this.state !== STATE.PLAYING || this.contando) return;
     const antes = this.player.lane;
     this.player.lane = THREE.MathUtils.clamp(this.player.lane + dir, 0, LANES.length - 1);
     // Só conta como movimento se ele realmente saiu do lugar: bater na
@@ -2344,7 +2398,7 @@ export class Game {
   // Pulo duplo: o primeiro sai do chão, o segundo é no ar mesmo — a asa
   // bate de novo. Passou de MAX_JUMPS, só depois de encostar no chão.
   jump() {
-    if (this.state !== STATE.PLAYING) return;
+    if (this.state !== STATE.PLAYING || this.contando) return;
     if (this.powers.boost > 0) return;      // já está voando
     const p = this.player;
     // `extraJump` é o Cometa, que não sabe parar: pula uma terceira vez.
@@ -2735,7 +2789,10 @@ export class Game {
 
   tick() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
-    const playing = this.state === STATE.PLAYING;
+    // Durante a contagem o mundo escorre devagar (o mesmo passo das telas de
+    // menu) mas nada é simulado: sem tempo correndo, sem colisão, sem
+    // pontuação.
+    const playing = this.state === STATE.PLAYING && !this.contando;
     this.elapsed += dt;
 
     if (playing) {

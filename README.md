@@ -887,6 +887,14 @@ salvo.
 
 ## Partida, distância e recorde na pista
 
+Toda corrida começa com uma contagem: **3, 2, 1, Vai!**, em números grandes
+no meio da tela. Durante ela a pista já escorre devagar — a criança vê para
+onde vai antes de precisar reagir —, mas nada é simulado: sem tempo correndo,
+sem colisão, sem pontuação, e as setas e o pulo não respondem. Sem isso, quem
+largava com o dedo já na seta trocava de faixa antes de ver o primeiro
+obstáculo. O botão de pausa e a primeira aula da lição só entram depois do
+"Vai!".
+
 Toda corrida começa passando por um **portal de partida**: uma faixa
 quadriculada atravessando o chão, dois postes, um travessão rosa com uma
 fileira de bandeirolas penduradas e bandeirinhas douradas no alto. Ele nasce a sete passos do
