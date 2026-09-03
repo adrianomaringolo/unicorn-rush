@@ -197,6 +197,11 @@ html, body {
 
 /* Avisinho no meio da tela quando pega um power-up */
 #toast {
+  /* Acima do cartão. O `#toast` vem antes do `#overlay` no HTML e nenhum dos
+     dois declarava camada, então o modal pintava por cima — o aviso de
+     "segure para abrir o cantinho dos adultos", que nasce justamente com um
+     modal aberto, aparecia atrás dele. */
+  z-index: 18;
   position: absolute;
   left: 50%;
   top: 38%;
@@ -283,7 +288,17 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* `dvh`, e não `vh`.
+     Em celular, `vh` é medido com a barra de endereço **escondida**: com ela
+     à vista, 92vh é maior que a tela — o cartão "acha" que cabe, não rola, e
+     os últimos botões ficam embaixo da barra sem nenhum sinal de que estão
+     lá. O `dvh` é a tela que existe agora, e encolhe junto com a barra.
+     (Tentei antes `100%` do #overlay; não funciona: com `align-content:
+     start` a linha do grid tem altura automática, e porcentagem não tem
+     contra o que resolver.)
+     A linha em `vh` fica como reserva para navegador sem `dvh`. */
   max-height: 92vh;
+  max-height: 92dvh;
 }
 /* Grade maior que o cartão: as pontas desbotam, para ficar claro que dá
    para rolar e que a fileira cortada não é um defeito. */
@@ -1103,6 +1118,18 @@ html, body {
      entra em ação. */
   min-height: 0;
   overflow-y: auto;
+
+  /* E que **se veja** que rola. No celular a barra de rolagem é invisível
+     até se arrastar, então o corte parecia um bug: a sombrinha só aparece
+     do lado em que ainda há botão escondido.
+     São quatro camadas: duas cor de cartão que tapam a sombra quando se
+     chega ao fim (`local`, andam com o conteúdo) e duas sombras presas às
+     bordas (`scroll`). */
+  background:
+    linear-gradient(var(--cream) 40%, rgba(255, 246, 251, 0)) top / 100% 20px no-repeat local,
+    linear-gradient(rgba(255, 246, 251, 0), var(--cream) 60%) bottom / 100% 20px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgba(122, 78, 199, .22), transparent) top / 100% 9px no-repeat,
+    radial-gradient(farthest-side at 50% 100%, rgba(122, 78, 199, .22), transparent) bottom / 100% 9px no-repeat;
 }
 
 .muted { opacity: .7; font-size: .88em; }
@@ -1233,11 +1260,11 @@ html, body {
    ficam sempre numa linha só — assim dá para ver a pista e o personagem
    enquanto escolhe. */
 @media (orientation: portrait) {
-  .card { max-height: 88vh; padding: 14px 14px 16px; }
+  .card { max-height: 88vh; max-height: 88dvh; padding: 14px 14px 16px; }
   /* O cartão de escolha deixa o unicórnio girando aparecer embaixo, mas com
      21 slots o elenco passa a valer mais do que o espelho: o cartão cresce
      até quase a tela toda e a grade rola por dentro. */
-  .card.picker { max-height: 86vh; }
+  .card.picker { max-height: 86vh; max-height: 86dvh; }
   /* A historinha é o que pode encolher, para as fichas e os botões caberem. */
   #overlay-text { font-size: clamp(12px, 3.3vw, 15px); line-height: 1.3; }
   .card h1 { font-size: clamp(24px, 7vw, 34px); }
@@ -1245,7 +1272,7 @@ html, body {
   .levels-grid { gap: 7px; }
   /* O cartão do hub é curtinho de propósito: o unicórnio girando tem que
      aparecer embaixo dele. */
-  .card.home { max-height: 72vh; }
+  .card.home { max-height: 72vh; max-height: 72dvh; }
 }
 
 /* Celular em pé e baixinho (iPhone SE e parecidos): aqui ver os seis de uma
@@ -1255,7 +1282,7 @@ html, body {
   /* Numa tela dessas o cartão toma quase tudo: com nove retratos em três
      fileiras, ver o elenco inteiro (e os preços de quem está trancado) vale
      mais do que ver o unicórnio girando embaixo. */
-  .card.picker { max-height: 88vh; }
+  .card.picker { max-height: 88vh; max-height: 88dvh; }
   /* Três colunas em vez de quatro: cabe na altura e o tile fica maior, que
      é o que importa para um dedo pequeno. */
   .levels-grid { grid-template-columns: repeat(3, 1fr); }
