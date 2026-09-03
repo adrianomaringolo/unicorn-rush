@@ -893,7 +893,8 @@ onde vai antes de precisar reagir —, mas nada é simulado: sem tempo correndo,
 sem colisão, sem pontuação, e as setas e o pulo não respondem. Sem isso, quem
 largava com o dedo já na seta trocava de faixa antes de ver o primeiro
 obstáculo. O botão de pausa e a primeira aula da lição só entram depois do
-"Vai!".
+"Vai!". **Voltar da pausa também conta**: quem parou para atender alguém
+largaria de novo com a pista andando e um obstáculo em cima.
 
 Toda corrida começa passando por um **portal de partida**: uma faixa
 quadriculada atravessando o chão, dois postes, um travessão rosa com uma
@@ -1069,7 +1070,9 @@ Não são cópias congeladas nem clones: são unicórnios montados pelo mesmo
 determinístico no tempo, os três galopam em sincronia de graça — e os ecos
 recebem o tempo com **0,12 s de atraso**, que é o que faz parecerem eco e não
 gêmeos. A pintura some: as dezenas de cores do original dão lugar a **um
-material só**, translúcido, compartilhado pelos dois.
+material só**, translúcido, compartilhado pelos dois — e bem apagado (0,26 de
+opacidade): a 0,45 os três competiam, e a criança perdia de vista qual deles
+está controlando.
 
 Custam 200 malhas (100 cada) sobre as 126 do personagem, num cenário de
 ~1100 — e só existem para um dos 22 unicórnios. Quem troca de personagem os

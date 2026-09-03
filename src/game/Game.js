@@ -216,7 +216,9 @@ export class Game {
     if (!this.character.reach) return;
 
     this.echoMaterial = new THREE.MeshBasicMaterial({
-      color: 0xe9e2ff, transparent: true, opacity: 0.45, depthWrite: false, fog: false,
+      // Bem apagados: são eco, não gêmeos. A 0,45 eles competiam com o
+      // próprio Eco e a criança perdia de vista qual dos três ela controla.
+      color: 0xe9e2ff, transparent: true, opacity: 0.26, depthWrite: false, fog: false,
     });
 
     this.echoes = [-1, 1].map((lado) => {
@@ -2082,9 +2084,14 @@ export class Game {
     if (this.state !== STATE.PAUSED) return;
     this.state = STATE.PLAYING;
     this.ui.hideOverlay();
-    this.ui.showPause(true);
     this.ui.showRush(this.isFastHere(), this.rush);
     this.clock.getDelta();       // descarta o tempo parado
+
+    // Volta com contagem, como a largada. Quem pausou para atender alguém
+    // larga de novo com a pista já andando e um obstáculo em cima — a
+    // contagem devolve o mesmo instante de se preparar que a corrida teve
+    // no começo.
+    this.largar(() => this.ui.showPause(true));
   }
 
   start(modeId = this.mode.id, difficultyId = this.difficulty.id) {
