@@ -660,8 +660,9 @@ export const CHARACTERS = {
     wing: { style: 'veil', colors: [0xf3eeff, 0xe3dcff, 0xd8cff5] },
     mark: { shape: 'heart', color: 0xc09cff },
     voice: 1.0,
-    // A Bruma, onde ninguém enxerga, e o Vilarejo, onde há gente.
-    fast: ['bruma', 'vilarejo'],
+    // Os dois lugares onde um eco existe: a Bruma, onde ninguém enxerga, e a
+    // Caverna, onde cada passo volta duas vezes.
+    fast: ['bruma', 'caverna'],
     // Nunca mais sozinho: o eco dele corre na faixa ao lado e pega o que
     // tem lá também (ver Game.checkCollisions).
     reach: 3.4,

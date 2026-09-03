@@ -173,7 +173,7 @@ corrida. Fora das pistas dele o botão nem aparece.
 | ⚡ Relâmpago | **Tempestade**, Céu | nasceu no raio da tempestade, e mora nas nuvens do Céu |
 | 🍿 Pipoca | **Parque**, Vilarejo | as duas pistas de gente, onde a música não para |
 | 🐚 Pérola | **Oceano**, Bruma | as duas de pouca visibilidade: ela enxerga onde ninguém enxerga |
-| 💫 Eco | **Bruma**, Vilarejo | a neblina onde ele viveu invisível, e o lugar com mais gente |
+| 💫 Eco | **Bruma**, Caverna | a neblina onde ele viveu invisível, e o lugar onde cada passo volta duas vezes |
 
 O campo `fast` de cada personagem em `src/models/characters.js` é só a lista
 de ids de pista; o multiplicador fica em `RUSH_SPEED`, no `config.js`.
