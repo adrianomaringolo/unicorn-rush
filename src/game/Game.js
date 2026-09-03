@@ -1233,24 +1233,37 @@ export class Game {
       ? `<button class="ver3d" data-pick="ver3d" title="${t('Ver em 3D')}">🧊 3D</button>`
       : '';
 
-    // Ouvir a ficha inteira, para quem ainda não lê.
+    // Ouvir, para quem ainda não lê. Dois botões, porque são duas coisas
+    // diferentes: quem é ele (a história) e o que ele faz (o poder e as
+    // pistas). Quem já sabe a história e quer só saber o poder não precisa
+    // ouvir tudo de novo.
     //
-    // Só aparece com a voz ligada — sem ela o botão não faria nada, e um
-    // botão que não faz nada é pior que nenhum. O que ele lê é a ficha toda,
-    // na ordem em que está escrita: nome, quem é, a história e o poder. É a
-    // mesma informação que a criança que lê recebe.
-    const paraOuvir = [
+    // Só aparecem com a voz ligada — sem ela o botão não faria nada, e um
+    // botão que não faz nada é pior que nenhum.
+    //
+    // A voz lê texto, não figurinha: sem tirar os emoji, o "⭐" no meio de
+    // "as estrelas ⭐ valem o dobro" vira "estrela branca média" em alguns
+    // aparelhos, no meio da frase.
+    const semEmoji = (texto) => String(texto)
+      .replace(/<[^>]*>/g, '')
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{2600}-\u{27BF}]/gu, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const falaHistoria = semEmoji([
       oculto ? t('Ninguém sabe quem é.') : `${item.name}.`,
       !oculto && loja.subtitulo(item) ? `${loja.subtitulo(item)}.` : '',
-      oculto
-        ? t('Dizem que alguém espera na torre da neblina.')
-        : loja.descricao(item),
-      !oculto && kind === 'character' && item.power ? `${item.power}.` : '',
-    ].filter(Boolean).join(' ');
+      oculto ? t('Dizem que alguém espera na torre da neblina.') : loja.descricao(item),
+    ].filter(Boolean).join(' '));
 
-    const ouvir = speechOn()
-      ? `<button class="ouvir" data-pick="ouvir" title="${t('Ouvir')}">🔊</button>`
-      : '';
+    const falaPoder = semEmoji([
+      !oculto && kind === 'character' && item.power ? `${item.power}.` : '',
+      rapidas || rapidasDaPista,
+    ].filter(Boolean).join(' '));
+
+    const botaoOuvir = (qual) => `<button class="ouvir" data-pick="${qual}" title="${t('Ouvir')}">🔊</button>`;
+    const ouvir = speechOn() ? botaoOuvir('ouvir') : '';
+    const ouvirPoder = speechOn() && falaPoder ? botaoOuvir('ouvir-poder') : '';
 
     this.ui.showOverlay({
       picker: true,
@@ -1265,8 +1278,10 @@ export class Game {
           <p class="shop-story">${ouvir}${oculto
             ? t('Ninguém sabe quem é. Dizem que alguém espera na torre da neblina, e que só aparece no dia em que o último amigo sair de trás da porta dele.')
             : loja.descricao(item)}</p>
-          ${poder}
-          ${rapidas}
+          ${poder ? `<p class="shop-power">${ouvirPoder}${poder}</p>` : ''}
+          ${rapidas || rapidasDaPista
+            ? `<p class="shop-fast">${poder ? '' : ouvirPoder}${rapidas || rapidasDaPista}</p>`
+            : ''}
           ${rodape}
         </div>
       `,
@@ -1276,7 +1291,8 @@ export class Game {
 
     this.ui.bindExtra((qual) => {
       if (qual === 'ver3d') { sfx.tap(); this.showItemViewer(kind, id); }
-      if (qual === 'ouvir') { sfx.tap(); speak(paraOuvir); }
+      if (qual === 'ouvir') { sfx.tap(); speak(falaHistoria); }
+      if (qual === 'ouvir-poder') { sfx.tap(); speak(falaPoder); }
     });
   }
 
