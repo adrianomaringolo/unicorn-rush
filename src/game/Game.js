@@ -12,6 +12,7 @@ import {
   CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER, characterPrice, CHARACTER_SLOTS, isFastOn,
 } from '../models/characters.js';
 import { getPortraits } from '../models/portraits.js';
+import { createViewer3d } from '../models/viewer3d.js';
 import { getTrackPortraits } from '../models/trackPortraits.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
@@ -803,6 +804,7 @@ export class Game {
 
   // O cantinho de onde tudo sai e para onde tudo volta.
   showHome() {
+    this.fecharViewer();
     this.state = STATE.READY;
     this.screen = 'home';
     this.ui.showPause(false);
@@ -1108,6 +1110,7 @@ export class Game {
   // troca o modelo 3D atrás do cartão — sem ficha no meio do caminho e sem
   // confirmar: a escolha é a própria resposta.
   showCharacterPicker() {
+    this.fecharViewer();
     this.state = STATE.READY;
     this.screen = 'character';
     this.ui.showPause(false);
@@ -1135,6 +1138,7 @@ export class Game {
   // É um momento, não um menu: retrato grande, a historinha inteira e um só
   // botão — que é onde a criança lê quem é aquele antes de escolher.
   showItemSheet(kind, id) {
+    this.fecharViewer();
     const loja = this.shopOf(kind);
     const item = loja.obter(id);
     if (!item) return loja.voltar();
@@ -1210,6 +1214,17 @@ export class Game {
         : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
           + `${t('Custa <b>🔑 {preco}</b> · você tem <b>🔑 {tenho}</b>', { preco, tenho })}</p>`;
 
+    // Ver de perto e girar. Não aparece para o mistério: o Eco não pode ser
+    // examinado antes de ser encontrado.
+    const ver3d = kind === 'character' && !oculto
+      ? [{
+        label: t('🔄 Ver em 3D'),
+        hint: t('gire com o dedo ou o mouse'),
+        secondary: true,
+        onClick: () => this.showItemViewer(kind, id),
+      }]
+      : [];
+
     this.ui.showOverlay({
       picker: true,
       title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
@@ -1225,9 +1240,52 @@ export class Game {
           ${rodape}
         </div>
       `,
-      buttons: [botao],
+      buttons: [botao, ...ver3d],
       back: () => loja.voltar(),
     });
+  }
+
+  // O unicórnio de perto, girando com o dedo.
+  //
+  // O retrato da ficha é sempre o mesmo perfil; aqui dá para ver o outro
+  // lado da crina, a marca da anca e as asas por trás.
+  showItemViewer(kind, id) {
+    const loja = this.shopOf(kind);
+    const item = loja.obter(id);
+    if (!item || kind !== 'character') return this.showItemSheet(kind, id);
+
+    this.fecharViewer();
+    this.state = STATE.READY;
+    this.screen = 'viewer';
+    this.ui.showPause(false);
+
+    const voltar = () => this.showItemSheet(kind, id);
+
+    this.ui.showOverlay({
+      picker: true,
+      title: `${item.emoji} ${item.name}`,
+      html: '<div class="viewer-vaga"></div>'
+        + `<p class="viewer-dica">${t('gire com o dedo ou o mouse')}</p>`,
+      buttons: [{ label: t('⬅️ Voltar'), huge: true, onClick: voltar }],
+      back: voltar,
+    });
+
+    // A tela 3D não cabe no `html` do cartão (é um <canvas> vivo, não texto),
+    // então entra depois, na vaga deixada acima.
+    const vaga = document.querySelector('#overlay-extra .viewer-vaga');
+    if (!vaga) return;
+    this.viewer = createViewer3d(item, {
+      altura: Math.max(200, Math.min(340, Math.round(innerHeight * 0.4))),
+    });
+    vaga.appendChild(this.viewer.dom);
+  }
+
+  // Sem isto cada abertura deixaria um contexto WebGL para trás — e o
+  // navegador, ao estourar o limite, descarta os antigos, inclusive o do
+  // jogo que está rodando atrás do cartão.
+  fecharViewer() {
+    this.viewer?.dispose();
+    this.viewer = null;
   }
 
   // Quantos unicórnios ainda faltam libertar (para a ficha do Eco).

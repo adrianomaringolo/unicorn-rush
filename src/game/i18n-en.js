@@ -319,6 +319,8 @@ export const EN = {
   '⚡ {nome} corre mais rápido nas pistas marcadas': '⚡ {nome} runs faster on the marked tracks',
   'já é o escolhido': 'already chosen',
   '✅ Escolher esse': '✅ Choose this one',
+  '🔄 Ver em 3D': '🔄 See in 3D',
+  'gire com o dedo ou o mouse': 'spin it with your finger or the mouse',
   '{nome} vem correr com você': '{nome} comes and runs with you',
   'é para lá que a corrida vai': "that's where the race goes",
   '🔑 Trocar {preco} chaves': '🔑 Trade {preco} keys',

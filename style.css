@@ -1946,3 +1946,34 @@ html, body {
   background: none;
   border-color: transparent;
 }
+
+/* --- O unicórnio de perto, para girar (ver models/viewer3d.js) ----------- */
+
+.viewer-vaga {
+  display: flex;
+  justify-content: center;
+}
+.viewer3d {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 22px;
+  background: linear-gradient(#fff9fd, #f6ecff);
+  border: 3px solid #f3dcef;
+  overflow: hidden;
+  /* O dedo aqui gira o bicho; sem isto o navegador entenderia o arrasto
+     como rolagem do cartão e o unicórnio não sairia do lugar. */
+  touch-action: none;
+  cursor: grab;
+}
+.viewer3d.girando { cursor: grabbing; }
+.viewer3d-tela {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.viewer-dica {
+  margin: 10px 0 0 !important;
+  text-align: center;
+  font-size: .82rem;
+  color: #a98bc4;
+}

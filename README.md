@@ -277,6 +277,37 @@ lugar deles nasce a chave**, que sobe e some. Os cinquenta dividem uma
 geometria e um material só, então a animação inteira custa pouco (ver
 `src/models/keyReward.js`).
 
+### Ver de perto e girar
+
+A ficha de cada unicórnio tem o botão **🔄 Ver em 3D**: abre o modelo de
+verdade num painel, girando devagar sozinho, e o dedo (ou o mouse) o gira
+para qualquer lado. É onde se vê o que o retrato esconde — o outro lado da
+crina, a marca da anca, as asas por trás.
+
+O retrato da grade é uma foto de perfil, sempre do mesmo ângulo, gerada uma
+vez e guardada. Aqui é o `createUnicorn` rodando ao vivo, com o mesmo
+`animateUnicorn` do jogo: ele galopa parado enquanto se gira.
+
+Quem gira é um **pivô**, não o unicórnio: assim o `animateUnicorn` continua
+mandando na pose sem brigar com a rotação do dedo. A inclinação para cima e
+para baixo é presa em ±0,5 rad — de cabeça para baixo ninguém reconhece o
+personagem, e uma criança não teria como voltar.
+
+O botão **não aparece no Eco enquanto ele for mistério**: examinar de perto
+quem ninguém deveria conseguir ver estragaria o fim da história.
+
+**A distância da câmera foi medida, não escolhida no olho.** Girando o maior
+do elenco de 30 em 30 graus e medindo a silhueta a cada volta, 6,9 é onde
+ele enche 90% da altura sem tocar a moldura em nenhuma delas; a 6,4 estoura
+e a 7,8 sobra margem. Os menores aparecem menores de propósito, como no
+retrato — o tamanho faz parte do personagem.
+
+Cada abertura monta o próprio contexto WebGL e o **descarta ao sair**
+(`Game.fecharViewer`). Sem isso, abrir a ficha de dez unicórnios deixaria
+dez contextos para trás, e o navegador, ao estourar o limite, começa a
+descartar os antigos — inclusive o do jogo, que está rodando atrás do
+cartão.
+
 ### O portal que se abre
 
 Trocar chaves por um unicórnio ou uma pista é a maior conquista do jogo —

@@ -1,6 +1,6 @@
 {
   "name": "unicornrush",
-  "version": "0.22.1",
+  "version": "0.23.0",
   "description": "Jogo infantil de corrida com um unicórnio, feito com three.js",
   "type": "module",
   "scripts": {
