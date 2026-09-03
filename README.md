@@ -435,6 +435,14 @@ faixas ao longo do rabo e é o mesmo de qualquer lado. São três fios grossos
 quase no mesmo lugar, com as cores defasadas entre eles, formando uma massa
 só — como na escultura.
 
+**A forma é a da escultura**: o rabo sai da garupa para trás (−0,72 rad, e
+não quase na vertical, que lia como vareta pendurada) e a curva das mechas o
+traz de volta para baixo, desenhando uma vírgula. Fecha numa ponta —
+`afunila: 0,92`, contra os 0,66 da crina.
+
+Os três fios ficam **quase colados**: abrindo 0,14 eles divergiam ao longo do
+comprimento e, de trás, liam como três rabos.
+
 A lição que ficou: largura da mecha é o que se vê **por trás**, espalhamento
 é o que se vê **de lado**. São eixos diferentes, e dá para consertar um
 estragando o outro sem perceber, se só se olhar de um ângulo.

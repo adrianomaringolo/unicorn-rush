@@ -24,7 +24,10 @@ const mat = (color, opts = {}) =>
 // `achatarEm` diz em que eixo a mecha é fina. O padrão é `x` (fina de lado,
 // larga de frente), que serve para crina e franja. O rabo precisa do
 // contrário — ver o porquê em makeTail.
-function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0, achatarEm = 'x' } = {}) {
+// `afunila` é o quanto a mecha estreita da base até a ponta: 0,66 deixa a
+// ponta com um terço da largura (mecha de cabelo), 0,92 fecha quase num bico
+// (a ponta do rabo da escultura).
+function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0, achatarEm = 'x', afunila = 0.66 } = {}) {
   const root = new THREE.Group();
   const joints = [];
   const segLength = length / segments;
@@ -33,8 +36,8 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
   for (let i = 0; i < segments; i++) {
     // Afina até um terço: em bico vira espinho de cacto, e sem afinar
     // nenhum vira tábua. O meio-termo é o que lê como mecha.
-    const top = width * (1 - (i / segments) * 0.66);
-    const bottom = width * (1 - ((i + 1) / segments) * 0.66);
+    const top = width * (1 - (i / segments) * afunila);
+    const bottom = width * (1 - ((i + 1) / segments) * afunila);
 
     const joint = new THREE.Group();
     if (i > 0) joint.position.y = -segLength;
@@ -96,7 +99,7 @@ function makeMane(colors, fiery = false) {
     // pescoço. Em cima, elas formam uma silhueta recortada que se reconhece
     // de longe — que é o que uma crina faz num bicho correndo.
     const lock = makeLock(colors[row % colors.length], {
-      length: 0.32 + Math.sin(u * Math.PI * 0.85) * 0.3,
+      length: 0.26 + Math.sin(u * Math.PI * 0.85) * 0.22,
       width: 0.3,
       segments: 3,
       flatten: fiery ? 0.62 : 0.2,      // placa fina, vista de lado
@@ -134,15 +137,19 @@ function makeTail(colors, fiery = false) {
     // rabo em faixas, e ele é o mesmo de qualquer lado.
     const desloca = colors.slice(i).concat(colors.slice(0, i));
     const lock = makeLock(desloca, {
-      length: 1.45 - i * 0.09,           // desce até perto do jarrete
-      width: 0.21,
+      length: 1.5 - i * 0.09,
+      width: 0.3,                        // grosso na base, como na escultura
       segments: 8,
+      afunila: 0.92,                     // e fechando numa ponta
       flatten: fiery ? 0.8 : 0.9,        // quase redonda: fio, não fita
-      curva: fiery ? 0 : 0.15,
+      curva: fiery ? 0 : 0.24,           // vírgula, não vareta
       fiery,
     });
-    lock.position.set((i - 1) * 0.055, 0, (i - 1) * 0.045);
-    lock.rotation.z = (i - 1) * 0.14;
+    // Bem juntos, e quase sem abrir. Com 0,14 de abertura eles divergiam ao
+    // longo do comprimento e, de trás, liam como três rabos — que é o ângulo
+    // em que o jogo mostra o bicho.
+    lock.position.set((i - 1) * 0.03, 0, (i - 1) * 0.028);
+    lock.rotation.z = (i - 1) * 0.045;
     lock.userData.phase = i * 0.6;
     tail.add(lock);
     locks.push(lock);
@@ -758,7 +765,10 @@ export function animateUnicorn(unicorn, time, speed, grounded) {
       wave: 0.12, sway: 0.1, speed: 7,
     });
   }
-  tail.rotation.x = -0.18 - wind * 0.3 + Math.sin(t + 1) * 0.1;
+  // O rabo sai da garupa **para trás**, e a curva das mechas o traz de volta
+  // para baixo: é a vírgula da escultura. Quase na vertical (-0,18, como
+  // era) ele lia como uma vareta pendurada.
+  tail.rotation.x = -0.72 - wind * 0.3 + Math.sin(t + 1) * 0.1;
   forelock.rotation.x = 0.55 - wind * 0.45;
 
   const flap = grounded ? 0.22 : 0.6;
