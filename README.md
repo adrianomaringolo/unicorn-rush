@@ -387,6 +387,46 @@ branco filtrado com corpo médio, que se ouve em qualquer aparelho, e o
 **rugido** grave que vem depois e vai fechando o filtro enquanto some, como
 um som que se afasta (`ruido()` em `src/game/audio.js`).
 
+## A cara do unicórnio
+
+O modelo foi aproximado das **ilustrações do livro** (ver `assets/story/`),
+que são o desenho oficial da Uni. O que mudou, e por quê:
+
+**O focinho era uma caixa com uma bolinha na ponta.** A bolinha lia como
+nariz de palhaço e a quina da caixa era o oposto de fofo. Agora é uma esfera
+achatada — sem costura com o crânio — com uma **mancha** clara no fim, na
+cor `muzzle` do personagem, e duas narinas do tamanho de um alfinete. Na
+primeira tentativa as narinas eram três vezes isto e a cara virava focinho
+de porquinho: o que faz ler "cavalinho" é a mancha, e a narina só precisa
+existir.
+
+**O olho era uma bolinha escura**, que de perto lia como botão de casaco.
+Agora são três peças — branco, íris e um pontinho de luz —, que é o que a
+ilustração faz. As três ficam empilhadas ao longo da **normal do crânio**, e
+não do eixo Z: o olho fica na quina entre a frente e a lateral, e empilhar em
+Z deixaria a íris torta de perfil (o que passou a importar quando a ficha
+ganhou o 3D que gira).
+
+**As orelhas eram cones altos e finos** que, ao lado do chifre, viravam um
+segundo chifre — três pontas na mesma cabeça. Agora são baixas, largas e com
+o rosa por dentro.
+
+**A crina e o rabo eram retos.** As mechas ganharam uma `curva`: cada nó
+dobra um pouco em relação ao anterior, e o que era espeto virou onda. A
+curva é **somada** dentro do `animateLock`, não deixada na montagem — aquele
+laço roda a cada quadro e apagaria qualquer dobra.
+
+Nisso errei duas vezes seguidas, nas duas direções: primeiro engrossei as
+mechas para dar volume e elas viraram **tábuas coloridas**; depois tirei o
+afinamento e elas viraram tábuas de ponta quadrada. O que funciona é larga
+como lençol e **fina de perfil** (`flatten` 0,25), afinando até um terço da
+largura — em bico vira espinho de cacto, sem afinar nenhum vira tábua.
+
+O modelo é um só, então isto vale para os 22. E duas coisas saem do modelo e
+ficam gravadas — a animação do carregamento (`npm run gravar-uni`) e as
+imagens de anúncio (`npm run anuncio`): mexeu no unicórnio, refaz as duas,
+senão elas continuam mostrando a cara antiga.
+
 ## Modos de jogo
 
 | Modo | Como é |
