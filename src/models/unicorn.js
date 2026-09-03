@@ -21,7 +21,10 @@ const mat = (color, opts = {}) =>
 // `curva` é o quanto cada nó dobra em relação ao anterior: com 0 a mecha é
 // um espeto, e com 0,2 ela vira uma onda. É o que separa "fio de cabelo" de
 // "cabelo de desenho", que é o que as ilustrações do livro têm.
-function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0 } = {}) {
+// `achatarEm` diz em que eixo a mecha é fina. O padrão é `x` (fina de lado,
+// larga de frente), que serve para crina e franja. O rabo precisa do
+// contrário — ver o porquê em makeTail.
+function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0, achatarEm = 'x' } = {}) {
   const root = new THREE.Group();
   const joints = [];
   const segLength = length / segments;
@@ -44,7 +47,7 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
       material
     );
     mesh.position.y = -segLength / 2;
-    mesh.scale.x = flatten;          // fina de lado: mecha de cabelo, não tubo
+    mesh.scale[achatarEm] = flatten;   // fina num eixo: mecha de cabelo, não tubo
     mesh.castShadow = true;
 
     joint.add(mesh);
@@ -108,23 +111,36 @@ function makeMane(colors, fiery = false) {
 function makeTail(colors, fiery = false) {
   const tail = new THREE.Group();
   const locks = [];
-  const count = 6;
+  const count = 7;
 
   for (let i = 0; i < count; i++) {
-    const offset = i - (count - 1) / 2;
+    const meio = i - (count - 1) / 2;
+
+    // O rabo é fino **em Z** e espalhado **em Z**, ao contrário da crina.
+    //
+    // Foi onde errei três vezes. A mecha padrão é fina de lado (X) e larga de
+    // frente (Z); espalhando-as em X, elas se empilham uma atrás da outra e
+    // de perfil só se vê a face da primeira — o rabo virava uma tábua de uma
+    // cor só, com as outras aparecendo num filete na borda. Espalhadas em Z e
+    // finas em Z, cada mecha ocupa uma fatia da largura do rabo, e as cores
+    // correm lado a lado ao longo dele, que é como o arco-íris aparece na
+    // ilustração do livro.
+    //
+    // Achatar por opção (e não girar a mecha 90°) é o que mantém o balanço
+    // certo: `animateLock` gira os nós no X local, e uma mecha girada
+    // balançaria de lado em vez de para trás.
     const lock = makeLock(colors[i % colors.length], {
-      length: 0.95 - Math.abs(offset) * 0.06,
-      width: 0.26,                       // pluma, não fita
+      length: 1.0 - Math.abs(meio) * 0.05,   // ponta arredondada
+      width: 0.3,
       segments: 5,
-      flatten: fiery ? 0.7 : 0.42,
-      // Dobra para fora: o rabo abre em leque em vez de cair reto.
-      curva: fiery ? 0 : 0.13,
+      flatten: fiery ? 0.7 : 0.22,
+      curva: fiery ? 0 : 0.12,
+      achatarEm: 'z',
       fiery,
     });
-    // Bem juntinhas: de trás o rabo tem que parecer um tufo, não fitas soltas.
-    lock.position.set(offset * 0.075, 0, -Math.abs(offset) * 0.05);
-    lock.rotation.z = offset * 0.1;
-    lock.userData.phase = i * 0.55;
+    lock.position.set(0, 0, meio * 0.052);
+    lock.rotation.x = -Math.abs(meio) * 0.02;
+    lock.userData.phase = i * 0.5;
     tail.add(lock);
     locks.push(lock);
   }
@@ -132,6 +148,10 @@ function makeTail(colors, fiery = false) {
   tail.userData.locks = locks;
   return tail;
 }
+
+
+
+
 
 // ---------------------------------------------------------------------------
 // Asas
@@ -488,64 +508,41 @@ export function createUnicorn(character = CHARACTERS.uni) {
   skull.castShadow = true;
   head.add(skull);
 
-  // Focinho arredondado. Era uma caixa, e de frente a cara terminava numa
-  // quina — o oposto de fofo. Uma esfera achatada encosta no crânio sem
-  // costura e mantém o vocabulário de poucas faces do resto do jogo.
-  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), bodyMat);
-  // Curto e redondo: focinho comprido lê como cavalo adulto, e o alvo
-  // aqui é o pônei das ilustrações.
-  muzzle.scale.set(0.88, 0.78, 0.92);
-  muzzle.position.set(0, -0.1, -0.26);
+  const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.25, 0.34), bodyMat);
+  muzzle.position.set(0, -0.09, -0.3);
   muzzle.castShadow = true;
   head.add(muzzle);
 
-  // O focinho é uma **mancha** rente à cara, e não a bolinha que ficava
-  // saliente na ponta — de perfil aquilo lia como nariz de palhaço. Nas
-  // ilustrações do livro é uma marca clara no fim do focinho, com duas
-  // narinas do tamanho de um alfinete.
-  const mancha = new THREE.Mesh(new THREE.SphereGeometry(0.132, 10, 8), mat(character.muzzle));
-  mancha.scale.set(1, 0.86, 0.46);
-  mancha.position.set(0, -0.105, -0.375);
-  head.add(mancha);
-
-  // Narinas mínimas. Na primeira tentativa eram três vezes isto e a cara
-  // virava focinho de porquinho: o que faz ler "cavalinho" é a mancha, e a
-  // narina só precisa existir.
+  // Só as narinas na ponta. A bolinha que havia aqui lia como nariz de
+  // palhaço, e a mancha que tentei no lugar dela deixava o focinho de
+  // porquinho — duas marquinhas bastam.
+  //
+  // A cor sai da do personagem, escurecida: no tom original ela sumiria em
+  // quem é claro, e um preto fixo destoaria de quem é escuro.
+  const corNarina = new THREE.Color(character.muzzle).multiplyScalar(0.62);
   for (const side of [-1, 1]) {
-    const narina = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 5), mat(0xb07f92));
-    narina.scale.set(1, 1.5, 0.6);
-    narina.position.set(side * 0.038, -0.1, -0.428);
+    const narina = new THREE.Mesh(new THREE.SphereGeometry(0.019, 6, 5), mat(corNarina));
+    narina.scale.set(1, 1.5, 0.7);
+    narina.position.set(side * 0.052, -0.1, -0.468);
     head.add(narina);
   }
 
   const ears = [];
   for (const side of [-1, 1]) {
-    // O olho, em três peças: branco, íris e um brilhinho.
-    //
-    // Antes era uma bolinha escura só, que de perto lia como botão de casaco.
-    // O que faz o olho parecer vivo — e o bicho, fofo — é o branco em volta e
-    // o pontinho de luz; é o que as ilustrações do livro fazem.
-    //
-    // As três peças ficam empilhadas ao longo da **normal do crânio** (a
-    // direção que sai do centro da cabeça passando pelo olho), e não ao longo
-    // do Z: o olho fica na quina entre a frente e a lateral, então empilhar em
-    // Z deixaria a íris torta quando o bicho é visto de lado — e agora ele
-    // gira 360° na ficha.
-    const raio = 0.092 * shape.eye;
-    const fora = new THREE.Vector3(side * 0.23, 0.075, -0.2).normalize();
-    const olho = (r, cor, altura) => {
-      const m = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), mat(cor));
-      m.position.copy(fora).multiplyScalar(0.285 + altura);
-      head.add(m);
-      return m;
-    };
-    olho(raio, 0xfffaff, 0);                       // o branco
-    olho(raio * 0.56, 0x2f2350, raio * 0.55);      // a íris, deixando o branco à mostra
-    const brilho = olho(raio * 0.26, 0xffffff, raio * 0.86);
-    // O brilho não fica no meio: sai um pouco para cima e para o lado de
-    // fora, que é onde a luz bate.
-    brilho.position.x += side * raio * 0.34;
-    brilho.position.y += raio * 0.38;
+    const raioOlho = 0.07 * shape.eye;
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(raioOlho, 8, 8), mat(0x30203a));
+    eye.position.set(side * 0.22, 0.06, -0.2);
+    head.add(eye);
+
+    // O brilho: uma bolinha branca em cima do olho, do lado de fora, que é
+    // onde a luz bateria. É o que separa "olho" de "botão de casaco" — e
+    // custa uma peça, não as três de um olho montado em camadas.
+    const fora = new THREE.Vector3(side * 0.22, 0.06, -0.2).normalize();
+    const brilho = new THREE.Mesh(new THREE.SphereGeometry(raioOlho * 0.33, 6, 5), mat(0xffffff));
+    brilho.position.copy(eye.position).addScaledVector(fora, raioOlho * 0.7);
+    brilho.position.x += side * raioOlho * 0.26;
+    brilho.position.y += raioOlho * 0.3;
+    head.add(brilho);
 
     // Orelha baixinha e larga, com o rosa por dentro. Era um cone alto e
     // fino que, ao lado do chifre, virava um segundo chifre — três pontas
