@@ -1007,7 +1007,14 @@ export class Game {
 
   // Cantinho dos adultos: o que é de configuração sai da pilha de botões da
   // criança e fica atrás de um toque longo no 👑.
-  showGrownUps() {
+  // O cantinho dos adultos: idioma, voz, instalar — e as duas ferramentas
+  // perigosas, o modo teste e o apagar tudo.
+  //
+  // Elas moravam na tela de estatísticas, que é uma tela de olhar: a criança
+  // entra ali para ver quantas corridas fez, e encontrava, na mesma fileira
+  // de botões, um que apaga o progresso inteiro. Aqui atrás do toque longo na
+  // coroa, ninguém chega sem querer.
+  showGrownUps({ confirmandoApagar = false } = {}) {
     this.state = STATE.READY;
     this.screen = 'grown';
     this.ui.showPause(false);
@@ -1044,6 +1051,30 @@ export class Game {
           onClick: () => this.installApp(),
           secondary: true,
         }] : []),
+        {
+          label: isTestMode() ? t('🧪 Modo teste: ligado') : t('🧪 Modo teste: desligado'),
+          hint: isTestMode()
+            ? t('tudo liberado e nada é guardado · o jogo recarrega ao desligar')
+            : t('libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega'),
+          secondary: true,
+          onClick: () => this.toggleTestMode(),
+        },
+        confirmandoApagar
+          ? {
+            label: t('⚠️ Apagar mesmo?'),
+            hint: t('toque de novo para zerar tudo'),
+            secondary: true,
+            onClick: () => {
+              resetSave();
+              this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
+              this.character = CHARACTERS[this.save.choices.character];
+              this.track = TRACKS[this.save.choices.track];
+              this.buildWorld();
+              this.buildCharacter();
+              this.showGrownUps();
+            },
+          }
+          : { label: t('🧹 Recomeçar do zero'), onClick: () => this.showGrownUps({ confirmandoApagar: true }), secondary: true },
       ],
       back: () => this.showHome(),
     });
@@ -1945,7 +1976,7 @@ export class Game {
 
   // Tela de estatísticas: tudo o que está guardado no save, em números
   // grandes e barrinhas — dá para ver de longe.
-  showStats(confirmingReset = false) {
+  showStats() {
     this.state = STATE.READY;
     this.screen = 'stats';
     this.ui.showPause(false);
@@ -1991,30 +2022,6 @@ export class Game {
       html,
       buttons: [
         { label: t('⬅️ Voltar'), onClick: () => this.showHome() },
-        {
-          label: isTestMode() ? t('🧪 Modo teste: ligado') : t('🧪 Modo teste: desligado'),
-          hint: isTestMode()
-            ? t('tudo liberado e nada é guardado · o jogo recarrega ao desligar')
-            : t('libera todos os unicórnios e pistas sem guardar nada · o jogo recarrega'),
-          secondary: true,
-          onClick: () => this.toggleTestMode(),
-        },
-        confirmingReset
-          ? {
-            label: t('⚠️ Apagar mesmo?'),
-            hint: t('toque de novo para zerar tudo'),
-            secondary: true,
-            onClick: () => {
-              resetSave();
-              this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
-              this.character = CHARACTERS[this.save.choices.character];
-              this.track = TRACKS[this.save.choices.track];
-              this.buildWorld();
-              this.buildCharacter();
-              this.showStats();
-            },
-          }
-          : { label: t('🧹 Recomeçar do zero'), onClick: () => this.showStats(true), secondary: true },
       ],
     });
   }

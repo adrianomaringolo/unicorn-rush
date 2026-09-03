@@ -1093,6 +1093,16 @@ html, body {
   flex-direction: column;
   gap: 10px;
   align-items: stretch;
+  width: 100%;
+  /* A fileira precisa poder rolar. O cantinho dos adultos chega a sete
+     botões, e em tela baixa (aparelho pequeno, ou celular deitado) o último
+     caía fora do cartão sem deixar rastro — medido, terminava 120px abaixo
+     da borda da tela, e não havia como alcançá-lo.
+     O `min-height: 0` é o que permite encolher dentro do cartão flex: sem
+     ele o navegador respeita o tamanho do conteúdo e o `overflow` nunca
+     entra em ação. */
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .muted { opacity: .7; font-size: .88em; }
