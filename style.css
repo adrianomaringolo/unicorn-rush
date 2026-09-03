@@ -2079,7 +2079,9 @@ html, body {
 }
 .ajuste {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  /* `minmax(0, …)` no nome: com o `1fr` puro a coluna não encolhe abaixo do
+     próprio texto e espreme o valor até sumir. */
+  grid-template-columns: 26px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 11px 14px;
@@ -2095,11 +2097,23 @@ html, body {
 .ajuste.aviso { border-color: #ffb3c8; background: #fff4f7; }
 .ajuste-icone { font-size: 1.05rem; line-height: 1; }
 .ajuste-icone .fi { width: 20px; height: 20px; }
-.ajuste-nome { font-weight: 600; font-size: .95rem; }
+.ajuste-nome {
+  font-weight: 600;
+  font-size: .95rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ajuste-valor {
   font-size: .82rem;
   color: #a98bc4;
-  max-width: 46%;
+  /* Em `ch`, e não em `%`.
+     Porcentagem aqui resolve contra a própria coluna, que é `auto` e depende
+     do conteúdo: a conta fica circular e o navegador colapsava o valor para
+     uns 20px — no celular dava para ver duas letras e reticências, ou seja,
+     depois de mudar um ajuste não dava para conferir o que ficou. */
+  max-width: 13ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
