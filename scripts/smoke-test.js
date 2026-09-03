@@ -180,6 +180,40 @@ for (const track of TRACK_LIST) {
   }
   console.log(`   interface: ${daInterface.size} frases, nenhuma faltando`);
 
+  // E o contrário: texto em português **que nunca passou pelo `t()`**.
+  //
+  // A busca por `t('…')` só encontra o que alguém lembrou de embrulhar. Foi
+  // assim que "⚡ Corre mais rápido em" ficou em português no jogo inglês
+  // por semanas: a frase morava dentro de uma tag HTML, e ali ninguém olha.
+  // A regra aqui é outra — qualquer literal do código cujo **texto visível**
+  // (fora das tags e dos `${}`) tenha cara de português precisa ser chave do
+  // dicionário. Se for, está traduzido, tanto faz por qual caminho.
+  {
+    const PORTUGUES = /[àáâãéêíóôõúç]|\b(você|para|com|não|uma|mais|pela|essa|esse|aqui|agora|onde|todos|cada|corre)\b/i;
+    const NAO_CONTA = new Set(['🌍 Idioma · Language']);   // bilíngue de propósito
+    const soltas = [];
+    for (const linha of fonte.split('\n')) {
+      if (/^\s*(\/\/|\*)/.test(linha)) continue;
+      for (const lit of linha.match(/'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/g) || []) {
+        const corpo = lit.slice(1, -1);
+        // Literal que já traz um `t()` dentro está resolvido: o português
+        // que sobra nele é o argumento da tradução, não texto solto.
+        if (corpo.includes("t('") || corpo.includes('t(`')) continue;
+        const visivel = corpo.replace(/<[^>]*>|\$\{[^}]*\}/g, ' ').trim();
+        // Uma palavra sem acento é quase sempre nome de classe CSS
+        // ('agora', 'lida'); frase de gente tem acento ou tem duas palavras.
+        const palavras = visivel.split(/\s+/).filter(Boolean).length;
+        if (!/[àáâãéêíóôõúç]/i.test(visivel) && palavras < 2) continue;
+        if (visivel.length < 4 || !PORTUGUES.test(visivel)) continue;
+        if (EN[corpo] || NAO_CONTA.has(corpo)) continue;
+        soltas.push(corpo.slice(0, 70));
+      }
+    }
+    if (soltas.length) {
+      throw new Error(`português solto, sem passar pelo dicionário:\n   ${soltas.join('\n   ')}`);
+    }
+  }
+
   // Chave repetida no dicionário é o erro que não dá erro: a segunda
   // simplesmente apaga a primeira quando o objeto é montado. Só dá para
   // ver lendo o arquivo como texto.

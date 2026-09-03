@@ -1199,10 +1199,20 @@ export class Game {
 
     // As pistas em que ele corre mais rápido: é o que diferencia um
     // unicórnio do outro além da cor, então aparece na ficha.
+    // (O parâmetro se chamava `t` e sombreava a função de tradução — foi por
+    // isso que esta frase ficou em português no jogo em inglês.)
     const rapidas = !oculto && kind === 'character' && item.fast?.length
-      ? `<p class="shop-fast">⚡ Corre mais rápido em `
-        + item.fast.map((t) => `<b>${TRACKS[t]?.emoji || ''} ${TRACKS[t]?.name || t}</b>`).join(' e ')
-        + '</p>'
+      ? (() => {
+        const nomes = item.fast.map((pista) =>
+          `<b>${TRACKS[pista]?.emoji || ''} ${TRACKS[pista]?.name || pista}</b>`);
+        const lista = nomes.length > 1
+          ? t('{primeiras} e {ultima}', {
+            primeiras: nomes.slice(0, -1).join(', '),
+            ultima: nomes[nomes.length - 1],
+          })
+          : nomes[0];
+        return `<p class="shop-fast">${t('⚡ Corre mais rápido em {pistas}', { pistas: lista })}</p>`;
+      })()
       : '';
 
     // O preço só aparece em quem ainda não é seu; na pista, o lugar dele é a
@@ -1545,7 +1555,7 @@ export class Game {
     // Também são botões — dá para pular direto para uma página.
     const bolinhas = livro.map((p, i) => (
       `<button class="page-dot${i === indice ? ' agora' : ''}${i < indice ? ' lida' : ''}"`
-      + ` data-pick="ir:${i}" aria-label="Página ${i + 1}"`
+      + ` data-pick="ir:${i}" aria-label="${t('Página {n}', { n: i + 1 })}"`
       + ` aria-current="${i === indice}"></button>`
     )).join('');
 

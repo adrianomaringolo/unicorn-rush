@@ -178,7 +178,7 @@ export function createUI() {
         lessonDots.appendChild(b);
       }
       lessonDots.hidden = false;
-      lessonDots.setAttribute('aria-label', `Aula ${feitas + 1} de ${total}`);
+      lessonDots.setAttribute('aria-label', t('Aula {n} de {total}', { n: feitas + 1, total }));
     },
 
     // A seta do movimento que a aula pede. Aparece piscando e, no celular,
