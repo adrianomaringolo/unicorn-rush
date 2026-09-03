@@ -3,6 +3,10 @@
 Em inglês, para publicar com a imagem `assets/anuncio/unicornrush-campo.png`
 (ou a noturna, `unicornrush-noite.png`).
 
+⚠️ **Falta o endereço do jogo.** Onde está `COLE-AQUI-O-ENDERECO`, ponha a
+URL da Vercel — não há nenhuma gravada no repositório, então não tinha como
+eu preencher.
+
 ---
 
 I built a 3D game for my kids. Then they started finding the bugs I couldn't.
@@ -35,5 +39,16 @@ the car, in a waiting room.
 The most useful thing wasn't a framework. It was watching a 7-year-old play
 it well, a 3-year-old play the obstacle-free mode, and both of them find, in
 minutes, the things I'd been guessing about for weeks.
+
+👉 **Want to let your kids have a go?** It's free, runs in any browser and
+installs like an app — no store, no account, no ads:
+COLE-AQUI-O-ENDERECO
+
+And if something breaks, or a four-year-old gets stuck somewhere I didn't
+plan for, please tell me. Every good fix in this project started with a child
+doing something I hadn't thought of — I'd rather hear it than guess again.
+
+Code's open, if you're curious how a unicorn gets drawn in code:
+github.com/adrianomaringolo/unicorn-rush
 
 #gamedev #threejs #webdev #pwa #kidstech
