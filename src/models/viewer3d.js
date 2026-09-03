@@ -46,12 +46,37 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
   const unicornio = createUnicorn(personagem);
   pivo.add(unicornio);
 
-  // Começa de três quartos, que é o ângulo em que se vê o focinho e o
-  // flanco ao mesmo tempo — de perfil ele parece uma figurinha, de frente
-  // some a marca da anca.
-  let anguloY = -0.9;
-  let anguloX = 0;
-  let embalo = 0;
+  // O eixo no **meio do bicho**, não nos pés.
+  //
+  // O modelo nasce em pé sobre a origem, então o centro dele fica quase dois
+  // metros acima. Girando em torno da origem, ele descrevia um arco enorme e
+  // saía do quadro — parecia um carrossel, não um giro. Descer o modelo
+  // dentro do pivô e subir o pivô no mesmo tanto põe o eixo no meio dele sem
+  // mexer em onde ele aparece.
+  const centro = new THREE.Box3().setFromObject(unicornio).getCenter(new THREE.Vector3());
+  unicornio.position.sub(centro);
+  pivo.position.copy(centro);
+
+  // Giro livre nas duas direções, sem trava: acumulado em quaternião e
+  // aplicado **por fora** (`premultiply`), nos eixos da câmera. Com ângulos
+  // de Euler, depois de meia volta o arrasto lateral passava a girar o bicho
+  // no sentido errado; assim, arrastar para a direita gira para a direita em
+  // qualquer posição em que ele esteja.
+  const giro = new THREE.Quaternion();
+  const frente = new THREE.Vector3();
+  const direita = new THREE.Vector3();
+
+  function girar(dx, dy) {
+    camera.getWorldDirection(frente);
+    direita.crossVectors(frente, camera.up).normalize();
+    giro.setFromAxisAngle(camera.up, dx);
+    pivo.quaternion.premultiply(giro);
+    giro.setFromAxisAngle(direita, dy);
+    pivo.quaternion.premultiply(giro);
+  }
+
+  let embaloX = 0;
+  let embaloY = 0;
   let arrastando = false;
   let mexeram = false;
 
@@ -74,6 +99,10 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
     camera.updateProjectionMatrix();
   }
   medir();
+  // Começa de três quartos, que é o ângulo em que se vê o focinho e o flanco
+  // ao mesmo tempo — de perfil ele parece uma figurinha, de frente some a
+  // marca da anca.
+  girar(-0.9, 0);
   const aoRedimensionar = () => medir();
   addEventListener('resize', aoRedimensionar);
 
@@ -84,7 +113,8 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
   const pegar = (e) => {
     arrastando = true;
     mexeram = true;
-    embalo = 0;
+    embaloX = 0;
+    embaloY = 0;
     ultimoX = e.clientX;
     ultimoY = e.clientY;
     tela.setPointerCapture?.(e.pointerId);
@@ -97,11 +127,9 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
     const dy = e.clientY - ultimoY;
     ultimoX = e.clientX;
     ultimoY = e.clientY;
-    anguloY += dx * SENSIBILIDADE;
-    // A inclinação é presa: de cabeça para baixo ninguém reconhece o
-    // personagem, e a criança não teria como voltar.
-    anguloX = Math.max(-0.5, Math.min(0.5, anguloX + dy * SENSIBILIDADE * 0.6));
-    embalo = dx * SENSIBILIDADE;
+    embaloX = dx * SENSIBILIDADE;
+    embaloY = dy * SENSIBILIDADE;
+    girar(embaloX, embaloY);
     // Segurar o dedo aqui não pode rolar o cartão junto.
     e.preventDefault();
   };
@@ -130,12 +158,12 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
     if (!arrastando) {
       // Enquanto ninguém tocou, ele se apresenta girando sozinho; depois do
       // primeiro toque, quem manda é o dedo — só o embalo continua.
-      embalo *= ATRITO;
-      anguloY += mexeram || devagar ? embalo : GIRO_SOZINHO * dt;
+      embaloX *= ATRITO;
+      embaloY *= ATRITO;
+      if (mexeram || devagar) girar(embaloX, embaloY);
+      else girar(GIRO_SOZINHO * dt, 0);
     }
 
-    pivo.rotation.y = anguloY;
-    pivo.rotation.x = anguloX;
     animateUnicorn(unicornio, tempo, 2.4, true);
 
     renderer.render(scene, camera);

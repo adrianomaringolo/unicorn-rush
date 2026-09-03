@@ -1949,6 +1949,34 @@ html, body {
 
 /* --- O unicórnio de perto, para girar (ver models/viewer3d.js) ----------- */
 
+/* A etiquetinha no canto do retrato, na ficha. Discreta de propósito: a
+   decisão da tela é o botão grande lá embaixo. */
+.shop-retrato {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.ver3d {
+  position: absolute;
+  right: -8px;
+  bottom: -6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px 4px 7px;
+  border: 2px solid #f3dcef;
+  border-radius: 999px;
+  background: #fff;
+  color: #a163c9;
+  font: 600 .78rem/1 inherit;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(150, 90, 170, .18);
+}
+.ver3d .fi { width: 15px; height: 15px; }
+.ver3d:hover { background: #fdf4ff; }
+.ver3d:active { transform: translateY(1px); }
+
 .viewer-vaga {
   display: flex;
   justify-content: center;

@@ -1214,23 +1214,24 @@ export class Game {
         : `<p class="shop-price${falta > 0 ? ' falta' : ''}">`
           + `${t('Custa <b>🔑 {preco}</b> · você tem <b>🔑 {tenho}</b>', { preco, tenho })}</p>`;
 
-    // Ver de perto e girar. Não aparece para o mistério: o Eco não pode ser
+    // Ver de perto e girar: uma etiquetinha no canto do retrato, e não um
+    // botão na fileira de baixo — ali embaixo mora a decisão da tela
+    // (comprar, escolher, buscar chaves), e um segundo botão grande do lado
+    // disputaria com ela. Não aparece para o mistério: o Eco não pode ser
     // examinado antes de ser encontrado.
     const ver3d = kind === 'character' && !oculto
-      ? [{
-        label: t('🔄 Ver em 3D'),
-        hint: t('gire com o dedo ou o mouse'),
-        secondary: true,
-        onClick: () => this.showItemViewer(kind, id),
-      }]
-      : [];
+      ? `<button class="ver3d" data-pick="ver3d" title="${t('Ver em 3D')}">🧊 3D</button>`
+      : '';
 
     this.ui.showOverlay({
       picker: true,
       title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
       html: `
         <div class="shop">
-          <img class="shop-face${oculto ? ' sombra' : ''}" src="${loja.retratos()[item.id]}" alt="" />
+          <span class="shop-retrato">
+            <img class="shop-face${oculto ? ' sombra' : ''}" src="${loja.retratos()[item.id]}" alt="" />
+            ${ver3d}
+          </span>
           ${!oculto && loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
           <p class="shop-story">${oculto
             ? t('Ninguém sabe quem é. Dizem que alguém espera na torre da neblina, e que só aparece no dia em que o último amigo sair de trás da porta dele.')
@@ -1240,8 +1241,12 @@ export class Game {
           ${rodape}
         </div>
       `,
-      buttons: [botao, ...ver3d],
+      buttons: [botao],
       back: () => loja.voltar(),
+    });
+
+    this.ui.bindExtra((qual) => {
+      if (qual === 'ver3d') { sfx.tap(); this.showItemViewer(kind, id); }
     });
   }
 
