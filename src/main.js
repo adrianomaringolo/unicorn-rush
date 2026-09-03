@@ -1,3 +1,4 @@
+import { inject } from '@vercel/analytics';
 import { Game } from './game/Game.js';
 import { setIdioma, idiomaSugerido } from './game/i18n.js';
 import { getSave } from './game/storage.js';
@@ -6,6 +7,9 @@ import { update, resetSave } from './game/storage.js';
 import { watchUpdates } from './game/update.js';
 import { CHARACTER_LIST } from './models/characters.js';
 import { TRACK_LIST } from './game/tracks.js';
+
+// Initialize Vercel Web Analytics
+inject();
 
 // O idioma antes de qualquer tela: os nomes dos unicórnios e das pistas
 // vivem nos próprios dados, e é aqui que eles trocam. Quem ainda não
