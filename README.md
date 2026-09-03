@@ -387,60 +387,70 @@ branco filtrado com corpo médio, que se ouve em qualquer aparelho, e o
 **rugido** grave que vem depois e vai fechando o filtro enquanto some, como
 um som que se afasta (`ruido()` em `src/game/audio.js`).
 
-## A cara e o rabo do unicórnio
+## O desenho do unicórnio
 
-Aproximados das **ilustrações do livro** (ver `assets/story/`), que são o
-desenho oficial da Uni.
+O modelo segue duas referências: as **ilustrações do livro**
+(`assets/story/`) para a cara, e uma **escultura low-poly** para a silhueta —
+facetada, chapada, com a crina em crista e o rabo em massa única.
 
-**O focinho perdeu a bolinha da ponta**, que lia como nariz de palhaço. No
-lugar dela ficaram só duas narinas, na cor do personagem escurecida — no tom
-original elas sumiriam em quem é claro, e um preto fixo destoaria de quem é
-escuro. (Tentei antes trocar a caixa do focinho por uma esfera com uma
-mancha clara; ficou pior, virou focinho de porquinho, e voltou atrás.)
+**A crina é uma crista no alto do pescoço**, e não mechas caindo dos dois
+lados. Além de ser o que a escultura faz, resolve um problema do jogo: pela
+lateral, as mechas ficavam de perfil para a câmera (que vem de trás) e liam
+como plaquinhas coloridas grudadas no pescoço. Em cima, formam uma silhueta
+recortada que se reconhece de longe.
 
-**O olho ganhou um brilho**: uma bolinha branca em cima, do lado de fora,
-onde a luz bateria. É o que separa "olho" de "botão de casaco", e custa uma
-peça — não as três de um olho montado em camadas, que também tentei e
-descartei.
+**O focinho afina para a frente.** Era uma caixa de lados paralelos, com cara
+de vagão; agora é um cilindro de quatro lados — uma caixa que afina —, com a
+geometria já girada na montagem para o eixo apontar para a frente sem
+depender da ordem das rotações. As narinas ficam na ponta, na cor do
+personagem escurecida.
 
-**As orelhas eram cones altos e finos** que, ao lado do chifre, viravam um
-segundo chifre — três pontas na mesma cabeça. Agora são baixas, largas e com
-o rosa por dentro.
+**O olho** é a bolinha escura com um brilho branco em cima, do lado de fora,
+onde a luz bateria. É o que separa "olho" de "botão de casaco", por uma peça.
 
-**As mechas ganharam `curva`**: cada nó dobra um pouco em relação ao
-anterior, e o que era espeto virou onda. A curva é **somada** dentro do
-`animateLock`, não deixada na montagem — aquele laço roda a cada quadro e
-apagaria qualquer dobra.
+**As orelhas** são baixas e largas, com o rosa por dentro. Cones altos, ao
+lado do chifre, viravam um segundo chifre — três pontas na mesma cabeça.
 
-### O rabo, e o eixo em que a mecha é fina
+### O rabo: cor por nó, não por mecha
 
-O rabo é o oposto da crina, e foi onde errei três vezes seguidas.
+Este custou quatro tentativas, e vale registrar por quê.
 
-A mecha padrão é **fina em X** (de lado) e larga em Z (de frente), que é o
-que serve para a crina cair rente ao pescoço. Espalhando as mechas do rabo
-em X — lado a lado, como estavam —, elas se empilham uma atrás da outra: de
-perfil só se vê a face da primeira, e o rabo vira uma tábua de uma cor só,
-com as outras seis aparecendo num filete na borda. Grossas, dava para contar
-uma a uma e o bicho parecia ter sete rabinhos; foi o que se viu em jogo.
+A mecha (`makeLock`) é uma corrente de nós, fina num eixo. Com **uma cor por
+mecha**, qualquer arranjo falha em algum ângulo:
 
-Também não funciona dispô-las **em anel**, com a face acompanhando a volta:
-de qualquer ângulo se vê metade de face e metade de fio, e o rabo vira uma
-fileira de lâminas.
+| arranjo | de lado | de trás (o ângulo do jogo) |
+| --- | --- | --- |
+| lado a lado, grossas | várias tranças | várias tranças |
+| em anel, face na volta | fileira de lâminas | fileira de lâminas |
+| empilhadas em profundidade | massa de uma cor só | idem |
+| finas, espalhadas em Z | listras certas ✓ | **placa da cor da primeira** |
 
-O que funciona é achatar **em Z** e espalhar **em Z**: cada mecha ocupa uma
-fatia da largura do rabo, e as cores correm lado a lado *ao longo* dele —
-que é exatamente como o arco-íris aparece na ilustração.
+A última quase funcionou — e foi a que entrou em jogo por uma versão, com um
+escudo dourado achatado na garupa, justo no ângulo em que o jogo mostra o
+bicho.
 
-Daí a opção `achatarEm` do `makeLock`. Achatar por opção, e não girar a
-mecha 90°, é o que mantém o balanço certo: o `animateLock` gira os nós no X
-local, e uma mecha girada balançaria de lado em vez de para trás.
+O que resolve é mudar **onde a cor mora**: em vez de uma cor por mecha, uma
+**cor por nó** (o `makeLock` aceita uma lista). Aí o arco-íris corre em
+faixas ao longo do rabo e é o mesmo de qualquer lado. São três fios grossos
+quase no mesmo lugar, com as cores defasadas entre eles, formando uma massa
+só — como na escultura.
+
+A lição que ficou: largura da mecha é o que se vê **por trás**, espalhamento
+é o que se vê **de lado**. São eixos diferentes, e dá para consertar um
+estragando o outro sem perceber, se só se olhar de um ângulo.
+
+### As proporções da Uni
+
+Ela ganhou `proportions: { head: 1.12, legs: 0.9, eye: 1.15 }` — cabeça e
+olho maiores, perna mais curta que a dos adultos, sem chegar perto da Lulu
+(1,35 / 0,72 / 1,35), que é o bebê de verdade. É por personagem, então só
+mexe nela.
 
 ### O que fica gravado
 
-O modelo é um só, então tudo isto vale para os 22. E duas coisas saem dele e
-ficam guardadas como arquivo — a animação do carregamento
-(`npm run gravar-uni`) e as imagens de anúncio (`npm run anuncio`): mexeu no
-unicórnio, refaz as duas, senão continuam mostrando a cara antiga.
+O modelo é um só, então o resto vale para os 22. E duas coisas saem dele e
+viram arquivo — a animação do carregamento (`npm run gravar-uni`) e as
+imagens de anúncio (`npm run anuncio`): mexeu no unicórnio, refaz as duas.
 
 ## Modos de jogo
 

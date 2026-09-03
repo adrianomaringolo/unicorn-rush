@@ -20,6 +20,9 @@ export const CHARACTERS = {
     id: 'uni',
     name: 'Uni',
     emoji: '🌈',
+    // Um tico mais infantil que os adultos: cabeça e olho maiores, perna
+    // mais curta. Não chega perto da Lulu, que é o bebê de verdade.
+    proportions: { head: 1.12, legs: 0.9, eye: 1.15 },
     title: 'a unicórnia arco-íris',
     story: 'Uni nasceu na ponta de um arco-íris, num dia de sol com chuva. '
       + 'Onde ela pisa fica colorido, e ela adora dividir corações com quem encontra pelo caminho.',

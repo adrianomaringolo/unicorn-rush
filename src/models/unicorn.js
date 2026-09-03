@@ -39,9 +39,14 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
     const joint = new THREE.Group();
     if (i > 0) joint.position.y = -segLength;
 
+    // `color` pode ser uma cor só (crina, franja) ou uma lista — aí cada nó
+    // pega a sua, e a mecha sai listrada ao longo do comprimento. É o que o
+    // rabo usa: listra que se vê de qualquer ângulo, ao contrário da cor por
+    // mecha, que só aparece de um lado.
+    const cor = Array.isArray(color) ? color[i % color.length] : color;
     const material = fiery
-      ? mat(color, { emissive: color, emissiveIntensity: 0.9 })
-      : mat(color);
+      ? mat(cor, { emissive: cor, emissiveIntensity: 0.9 })
+      : mat(cor);
     const mesh = new THREE.Mesh(
       new THREE.CylinderGeometry(top, bottom, segLength * 1.06, 8),
       material
@@ -78,69 +83,67 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
 function makeMane(colors, fiery = false) {
   const mane = new THREE.Group();
   const locks = [];
-  const rows = 4;
+  const rows = 7;
 
   for (let row = 0; row < rows; row++) {
-    const u = row / (rows - 1);
-    for (const side of [-1, 1]) {
-      // Mechas largas e achatadas: juntas elas formam um lençol de cabelo,
-      // em vez de fios soltos parecendo macarrão.
-      const lock = makeLock(colors[row % colors.length], {
-        length: 0.5 + Math.sin(u * Math.PI * 0.9) * 0.58,
-        width: 0.32,                     // larga como lençol…
-        segments: 5,
-        flatten: fiery ? 0.55 : 0.25,    // …e fina de perfil, senão vira tábua
-        // As de baixo dobram mais que as da nuca, que é como cabelo cai.
-        curva: fiery ? 0 : 0.1 + u * 0.16,
-        fiery,
-      });
-      // Da nuca (u=0) até a cernelha, acompanhando a curva do pescoço.
-      lock.position.set(side * 0.06, 1.99 - u * 0.5, -0.74 + u * 0.62);
-      lock.rotation.z = side * 0.34;    // a mecha cai rente à lateral do pescoço
-      lock.userData.phase = row * 0.5 + (side > 0 ? 0.28 : 0);
-      mane.add(lock);
-      locks.push(lock);
-    }
+    const u = row / (rows - 1);        // 0 = nuca, 1 = cernelha
+
+    // Crista no **alto** do pescoço, e não mechas caindo dos dois lados.
+    //
+    // É o que a escultura de referência faz, e resolve um problema antigo:
+    // caindo pelas laterais, as mechas ficavam de perfil para a câmera do
+    // jogo (que vem de trás) e liam como plaquinhas coloridas grudadas no
+    // pescoço. Em cima, elas formam uma silhueta recortada que se reconhece
+    // de longe — que é o que uma crina faz num bicho correndo.
+    const lock = makeLock(colors[row % colors.length], {
+      length: 0.32 + Math.sin(u * Math.PI * 0.85) * 0.3,
+      width: 0.3,
+      segments: 3,
+      flatten: fiery ? 0.62 : 0.2,      // placa fina, vista de lado
+      curva: fiery ? 0 : 0.12,
+      fiery,
+    });
+    lock.position.set(0, 2.0 - u * 0.5, -0.78 + u * 0.64);
+    // A mecha nasce apontando para baixo; isto a põe em pé e tombada para
+    // trás, acompanhando a inclinação do pescoço.
+    lock.rotation.x = -2.62 + u * 0.5;
+    lock.userData.phase = row * 0.5;
+    mane.add(lock);
+    locks.push(lock);
   }
 
   mane.userData.locks = locks;
   return mane;
 }
 
+
 // Rabo: um punhado de mechas saindo da garupa.
 function makeTail(colors, fiery = false) {
   const tail = new THREE.Group();
   const locks = [];
-  const count = 7;
+  const count = 3;
 
   for (let i = 0; i < count; i++) {
-    const meio = i - (count - 1) / 2;
-
-    // O rabo é fino **em Z** e espalhado **em Z**, ao contrário da crina.
+    // Três fios grossos quase no mesmo lugar — uma massa só, como na
+    // escultura — e a cor **por nó**, não por fio.
     //
-    // Foi onde errei três vezes. A mecha padrão é fina de lado (X) e larga de
-    // frente (Z); espalhando-as em X, elas se empilham uma atrás da outra e
-    // de perfil só se vê a face da primeira — o rabo virava uma tábua de uma
-    // cor só, com as outras aparecendo num filete na borda. Espalhadas em Z e
-    // finas em Z, cada mecha ocupa uma fatia da largura do rabo, e as cores
-    // correm lado a lado ao longo dele, que é como o arco-íris aparece na
-    // ilustração do livro.
-    //
-    // Achatar por opção (e não girar a mecha 90°) é o que mantém o balanço
-    // certo: `animateLock` gira os nós no X local, e uma mecha girada
-    // balançaria de lado em vez de para trás.
-    const lock = makeLock(colors[i % colors.length], {
-      length: 1.0 - Math.abs(meio) * 0.05,   // ponta arredondada
-      width: 0.3,
-      segments: 5,
-      flatten: fiery ? 0.7 : 0.22,
-      curva: fiery ? 0 : 0.12,
-      achatarEm: 'z',
+    // Era o que faltava. Com uma cor por mecha, as mechas viram placas: de
+    // lado aparecem as listras e de trás aparece uma placa da cor da
+    // primeira (era um escudo dourado na garupa, justo no ângulo em que o
+    // jogo mostra o bicho). Com a cor por nó, o arco-íris corre ao longo do
+    // rabo em faixas, e ele é o mesmo de qualquer lado.
+    const desloca = colors.slice(i).concat(colors.slice(0, i));
+    const lock = makeLock(desloca, {
+      length: 1.45 - i * 0.09,           // desce até perto do jarrete
+      width: 0.21,
+      segments: 8,
+      flatten: fiery ? 0.8 : 0.9,        // quase redonda: fio, não fita
+      curva: fiery ? 0 : 0.15,
       fiery,
     });
-    lock.position.set(0, 0, meio * 0.052);
-    lock.rotation.x = -Math.abs(meio) * 0.02;
-    lock.userData.phase = i * 0.5;
+    lock.position.set((i - 1) * 0.055, 0, (i - 1) * 0.045);
+    lock.rotation.z = (i - 1) * 0.14;
+    lock.userData.phase = i * 0.6;
     tail.add(lock);
     locks.push(lock);
   }
@@ -148,6 +151,7 @@ function makeTail(colors, fiery = false) {
   tail.userData.locks = locks;
   return tail;
 }
+
 
 
 
@@ -508,8 +512,15 @@ export function createUnicorn(character = CHARACTERS.uni) {
   skull.castShadow = true;
   head.add(skull);
 
-  const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.25, 0.34), bodyMat);
-  muzzle.position.set(0, -0.09, -0.3);
+  // Focinho em cunha: afina para a frente, como na escultura. Era uma caixa
+  // de lados paralelos, que dava cara de vagão. Um cilindro de quatro lados
+  // é uma caixa que afina — e a geometria já nasce virada, para o eixo
+  // apontar para a frente sem depender da ordem das rotações.
+  const geoFocinho = new THREE.CylinderGeometry(0.115, 0.16, 0.36, 4);
+  geoFocinho.rotateY(Math.PI / 4);      // quinas alinhadas com o corpo
+  geoFocinho.rotateX(-Math.PI / 2);     // o topo (mais fino) vira a ponta
+  const muzzle = new THREE.Mesh(geoFocinho, bodyMat);
+  muzzle.position.set(0, -0.09, -0.31);
   muzzle.castShadow = true;
   head.add(muzzle);
 
@@ -523,7 +534,7 @@ export function createUnicorn(character = CHARACTERS.uni) {
   for (const side of [-1, 1]) {
     const narina = new THREE.Mesh(new THREE.SphereGeometry(0.019, 6, 5), mat(corNarina));
     narina.scale.set(1, 1.5, 0.7);
-    narina.position.set(side * 0.052, -0.1, -0.468);
+    narina.position.set(side * 0.04, -0.1, -0.482);
     head.add(narina);
   }
 
