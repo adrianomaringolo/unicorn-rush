@@ -766,7 +766,14 @@ export class Game {
     this.hitShield = !!this.character.firstHitFree;
     this.elapsed = 0;
     this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0, jumps: 0, flip: 0 };
+    // De frente para a pista, e não para onde o menu tiver parado.
+    //
+    // Nas telas de menu o unicórnio gira devagar, para se mostrar (ver o
+    // `state === READY` no fim do tick). O `rotation.y` ficava com o ângulo
+    // do giro, e quem começava uma corrida via o bicho de lado — ou de
+    // costas — durante toda a contagem, até o primeiro comando endireitá-lo.
     this.unicorn.rotation.x = 0;
+    this.unicorn.rotation.y = 0;
     // Segundos restantes de cada efeito (`flash` é só o brilho da vida extra).
     // `startShield` é a Chiclete, que começa dentro da bolha de chiclete.
     this.powers = { shield: this.character.startShield ?? 0, magnet: 0, boost: 0, flash: 0 };
