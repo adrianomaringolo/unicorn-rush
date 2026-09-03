@@ -20,6 +20,7 @@ export const CHARACTERS = {
     id: 'uni',
     name: 'Uni',
     emoji: '🌈',
+    eye: 0x2f6fd4,   // azul, como na ilustração do livro
     // Um tico mais infantil que os adultos: cabeça e olho maiores, perna
     // mais curta. Não chega perto da Lulu, que é o bebê de verdade.
     proportions: { head: 1.12, legs: 0.9, eye: 1.15 },
@@ -91,6 +92,7 @@ export const CHARACTERS = {
     id: 'brasa',
     name: 'Brasa',
     emoji: '🔥',
+    eye: 0xffd166,   // âmbar de brasa
     title: 'o unicórnio de fogo',
     story: 'Brasa é o maior da turma e corre tão rápido que a crina dele pega fogo. '
       + 'Onde ele passa fica um caminho de brasas quentinhas que some devagar.',
@@ -327,6 +329,7 @@ export const CHARACTERS = {
     id: 'cometa',
     name: 'Cometa',
     emoji: '☄️',
+    eye: 0x8ce9ff,   // gelo de cometa
     title: 'o unicórnio do espaço',
     story: 'Cometa não sabe parar: desde que nasceu está atravessando o céu. '
       + 'Dizem que quem consegue acompanhá-lo ganha um pedido.',
@@ -365,6 +368,7 @@ export const CHARACTERS = {
     id: 'cereja',
     name: 'Cereja',
     emoji: '🍒',
+    eye: 0xffe9a8,   // creme quente no vermelho
     title: 'a unicórnia mais ligeira',
     story: 'Cereja não anda: ela desvia. Dizem que consegue trocar de pista '
       + 'duas vezes antes de a poeira do primeiro desvio assentar.',
@@ -423,6 +427,7 @@ export const CHARACTERS = {
     id: 'violeta',
     name: 'Violeta',
     emoji: '🔮',
+    eye: 0xffe0ff,   // quase branco, na fumaça roxa
     title: 'a unicórnia de fumaça',
     story: 'Violeta é meio feita de fumaça: quando salta, demora para descer, '
       + 'como se o ar segurasse ela um pouquinho.',
@@ -504,6 +509,7 @@ export const CHARACTERS = {
     id: 'sombra',
     name: 'Sombra',
     emoji: '🦇',
+    eye: 0xb9a6ff,   // lilás que acende no preto
     title: 'o unicórnio da meia-noite',
     story: 'Sombra é preto de verdade, sem um fiozinho de cor. '
       + 'Ele brilha por conta própria, então nunca corre no escuro.',
@@ -533,6 +539,7 @@ export const CHARACTERS = {
     id: 'relampago',
     name: 'Relâmpago',
     emoji: '⚡',
+    eye: 0xfff44f,   // o amarelo do raio
     title: 'o unicórnio da tempestade',
     story: 'Relâmpago nasceu no talho de um raio, numa noite de tempestade. '
       + 'O vento que desgoverna todo mundo não desvia ele nem um pouco: corta a Tempestade em linha reta.',

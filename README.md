@@ -405,8 +405,15 @@ geometria já girada na montagem para o eixo apontar para a frente sem
 depender da ordem das rotações. As narinas ficam na ponta, na cor do
 personagem escurecida.
 
-**O olho** é a bolinha escura com um brilho branco em cima, do lado de fora,
-onde a luz bateria. É o que separa "olho" de "botão de casaco", por uma peça.
+**O olho** é uma bolinha com um brilho branco em cima, do lado de fora, onde
+a luz bateria — é o que separa "olho" de "botão de casaco", por uma peça.
+
+A cor sai do `eye` do personagem. O escuro que servia a todos sumia em quem
+tem o corpo escuro: no Sombra, que é preto de verdade, o olho simplesmente
+não existia. Agora cada um tem o seu — o **azul** da Uni (como na
+ilustração), o âmbar do Brasa, o amarelo do Relâmpago, o lilás do Sombra —, e
+quem não declarar nada e for escuro ganha um olho claro automaticamente, para
+nenhum personagem novo nascer sem cara.
 
 **As orelhas** são baixas e largas, com o rosa por dentro. Cones altos, ao
 lado do chifre, viravam um segundo chifre — três pontas na mesma cabeça.
@@ -435,10 +442,12 @@ faixas ao longo do rabo e é o mesmo de qualquer lado. São três fios grossos
 quase no mesmo lugar, com as cores defasadas entre eles, formando uma massa
 só — como na escultura.
 
-**A forma é a da escultura**: o rabo sai da garupa para trás (−0,72 rad, e
-não quase na vertical, que lia como vareta pendurada) e a curva das mechas o
-traz de volta para baixo, desenhando uma vírgula. Fecha numa ponta —
-`afunila: 0,92`, contra os 0,66 da crina.
+**A forma é a do rabo de fogo**, que era o único sem curva e acabou sendo o
+melhor de todos: sai da garupa para trás (−0,72 rad — quase na vertical ele
+lia como vareta pendurada) e varre reto, acompanhando a linha da garupa. A
+curva que os outros tinham enrolava a ponta para baixo e engrossava a
+silhueta. Fecha numa ponta (`afunila: 0,92`, contra os 0,66 da crina, que
+precisa terminar arredondada).
 
 Os três fios ficam **quase colados**: abrindo 0,14 eles divergiam ao longo do
 comprimento e, de trás, liam como três rabos.

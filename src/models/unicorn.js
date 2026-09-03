@@ -138,11 +138,14 @@ function makeTail(colors, fiery = false) {
     const desloca = colors.slice(i).concat(colors.slice(0, i));
     const lock = makeLock(desloca, {
       length: 1.5 - i * 0.09,
-      width: 0.3,                        // grosso na base, como na escultura
+      width: 0.24,                       // um tico mais fino
       segments: 8,
-      afunila: 0.92,                     // e fechando numa ponta
-      flatten: fiery ? 0.8 : 0.9,        // quase redonda: fio, não fita
-      curva: fiery ? 0 : 0.24,           // vírgula, não vareta
+      afunila: 0.92,                     // fechando numa ponta
+      // O mesmo do rabo de fogo para todo mundo: reto, varrendo para trás.
+      // A curva que os outros tinham enrolava a ponta para baixo e engrossava
+      // a silhueta; sem ela o rabo acompanha a linha da garupa.
+      flatten: 0.8,
+      curva: 0,
       fiery,
     });
     // Bem juntos, e quase sem abrir. Com 0,14 de abertura eles divergiam ao
@@ -465,6 +468,27 @@ function makeMark(mark) {
 
 // ---------------------------------------------------------------------------
 
+// A cor do olho.
+//
+// O escuro de sempre some em quem tem o corpo escuro — no Sombra, que é
+// preto de verdade, o olho simplesmente não existia. Quem não declara `eye`
+// e é escuro ganha um olho claro automaticamente, para nenhum personagem
+// novo nascer sem cara; os que declaram mandam, e é por ali que cada um
+// ganha o seu (o azul da Uni, o âmbar do Brasa, o amarelo do Relâmpago).
+const ESCURO = 0x30203a;
+const CLARO = 0xf2f0ff;
+
+function luminancia(hex) {
+  return 0.2126 * ((hex >> 16) & 255) / 255
+    + 0.7152 * ((hex >> 8) & 255) / 255
+    + 0.0722 * (hex & 255) / 255;
+}
+
+function corDoOlho(character) {
+  if (character.eye !== undefined) return character.eye;
+  return luminancia(character.body) < 0.34 ? CLARO : ESCURO;
+}
+
 export function createUnicorn(character = CHARACTERS.uni) {
   const unicorn = new THREE.Group();
 
@@ -548,7 +572,7 @@ export function createUnicorn(character = CHARACTERS.uni) {
   const ears = [];
   for (const side of [-1, 1]) {
     const raioOlho = 0.07 * shape.eye;
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(raioOlho, 8, 8), mat(0x30203a));
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(raioOlho, 8, 8), mat(corDoOlho(character)));
     eye.position.set(side * 0.22, 0.06, -0.2);
     head.add(eye);
 
@@ -556,10 +580,13 @@ export function createUnicorn(character = CHARACTERS.uni) {
     // onde a luz bateria. É o que separa "olho" de "botão de casaco" — e
     // custa uma peça, não as três de um olho montado em camadas.
     const fora = new THREE.Vector3(side * 0.22, 0.06, -0.2).normalize();
-    const brilho = new THREE.Mesh(new THREE.SphereGeometry(raioOlho * 0.33, 6, 5), mat(0xffffff));
-    brilho.position.copy(eye.position).addScaledVector(fora, raioOlho * 0.7);
-    brilho.position.x += side * raioOlho * 0.26;
-    brilho.position.y += raioOlho * 0.3;
+    // Pequeno e bem em cima do olho. Maior, e afastado para a borda, ele
+    // parava de ler como luz e virava uma bolinha grudada — o que só ficou
+    // evidente quando o olho ganhou cor.
+    const brilho = new THREE.Mesh(new THREE.SphereGeometry(raioOlho * 0.24, 6, 5), mat(0xffffff));
+    brilho.position.copy(eye.position).addScaledVector(fora, raioOlho * 0.82);
+    brilho.position.x += side * raioOlho * 0.18;
+    brilho.position.y += raioOlho * 0.24;
     head.add(brilho);
 
     // Orelha baixinha e larga, com o rosa por dentro. Era um cone alto e
