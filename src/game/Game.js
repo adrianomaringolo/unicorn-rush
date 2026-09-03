@@ -1233,6 +1233,25 @@ export class Game {
       ? `<button class="ver3d" data-pick="ver3d" title="${t('Ver em 3D')}">🧊 3D</button>`
       : '';
 
+    // Ouvir a ficha inteira, para quem ainda não lê.
+    //
+    // Só aparece com a voz ligada — sem ela o botão não faria nada, e um
+    // botão que não faz nada é pior que nenhum. O que ele lê é a ficha toda,
+    // na ordem em que está escrita: nome, quem é, a história e o poder. É a
+    // mesma informação que a criança que lê recebe.
+    const paraOuvir = [
+      oculto ? t('Ninguém sabe quem é.') : `${item.name}.`,
+      !oculto && loja.subtitulo(item) ? `${loja.subtitulo(item)}.` : '',
+      oculto
+        ? t('Dizem que alguém espera na torre da neblina.')
+        : loja.descricao(item),
+      !oculto && kind === 'character' && item.power ? `${item.power}.` : '',
+    ].filter(Boolean).join(' ');
+
+    const ouvir = speechOn()
+      ? `<button class="ouvir" data-pick="ouvir" title="${t('Ouvir')}">🔊</button>`
+      : '';
+
     this.ui.showOverlay({
       picker: true,
       title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
@@ -1243,7 +1262,7 @@ export class Game {
             ${ver3d}
           </span>
           ${!oculto && loja.subtitulo(item) ? `<p class="shop-title">${loja.subtitulo(item)}</p>` : ''}
-          <p class="shop-story">${oculto
+          <p class="shop-story">${ouvir}${oculto
             ? t('Ninguém sabe quem é. Dizem que alguém espera na torre da neblina, e que só aparece no dia em que o último amigo sair de trás da porta dele.')
             : loja.descricao(item)}</p>
           ${poder}
@@ -1257,6 +1276,7 @@ export class Game {
 
     this.ui.bindExtra((qual) => {
       if (qual === 'ver3d') { sfx.tap(); this.showItemViewer(kind, id); }
+      if (qual === 'ouvir') { sfx.tap(); speak(paraOuvir); }
     });
   }
 
@@ -2404,7 +2424,8 @@ export class Game {
     this.world.burst(entity.position, power.color);
     this.world.group.remove(entity);
     this.world.entities.splice(index, 1);
-    sfx.power();
+    // A bomba tem estouro próprio; os outros power-ups compartilham o arpejo.
+    if (power.id === 'bomb') sfx.bomb(); else sfx.power();
     this.ui.toast(`${power.emoji} ${power.message}`);
     update((save) => {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;

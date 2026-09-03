@@ -65,7 +65,16 @@ function blip(freq, duration, type = 'sine', volume = 0.12) {
   osc.stop(ac.currentTime + duration);
 }
 
-const safe = (fn) => (...args) => { try { fn(...args); } catch { /* áudio é opcional */ } };
+// Áudio é opcional: um navegador sem som, ou com o contexto suspenso, não
+// pode derrubar o jogo. Mas engolir o erro **em silêncio** esconde som
+// quebrado — daí o aviso no console, que só quem está desenvolvendo vê.
+const safe = (fn) => (...args) => {
+  try {
+    fn(...args);
+  } catch (erro) {
+    console.warn('som falhou:', erro);
+  }
+};
 
 // Cada personagem tem a sua "voz": a Lulu, que é bebê, pega os itens com um
 // som mais agudo. 1 = tom normal.
@@ -87,6 +96,39 @@ export const sfx = {
   }),
   key: safe(() => [784, 988, 1319].forEach((f, i) => setTimeout(() => blip(tom(f), 0.18, 'sine', 0.14), i * 60))),
   power: safe(() => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(tom(f), 0.16, 'triangle', 0.13), i * 70))),
+  // 🌈 A Bomba Arco-Íris: um estouro, e não o arpejo de power-up que tocava
+  // antes — aquele soava como "peguei um item", e não como "explodiu".
+  //
+  // Três camadas, que é o que faz um estouro soar como estouro: o estalo
+  // (ruído de corte alto caindo depressa), o corpo grave (um oscilador
+  // descendo de 140 para 38 Hz, que é o "buum" que se sente no peito) e, um
+  // quarto de segundo depois, um chuvisco de brilhos subindo.
+  //
+  // A terceira camada é o que mantém o som deste jogo: é uma bomba de
+  // arco-íris para criança pequena, então ela estoura e **vira purpurina**,
+  // não escombro.
+  bomb: safe(() => {
+    ruido(0.5, 3200, 0.34);
+
+    const ac = ensure();
+    if (ac) {
+      const grave = ac.createOscillator();
+      const volume = ac.createGain();
+      grave.type = 'sine';
+      grave.frequency.setValueAtTime(140, ac.currentTime);
+      grave.frequency.exponentialRampToValueAtTime(38, ac.currentTime + 0.45);
+      volume.gain.setValueAtTime(0.3, ac.currentTime);
+      volume.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.52);
+      grave.connect(volume).connect(ac.destination);
+      grave.start();
+      grave.stop(ac.currentTime + 0.52);
+    }
+
+    [1046, 1318, 1568, 2093].forEach((f, i) => {
+      setTimeout(() => blip(f, 0.14, 'triangle', 0.075), 250 + i * 55);
+    });
+  }),
+
   gameOver: safe(() => [440, 350, 260].forEach((f, i) => setTimeout(() => blip(f, 0.3, 'triangle'), i * 160))),
 
   // Fase completa: uma fanfarra curta subindo (dó–mi–sol–dó) com a última

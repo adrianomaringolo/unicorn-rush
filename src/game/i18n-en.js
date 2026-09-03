@@ -320,6 +320,10 @@ export const EN = {
   'já é o escolhido': 'already chosen',
   '✅ Escolher esse': '✅ Choose this one',
   'Ver em 3D': 'See in 3D',
+  'Ouvir': 'Listen',
+  'Ninguém sabe quem é.': 'Nobody knows who he is.',
+  'Dizem que alguém espera na torre da neblina.':
+    'They say somebody is waiting in the tower in the fog.',
   '⚡ Corre mais rápido em {pistas}': '⚡ Runs faster on {pistas}',
   '{primeiras} e {ultima}': '{primeiras} and {ultima}',
   'Página {n}': 'Page {n}',

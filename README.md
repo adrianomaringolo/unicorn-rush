@@ -277,6 +277,16 @@ lugar deles nasce a chave**, que sobe e some. Os cinquenta dividem uma
 geometria e um material só, então a animação inteira custa pouco (ver
 `src/models/keyReward.js`).
 
+### Ouvir a ficha
+
+Com a **voz ligada** (no cantinho dos adultos), a ficha de cada unicórnio e
+de cada pista ganha um botão 🔊 ao lado da descrição. Ele lê a ficha inteira
+na ordem em que está escrita — nome, quem é, a história e o poder —, que é a
+mesma informação que a criança que lê recebe.
+
+Só aparece com a voz ligada: sem ela o botão não faria nada, e um botão que
+não faz nada é pior do que nenhum.
+
 ### Ver de perto e girar
 
 A ficha de cada unicórnio tem o botão **🔄 Ver em 3D**: abre o modelo de
@@ -474,6 +484,25 @@ Ela ganhou `proportions: { head: 1.12, legs: 0.9, eye: 1.15 }` — cabeça e
 olho maiores, perna mais curta que a dos adultos, sem chegar perto da Lulu
 (1,35 / 0,72 / 1,35), que é o bebê de verdade. É por personagem, então só
 mexe nela.
+
+### O som da bomba
+
+A 🌈 Bomba Arco-Íris tocava o arpejo genérico de power-up, que soa como
+"peguei um item" e não como "explodiu". Agora tem estouro próprio, em três
+camadas: o estalo (ruído com o corte caindo depressa), o corpo grave (um
+oscilador descendo de 140 para 38 Hz, que é o "buum" que se sente no peito)
+e, um quarto de segundo depois, um chuvisco de brilhos subindo — porque é
+uma bomba de arco-íris para criança pequena: ela estoura e **vira
+purpurina**, não escombro.
+
+A envoltória foi medida num contexto offline, que é o jeito de conferir um
+som sem poder ouvi-lo: **43% da energia nos primeiros 50 ms** e 74% nos
+primeiros 150, seguidos dos quatro brilhos. É a forma de um estouro; o arpejo
+antigo era quatro batidas iguais espalhadas por 210 ms.
+
+O `safe()` que embrulha todos os sons deixou de engolir o erro em silêncio e
+passou a avisar no console — foi assim que deu para conferir, de uma vez, que
+os 16 sons do jogo rodam sem estourar.
 
 ### O que fica gravado
 
