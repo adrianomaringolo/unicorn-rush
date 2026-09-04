@@ -277,10 +277,10 @@ for (const track of TRACK_LIST) {
   if (em('campo', 'adventure', guardado) !== 1400) throw new Error('o recorde não separa as brincadeiras');
   if (em('oceano', 'baby', guardado) !== 900) throw new Error('o recorde não separa as pistas');
   if (em('noite', 'baby', guardado) !== 0) throw new Error('pista sem corrida devia dar zero');
-  // Uma corrida longa de Aventura não pode virar a marca do Livre: é a
+  // Uma corrida longa de Desafio não pode virar a marca do Livre: é a
   // razão de a chave ter as duas partes.
   if (em('campo', 'baby', { 'campo:adventure': 1400 }) !== 0) {
-    throw new Error('o recorde da Aventura vazou para o Livre');
+    throw new Error('o recorde do Desafio vazou para o Livre');
   }
   // Saves antigos guardavam só o modo, e depois só a pista. Nenhuma das duas
   // formas casa com esta: o recorde recomeça do zero, sem quebrar.

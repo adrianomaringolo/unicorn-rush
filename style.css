@@ -672,6 +672,54 @@ html, body {
   white-space: nowrap;
 }
 
+/* A história e os poderes são as duas coisas que valem um botão de
+   verdade, mesmo sem ser o de jogar: uma é o porquê do jogo, a outra é o
+   que segurar a atenção de quem já tem tudo. Preenchidos e coloridos, e
+   não desbotados como a fileira miúda logo abaixo. */
+.destaques {
+  display: flex;
+  gap: clamp(6px, 2vw, 10px);
+  width: 100%;
+  margin-top: clamp(10px, 3vw, 16px);
+}
+.destaque {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 16px;
+  padding: clamp(9px, 2.6vw, 13px) 6px;
+  font: inherit;
+  font-size: clamp(13px, 3.6vw, 16px);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.destaque-emoji { font-size: 1.25em; line-height: 1; }
+.destaque.historia {
+  color: #fff;
+  background: linear-gradient(180deg, #c7a6f5, #9a6fe0);
+  box-shadow: 0 5px 0 #7247b8;
+}
+.destaque.poderes {
+  color: #6b4600;
+  background: linear-gradient(180deg, #ffd875, #ffab1f);
+  box-shadow: 0 5px 0 #c97a00;
+}
+.destaque:active { transform: translateY(3px); }
+.destaque.historia:active { box-shadow: 0 2px 0 #7247b8; }
+.destaque.poderes:active { box-shadow: 0 2px 0 #c97a00; }
+/* A história ganha novidade quando o fim dela abre (todo mundo livre): o
+   mesmo pulso do ⚡ pedindo toque, para não se perder no botão já colorido. */
+.destaque.historia.nova { animation: destaque-nova .9s ease-in-out infinite; }
+@keyframes destaque-nova {
+  0%, 100% { box-shadow: 0 5px 0 #7247b8, 0 0 0 0 rgba(255, 209, 102, .8); }
+  70%      { box-shadow: 0 5px 0 #7247b8, 0 0 0 10px rgba(255, 209, 102, 0); }
+}
+
 /* Estatísticas e "sobre" ficam à mão, mas miúdos: são de adulto, e não
    podem disputar o olho com o botão de jogar. */
 .extras {
