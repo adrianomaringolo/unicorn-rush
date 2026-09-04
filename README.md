@@ -1236,6 +1236,17 @@ casa. E a tela de escolha é a única do jogo escrita **nos dois idiomas ao
 mesmo tempo**, cada botão no seu — ela não pode depender de o leitor
 entender o idioma em que ela está.
 
+Logo depois do idioma, e só nessa primeira vez, vem uma segunda pergunta:
+**🔊 Quer que eu leia os textos em voz alta?** — com **🔊 Sim, por favor** e
+**🔈 Não, obrigada** do mesmo peso, e um aviso de que dá para trocar depois,
+na **coroa 👑**, no cantinho dos adultos. É a mesma voz que lê a história
+que vem a seguir e as fichas de unicórnio e pista (ver *A história* e o
+cantinho dos adultos), então perguntar antes de tudo — e não deixar para
+quem já está lendo achar o botão sozinho — é o que faz a voz servir a quem
+mais precisa dela: quem ainda não lê. Onde o aparelho não tem voz nenhuma
+(`canSpeak()` falso) a pergunta nem aparece: direto para a história. Quem
+faz isso é o `Game.showVoiceInvite`.
+
 ### A chave é a própria frase
 
 O costume em tradução é dar um código a cada texto (`menu.jogar`) e guardar
@@ -1292,7 +1303,7 @@ Como a chave é a própria frase, **um acento trocado faz a tradução sumir em
 silêncio**: o jogo continua rodando e mostra o português. Por isso o teste
 verifica, e falha:
 
-- todo texto dos dados e da interface tem tradução (326 frases);
+- todo texto dos dados e da interface tem tradução (384 frases);
 - nenhuma chave do dicionário deixou de bater com algum texto;
 - **nenhuma chave repetida** — a segunda apaga a primeira quando o objeto é
   montado, e isso não dá erro nenhum. Foi assim que se descobriu que

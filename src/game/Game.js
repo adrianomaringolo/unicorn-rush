@@ -1886,7 +1886,7 @@ export class Game {
     this.ui.showPause(false);
 
     const escolher = (id) => {
-      const seguir = () => (primeira ? this.showStory(0)
+      const seguir = () => (primeira ? this.showVoiceInvite()
         : voltarPara === 'grown' ? this.showGrownUps() : this.showHome());
       if (id === idioma()) return seguir();
 
@@ -1928,6 +1928,35 @@ export class Game {
         onClick: () => escolher(lang.id),
       })),
       back: primeira ? null : () => (voltarPara === 'grown' ? this.showGrownUps() : this.showHome()),
+    });
+  }
+
+  // O convite para a leitura em voz alta, uma vez só, logo depois de
+  // escolher o idioma na primeira abertura — e antes da história, para que
+  // ela mesma já possa sair falada, para quem ainda não lê.
+  //
+  // Onde o aparelho não tem voz nenhuma (`canSpeak` falso) não há o que
+  // perguntar: direto para a história.
+  showVoiceInvite() {
+    if (!canSpeak()) return this.showStory(0);
+    this.state = STATE.READY;
+    this.screen = 'voz-convite';
+    this.ui.showPause(false);
+
+    const escolher = (ligar) => {
+      const ligado = setSpeech(ligar);
+      update((save) => { save.speech = ligado; });
+      if (ligado) speak(t('Pronto, agora eu falo'));
+      this.showStory(0);
+    };
+
+    this.ui.showOverlay({
+      title: t('🔊 Quer que eu leia os textos em voz alta?'),
+      text: t('É bom para quem ainda não lê. Dá para trocar isso depois, na coroa 👑, no cantinho dos adultos.'),
+      buttons: [
+        { label: t('🔊 Sim, por favor'), huge: true, onClick: () => escolher(true) },
+        { label: t('🔈 Não, obrigada'), onClick: () => escolher(false), secondary: true },
+      ],
     });
   }
 
