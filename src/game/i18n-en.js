@@ -327,6 +327,18 @@ export const EN = {
   'Sobre': 'About',
   'Idioma': 'Language',
   'Atualizar': 'Update',
+  'Poderes': 'Powers',
+
+  // --- Evoluir os power-ups ---------------------------------------------------
+  '⬆️ Evoluir poderes': '⬆️ Level up powers',
+  'Cada nível deixa o power-up mais forte para sempre — e sempre existe o próximo.':
+    'Each level makes the power-up stronger for good — and there is always a next one.',
+  'nível {n}': 'level {n}',
+  '+{n} linhas limpas': '+{n} clear lines',
+  '+{pct}% de pontos': '+{pct}% points',
+  '+{pct}% de duração': '+{pct}% duration',
+  '🔑 Faltam {n} chaves': '🔑 {n} keys short',
+  'Subiu de nível!': 'Leveled up!',
 
   // --- Escolher a brincadeira -----------------------------------------------
   'Como vamos brincar?': 'How shall we play?',

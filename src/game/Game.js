@@ -18,7 +18,9 @@ import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tr
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
 import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../models/rainbowTrail.js';
-import { POWERUPS, POWERUP_LIST } from '../models/powerups.js';
+import {
+  POWERUPS, POWERUP_LIST, powerLevelMultiplier, powerLevelCost, POWER_LEVEL_PERCENT,
+} from '../models/powerups.js';
 import { createGlow } from '../models/collectibles.js';
 import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../models/keyReward.js';
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
@@ -878,6 +880,7 @@ export class Game {
         <div class="extras">
           <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 ${t('A história')}${this.storyEndNew ? ' ✨' : ''}</button>
           <button class="mini-button" data-pick="stats">📊 ${t('Estatísticas')}</button>
+          <button class="mini-button" data-pick="powers">⬆️ ${t('Poderes')}</button>
           <button class="mini-button" data-pick="about">ℹ️ ${t('Sobre')}</button>
           <button class="mini-button aprender" data-pick="tutorial">👆 ${t('Aprender')}</button>
           ${hasUpdate() ? `<button class="mini-button nova" data-pick="update">🔄 ${t('Atualizar')}</button>` : ''}
@@ -893,6 +896,7 @@ export class Game {
       if (qual === 'story') return this.showStory(0);
       if (qual === 'tutorial') return this.startTutorial();
       if (qual === 'stats') return this.showStats();
+      if (qual === 'powers') return this.showPowerShop();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
       return this.showModePicker();
@@ -2099,6 +2103,86 @@ export class Game {
     });
   }
 
+  // Evoluir os power-ups: para onde as chaves continuam servindo depois de
+  // já ter todo mundo — todos os unicórnios, todas as pistas. Cada um tem o
+  // próprio nível, guardado em `save.powerLevels`, e não tem teto: sempre
+  // existe o próximo, custando mais um pouco (ver POWER_LEVEL_PERCENT e
+  // `powerLevelCost` em models/powerups.js).
+  //
+  // Uma lista, como o cantinho dos adultos — aqui não se joga, se evolui —,
+  // mas fica no hub, não atrás da coroa: gastar chave é brincadeira da
+  // criança, não ajuste de adulto.
+  showPowerShop() {
+    this.state = STATE.READY;
+    this.screen = 'powers';
+    this.ui.showPause(false);
+    this.ui.setWallet(this.wallet, true);
+
+    const linhas = POWERUP_LIST.map((power) => {
+      const nivel = this.save.powerLevels?.[power.id] ?? 0;
+      const custo = powerLevelCost(nivel);
+      const pct = Math.round(POWER_LEVEL_PERCENT * nivel);
+      // A Bomba não dura (o efeito é na hora): o nível soma linhas livres de
+      // obstáculo em vez de tempo. A Vida extra também não dura: soma no
+      // bônus de pontos de quando já está com tudo cheio. O resto soma
+      // direto no tempo de ativação padrão.
+      const efeito = nivel === 0 ? '' : power.id === 'bomb'
+        ? ` · ${t('+{n} linhas limpas', { n: Math.round(power.graceRowsPerLevel * nivel) })}`
+        : power.id === 'life'
+          ? ` · ${t('+{pct}% de pontos', { pct })}`
+          : ` · ${t('+{pct}% de duração', { pct })}`;
+      return {
+        id: power.id,
+        icone: power.emoji,
+        nome: `${power.name} · ${t('nível {n}', { n: nivel })}${efeito}`,
+        valor: `🔑 ${custo}`,
+        aviso: this.wallet < custo,
+      };
+    });
+
+    const html = `<div class="ajustes">${linhas.map((l) => `
+      <button class="ajuste${l.aviso ? ' aviso' : ''}" data-pick="${l.id}">
+        <span class="ajuste-icone">${l.icone}</span>
+        <span class="ajuste-nome">${l.nome}</span>
+        <span class="ajuste-valor">${l.valor}</span>
+      </button>`).join('')}</div>`;
+
+    this.ui.showOverlay({
+      title: t('⬆️ Evoluir poderes'),
+      text: t('Cada nível deixa o power-up mais forte para sempre — e sempre existe o próximo.'),
+      html,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((qual, el) => this.levelUpPower(qual, el));
+  }
+
+  // Toca em um power-up na tela de evoluir: sobe de nível se der, ou avisa
+  // que faltam chaves — mesma resposta do resto do jogo para um toque que
+  // não pode fazer o que pediu (a fase trancada, o item sem chave: "toque
+  // que não faz nada parece defeito").
+  levelUpPower(id, el) {
+    if (!POWERUPS[id]) return;
+    const nivel = this.save.powerLevels?.[id] ?? 0;
+    const custo = powerLevelCost(nivel);
+    if (this.wallet < custo) {
+      sfx.deny();
+      this.ui.shakeElement(el);
+      this.ui.toast(t('🔑 Faltam {n} chaves', { n: custo - this.wallet }));
+      return;
+    }
+
+    sfx.power();
+    update((save) => {
+      save.stats.keys = (save.stats.keys || 0) - custo;
+      save.powerLevels = { ...(save.powerLevels || {}), [id]: nivel + 1 };
+    });
+    this.save = getSave();
+    this.world.burst(this.unicorn.position.clone().setY(1.4), POWERUPS[id].color);
+    this.ui.toast(`${POWERUPS[id].emoji} ${t('Subiu de nível!')}`);
+    this.showPowerShop();
+  }
+
   // Pausa: congela a pista e abre as opções. Volta com o mesmo botão, com
   // Esc/P ou tocando em "Continuar".
   togglePause() {
@@ -2700,10 +2784,17 @@ export class Game {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;
     });
 
+    // O nível de evolução (comprado com chaves em Game.showPowerShop) soma
+    // por cima do resto — ver POWER_LEVEL_PERCENT em models/powerups.js.
+    const nivel = this.save.powerLevels?.[power.id] ?? 0;
+    const bonusNivel = powerLevelMultiplier(nivel);
+
     // Bomba Arco-Íris: a onda sai varrendo a pista e o mundo pisca colorido.
-    // Efeito na hora, sem tempo correndo no HUD — o que dura é a onda.
+    // Efeito na hora, sem tempo correndo no HUD — o que dura é a onda. O
+    // nível não estende a onda em si (ela já limpa tudo o que está visível):
+    // soma linhas livres de obstáculo pista adentro, no que ainda vai nascer.
     if (power.id === 'bomb') {
-      this.world.rainbowBlast();
+      this.world.rainbowBlast(Math.round(power.graceRowsPerLevel * nivel));
       this.ui.rainbowFlash();
       this.ui.shake();
       // A onda nasce atrás do unicórnio e leva uns instantes para varrer o
@@ -2722,13 +2813,15 @@ export class Game {
         this.lives += 1;
         this.ui.setLives(this.lives);
       } else {
-        this.score += 100;      // já estava com tudo cheio: vira ponto
+        // Já estava com tudo cheio: vira ponto. O nível soma no mesmo tanto
+        // que somaria no tempo de ativação, se ele tivesse um.
+        this.score += Math.round(power.scoreBonus * bonusNivel);
       }
       return;
     }
 
     // `powerTime` é o Sol: o dia dele é mais longo.
-    this.powers[power.id] = power.duration * (this.character.powerTime ?? 1);
+    this.powers[power.id] = power.duration * (this.character.powerTime ?? 1) * bonusNivel;
     if (power.id === 'shield') this.player.invulnerable = 0;   // para de piscar
   }
 

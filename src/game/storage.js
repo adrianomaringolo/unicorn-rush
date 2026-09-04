@@ -33,6 +33,10 @@ const DEFAULTS = {
     characters: [],      // unicórnios já trocados por chaves mágicas
     tracks: [],          // pistas já trocadas por chaves mágicas
   },
+  // O nível de evolução de cada power-up (nunca desce, sem teto) — o jeito
+  // de continuar gastando chaves depois de já ter todo mundo (ver
+  // Game.showPowerShop e POWER_LEVEL_PERCENT em models/powerups.js).
+  powerLevels: { shield: 0, magnet: 0, boost: 0, feather: 0, life: 0, bomb: 0 },
   stats: {
     runs: 0,             // corridas começadas
     wins: 0,             // metas do modo Livre completadas

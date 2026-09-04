@@ -73,6 +73,7 @@ export class World {
     this.clouds = [];
     this.sparkles = [];
     this.wave = null;              // a onda da bomba, quando há uma
+    this.bombGraceRows = 0;        // linhas ainda por vir que a Bomba deixa sem obstáculo
     this.spawnTimer = 0;
     this.rowsSincePower = 0;      // espaça os power-ups na pista
     this.rowsSinceKey = 99;       // espaça as chaves mágicas do modo Fases
@@ -341,6 +342,7 @@ export class World {
     this.rowsSincePower = 0;
     this.rowsSinceBarrier = 0;
     this.barrierDone = false;
+    this.bombGraceRows = 0;
     if (mode.scripted) this.clearLessonItems();
     for (const s of this.sparkles) { s.userData.life = 0; s.visible = false; }
     this.clearWave();
@@ -354,12 +356,18 @@ export class World {
   //
   // A onda é uma só de cada vez — pegar duas bombas seguidas recomeça a
   // varredura em vez de acumular duas paredes.
-  rainbowBlast() {
+  //
+  // `extraRows` é o bônus do nível de evolução: a onda já limpa tudo o que
+  // está visível sozinha, então "limpar mais" quer dizer manter as
+  // próximas `extraRows` linhas sem obstáculo enquanto elas nascem (ver
+  // `spawnRow`) — o rastro mágico continuando um pouco mais pista adentro.
+  rainbowBlast(extraRows = 0) {
     this.clearWave();
     const mesh = createRainbowWave();
     mesh.position.z = WAVE_START_Z;
     this.group.add(mesh);
     this.wave = { mesh, z: WAVE_START_Z, idade: 0 };
+    this.bombGraceRows = extraRows;
   }
 
   clearWave() {
@@ -531,9 +539,16 @@ export class World {
     // Na lição quem manda na pista é o Game, uma aula por vez.
     if (this.mode.scripted) return;
 
+    // A Bomba Arco-Íris evoluída deixa um rastro depois da varredura: por
+    // `bombGraceRows` linhas, a pista nasce como se não tivesse obstáculo
+    // nenhum — o mesmo caminho do modo Livre, mas de passagem —, e só então
+    // volta ao normal.
+    const limpando = this.bombGraceRows > 0;
+    if (limpando) this.bombGraceRows -= 1;
+
     // A barreira toma a linha inteira: nada mais nasce junto, fora o prêmio
     // de quem pula, flutuando na altura do salto.
-    if (this.rollBarrier()) {
+    if (!limpando && this.rollBarrier()) {
       const barreira = createBarrier(this.track);
       barreira.position.set(0, 0, SPAWN_DISTANCE);
       this.group.add(barreira);
@@ -546,10 +561,11 @@ export class World {
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
 
-    // Modo Livre: nada de obstáculo, só itens espalhados pelas pistas — e a
-    // chave, que antes era sorteada aqui em cima e jogada fora sem nunca
-    // nascer. Quem só joga no Livre não via chave nenhuma na pista.
-    if (!this.mode.obstacles) {
+    // Modo Livre (ou uma linha que a Bomba deixou limpa): nada de obstáculo,
+    // só itens espalhados pelas pistas — e a chave, que antes era sorteada
+    // aqui em cima e jogada fora sem nunca nascer. Quem só joga no Livre não
+    // via chave nenhuma na pista.
+    if (!this.mode.obstacles || limpando) {
       const powerLane = powerId === null ? -1 : Math.floor(Math.random() * LANES.length);
       for (let lane = 0; lane < LANES.length; lane++) {
         if (lane === keyLane) this.addEntity(createKey(), lane, 1.2);
