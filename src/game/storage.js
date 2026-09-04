@@ -3,8 +3,13 @@
 //
 // Guardar tudo junto (em vez de uma chave por assunto) facilita crescer o
 // save sem espalhar `localStorage.getItem` pelo código.
+//
+// Mais de uma criança pode dividir o mesmo aparelho, e cada uma tem o seu
+// save — ver "Perfis", mais abaixo.
 
-const KEY = 'unicornrush-save';
+const LEGACY_KEY = 'unicornrush-save';       // de antes de existirem perfis
+const PROFILES_KEY = 'unicornrush-profiles';
+const saveKeyFor = (id) => `unicornrush-save:${id}`;
 
 const DEFAULTS = {
   version: 1,
@@ -100,16 +105,94 @@ function migrateFlatLevels(save) {
   return save;
 }
 
-function read() {
+function readFrom(key) {
   try {
-    const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(KEY)));
+    const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(key)));
     return migrateFlatLevels(migrateOldKeys(save));
   } catch {
     return clone(DEFAULTS);   // aba anônima, save corrompido…
   }
 }
 
-const save = read();
+// --- Perfis -------------------------------------------------------------
+//
+// Cada perfil é só um nome e um avatar (`{ id, name, avatar }`) guardados à
+// parte do save de verdade — trocar de perfil não lê nem escreve o save, só
+// diz qual dos vários usar. Quem lê o save de fato é `readFrom`, acima, na
+// chave `unicornrush-save:<id>`.
+//
+// Enquanto ninguém criou um perfil ainda (jogo novo, ou aparelho de quem
+// jogava antes de perfis existirem), o save mora na chave antiga
+// (`LEGACY_KEY`) — é nela que `Game.showCreateProfile` está mexendo até o
+// primeiro perfil nascer. Criar o primeiro perfil **adota** o que já
+// estava ali (progresso de verdade, se havia; os padrões, se o jogo era
+// novo) em vez de começar do zero — perguntar nome e avatar não pode
+// apagar corrida de ninguém. Os perfis seguintes (irmãos, no mesmo
+// aparelho) já começam de `DEFAULTS`, porque são gente diferente.
+function readProfiles() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PROFILES_KEY));
+    if (parsed && Array.isArray(parsed.list)) return parsed;
+  } catch { /* nenhum perfil ainda */ }
+  return { activeId: null, list: [] };
+}
+
+function writeProfiles(data) {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(data)); } catch { /* sem espaço */ }
+}
+
+let profiles = readProfiles();
+
+export function hasProfiles() {
+  return profiles.list.length > 0;
+}
+
+export function listProfiles() {
+  return profiles.list;
+}
+
+export function activeProfile() {
+  return profiles.list.find((p) => p.id === profiles.activeId) || null;
+}
+
+// Cria um perfil e já deixa ele ativo. Precisa de `location.reload()` logo
+// depois — ver o comentário em `switchProfile`.
+export function createProfile(name, avatar) {
+  const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const primeiro = profiles.list.length === 0;
+  // O primeiro perfil herda o que já estava no save antigo (de verdade ou
+  // só os padrões); os de depois começam do zero, porque são outra pessoa.
+  const dados = primeiro ? readFrom(LEGACY_KEY) : clone(DEFAULTS);
+  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(dados)); } catch { /* sem espaço */ }
+  if (primeiro) {
+    try { localStorage.removeItem(LEGACY_KEY); } catch { /* nada a apagar */ }
+  }
+
+  profiles = { activeId: id, list: [...profiles.list, { id, name, avatar }] };
+  writeProfiles(profiles);
+  return id;
+}
+
+// Só troca qual perfil está ativo — não muda nada no save de ninguém. Quem
+// chama isto precisa dar um `location.reload()` em seguida: o `save`
+// carregado abaixo é fixado na abertura do jogo, e um perfil novo tem um
+// save diferente por completo (progresso, idioma, tudo) — remontar tudo
+// em cima do que já estava na tela seria pedir para algo ficar por
+// atualizar. Um recarregamento de verdade, e não a cortina de mentira que
+// a troca de idioma usa, é o que garante que nada do perfil antigo
+// sobra por engano.
+export function switchProfile(id) {
+  if (!profiles.list.some((p) => p.id === id)) return false;
+  profiles = { ...profiles, activeId: id };
+  writeProfiles(profiles);
+  return true;
+}
+
+// A chave de onde este save vem: a do perfil ativo, ou a antiga (para quem
+// ainda não criou nenhum perfil).
+const KEY = profiles.activeId ? saveKeyFor(profiles.activeId) : LEGACY_KEY;
+
+const save = readFrom(KEY);
 
 export function getSave() {
   return save;

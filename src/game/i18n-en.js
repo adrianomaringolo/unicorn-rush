@@ -329,6 +329,15 @@ export const EN = {
   'Atualizar': 'Update',
   'Poderes': 'Powers',
 
+  // --- Perfis: mais de uma criança no mesmo aparelho -------------------------
+  'Trocar de quem está jogando': 'Switch who is playing',
+  'Como você se chama?': "What's your name?",
+  'Escolha um avatar': 'Choose an avatar',
+  '👋 Quem vai brincar?': '👋 Who wants to play?',
+  'Amiguinho': 'Friend',
+  'Novo perfil': 'New profile',
+  'Quem vai brincar?': 'Who wants to play?',
+
   // --- Evoluir os power-ups ---------------------------------------------------
   '⬆️ Evoluir poderes': '⬆️ Level up powers',
   'Cada nível deixa o power-up mais forte para sempre — e sempre existe o próximo.':

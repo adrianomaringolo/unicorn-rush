@@ -941,6 +941,51 @@ Um save antigo (de quando cada coisa tinha sua própria chave) é migrado
 sozinho na primeira vez, e um campo novo no save não quebra o que já estava
 salvo.
 
+## Perfis: mais de uma criança no mesmo aparelho
+
+Duas crianças que dividem o mesmo tablet não podem dividir save: a fase que
+uma abriu, os personagens que a outra trocou por chaves, tudo isso ficaria
+misturado. Por isso o jogo tem **perfis** — cada um com nome e avatar
+próprios, e um save totalmente separado (`src/game/storage.js`).
+
+Um perfil é só `{ id, name, avatar }`, guardado à parte do save de verdade,
+numa lista pequena em `unicornrush-profiles`. O avatar é um dos emojis dos
+seis unicórnios e das dezesseis pistas extras — os mesmos retratos que já
+existiam na loja, sem nenhum desenho novo. O save de cada perfil mora na sua
+própria chave, `unicornrush-save:<id>`; trocar de perfil não lê nem escreve
+save nenhum, só troca **qual delas** o resto do jogo usa a partir do próximo
+carregamento.
+
+**Quem já jogava antes de perfis existirem** não perde nada: enquanto
+ninguém cria um perfil, o save continua morando na chave antiga
+(`unicornrush-save`, sem `:id`). Criar o **primeiro** perfil adota o que já
+estava ali — progresso de verdade, se havia, ou só os padrões, se o jogo era
+novo — em vez de começar do zero; perguntar nome e avatar não pode apagar
+corrida de ninguém. Perfis seguintes (irmãos, no mesmo aparelho) já começam
+de um save limpo, porque são gente diferente.
+
+A tela de criação (**"👋 Quem vai brincar?"**) pede o nome (campo livre,
+até 16 letras, vira "Amiguinho" se ficar em branco) e uma grade de avatares
+para escolher — sem confirmação separada, o próprio nome ou avatar tocado já
+fica marcado até apertar **✅ Pronto**. Ela aparece:
+
+- **na primeira abertura do jogo**, depois da escolha de idioma (que ainda
+  não depende de perfil) e antes da história — assim quem está criando o
+  perfil já escolhe o nome antes de "conhecer" o jogo;
+- **para quem já jogava** antes de perfis existirem, direto ao abrir (sem
+  repetir idioma nem história, que já passaram);
+- **a qualquer momento pelo hub**, tocando no chip do perfil atual (avatar +
+  nome + 🔀, no topo da tela) e depois em **"➕ Novo perfil"**, na grade de
+  quem já existe.
+
+Essa mesma grade (**"Quem vai brincar?"**) é o trocador: um retrato por
+perfil, com o de quem está jogando marcado, e tocar em outro troca. Trocar
+de perfil (e criar um novo) dá um **recarregamento de verdade da página**,
+não a cortina de mentira que a troca de idioma usa — um perfil novo muda o
+save inteiro (idioma, progresso, tudo), e é fácil algum módulo ficar com um
+pedaço do perfil antigo em memória se só o `render()` rodasse de novo por
+cima.
+
 ## Partida, distância e recorde na pista
 
 Toda corrida começa com uma contagem: **3, 2, 1, Vai!**, em números grandes

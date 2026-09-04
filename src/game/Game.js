@@ -25,7 +25,10 @@ import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createCharacterAura, updateCharacterAura } from '../models/characterAura.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
-import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.js';
+import {
+  getSave, update, resetSave, isTestMode, setTestMode,
+  hasProfiles, listProfiles, activeProfile, createProfile, switchProfile,
+} from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import {
@@ -876,6 +879,8 @@ export class Game {
       ? `<span class="pick-badge">${this.difficulty.emoji}</span>`
       : '';
 
+    const perfil = activeProfile();
+
     this.ui.showOverlay({
       home: true,
       picker: true,
@@ -883,6 +888,12 @@ export class Game {
       arrows: false,        // no hub as setas não têm o que percorrer
       title: t('Vamos correr?'),
       html: `
+        ${perfil ? `
+        <button class="perfil-chip" data-pick="perfil" aria-label="${t('Trocar de quem está jogando')}">
+          <span class="perfil-chip-avatar">${perfil.avatar}</span>
+          <span class="perfil-chip-nome">${perfil.name}</span>
+          <span class="perfil-chip-trocar">🔀</span>
+        </button>` : ''}
         <div class="picks">
           <button class="pick" data-pick="character" aria-label="${t('Trocar de unicórnio')}">
             <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
@@ -925,6 +936,7 @@ export class Game {
       if (qual === 'powers') return this.showPowerShop();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
+      if (qual === 'perfil') return this.showProfileSwitcher();
       return this.showModePicker();
     });
 
@@ -1924,13 +1936,17 @@ export class Game {
   // Os dois botões são escritos **cada um no seu idioma**, com a bandeira:
   // é a única tela do jogo que não pode depender de o leitor entender o
   // idioma em que ela está.
-  showLanguagePicker({ primeira = false, voltarPara = 'home' } = {}) {
+  showLanguagePicker({ primeira = false, novoPerfil = false, voltarPara = 'home' } = {}) {
     this.state = STATE.READY;
     this.screen = 'idioma';
     this.ui.showPause(false);
 
     const escolher = (id) => {
-      const seguir = () => (primeira ? this.showVoiceInvite()
+      // `novoPerfil` é o jogo sendo aberto pela primeira vez de todas, sem
+      // nenhum perfil ainda: depois do idioma vem o nome e o avatar, não a
+      // voz nem a história — quem ainda não existe não tem o que ouvir.
+      const seguir = () => (novoPerfil ? this.showCreateProfile()
+        : primeira ? this.showVoiceInvite()
         : voltarPara === 'grown' ? this.showGrownUps() : this.showHome());
       if (id === idioma()) return seguir();
 
@@ -1971,7 +1987,7 @@ export class Game {
         secondary: lang.id !== sugerido,
         onClick: () => escolher(lang.id),
       })),
-      back: primeira ? null : () => (voltarPara === 'grown' ? this.showGrownUps() : this.showHome()),
+      back: (primeira || novoPerfil) ? null : () => (voltarPara === 'grown' ? this.showGrownUps() : this.showHome()),
     });
   }
 
@@ -2005,6 +2021,15 @@ export class Game {
   }
 
   showFirstScreen() {
+    // Ninguém criou um perfil ainda: aparelho novo, ou de quem já jogava
+    // antes de perfis existirem. Quem já tinha idioma escolhido (é o caso
+    // de quem já jogava) não precisa escolher de novo — só diz quem é,
+    // reivindicando o progresso que já tinha. Quem está abrindo o jogo pela
+    // primeira vez de todas passa pelo idioma primeiro (ver
+    // `showLanguagePicker({ novoPerfil: true })`).
+    if (!hasProfiles()) {
+      return this.save.idioma ? this.showCreateProfile() : this.showLanguagePicker({ novoPerfil: true });
+    }
     // Guardado antes de a história marcar `storySeen`: é o que diferencia
     // "abriu o jogo pela primeira vez" de "reabriu a história pelo 📖".
     this.primeiraVez = !this.save.storySeen;
@@ -2012,6 +2037,107 @@ export class Game {
     // adivinhou, que pode não ser o da casa.
     if (!this.save.idioma) return this.showLanguagePicker({ primeira: this.primeiraVez });
     return this.primeiraVez ? this.showStory(0) : this.showHome();
+  }
+
+  // Nome e avatar de quem vai jogar — uma vez por perfil, nunca mais depois
+  // disso (trocar de nome ou avatar não existe hoje; só criar um perfil
+  // novo, ver `showProfileSwitcher`).
+  //
+  // O avatar é um emoji, e a lista é a mesma dos 22 unicórnios: já existe,
+  // já é do jeitinho do jogo, e escolher um não precisa liberar nada — é só
+  // um retrato, não um personagem para jogar.
+  //
+  // Sem botão de voltar quando `voltar` não é passado: é o caso do
+  // primeiríssimo perfil (aparelho novo, ou quem está reivindicando o
+  // progresso de antes dos perfis existirem) — não tem para onde voltar
+  // ainda. Criar um perfil a mais (pelo trocador) já tem.
+  showCreateProfile({ voltar = null } = {}) {
+    this.state = STATE.READY;
+    this.screen = 'novo-perfil';
+    this.ui.showPause(false);
+
+    const avatares = CHARACTER_LIST.map((c) => c.emoji);
+    let escolhido = avatares[0];
+
+    const html = `
+      <div class="perfil-form">
+        <input id="perfil-nome" class="perfil-nome-input" type="text" maxlength="16"
+          placeholder="${t('Como você se chama?')}" autocomplete="off" autocapitalize="words" />
+        <p class="perfil-sub">${t('Escolha um avatar')}</p>
+        <div class="perfil-avatares">
+          ${avatares.map((emoji, i) => `
+            <button class="avatar-opcao${i === 0 ? ' escolhido' : ''}" data-pick="avatar:${i}">${emoji}</button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    this.ui.showOverlay({
+      title: t('👋 Quem vai brincar?'),
+      html,
+      buttons: [{
+        label: t('✅ Pronto'),
+        huge: true,
+        onClick: () => {
+          const campo = document.getElementById('perfil-nome');
+          const nome = (campo?.value || '').trim().slice(0, 16) || t('Amiguinho');
+          createProfile(nome, escolhido);
+          // Perfil novo é save novo por completo — idioma, progresso, tudo.
+          // Um recarregamento de verdade garante que nada do que estava na
+          // tela (nem do save antigo, se havia) sobra por engano. Ver o
+          // comentário de `switchProfile`, em storage.js.
+          location.reload();
+        },
+      }],
+      back: voltar,
+    });
+    this.ui.bindExtra((qual, el) => {
+      if (!qual.startsWith('avatar:')) return;
+      sfx.tap();
+      // O índice (e não o emoji) vai no atributo: emoji ali dentro seria
+      // trocado pelo <img> do withIcons e quebraria as aspas do atributo.
+      escolhido = avatares[Number(qual.slice('avatar:'.length))];
+      document.querySelectorAll('.avatar-opcao.escolhido').forEach((b) => b.classList.remove('escolhido'));
+      el.classList.add('escolhido');
+    });
+  }
+
+  // "Quem vai brincar?": um retrato por perfil, e um "+" para criar mais um
+  // — o Netflix dos unicórnios. Só existe a partir do hub (não faz sentido
+  // trocar de criança no meio de uma corrida), e trocar de perfil recarrega
+  // o jogo de verdade (ver `switchProfile`, em storage.js).
+  showProfileSwitcher() {
+    this.state = STATE.READY;
+    this.screen = 'perfis';
+    this.ui.showPause(false);
+
+    const perfis = listProfiles();
+    const atual = activeProfile();
+    const html = `<div class="perfis-grade">
+      ${perfis.map((p) => `
+        <button class="perfil-tile${p.id === atual?.id ? ' escolhido' : ''}" data-pick="ir:${p.id}">
+          <span class="perfil-tile-avatar">${p.avatar}</span>
+          <span class="perfil-tile-nome">${p.name}</span>
+        </button>`).join('')}
+      <button class="perfil-tile novo" data-pick="novo">
+        <span class="perfil-tile-avatar">➕</span>
+        <span class="perfil-tile-nome">${t('Novo perfil')}</span>
+      </button>
+    </div>`;
+
+    this.ui.showOverlay({
+      title: t('Quem vai brincar?'),
+      html,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual === 'novo') return this.showCreateProfile({ voltar: () => this.showProfileSwitcher() });
+      const id = qual.slice('ir:'.length);
+      if (id === atual?.id) return this.showHome();
+      if (!switchProfile(id)) return;
+      location.reload();
+    });
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
