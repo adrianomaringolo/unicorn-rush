@@ -200,7 +200,7 @@ export const CHARACTERS = {
     // os Doces são a casa dela
     fast: ['doces'],
     // A bolha de chiclete protege: ela começa cada corrida de escudo.
-    startShield: 5,
+    startShield: 20,
     power: 'começa cada corrida dentro de uma bolha',
     aura: { kind: 'bolha', color: [0xffb3d9, 0xff8fc4, 0xffe3f4], count: 8, opacity: 0.6 },
     trail: { colors: [0xfff0f6, 0xffd9ef, 0xffabd9, 0xff5d8f, 0xff9ecb, 0xffc2e4], width: 0.65 },

@@ -82,7 +82,7 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | 🔥 Brasa | `speedRamp: 1.6` | a velocidade sobe a **0,56/s contra 0,35** |
 | 🤍 Lulu | `extraLives: 1` | corre com **4 vidas** em vez de 3 |
 | ⭐ Estrela | `starValue: 2` | a estrela vale **10 corações em vez de 5** |
-| 🫧 Chiclete | `startShield: 5` | começa cada corrida com **5 s de bolha** |
+| 🫧 Chiclete | `startShield: 20` | começa cada corrida com **20 s de bolha** |
 | 🍃 Musgo | `speedRamp: 0.55` | a velocidade sobe a **0,19/s** — o mais fácil de guiar |
 | 🌊 Onda | `topSpeed: 1.14` | o teto vai a **29,6 em vez de 26** |
 | 🧊 Floco | `steady: true` | **ignora o chão escorregadio**: 17 quadros na Geada contra 40 |
