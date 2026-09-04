@@ -389,6 +389,13 @@ export const EN = {
   'Pular': 'Skip',
   'Virar a página': 'Turn the page',
 
+  // --- O convite da voz, na primeira abertura --------------------------------
+  '🔊 Quer que eu leia os textos em voz alta?': '🔊 Want me to read the texts out loud?',
+  'É bom para quem ainda não lê. Dá para trocar isso depois, na coroa 👑, no cantinho dos adultos.':
+    "It's great for anyone who can't read yet. You can change this later, in the crown 👑, in the grown-ups' corner.",
+  '🔊 Sim, por favor': '🔊 Yes, please',
+  '🔈 Não, obrigada': '🔈 No, thanks',
+
   // --- O modo Aprender ------------------------------------------------------
   'Quer aprender a correr?': 'Want to learn how to run?',
   'A Uni mostra os comandos e os poderes numa corrida curtinha — e aqui ninguém perde vida.':
