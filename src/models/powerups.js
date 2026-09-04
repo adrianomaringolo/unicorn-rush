@@ -18,6 +18,33 @@ import { createGlow } from './collectibles.js';
 const mat = (color, opts = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
 
+// --- Evolução por chaves ----------------------------------------------------
+//
+// Depois que já se tem todo mundo — os unicórnios, as pistas —, as chaves
+// continuam nascendo e não tinham mais para onde ir. Aqui é para onde: cada
+// power-up tem um nível próprio, guardado em `save.powerLevels` (nunca
+// desce, e não tem teto), que se compra com chaves na tela de
+// `Game.showPowerShop`.
+//
+// Por padrão, cada nível soma POWER_LEVEL_PERCENT% ao tempo de ativação
+// padrão (o `duration` de cada um, em Game.takePower). Os dois que não têm
+// duração (o efeito é na hora) usam o número que faz as vezes dela: a Bomba
+// soma `graceRowsPerLevel` linhas livres de obstáculo depois da varredura
+// (ver `POWERUPS.bomb`), e a Vida extra soma o mesmo tanto ao `scoreBonus`
+// de quando já está com tudo cheio (ver `POWERUPS.life`).
+export const POWER_LEVEL_PERCENT = 12;
+
+// O multiplicador de um campo que cresce com o nível (duration, scoreBonus).
+// Nível 0 (ainda não evoluído) devolve 1 — o valor padrão, sem bônus nenhum.
+export const powerLevelMultiplier = (nivel) => 1 + (POWER_LEVEL_PERCENT / 100) * (nivel || 0);
+
+// Quanto custa subir do nível `nivel` para o `nivel + 1`. Cresce devagar no
+// começo (o primeiro custa 6 chaves) e vai dobrando a cada uns três níveis —
+// dá para evoluir para sempre, mas cada nível pede mais que o anterior.
+export function powerLevelCost(nivel) {
+  return Math.round(6 * 1.28 ** (nivel || 0));
+}
+
 export const POWERUPS = {
   shield: {
     id: 'shield',
@@ -70,6 +97,9 @@ export const POWERUPS = {
     color: 0xff8fb1,
     duration: 0,          // efeito na hora, não dura
     needsLives: true,     // no Livre não há vida para devolver
+    // Se já estiver com tudo cheio, vira ponto em vez de vida — é este
+    // número que o nível de evolução aumenta (ver POWER_LEVEL_PERCENT).
+    scoreBonus: 100,
     message: 'Mais uma vida!',
   },
   bomb: {
@@ -77,6 +107,11 @@ export const POWERUPS = {
     name: 'Bomba Arco-Íris',
     emoji: '🌈',
     color: 0xff7b9d,      // uma cor só, para o halo e o brilho da pista
+    // Cada nível de evolução soma esse tanto de linhas livres de obstáculo
+    // logo depois da varredura — a onda já limpa tudo o que está visível
+    // (ver createRainbowWave), então "limpar mais longe" só faz sentido
+    // pista adentro, no que ainda vai nascer (ver World.spawnRow).
+    graceRowsPerLevel: 3,
     duration: 0,          // efeito na hora: a onda vai e acaba
     // Peso do sorteio. Com os outros quatro valendo 1, 0,45 dá uma bomba a
     // cada dez power-ups (0,45 / 4,45). No Devagarinho a velocidade sobe

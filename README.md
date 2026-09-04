@@ -800,6 +800,37 @@ tempo que falta — e o efeito no personagem **pisca no último segundo**,
 avisando que vai acabar. Os números (duração, velocidade do turbo) ficam em
 `src/models/powerups.js`, junto com o modelo 3D de cada um.
 
+### Evoluir com chaves
+
+Depois que já se tem todos os unicórnios e todas as pistas, as chaves
+continuam nascendo — e é para isto que elas servem então. Cada power-up tem
+um **nível** próprio, guardado no save (`powerLevels`), que se compra com
+chaves na tela **⬆️ Poderes**, no hub (ao lado de *Estatísticas* — gastar
+chave é brincadeira da criança, então não fica atrás da coroa, como o
+idioma ou a voz). Não tem teto: sempre existe o próximo nível, custando um
+pouco mais.
+
+Por padrão, cada nível soma **12%** ao tempo de ativação padrão — o nível 5
+do Escudo dura 60% mais (8 s viram 12,8 s). Os dois que não duram (o efeito
+é na hora) usam o que faz as vezes disso: a **Bomba Arco-Íris** soma linhas
+livres de obstáculo pista adentro (ver abaixo), e a **Vida extra** soma o
+mesmo tanto ao bônus de pontos de quando já está com tudo cheio — 100 pontos
+viram 136 no nível 3.
+
+O custo cresce devagar no começo e vai dobrando a cada uns três níveis:
+
+| Nível | Custa | Total até ali |
+| --- | --- | --- |
+| 1 | 🔑 6 | 6 |
+| 2 | 🔑 8 | 14 |
+| 5 | 🔑 16 | 53 |
+| 10 | 🔑 55 | 232 |
+
+232 chaves só para o décimo nível de **um** power-up, dos seis que existem —
+de propósito: é a única coisa no jogo sem fim, para quem já conquistou tudo
+o mais. Os números ficam em `POWER_LEVEL_PERCENT` e `powerLevelCost`, em
+`src/models/powerups.js`; a tela em `Game.showPowerShop`.
+
 ### A Bomba Arco-Íris
 
 Ela limpa a pista inteira, então é a menos comum: cada power-up tem um
@@ -830,6 +861,14 @@ O que acontece ao pegar:
    subindo em meio segundo. Vale também para as **barreiras** que atravessam
    as três pistas, que são o que mais atrapalha.
 4. A cortina segue até o fim da pista visível e some.
+
+No nível de evolução (ver *Evoluir com chaves*, acima), a onda em si não
+fica mais comprida — ela já cobre tudo o que já está visível. O que o nível
+soma é o que vem **depois**: por `graceRowsPerLevel × nível` linhas (3 por
+nível), o trecho que ainda vai nascer continua sem obstáculo, como se o
+rastro mágico continuasse pista adentro — o nível 5 deixa 15 linhas extras
+limpas depois da varredura. Quem decide isso é o `World.spawnRow`, e não a
+onda: ela some do jeito de sempre, só a pista que nasce depois é que muda.
 
 Nada do que a onda alcançou machuca mais: o obstáculo que está desmanchando
 sai da conta de colisão no mesmo instante em que é marcado. E, como a onda
@@ -869,6 +908,9 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
   do jogo, nas telas de escolha — são a moeda do jogo, e é com elas que se
   trocam os unicórnios trancados;
 - quais **unicórnios já foram trocados** por chaves;
+- o **nível de evolução de cada power-up** (`powerLevels`), sem teto — é para
+  onde as chaves continuam servindo depois de já ter todo mundo (ver
+  *Evoluir com chaves*, em *Power-ups*);
 - se a **música** está ligada ou desligada.
 
 No primeiro passo da escolha ainda tem o botão **ℹ️ Sobre**, com quem fez, o
@@ -1001,8 +1043,9 @@ Cada figura abre uma tela só, com **todas as opções à vista**:
 
 O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
 cartão. Embaixo das três figuras ficam os botões miúdos — **📖 A história**
-(que reabre o livro; ver *A história*), estatísticas e "sobre" —, e
-**instalar** sai do caminho da criança:
+(que reabre o livro; ver *A história*), estatísticas, **⬆️ Poderes** (a
+tela de evoluir os power-ups com chaves; ver *Evoluir com chaves*, em
+*Power-ups*) e "sobre" —, e **instalar** sai do caminho da criança:
 moram atrás do **👑**, no canto oposto, que só abre segurando o dedo.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
