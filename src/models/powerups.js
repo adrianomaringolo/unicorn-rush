@@ -55,6 +55,12 @@ export const POWERUPS = {
     // com o quadrado da velocidade — ver o comentário do `jumpBoost` do
     // Limão em characters.js). 1,4 rende quase o dobro de altura.
     jumpBoost: 1.4,
+    // Mesmo campo que a Violeta usa (`character.airGlide`): reduz a
+    // gravidade enquanto ele dura, então o pulo não fica só mais alto,
+    // fica também mais longo — demora mais para voltar ao chão. Os dois
+    // efeitos se somam: altura de ×2,6 (1,4² / 0,75) e tempo no ar de
+    // quase o dobro (1,4 / 0,75).
+    airGlide: 0.75,
     message: 'Pulo gigante!',
   },
   life: {
@@ -172,41 +178,112 @@ function boostModel() {
   return g;
 }
 
-// Pena Mágica: uma pena colorida, com as barbas em três tons empilhados
-// (dá o efeito de pena "de várias cores") e uma cana fininha no meio.
+// Pena Mágica: uma pena de verdade, não uma folha — o que separa as duas é
+// a **assimetria** (o lado de fora do vento é bem mais largo que o de
+// dentro, com a cana correndo fora do centro) e o contorno ondulado, em vez
+// do oval liso de uma folha. A ponta é dourada, "molhada" numa cor
+// diferente do resto — como penas de verdade costumam ser —, e a base
+// ganha um penugem fofo, que uma folha também não tem.
+function penaShape(ate = 1) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0.02, 0.75);
+  // Lado de fora (mais largo): desce ondulando até a cana.
+  shape.quadraticCurveTo(0.22, 0.58, 0.16, 0.40);
+  if (ate > 0.3) {
+    shape.quadraticCurveTo(0.26, 0.28, 0.24, 0.05);
+    shape.quadraticCurveTo(0.20, -0.12, 0.10, -0.28);
+    shape.quadraticCurveTo(0.04, -0.42, 0.02, -0.60);
+    shape.lineTo(-0.02, -0.60);
+    // Lado de dentro (mais estreito — a assimetria da pena de verdade).
+    shape.quadraticCurveTo(-0.06, -0.42, -0.12, -0.24);
+    shape.quadraticCurveTo(-0.16, -0.05, -0.12, 0.12);
+    shape.quadraticCurveTo(-0.17, 0.30, -0.10, 0.46);
+  } else {
+    // A "ponta molhada": só o topo, fechando reto pouco abaixo do que a
+    // curva de fora já desceu — ancorada na mesma ponta, não uma cópia
+    // encolhida (senão viraria anéis concêntricos, a cara de folha que se
+    // queria tirar).
+    shape.lineTo(-0.10, 0.40);
+  }
+  shape.quadraticCurveTo(-0.04, 0.62, 0.02, 0.75);
+  shape.closePath();
+  return shape;
+}
+
+function extrudePena(shape, cor) {
+  return new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape, {
+      depth: 0.05, bevelEnabled: true, bevelSize: 0.015, bevelThickness: 0.015, bevelSegments: 2,
+    }),
+    mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.14) })
+  );
+}
+
+// Uma barba: um tracinho fino saindo da cana para fora, em espinha de
+// peixe — é o que faz o contorno ondulado ler como pena, e não como folha
+// (folha tem nervura ramificada, pena tem as barbas em paralelo).
+function barba(de, ate, z, cor) {
+  const dx = ate[0] - de[0];
+  const dy = ate[1] - de[1];
+  const comprimento = Math.hypot(dx, dy);
+  const tira = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.028, 0.018), mat(cor));
+  tira.position.set((de[0] + ate[0]) / 2, (de[1] + ate[1]) / 2, z);
+  tira.rotation.z = Math.atan2(dy, dx);
+  return tira;
+}
+
 function featherModel() {
   const g = new THREE.Group();
 
-  const shape = new THREE.Shape();
-  shape.moveTo(0, 0.6);
-  shape.quadraticCurveTo(0.3, 0.4, 0.26, 0.02);
-  shape.quadraticCurveTo(0.2, -0.28, 0.05, -0.56);
-  shape.quadraticCurveTo(0.02, -0.62, 0, -0.66);
-  shape.quadraticCurveTo(-0.02, -0.62, -0.05, -0.56);
-  shape.quadraticCurveTo(-0.2, -0.28, -0.26, 0.02);
-  shape.quadraticCurveTo(-0.3, 0.4, 0, 0.6);
-  shape.closePath();
+  const leque = extrudePena(penaShape(1), 0xcc5de8);   // violeta
+  leque.castShadow = true;
+  g.add(leque);
 
-  const tons = [0xcc5de8, 0xff8fa3, 0xffd43b];   // violeta, rosa, dourado
-  tons.forEach((cor, i) => {
-    const barbas = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(shape, {
-        depth: 0.05, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 1,
-      }).center(),
-      mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.16) })
-    );
-    const s = 1 - i * 0.24;
-    barbas.scale.set(s, s, 1);
-    barbas.position.z = i * 0.06 - 0.06;
-    barbas.rotation.z = (i - 1) * 0.06;
-    barbas.castShadow = true;
-    g.add(barbas);
-  });
+  const ponta = extrudePena(penaShape(0.2), 0xffd43b);   // dourado
+  ponta.position.z = 0.03;
+  ponta.castShadow = true;
+  g.add(ponta);
 
-  const cana = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 1.2, 6), mat(0xfff6fb));
-  cana.position.z = 0.12;
+  // As barbas: mais compridas e mais numerosas do lado de fora (mais
+  // largo), curtinhas do lado de dentro — cada uma varrida um pouco para
+  // cima, como as de uma pena de verdade.
+  const escuro = new THREE.Color(0xcc5de8).multiplyScalar(0.72).getHex();
+  const dourado = new THREE.Color(0xffd43b).multiplyScalar(0.75).getHex();
+  const RACHIS = 0.015;
+  const DIREITA = [
+    [0.58, 0.17, 0.63], [0.42, 0.20, 0.48], [0.26, 0.23, 0.32], [0.10, 0.22, 0.16],
+    [-0.06, 0.18, 0.00], [-0.22, 0.13, -0.16], [-0.38, 0.07, -0.30],
+  ];
+  const ESQUERDA = [
+    [0.48, -0.09, 0.53], [0.28, -0.14, 0.32], [0.08, -0.13, 0.12],
+    [-0.14, -0.10, -0.10], [-0.34, -0.05, -0.28],
+  ];
+  for (const [y, x, ponta_y] of DIREITA) {
+    g.add(barba([RACHIS, y], [x, ponta_y], 0.09, y > 0.4 ? dourado : escuro));
+  }
+  for (const [y, x, ponta_y] of ESQUERDA) {
+    g.add(barba([RACHIS, y], [x, ponta_y], 0.09, escuro));
+  }
+
+  // A cana: fininha, corre da ponta até a base, um pouco fora do centro —
+  // é ela que dá o eixo assimétrico de uma pena de verdade.
+  const cana = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.028, 1.4, 6), mat(0xfff6fb));
+  cana.position.set(0.01, 0.05, 0.11);
   cana.castShadow = true;
   g.add(cana);
+
+  // O cálamo: o toco liso antes das barbas começarem, embaixo de tudo.
+  const calamo = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.02, 0.16, 6), mat(0xfff6fb));
+  calamo.position.set(0, -0.68, 0.06);
+  calamo.castShadow = true;
+  g.add(calamo);
+
+  // Penugem na base: uns tufos fofos, que uma folha não tem.
+  for (const [x, y] of [[-0.03, -0.36], [0.05, -0.40], [-0.01, -0.46]]) {
+    const tufo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.05, 0), mat(0xfff6fb));
+    tufo.position.set(x, y, 0.05);
+    g.add(tufo);
+  }
 
   return g;
 }
