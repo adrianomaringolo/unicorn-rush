@@ -772,7 +772,7 @@ function animateLock(lock, time, { sweep, wave, sway, speed }) {
 
 // Animação de galope: pernas em diagonal, torso subindo e descendo,
 // cabeça balançando, crina e rabo esvoaçando, asas batendo.
-export function animateUnicorn(unicorn, time, speed, grounded) {
+export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false) {
   const { torso, head, ears, mane, forelock, tail, wings, legs } = unicorn.userData;
   const t = time * speed;
   const gallop = Math.sin(t);
@@ -833,8 +833,10 @@ export function animateUnicorn(unicorn, time, speed, grounded) {
   tail.rotation.x = -0.72 - wind * 0.3 + Math.sin(t + 1) * 0.1;
   forelock.rotation.x = 0.55 - wind * 0.45;
 
-  const flap = grounded ? 0.22 : 0.6;
-  const beat = Math.sin(time * (grounded ? 7 : 11)) * flap;
+  // `flapBoost` é a Pena Mágica: enquanto dura, a asa bate quase o dobro
+  // rápido — é o aviso visual de que o próximo pulo vai bem mais alto.
+  const flap = (grounded ? 0.22 : 0.6) * (flapBoost ? 1.3 : 1);
+  const beat = Math.sin(time * (grounded ? 7 : 11) * (flapBoost ? 1.9 : 1)) * flap;
   wings.children.forEach((wing, i) => {
     const side = i === 0 ? 1 : -1;
     wing.rotation.z = side * 0.22 + beat * side;

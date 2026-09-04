@@ -2420,8 +2420,9 @@ export class Game {
 
     const primeiro = p.jumps === 0;
     // `jumpBoost` é o Limão, que é miúdo e elétrico: pula mais alto que os
-    // outros, nos dois saltos.
-    const impulso = this.character.jumpBoost ?? 1;
+    // outros, nos dois saltos. A Pena Mágica soma o dela por cima, para
+    // quem já pula mais alto continuar pulando mais alto que os outros.
+    const impulso = (this.character.jumpBoost ?? 1) * (this.powers.feather > 0 ? POWERUPS.feather.jumpBoost : 1);
     p.vy = (primeiro ? JUMP_VELOCITY : DOUBLE_JUMP_VELOCITY) * impulso;
     p.grounded = false;
     p.jumps += 1;
@@ -2855,7 +2856,7 @@ export class Game {
     }
 
     this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
-    animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded);
+    animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
     this.updateEchoes(worldSpeed);
     updateAuras(this.auras, this.powers, this.elapsed);
     updateCharacterAura(this.charAura, dt, this.elapsed, worldSpeed);
