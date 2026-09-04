@@ -811,11 +811,13 @@ idioma ou a voz). Não tem teto: sempre existe o próximo nível, custando um
 pouco mais.
 
 Por padrão, cada nível soma **12%** ao tempo de ativação padrão — o nível 5
-do Escudo dura 60% mais (8 s viram 12,8 s). Os dois que não duram (o efeito
-é na hora) usam o que faz as vezes disso: a **Bomba Arco-Íris** soma linhas
-livres de obstáculo pista adentro (ver abaixo), e a **Vida extra** soma o
-mesmo tanto ao bônus de pontos de quando já está com tudo cheio — 100 pontos
-viram 136 no nível 3.
+do Escudo dura 60% mais (8 s viram 12,8 s). A **Bomba Arco-Íris** não dura (o
+efeito é na hora): o nível soma linhas livres de obstáculo pista adentro em
+vez de tempo (ver abaixo).
+
+A **Vida extra** fica de fora — ela não dura (o efeito também é na hora), e
+não tem um "mais forte" que não distorça o jogo: devolve uma vida, ou vira
+100 pontos se já estiver com tudo cheio, do mesmo jeito sempre.
 
 O custo cresce devagar no começo e vai dobrando a cada uns três níveis:
 
@@ -826,10 +828,10 @@ O custo cresce devagar no começo e vai dobrando a cada uns três níveis:
 | 5 | 🔑 16 | 53 |
 | 10 | 🔑 55 | 232 |
 
-232 chaves só para o décimo nível de **um** power-up, dos seis que existem —
-de propósito: é a única coisa no jogo sem fim, para quem já conquistou tudo
-o mais. Os números ficam em `POWER_LEVEL_PERCENT` e `powerLevelCost`, em
-`src/models/powerups.js`; a tela em `Game.showPowerShop`.
+232 chaves só para o décimo nível de **um** power-up, dos cinco que evoluem
+— de propósito: é a única coisa no jogo sem fim, para quem já conquistou
+tudo o mais. Os números ficam em `POWER_LEVEL_PERCENT` e `powerLevelCost`,
+em `src/models/powerups.js`; a tela em `Game.showPowerShop`.
 
 ### A Bomba Arco-Íris
 
@@ -908,9 +910,9 @@ Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
   do jogo, nas telas de escolha — são a moeda do jogo, e é com elas que se
   trocam os unicórnios trancados;
 - quais **unicórnios já foram trocados** por chaves;
-- o **nível de evolução de cada power-up** (`powerLevels`), sem teto — é para
-  onde as chaves continuam servindo depois de já ter todo mundo (ver
-  *Evoluir com chaves*, em *Power-ups*);
+- o **nível de evolução de cada power-up evoluível** (`powerLevels`), sem
+  teto — é para onde as chaves continuam servindo depois de já ter todo
+  mundo (ver *Evoluir com chaves*, em *Power-ups*);
 - se a **música** está ligada ou desligada.
 
 No primeiro passo da escolha ainda tem o botão **ℹ️ Sobre**, com quem fez, o

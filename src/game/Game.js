@@ -594,6 +594,19 @@ export class Game {
   // Em pé, a câmera abre o campo de visão e afasta um pouco para as três
   // pistas continuarem cabendo na tela.
   resize() {
+    // A altura de verdade da tela, para o CSS não confiar só no `dvh`.
+    //
+    // O `dvh` já resolveu a barra de endereço escondendo e mostrando (ver o
+    // comentário de `.card` no style.css), mas em alguns aparelhos ele não
+    // atualiza sozinho quando a barra muda — o cartão fica com uma altura
+    // velha, acha que cabe, não rola, e os botões de baixo saem cortados.
+    // `visualViewport.height` é a tela que existe **agora**, sempre; guardar
+    // 1% dela numa variável CSS dá ao `.card` uma segunda fonte de altura,
+    // que o style.css usa por cima do `dvh` (a última declaração vale).
+    document.documentElement.style.setProperty(
+      '--vh1', `${(window.visualViewport?.height ?? innerHeight) * 0.01}px`
+    );
+
     const w = innerWidth;
     const h = innerHeight;
     const aspect = w / h;
@@ -2109,6 +2122,10 @@ export class Game {
   // existe o próximo, custando mais um pouco (ver POWER_LEVEL_PERCENT e
   // `powerLevelCost` em models/powerups.js).
   //
+  // A Vida extra fica de fora: não dura (o efeito é na hora, e já é só um
+  // reforço — devolve uma vida ou vira ponto) e não tem um "mais forte" que
+  // não distorça o jogo, diferente dos outros cinco.
+  //
   // Uma lista, como o cantinho dos adultos — aqui não se joga, se evolui —,
   // mas fica no hub, não atrás da coroa: gastar chave é brincadeira da
   // criança, não ajuste de adulto.
@@ -2118,19 +2135,16 @@ export class Game {
     this.ui.showPause(false);
     this.ui.setWallet(this.wallet, true);
 
-    const linhas = POWERUP_LIST.map((power) => {
+    const linhas = POWERUP_LIST.filter((power) => power.id !== 'life').map((power) => {
       const nivel = this.save.powerLevels?.[power.id] ?? 0;
       const custo = powerLevelCost(nivel);
       const pct = Math.round(POWER_LEVEL_PERCENT * nivel);
       // A Bomba não dura (o efeito é na hora): o nível soma linhas livres de
-      // obstáculo em vez de tempo. A Vida extra também não dura: soma no
-      // bônus de pontos de quando já está com tudo cheio. O resto soma
-      // direto no tempo de ativação padrão.
+      // obstáculo em vez de tempo. O resto soma direto no tempo de ativação
+      // padrão.
       const efeito = nivel === 0 ? '' : power.id === 'bomb'
         ? ` · ${t('+{n} linhas limpas', { n: Math.round(power.graceRowsPerLevel * nivel) })}`
-        : power.id === 'life'
-          ? ` · ${t('+{pct}% de pontos', { pct })}`
-          : ` · ${t('+{pct}% de duração', { pct })}`;
+        : ` · ${t('+{pct}% de duração', { pct })}`;
       return {
         id: power.id,
         icone: power.emoji,
@@ -2784,8 +2798,20 @@ export class Game {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;
     });
 
+    if (power.id === 'life') {
+      this.powers.flash = FLASH_TIME;
+      if (this.lives < START_LIVES + (this.character.extraLives ?? 0)) {
+        this.lives += 1;
+        this.ui.setLives(this.lives);
+      } else {
+        this.score += 100;      // já estava com tudo cheio: vira ponto
+      }
+      return;
+    }
+
     // O nível de evolução (comprado com chaves em Game.showPowerShop) soma
-    // por cima do resto — ver POWER_LEVEL_PERCENT em models/powerups.js.
+    // por cima do resto — ver POWER_LEVEL_PERCENT em models/powerups.js. A
+    // Vida extra, tratada acima, não evolui (ver Game.showPowerShop).
     const nivel = this.save.powerLevels?.[power.id] ?? 0;
     const bonusNivel = powerLevelMultiplier(nivel);
 
@@ -2804,19 +2830,6 @@ export class Game {
       // Sem `sfx.win()` aqui de propósito: aquela fanfarra é a de fase
       // concluída, e ouvi-la no meio da corrida faria a criança achar que
       // acabou. O estouro visual já é o "uau"; o som é o de power-up mesmo.
-      return;
-    }
-
-    if (power.id === 'life') {
-      this.powers.flash = FLASH_TIME;
-      if (this.lives < START_LIVES + (this.character.extraLives ?? 0)) {
-        this.lives += 1;
-        this.ui.setLives(this.lives);
-      } else {
-        // Já estava com tudo cheio: vira ponto. O nível soma no mesmo tanto
-        // que somaria no tempo de ativação, se ele tivesse um.
-        this.score += Math.round(power.scoreBonus * bonusNivel);
-      }
       return;
     }
 
