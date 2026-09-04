@@ -82,7 +82,7 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | 🔥 Brasa | `speedRamp: 1.6` | a velocidade sobe a **0,56/s contra 0,35** |
 | 🤍 Lulu | `extraLives: 1` | corre com **4 vidas** em vez de 3 |
 | ⭐ Estrela | `starValue: 2` | a estrela vale **10 corações em vez de 5** |
-| 🫧 Chiclete | `startShield: 5` | começa cada corrida com **5 s de bolha** |
+| 🫧 Chiclete | `startShield: 20` | começa cada corrida com **20 s de bolha** |
 | 🍃 Musgo | `speedRamp: 0.55` | a velocidade sobe a **0,19/s** — o mais fácil de guiar |
 | 🌊 Onda | `topSpeed: 1.14` | o teto vai a **29,6 em vez de 26** |
 | 🧊 Floco | `steady: true` | **ignora o chão escorregadio**: 17 quadros na Geada contra 40 |
@@ -940,6 +940,59 @@ escolha.
 Um save antigo (de quando cada coisa tinha sua própria chave) é migrado
 sozinho na primeira vez, e um campo novo no save não quebra o que já estava
 salvo.
+
+## Perfis: mais de uma criança no mesmo aparelho
+
+Duas crianças que dividem o mesmo tablet não podem dividir save: a fase que
+uma abriu, os personagens que a outra trocou por chaves, tudo isso ficaria
+misturado. Por isso o jogo tem **perfis** — cada um com nome e avatar
+próprios, e um save totalmente separado (`src/game/storage.js`).
+
+Um perfil é só `{ id, name, avatar }`, guardado à parte do save de verdade,
+numa lista pequena em `unicornrush-profiles`. O avatar é um dos emojis dos
+seis unicórnios e das dezesseis pistas extras — os mesmos retratos que já
+existiam na loja, sem nenhum desenho novo. O save de cada perfil mora na sua
+própria chave, `unicornrush-save:<id>`; trocar de perfil não lê nem escreve
+save nenhum, só troca **qual delas** o resto do jogo usa a partir do próximo
+carregamento.
+
+**Ninguém precisa digitar nada antes de jogar.** Assim que o jogo abre e não
+existe nenhum perfil ainda — aparelho novo, ou de quem já jogava antes de
+perfis existirem —, um perfil **padrão** nasce sozinho, sem pedir nada:
+`storage.js` adota o que já estava na chave antiga (`unicornrush-save`, sem
+`:id`) — progresso de verdade, se havia, ou só os padrões, se o jogo era
+novo. O avatar padrão é o do personagem que já estava escolhido (para quem
+já jogava, é literalmente "ele mesmo"); o nome fica `null` — sem nome
+próprio ainda —, e a tela mostra um nome-modelo traduzido ("Amiguinho" /
+"Friend") onde quer que o nome apareça, até alguém editar. Perguntar nome e
+avatar de saída não podia virar obstáculo entre a criança e o botão JOGAR.
+
+Personalizar esse perfil (ou criar mais um, para um irmão) é sempre coisa
+de **depois**, pelo trocador — nunca obrigatório:
+
+- tocando no **chip do perfil atual** (avatar + nome + 🔀), no topo do hub,
+  abre a grade de perfis (**"Quem vai brincar?"**);
+- ali, o **✏️** no canto de cada retrato abre a ficha de edição — nome
+  (campo livre, até 16 letras) e a mesma grade de avatares da criação, com
+  o de agora já marcado. Como editar não mexe no save de ninguém, **✅
+  Pronto** só volta para a tela de onde veio, sem recarregar nada;
+- **➕ Novo perfil**, na mesma grade, cria um irmão de verdade: começa de um
+  save limpo (`DEFAULTS`), com seu próprio idioma e sua própria passagem
+  pela história — são pessoas diferentes, então nada é herdado. O "+"
+  desaparece ao chegar em `MAX_PROFILES` (6) — dá para um tablet inteiro de
+  irmãos, sem a grade virar uma lista para rolar.
+
+A grade (**"Quem vai brincar?"**) é redonda, como um retrato de verdade: um
+círculo por perfil, com o nome embaixo — nada de moldura quadrada. O de
+quem está jogando agora vem com o anel rosa; o lápis de editar mora
+encavalado no canto de cada círculo.
+
+Tocar num retrato diferente do atual **troca** de perfil, e isso sim dá um
+**recarregamento de verdade da página** (criar um perfil novo também) — não
+a cortina de mentira que a troca de idioma usa. Um perfil diferente muda o
+save inteiro (idioma, progresso, tudo), e é fácil algum módulo ficar com um
+pedaço do perfil antigo em memória se só o `render()` rodasse de novo por
+cima.
 
 ## Partida, distância e recorde na pista
 

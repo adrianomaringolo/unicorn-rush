@@ -3,8 +3,15 @@
 //
 // Guardar tudo junto (em vez de uma chave por assunto) facilita crescer o
 // save sem espalhar `localStorage.getItem` pelo código.
+//
+// Mais de uma criança pode dividir o mesmo aparelho, e cada uma tem o seu
+// save — ver "Perfis", mais abaixo.
 
-const KEY = 'unicornrush-save';
+import { CHARACTERS, CHARACTER_LIST } from '../models/characters.js';
+
+const LEGACY_KEY = 'unicornrush-save';       // de antes de existirem perfis
+const PROFILES_KEY = 'unicornrush-profiles';
+const saveKeyFor = (id) => `unicornrush-save:${id}`;
 
 const DEFAULTS = {
   version: 1,
@@ -100,16 +107,121 @@ function migrateFlatLevels(save) {
   return save;
 }
 
-function read() {
+function readFrom(key) {
   try {
-    const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(KEY)));
+    const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(key)));
     return migrateFlatLevels(migrateOldKeys(save));
   } catch {
     return clone(DEFAULTS);   // aba anônima, save corrompido…
   }
 }
 
-const save = read();
+// --- Perfis -------------------------------------------------------------
+//
+// Cada perfil é só um nome e um avatar (`{ id, name, avatar }`) guardados à
+// parte do save de verdade — trocar de perfil não lê nem escreve o save, só
+// diz qual dos vários usar. Quem lê o save de fato é `readFrom`, acima, na
+// chave `unicornrush-save:<id>`.
+//
+// Ninguém precisa digitar nada antes de jogar: assim que o jogo abre e não
+// existe nenhum perfil ainda, um perfil **padrão** nasce sozinho, logo
+// abaixo, adotando o que já estava na chave antiga — progresso de verdade,
+// se havia, ou só os padrões, se o jogo era novo. `name: null` marca que
+// ele ainda não tem um nome de verdade escolhido; a tela mostra um
+// nome-modelo traduzido até alguém editar (ver `Game.showCreateProfile`).
+// O avatar padrão é o do personagem que já estava escolhido — para quem já
+// jogava, é literalmente "ele mesmo".
+//
+// Editar nome e avatar, criar mais perfis (irmãos, no mesmo aparelho) e
+// trocar entre eles é tudo coisa de depois, pelo trocador no hub — nunca
+// obrigatório.
+function readProfiles() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PROFILES_KEY));
+    if (parsed && Array.isArray(parsed.list)) return parsed;
+  } catch { /* nenhum perfil ainda */ }
+  return { activeId: null, list: [] };
+}
+
+function writeProfiles(data) {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(data)); } catch { /* sem espaço */ }
+}
+
+const novoId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+// Um tablet muda de mão entre irmãos, não entre uma sala de aula inteira —
+// seis já cobre famílias grandes sem a grade do trocador virar uma lista
+// para rolar.
+export const MAX_PROFILES = 6;
+
+let profiles = readProfiles();
+
+if (profiles.list.length === 0) {
+  const id = novoId();
+  const dados = readFrom(LEGACY_KEY);
+  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(dados)); } catch { /* sem espaço */ }
+  try { localStorage.removeItem(LEGACY_KEY); } catch { /* nada a apagar */ }
+  const avatar = CHARACTERS[dados.choices?.character]?.emoji || CHARACTER_LIST[0].emoji;
+  profiles = { activeId: id, list: [{ id, name: null, avatar }] };
+  writeProfiles(profiles);
+}
+
+export function listProfiles() {
+  return profiles.list;
+}
+
+export function activeProfile() {
+  return profiles.list.find((p) => p.id === profiles.activeId) || null;
+}
+
+// Cria um perfil novo (um irmão) e já deixa ele ativo, começando de um save
+// limpo — é gente diferente. Precisa de `location.reload()` logo depois —
+// ver o comentário em `switchProfile`.
+export function createProfile(name, avatar) {
+  const id = novoId();
+  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(clone(DEFAULTS))); } catch { /* sem espaço */ }
+  profiles = { activeId: id, list: [...profiles.list, { id, name, avatar }] };
+  writeProfiles(profiles);
+  return id;
+}
+
+// Muda nome e/ou avatar de um perfil que já existe. Não mexe no save dele
+// nem precisa de `location.reload()` — nada além do registro de perfis
+// muda, e quem chama já pode remontar a tela na hora.
+export function updateProfile(id, { name, avatar } = {}) {
+  const i = profiles.list.findIndex((p) => p.id === id);
+  if (i === -1) return false;
+  const lista = [...profiles.list];
+  lista[i] = {
+    ...lista[i],
+    ...(name !== undefined ? { name } : {}),
+    ...(avatar !== undefined ? { avatar } : {}),
+  };
+  profiles = { ...profiles, list: lista };
+  writeProfiles(profiles);
+  return true;
+}
+
+// Só troca qual perfil está ativo — não muda nada no save de ninguém. Quem
+// chama isto precisa dar um `location.reload()` em seguida: o `save`
+// carregado abaixo é fixado na abertura do jogo, e um perfil novo tem um
+// save diferente por completo (progresso, idioma, tudo) — remontar tudo
+// em cima do que já estava na tela seria pedir para algo ficar por
+// atualizar. Um recarregamento de verdade, e não a cortina de mentira que
+// a troca de idioma usa, é o que garante que nada do perfil antigo
+// sobra por engano.
+export function switchProfile(id) {
+  if (!profiles.list.some((p) => p.id === id)) return false;
+  profiles = { ...profiles, activeId: id };
+  writeProfiles(profiles);
+  return true;
+}
+
+// A chave de onde este save vem: a do perfil ativo — sempre existe um a
+// esta altura, por causa do perfil padrão logo acima.
+const KEY = saveKeyFor(profiles.activeId);
+
+const save = readFrom(KEY);
 
 export function getSave() {
   return save;

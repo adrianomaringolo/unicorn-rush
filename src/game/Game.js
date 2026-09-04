@@ -25,7 +25,10 @@ import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createCharacterAura, updateCharacterAura } from '../models/characterAura.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
-import { getSave, update, resetSave, isTestMode, setTestMode } from './storage.js';
+import {
+  getSave, update, resetSave, isTestMode, setTestMode,
+  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, MAX_PROFILES,
+} from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import {
@@ -64,6 +67,14 @@ function formatSegundos(s) {
   if (Number.isInteger(arredondado)) return String(arredondado);
   const separador = idioma() === 'en' ? '.' : ',';
   return arredondado.toFixed(1).replace('.', separador);
+}
+
+// O nome de um perfil é digitado por quem joga (ou por um adulto, por ele) —
+// diferente do resto do texto do jogo, que já nasce seguro. Usado no
+// atributo `value` do campo de nome e na grade de perfis do trocador.
+const ENTIDADES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+function escapeHtml(texto) {
+  return String(texto).replace(/[&<>"']/g, (c) => ENTIDADES[c]);
 }
 
 // O que a lição diz quando a mesma aula já falhou umas vezes. Menos "tente
@@ -876,6 +887,8 @@ export class Game {
       ? `<span class="pick-badge">${this.difficulty.emoji}</span>`
       : '';
 
+    const perfil = activeProfile();
+
     this.ui.showOverlay({
       home: true,
       picker: true,
@@ -883,6 +896,12 @@ export class Game {
       arrows: false,        // no hub as setas não têm o que percorrer
       title: t('Vamos correr?'),
       html: `
+        ${perfil ? `
+        <button class="perfil-chip" data-pick="perfil" aria-label="${t('Trocar de quem está jogando')}">
+          <span class="perfil-chip-avatar">${perfil.avatar}</span>
+          <span class="perfil-chip-nome">${perfil.name ? escapeHtml(perfil.name) : t('Amiguinho')}</span>
+          <span class="perfil-chip-trocar">🔀</span>
+        </button>` : ''}
         <div class="picks">
           <button class="pick" data-pick="character" aria-label="${t('Trocar de unicórnio')}">
             <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
@@ -925,6 +944,7 @@ export class Game {
       if (qual === 'powers') return this.showPowerShop();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
+      if (qual === 'perfil') return this.showProfileSwitcher();
       return this.showModePicker();
     });
 
@@ -2012,6 +2032,126 @@ export class Game {
     // adivinhou, que pode não ser o da casa.
     if (!this.save.idioma) return this.showLanguagePicker({ primeira: this.primeiraVez });
     return this.primeiraVez ? this.showStory(0) : this.showHome();
+  }
+
+  // Nome e avatar de quem vai jogar. O avatar é um emoji, e a lista é a
+  // mesma dos 22 unicórnios: já existe, já é do jeitinho do jogo, e
+  // escolher um não precisa liberar nada — é só um retrato, não um
+  // personagem para jogar.
+  //
+  // Sem `perfil`, cria um perfil **novo** (um irmão) e recarrega de
+  // verdade — ver o comentário de `createProfile`, em storage.js. Com
+  // `perfil`, **edita** o nome e/ou o avatar dele no lugar: como isso não
+  // mexe em save nenhum, basta voltar para onde se estava.
+  showCreateProfile({ perfil = null, voltar = null } = {}) {
+    this.state = STATE.READY;
+    this.screen = 'novo-perfil';
+    this.ui.showPause(false);
+
+    const avatares = CHARACTER_LIST.map((c) => c.emoji);
+    let escolhido = perfil?.avatar || avatares[0];
+
+    const html = `
+      <div class="perfil-form">
+        <input id="perfil-nome" class="perfil-nome-input" type="text" maxlength="16"
+          placeholder="${t('Como você se chama?')}" autocomplete="off" autocapitalize="words"
+          value="${escapeHtml(perfil?.name || '')}" />
+        <p class="perfil-sub">${t('Escolha um avatar')}</p>
+        <div class="perfil-avatares">
+          ${avatares.map((emoji, i) => `
+            <button class="avatar-opcao${emoji === escolhido ? ' escolhido' : ''}" data-pick="avatar:${i}">${emoji}</button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    this.ui.showOverlay({
+      title: perfil ? t('✏️ Editar perfil') : t('👋 Quem vai brincar?'),
+      html,
+      buttons: [{
+        label: t('✅ Pronto'),
+        huge: true,
+        onClick: () => {
+          const campo = document.getElementById('perfil-nome');
+          // Em branco: perfil novo ganha o nome-modelo na hora; um perfil
+          // editado volta a não ter nome próprio (`null`), e a tela
+          // continua mostrando o modelo — traduzido, e não congelado no
+          // idioma de quando alguém apagou o campo.
+          const digitado = (campo?.value || '').trim().slice(0, 16) || null;
+          if (perfil) {
+            updateProfile(perfil.id, { name: digitado, avatar: escolhido });
+            (voltar || (() => this.showHome()))();
+            return;
+          }
+          createProfile(digitado || t('Amiguinho'), escolhido);
+          // Perfil novo é save novo por completo — idioma, progresso, tudo.
+          // Um recarregamento de verdade garante que nada do que estava na
+          // tela sobra por engano. Ver o comentário de `switchProfile`, em
+          // storage.js.
+          location.reload();
+        },
+      }],
+      back: voltar,
+    });
+    this.ui.bindExtra((qual, el) => {
+      if (!qual.startsWith('avatar:')) return;
+      sfx.tap();
+      // O índice (e não o emoji) vai no atributo: emoji ali dentro seria
+      // trocado pelo <img> do withIcons e quebraria as aspas do atributo.
+      escolhido = avatares[Number(qual.slice('avatar:'.length))];
+      document.querySelectorAll('.avatar-opcao.escolhido').forEach((b) => b.classList.remove('escolhido'));
+      el.classList.add('escolhido');
+    });
+  }
+
+  // "Quem vai brincar?": um retrato por perfil, um lápis para editar cada
+  // um e um "+" para criar mais um — o Netflix dos unicórnios. Só existe a
+  // partir do hub (não faz sentido trocar de criança no meio de uma
+  // corrida), e trocar de perfil recarrega o jogo de verdade (ver
+  // `switchProfile`, em storage.js).
+  showProfileSwitcher() {
+    this.state = STATE.READY;
+    this.screen = 'perfis';
+    this.ui.showPause(false);
+
+    const perfis = listProfiles();
+    const atual = activeProfile();
+    const html = `<div class="perfis-grade">
+      ${perfis.map((p) => `
+        <div class="perfil-tile-wrap">
+          <button class="perfil-tile${p.id === atual?.id ? ' escolhido' : ''}" data-pick="ir:${p.id}">
+            <span class="perfil-tile-avatar">${p.avatar}</span>
+          </button>
+          <button class="perfil-tile-editar" data-pick="editar:${p.id}" aria-label="${t('Editar perfil')}">✏️</button>
+          <span class="perfil-tile-nome">${p.name ? escapeHtml(p.name) : t('Amiguinho')}</span>
+        </div>`).join('')}
+      ${perfis.length < MAX_PROFILES ? `
+      <div class="perfil-tile-wrap">
+        <button class="perfil-tile novo" data-pick="novo">
+          <span class="perfil-tile-avatar">➕</span>
+        </button>
+        <span class="perfil-tile-nome">${t('Novo perfil')}</span>
+      </div>` : ''}
+    </div>`;
+
+    this.ui.showOverlay({
+      title: t('Quem vai brincar?'),
+      html,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual === 'novo') return this.showCreateProfile({ voltar: () => this.showProfileSwitcher() });
+      if (qual.startsWith('editar:')) {
+        const alvo = perfis.find((p) => p.id === qual.slice('editar:'.length));
+        if (alvo) this.showCreateProfile({ perfil: alvo, voltar: () => this.showProfileSwitcher() });
+        return;
+      }
+      const id = qual.slice('ir:'.length);
+      if (id === atual?.id) return this.showHome();
+      if (!switchProfile(id)) return;
+      location.reload();
+    });
   }
 
   // Cartão "sobre": quem fez, com o quê, e os links.
