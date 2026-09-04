@@ -27,15 +27,16 @@ const mat = (color, opts = {}) =>
 // `Game.showPowerShop`.
 //
 // Por padrão, cada nível soma POWER_LEVEL_PERCENT% ao tempo de ativação
-// padrão (o `duration` de cada um, em Game.takePower). Os dois que não têm
-// duração (o efeito é na hora) usam o número que faz as vezes dela: a Bomba
-// soma `graceRowsPerLevel` linhas livres de obstáculo depois da varredura
-// (ver `POWERUPS.bomb`), e a Vida extra soma o mesmo tanto ao `scoreBonus`
-// de quando já está com tudo cheio (ver `POWERUPS.life`).
+// padrão (o `duration` de cada um, em Game.takePower). A Bomba não tem
+// duração (o efeito é na hora): soma `graceRowsPerLevel` linhas livres de
+// obstáculo depois da varredura em vez de tempo (ver `POWERUPS.bomb`). A
+// Vida extra fica de fora — não dura, e não tem um "mais forte" que não
+// distorça o jogo (ver `Game.showPowerShop`).
 export const POWER_LEVEL_PERCENT = 12;
 
-// O multiplicador de um campo que cresce com o nível (duration, scoreBonus).
-// Nível 0 (ainda não evoluído) devolve 1 — o valor padrão, sem bônus nenhum.
+// O multiplicador de um campo que cresce com o nível (o `duration` de cada
+// power-up). Nível 0 (ainda não evoluído) devolve 1 — o valor padrão, sem
+// bônus nenhum.
 export const powerLevelMultiplier = (nivel) => 1 + (POWER_LEVEL_PERCENT / 100) * (nivel || 0);
 
 // Quanto custa subir do nível `nivel` para o `nivel + 1`. Cresce devagar no
@@ -97,9 +98,6 @@ export const POWERUPS = {
     color: 0xff8fb1,
     duration: 0,          // efeito na hora, não dura
     needsLives: true,     // no Livre não há vida para devolver
-    // Se já estiver com tudo cheio, vira ponto em vez de vida — é este
-    // número que o nível de evolução aumenta (ver POWER_LEVEL_PERCENT).
-    scoreBonus: 100,
     message: 'Mais uma vida!',
   },
   bomb: {
