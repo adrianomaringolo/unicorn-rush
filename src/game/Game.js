@@ -18,9 +18,7 @@ import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tr
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
 import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../models/rainbowTrail.js';
-import {
-  POWERUPS, POWERUP_LIST, powerLevelMultiplier, powerLevelCost, POWER_LEVEL_PERCENT,
-} from '../models/powerups.js';
+import { POWERUPS, POWERUP_LIST, powerLevelMultiplier, powerLevelCost } from '../models/powerups.js';
 import { createGlow } from '../models/collectibles.js';
 import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../models/keyReward.js';
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
@@ -58,6 +56,15 @@ const ECHO_LAG = 0.12;
 // Carência depois da Bomba Arco-Íris: o tempo que a onda leva para sair de
 // trás do unicórnio e cobrir o campo próximo.
 const BOMB_GRACE = 0.6;
+
+// Segundos para a tela de evoluir poderes: "9s" quando fecha redondo, "12,8s"
+// quando não — a vírgula (ou o ponto, em inglês) só aparece quando precisa.
+function formatSegundos(s) {
+  const arredondado = Math.round(s * 10) / 10;
+  if (Number.isInteger(arredondado)) return String(arredondado);
+  const separador = idioma() === 'en' ? '.' : ',';
+  return arredondado.toFixed(1).replace('.', separador);
+}
 
 // O que a lição diz quando a mesma aula já falhou umas vezes. Menos "tente
 // de novo" e mais "faça isto".
@@ -2138,13 +2145,14 @@ export class Game {
     const linhas = POWERUP_LIST.filter((power) => power.id !== 'life').map((power) => {
       const nivel = this.save.powerLevels?.[power.id] ?? 0;
       const custo = powerLevelCost(nivel);
-      const pct = Math.round(POWER_LEVEL_PERCENT * nivel);
-      // A Bomba não dura (o efeito é na hora): o nível soma linhas livres de
-      // obstáculo em vez de tempo. O resto soma direto no tempo de ativação
-      // padrão.
-      const efeito = nivel === 0 ? '' : power.id === 'bomb'
-        ? ` · ${t('+{n} linhas limpas', { n: Math.round(power.graceRowsPerLevel * nivel) })}`
-        : ` · ${t('+{pct}% de duração', { pct })}`;
+      // Segundos e linhas, não porcentagem: "dura 9s" é o que uma criança
+      // sente na corrida — "+12% de duração" pede conta que ela não faz. A
+      // Bomba não dura (o efeito é na hora): o nível soma linhas livres de
+      // obstáculo, e só aparece a partir do nível 1 (no zero não há bônus
+      // nenhum para mostrar).
+      const efeito = power.id === 'bomb'
+        ? nivel === 0 ? '' : ` · ${t('+{n} linhas limpas', { n: Math.round(power.graceRowsPerLevel * nivel) })}`
+        : ` · ${t('dura {s}s', { s: formatSegundos(power.duration * powerLevelMultiplier(nivel)) })}`;
       return {
         id: power.id,
         icone: power.emoji,
@@ -2871,7 +2879,7 @@ export class Game {
     this.ui.setPowers(
       Object.entries(this.powers)
         .filter(([id, time]) => time > 0 && POWERUPS[id]?.duration > 0)
-        .map(([id, time]) => ({ emoji: POWERUPS[id].emoji, ratio: time / POWERUPS[id].duration }))
+        .map(([id, time]) => ({ id, emoji: POWERUPS[id].emoji, ratio: time / POWERUPS[id].duration }))
     );
     if (this.powers.magnet > 0) this.attractCollectibles(dt);
   }

@@ -335,7 +335,7 @@ export const EN = {
     'Each level makes the power-up stronger for good — and there is always a next one.',
   'nível {n}': 'level {n}',
   '+{n} linhas limpas': '+{n} clear lines',
-  '+{pct}% de duração': '+{pct}% duration',
+  'dura {s}s': 'lasts {s}s',
   '🔑 Faltam {n} chaves': '🔑 {n} keys short',
   'Subiu de nível!': 'Leveled up!',
 

@@ -800,6 +800,13 @@ tempo que falta — e o efeito no personagem **pisca no último segundo**,
 avisando que vai acabar. Os números (duração, velocidade do turbo) ficam em
 `src/models/powerups.js`, junto com o modelo 3D de cada um.
 
+O cartãozinho do power-up nasce uma vez só: `Ui.setPowers` roda a cada
+quadro enquanto o poder dura (é ela que anda a barrinha), mas só cria o
+elemento na primeira vez — depois só muda a largura da barra no que já
+existe. Recriar tudo a cada quadro, como era antes, reiniciava a animação de
+entrada antes dela terminar, e o cartão parecia tremer o tempo todo em que o
+poder valia.
+
 ### Evoluir com chaves
 
 Depois que já se tem todos os unicórnios e todas as pistas, as chaves
@@ -814,6 +821,10 @@ Por padrão, cada nível soma **12%** ao tempo de ativação padrão — o níve
 do Escudo dura 60% mais (8 s viram 12,8 s). A **Bomba Arco-Íris** não dura (o
 efeito é na hora): o nível soma linhas livres de obstáculo pista adentro em
 vez de tempo (ver abaixo).
+
+Na tela, porém, ninguém vê "12%": vê **"dura 12,8s"**, ou **"+12 linhas
+limpas"** na Bomba. Uma criança sente segundos de corrida, não porcentagem —
+uma conta que ela ainda não faz.
 
 A **Vida extra** fica de fora — ela não dura (o efeito também é na hora), e
 não tem um "mais forte" que não distorça o jogo: devolve uma vida, ou vira

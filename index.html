@@ -46,9 +46,18 @@
     <canvas id="scene"></canvas>
 
     <div id="hud">
-      <div class="panel score">
-        <span class="label" data-t>Pontos</span>
-        <span id="score">0</span>
+      <!-- Pontos e Distância ficam sempre juntos, um embaixo do outro — as
+           duas contas que sobem com a corrida, lado a lado com as que dizem
+           "quanto falta" (Meta, Chaves, Vidas). -->
+      <div class="hud-stack">
+        <div class="panel score">
+          <span class="label" data-t>Pontos</span>
+          <span id="score">0</span>
+        </div>
+        <div class="panel distance">
+          <span class="label" data-t>Distância</span>
+          <span id="distance">0</span>
+        </div>
       </div>
       <div class="panel hearts">
         <span class="label" data-t>Corações</span>
@@ -69,10 +78,6 @@
       <div class="panel lives">
         <span class="label" data-t>Vidas</span>
         <span id="lives"><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /><img class="fi" src="./assets/emoji/growing_heart.png" alt="💗" draggable="false" /></span>
-      </div>
-      <div class="panel distance">
-        <span class="label" data-t>Distância</span>
-        <span id="distance">0</span>
       </div>
       <div class="panel best">
         <span class="label" data-t>Recorde</span>
