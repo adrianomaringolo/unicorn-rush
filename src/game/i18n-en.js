@@ -337,6 +337,8 @@ export const EN = {
   'Amiguinho': 'Friend',
   'Novo perfil': 'New profile',
   'Quem vai brincar?': 'Who wants to play?',
+  '✏️ Editar perfil': '✏️ Edit profile',
+  'Editar perfil': 'Edit profile',
 
   // --- Evoluir os power-ups ---------------------------------------------------
   '⬆️ Evoluir poderes': '⬆️ Level up powers',

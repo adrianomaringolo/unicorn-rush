@@ -956,32 +956,33 @@ própria chave, `unicornrush-save:<id>`; trocar de perfil não lê nem escreve
 save nenhum, só troca **qual delas** o resto do jogo usa a partir do próximo
 carregamento.
 
-**Quem já jogava antes de perfis existirem** não perde nada: enquanto
-ninguém cria um perfil, o save continua morando na chave antiga
-(`unicornrush-save`, sem `:id`). Criar o **primeiro** perfil adota o que já
-estava ali — progresso de verdade, se havia, ou só os padrões, se o jogo era
-novo — em vez de começar do zero; perguntar nome e avatar não pode apagar
-corrida de ninguém. Perfis seguintes (irmãos, no mesmo aparelho) já começam
-de um save limpo, porque são gente diferente.
+**Ninguém precisa digitar nada antes de jogar.** Assim que o jogo abre e não
+existe nenhum perfil ainda — aparelho novo, ou de quem já jogava antes de
+perfis existirem —, um perfil **padrão** nasce sozinho, sem pedir nada:
+`storage.js` adota o que já estava na chave antiga (`unicornrush-save`, sem
+`:id`) — progresso de verdade, se havia, ou só os padrões, se o jogo era
+novo. O avatar padrão é o do personagem que já estava escolhido (para quem
+já jogava, é literalmente "ele mesmo"); o nome fica `null` — sem nome
+próprio ainda —, e a tela mostra um nome-modelo traduzido ("Amiguinho" /
+"Friend") onde quer que o nome apareça, até alguém editar. Perguntar nome e
+avatar de saída não podia virar obstáculo entre a criança e o botão JOGAR.
 
-A tela de criação (**"👋 Quem vai brincar?"**) pede o nome (campo livre,
-até 16 letras, vira "Amiguinho" se ficar em branco) e uma grade de avatares
-para escolher — sem confirmação separada, o próprio nome ou avatar tocado já
-fica marcado até apertar **✅ Pronto**. Ela aparece:
+Personalizar esse perfil (ou criar mais um, para um irmão) é sempre coisa
+de **depois**, pelo trocador — nunca obrigatório:
 
-- **na primeira abertura do jogo**, depois da escolha de idioma (que ainda
-  não depende de perfil) e antes da história — assim quem está criando o
-  perfil já escolhe o nome antes de "conhecer" o jogo;
-- **para quem já jogava** antes de perfis existirem, direto ao abrir (sem
-  repetir idioma nem história, que já passaram);
-- **a qualquer momento pelo hub**, tocando no chip do perfil atual (avatar +
-  nome + 🔀, no topo da tela) e depois em **"➕ Novo perfil"**, na grade de
-  quem já existe.
+- tocando no **chip do perfil atual** (avatar + nome + 🔀), no topo do hub,
+  abre a grade de perfis (**"Quem vai brincar?"**);
+- ali, o **✏️** no canto de cada retrato abre a ficha de edição — nome
+  (campo livre, até 16 letras) e a mesma grade de avatares da criação, com
+  o de agora já marcado. Como editar não mexe no save de ninguém, **✅
+  Pronto** só volta para a tela de onde veio, sem recarregar nada;
+- **➕ Novo perfil**, na mesma grade, cria um irmão de verdade: começa de um
+  save limpo (`DEFAULTS`), com seu próprio idioma e sua própria passagem
+  pela história — são pessoas diferentes, então nada é herdado.
 
-Essa mesma grade (**"Quem vai brincar?"**) é o trocador: um retrato por
-perfil, com o de quem está jogando marcado, e tocar em outro troca. Trocar
-de perfil (e criar um novo) dá um **recarregamento de verdade da página**,
-não a cortina de mentira que a troca de idioma usa — um perfil novo muda o
+Tocar num retrato diferente do atual **troca** de perfil, e isso sim dá um
+**recarregamento de verdade da página** (criar um perfil novo também) — não
+a cortina de mentira que a troca de idioma usa. Um perfil diferente muda o
 save inteiro (idioma, progresso, tudo), e é fácil algum módulo ficar com um
 pedaço do perfil antigo em memória se só o `render()` rodasse de novo por
 cima.

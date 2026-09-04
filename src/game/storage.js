@@ -7,6 +7,8 @@
 // Mais de uma criança pode dividir o mesmo aparelho, e cada uma tem o seu
 // save — ver "Perfis", mais abaixo.
 
+import { CHARACTERS, CHARACTER_LIST } from '../models/characters.js';
+
 const LEGACY_KEY = 'unicornrush-save';       // de antes de existirem perfis
 const PROFILES_KEY = 'unicornrush-profiles';
 const saveKeyFor = (id) => `unicornrush-save:${id}`;
@@ -121,14 +123,18 @@ function readFrom(key) {
 // diz qual dos vários usar. Quem lê o save de fato é `readFrom`, acima, na
 // chave `unicornrush-save:<id>`.
 //
-// Enquanto ninguém criou um perfil ainda (jogo novo, ou aparelho de quem
-// jogava antes de perfis existirem), o save mora na chave antiga
-// (`LEGACY_KEY`) — é nela que `Game.showCreateProfile` está mexendo até o
-// primeiro perfil nascer. Criar o primeiro perfil **adota** o que já
-// estava ali (progresso de verdade, se havia; os padrões, se o jogo era
-// novo) em vez de começar do zero — perguntar nome e avatar não pode
-// apagar corrida de ninguém. Os perfis seguintes (irmãos, no mesmo
-// aparelho) já começam de `DEFAULTS`, porque são gente diferente.
+// Ninguém precisa digitar nada antes de jogar: assim que o jogo abre e não
+// existe nenhum perfil ainda, um perfil **padrão** nasce sozinho, logo
+// abaixo, adotando o que já estava na chave antiga — progresso de verdade,
+// se havia, ou só os padrões, se o jogo era novo. `name: null` marca que
+// ele ainda não tem um nome de verdade escolhido; a tela mostra um
+// nome-modelo traduzido até alguém editar (ver `Game.showCreateProfile`).
+// O avatar padrão é o do personagem que já estava escolhido — para quem já
+// jogava, é literalmente "ele mesmo".
+//
+// Editar nome e avatar, criar mais perfis (irmãos, no mesmo aparelho) e
+// trocar entre eles é tudo coisa de depois, pelo trocador no hub — nunca
+// obrigatório.
 function readProfiles() {
   try {
     const parsed = JSON.parse(localStorage.getItem(PROFILES_KEY));
@@ -141,10 +147,18 @@ function writeProfiles(data) {
   try { localStorage.setItem(PROFILES_KEY, JSON.stringify(data)); } catch { /* sem espaço */ }
 }
 
+const novoId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
 let profiles = readProfiles();
 
-export function hasProfiles() {
-  return profiles.list.length > 0;
+if (profiles.list.length === 0) {
+  const id = novoId();
+  const dados = readFrom(LEGACY_KEY);
+  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(dados)); } catch { /* sem espaço */ }
+  try { localStorage.removeItem(LEGACY_KEY); } catch { /* nada a apagar */ }
+  const avatar = CHARACTERS[dados.choices?.character]?.emoji || CHARACTER_LIST[0].emoji;
+  profiles = { activeId: id, list: [{ id, name: null, avatar }] };
+  writeProfiles(profiles);
 }
 
 export function listProfiles() {
@@ -155,22 +169,32 @@ export function activeProfile() {
   return profiles.list.find((p) => p.id === profiles.activeId) || null;
 }
 
-// Cria um perfil e já deixa ele ativo. Precisa de `location.reload()` logo
-// depois — ver o comentário em `switchProfile`.
+// Cria um perfil novo (um irmão) e já deixa ele ativo, começando de um save
+// limpo — é gente diferente. Precisa de `location.reload()` logo depois —
+// ver o comentário em `switchProfile`.
 export function createProfile(name, avatar) {
-  const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-  const primeiro = profiles.list.length === 0;
-  // O primeiro perfil herda o que já estava no save antigo (de verdade ou
-  // só os padrões); os de depois começam do zero, porque são outra pessoa.
-  const dados = primeiro ? readFrom(LEGACY_KEY) : clone(DEFAULTS);
-  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(dados)); } catch { /* sem espaço */ }
-  if (primeiro) {
-    try { localStorage.removeItem(LEGACY_KEY); } catch { /* nada a apagar */ }
-  }
-
+  const id = novoId();
+  try { localStorage.setItem(saveKeyFor(id), JSON.stringify(clone(DEFAULTS))); } catch { /* sem espaço */ }
   profiles = { activeId: id, list: [...profiles.list, { id, name, avatar }] };
   writeProfiles(profiles);
   return id;
+}
+
+// Muda nome e/ou avatar de um perfil que já existe. Não mexe no save dele
+// nem precisa de `location.reload()` — nada além do registro de perfis
+// muda, e quem chama já pode remontar a tela na hora.
+export function updateProfile(id, { name, avatar } = {}) {
+  const i = profiles.list.findIndex((p) => p.id === id);
+  if (i === -1) return false;
+  const lista = [...profiles.list];
+  lista[i] = {
+    ...lista[i],
+    ...(name !== undefined ? { name } : {}),
+    ...(avatar !== undefined ? { avatar } : {}),
+  };
+  profiles = { ...profiles, list: lista };
+  writeProfiles(profiles);
+  return true;
 }
 
 // Só troca qual perfil está ativo — não muda nada no save de ninguém. Quem
@@ -188,9 +212,9 @@ export function switchProfile(id) {
   return true;
 }
 
-// A chave de onde este save vem: a do perfil ativo, ou a antiga (para quem
-// ainda não criou nenhum perfil).
-const KEY = profiles.activeId ? saveKeyFor(profiles.activeId) : LEGACY_KEY;
+// A chave de onde este save vem: a do perfil ativo — sempre existe um a
+// esta altura, por causa do perfil padrão logo acima.
+const KEY = saveKeyFor(profiles.activeId);
 
 const save = readFrom(KEY);
 
