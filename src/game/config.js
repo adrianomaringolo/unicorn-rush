@@ -76,7 +76,7 @@ export const MODES = {
 
   adventure: {
     id: 'adventure',
-    name: 'Aventura',
+    name: 'Desafio',
     emoji: '⭐',
     tagline: 'Com obstáculos e 3 vidas',
     obstacles: true,
@@ -87,15 +87,15 @@ export const MODES = {
     target: null,        // corrida infinita
     difficulties: 'adventure',
     // Aqui a chave também aparece, mas bem mais rara que nas Fases: lá sai
-    // uma a cada ~12 linhas, aqui a cada ~28. Não há meta de chaves na
-    // Aventura — cada uma vai direto para a carteira e fica, mesmo se a
+    // uma a cada ~12 linhas, aqui a cada ~28. Não há meta de chaves no
+    // Desafio — cada uma vai direto para a carteira e fica, mesmo se a
     // corrida acabar em seguida.
     keyGap: 24,
     keyChance: 0.22,
   },
 };
 
-// Níveis de dificuldade do modo Aventura: mudam quantos obstáculos aparecem
+// Níveis de dificuldade do modo Desafio: mudam quantos obstáculos aparecem
 // (e um tiquinho a velocidade), mantendo o resto igual.
 //
 // Os nomes falam de velocidade, não de habilidade: criança de cinco anos não

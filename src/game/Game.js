@@ -639,7 +639,7 @@ export class Game {
   // comparar as duas de relance, correndo.
   //
   // Pista **e** modo, e não só pista: a marca é um lugar, mas o quanto se
-  // corre nele depende da brincadeira. Uma partida de Aventura no Campo vai
+  // corre nele depende da brincadeira. Uma partida de Desafio no Campo vai
   // muito mais longe que uma do Livre, que acaba assim que a meta de itens
   // fecha — com uma marca só por pista, a do Livre nunca mais apareceria.
   // As doze fases dividem um recorde só (`levels`), e não um por fase: o
@@ -871,7 +871,7 @@ export class Game {
     const retratos = getPortraits(CHARACTER_LIST);
     const cenarios = getTrackPortraits(TRACK_LIST);
     const modo = MODES[this.mode.id] || MODES[DEFAULT_MODE];
-    // Só a Aventura tem velocidade para mostrar; nas outras a figura basta.
+    // Só o Desafio tem velocidade para mostrar; nas outras a figura basta.
     const selo = modo.difficulties
       ? `<span class="pick-badge">${this.difficulty.emoji}</span>`
       : '';
@@ -897,10 +897,16 @@ export class Game {
             <span class="pick-name">${modo.name}</span>
           </button>
         </div>
+        <div class="destaques">
+          <button class="destaque historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">
+            <span class="destaque-emoji">📖</span>${t('A história')}${this.storyEndNew ? ' ✨' : ''}
+          </button>
+          <button class="destaque poderes" data-pick="powers">
+            <span class="destaque-emoji">⬆️</span>${t('Poderes')}
+          </button>
+        </div>
         <div class="extras">
-          <button class="mini-button historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">📖 ${t('A história')}${this.storyEndNew ? ' ✨' : ''}</button>
           <button class="mini-button" data-pick="stats">📊 ${t('Estatísticas')}</button>
-          <button class="mini-button" data-pick="powers">⬆️ ${t('Poderes')}</button>
           <button class="mini-button" data-pick="about">ℹ️ ${t('Sobre')}</button>
           <button class="mini-button aprender" data-pick="tutorial">👆 ${t('Aprender')}</button>
           ${hasUpdate() ? `<button class="mini-button nova" data-pick="update">🔄 ${t('Atualizar')}</button>` : ''}
@@ -973,7 +979,7 @@ export class Game {
   }
 
   // As três brincadeiras, em figuras: cada card mostra como é a pista, e a
-  // velocidade da Aventura sai no próprio card, sem abrir outra tela.
+  // velocidade do Desafio sai no próprio card, sem abrir outra tela.
   showModePicker() {
     this.state = STATE.READY;
     this.screen = 'mode';
@@ -2595,7 +2601,7 @@ export class Game {
     return range > 0 ? THREE.MathUtils.clamp((this.speed - this.mode.startSpeed) / range, 0, 1) : 0;
   }
 
-  // Modo Aventura montado com a dificuldade escolhida.
+  // Modo Desafio montado com a dificuldade escolhida.
   adventureMode(difficulty) {
     const base = MODES.adventure;
     return {
@@ -2789,7 +2795,7 @@ export class Game {
     update((save) => { save.stats.keys = (save.stats.keys || 0) + 1; });
     this.ui.setWallet(this.save.stats.keys);
 
-    // Só nas Fases a chave é meta; na Aventura ela é só a moeda.
+    // Só nas Fases a chave é meta; no Desafio ela é só a moeda.
     if (this.mode.id === 'levels' && this.keys >= this.mode.keys) this.levelComplete();
   }
 

@@ -208,7 +208,7 @@ export const EN = {
   // --- Modos de brincar -----------------------------------------------------
   'Livre': 'Free Run',
   'Fases': 'Levels',
-  'Aventura': 'Adventure',
+  'Desafio': 'Challenge',
   'Aprender': 'Learn',
   'Sem obstáculos — é só juntar!': 'No obstacles — just collect!',
   '12 fases, cada uma com sua meta de chaves': '12 levels, each with its own key goal',

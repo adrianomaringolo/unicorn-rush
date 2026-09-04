@@ -116,7 +116,7 @@ export function createUI() {
     setBest: (v) => { best.textContent = Math.floor(v); },
     setDistance: (v) => { distance.textContent = Math.floor(v); },
     setGoal: (v, target) => { goal.textContent = target ? `${v}/${target}` : '∞'; },
-    // Nas Fases a chave tem meta (`3/5`); na Aventura ela só vai somando.
+    // Nas Fases a chave tem meta (`3/5`); no Desafio ela só vai somando.
     setKeys: (v, total) => { keys.textContent = total ? `${v}/${total}` : `${v}`; },
 
     // O botão de pausa só aparece durante a corrida.
@@ -160,7 +160,7 @@ export function createUI() {
       lives.innerHTML = withIcons('💗'.repeat(Math.max(0, v)) + '🖤'.repeat(Math.max(0, 3 - v)));
     },
 
-    // O HUD muda de acordo com o modo: "Meta" no Livre, "Vidas" na Aventura.
+    // O HUD muda de acordo com o modo: "Meta" no Livre, "Vidas" no Desafio.
     setMode: (mode) => { hud.dataset.mode = mode.id; },
 
     // Power-ups ligados agora, com a barrinha do tempo que falta.

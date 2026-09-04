@@ -243,7 +243,7 @@ com criança não funciona.
 
 Os preços seguem o ritmo do modo Fases: a **fase 1 já dá as 3 chaves** que
 quase pagam o Sol. Uma volta completa pelas doze fases de uma pista dá 96
-chaves, e a Aventura pinga mais algumas. Ter tudo o que existe hoje custa
+chaves, e o Desafio pinga mais algumas. Ter tudo o que existe hoje custa
 188 chaves — cerca de duas voltas, e cada pista nova traz doze fases a mais.
 
 As setas do teclado passeiam só pelo que já é seu; o trancado se pega tocando
@@ -252,8 +252,8 @@ feito".
 
 As chaves vêm de dois lugares.
 
-**Da pista**, nas **Fases** e na **Aventura**. Nas Fases elas são a meta (uma
-a cada ~12 linhas, ~8 s de corrida); na Aventura são só moeda e saem **bem
+**Da pista**, nas **Fases** e no **Desafio**. Nas Fases elas são a meta (uma
+a cada ~12 linhas, ~8 s de corrida); no Desafio são só moeda e saem **bem
 mais raras** — uma a cada ~27 linhas, perto de 15 s. Lá o HUD mostra só
 quantas saíram, sem meta, e cada uma vai direto para a carteira: mesmo que a
 corrida acabe no segundo seguinte, a chave fica. No **Livre** ela também
@@ -519,7 +519,7 @@ imagens de anúncio (`npm run anuncio`): mexeu no unicórnio, refaz as duas.
 | --- | --- |
 | 🗺️ **Fases** | **Doze fases por pista** — cada pista tem o seu caminho, guardado separado, então comprar uma pista nova abre doze fases novas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 12 (15 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
 | 🎈 **Livre** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
-| ⭐ **Aventura** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, mais as **barreiras que atravessam as três pistas** (dessas não tem desvio), 3 vidas e velocidade que vai aumentando. Aqui também saem **chaves mágicas**, bem mais raras que nas Fases — sem meta, direto para a carteira. A velocidade é escolhida no próprio card: 🐢 Devagarinho (22% de obstáculo por faixa, 16% de barreira), 🌞 Normal (40% / 30%) ou ⚡ Voando (62% / 45%, e mais rápido). |
+| ⭐ **Desafio** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, mais as **barreiras que atravessam as três pistas** (dessas não tem desvio), 3 vidas e velocidade que vai aumentando. Aqui também saem **chaves mágicas**, bem mais raras que nas Fases — sem meta, direto para a carteira. A velocidade é escolhida no próprio card: 🐢 Devagarinho (22% de obstáculo por faixa, 16% de barreira), 🌞 Normal (40% / 30%) ou ⚡ Voando (62% / 45%, e mais rápido). |
 
 A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
@@ -850,7 +850,7 @@ Ela limpa a pista inteira, então é a menos comum: cada power-up tem um
 `weight` no sorteio (ver `World.rollPowerup`), os outros valem 1 e ela vale
 **0,45** — uma bomba a cada dez power-ups.
 
-**Menos na Aventura 🐢 Devagarinho**, onde ela sai com a mesma frequência que
+**Menos no Desafio 🐢 Devagarinho**, onde ela sai com a mesma frequência que
 os outros: é a velocidade em que a criança está aprendendo, e ver a pista
 limpar é a melhor parte. Quem faz isso é o `powerWeights` da velocidade
 (`DIFFICULTIES.facil`, em `src/game/config.js`), que sobrescreve o peso de um
@@ -985,10 +985,10 @@ de relance, correndo.
 
 Por pista porque a marca é **um lugar**: o recorde do Campo é do Campo, e
 correr no Oceano não mexe nele. E por brincadeira porque o quanto se corre
-num lugar depende dela — uma partida de Aventura no Campo vai muito mais
+num lugar depende dela — uma partida de Desafio no Campo vai muito mais
 longe que uma do Livre, que acaba assim que a meta de itens fecha. Com uma
-marca só por pista, a marca do Livre nunca mais apareceria: a distância da
-Aventura ficaria lá na frente, fora de alcance.
+marca só por pista, a marca do Livre nunca mais apareceria: a distância do
+Desafio ficaria lá na frente, fora de alcance.
 
 A chave é `${pista}:${modo}` — `campo:baby`, `oceano:levels`. As doze fases
 dividem **um** recorde (`levels`), e não um por fase: o recorde é da
@@ -1050,16 +1050,26 @@ Cada figura abre uma tela só, com **todas as opções à vista**:
   pista;
 - **Como vamos brincar?** — os três modos em cards que mostram *como é* cada
   um: a pista limpa do Livre, o mini-mapa das doze fases da pista (cheio = feita,
-  contornado = aberta) e a pista cheia da Aventura. A velocidade da Aventura
+  contornado = aberta) e a pista cheia do Desafio. A velocidade do Desafio
   (🐢 Devagarinho, 🌞 Normal, ⚡ Voando) abre dentro do próprio card, sem
   outra tela.
 
 O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
-cartão. Embaixo das três figuras ficam os botões miúdos — **📖 A história**
-(que reabre o livro; ver *A história*), estatísticas, **⬆️ Poderes** (a
-tela de evoluir os power-ups com chaves; ver *Evoluir com chaves*, em
-*Power-ups*) e "sobre" —, e **instalar** sai do caminho da criança:
-moram atrás do **👑**, no canto oposto, que só abre segurando o dedo.
+cartão.
+
+Embaixo das três figuras, dois botões **cheios e coloridos** — nem do
+tamanho do JOGAR, nem desbotados como o resto: **📖 A história** (roxo, reabre
+o livro; ver *A história*) e **⬆️ Poderes** (dourado, a tela de evoluir os
+power-ups com chaves; ver *Evoluir com chaves*, em *Power-ups*). São as duas
+coisas que valem a pena destacar mesmo sem ser o botão de jogar — uma é o
+porquê do jogo, a outra é para onde as chaves continuam servindo depois de
+já ter tudo o mais. Quando o fim do livro abre, **📖 A história** ganha um
+pulso dourado (a mesma linguagem do ⚡ pedindo toque), para não se perder
+mesmo já sendo colorido.
+
+Abaixo deles, a fileira miúda de sempre — estatísticas e "sobre" —, e
+**instalar** sai do caminho da criança: moram atrás do **👑**, no canto
+oposto, que só abre segurando o dedo.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
 avisa, em vez de ignorar (toque que não faz nada parece defeito). No cantinho
@@ -1539,7 +1549,7 @@ Completar uma fase toca uma **fanfarra** — dó–mi–sol–dó subindo, com a
 nota segurada e um brilhinho por cima. É o som mais comprido do jogo de
 propósito: é o único momento em que a criança ganhou alguma coisa.
 
-No modo Aventura são 3 vidas — bater num obstáculo custa uma vida e dá alguns
+No modo Desafio são 3 vidas — bater num obstáculo custa uma vida e dá alguns
 segundos de invencibilidade. E a batida é bem sentida: **clarão vermelho** na
 tela, **tremida** da câmera, **poeira** na cor do que foi atingido, o
 **obstáculo sai voando girando** para trás e ficam **estrelinhas rodando** em
