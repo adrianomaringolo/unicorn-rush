@@ -782,7 +782,7 @@ com uma argolinha girando em volta):
 | | Power-up | O que faz |
 | --- | --- | --- |
 | 🛡️ | **Escudo** | 8 segundos atravessando obstáculos sem perder vida. O unicórnio ganha uma **bolha de energia** em volta, com uma redinha brilhando. |
-| 🪶 | **Pena Mágica** | 8 segundos pulando muito mais alto: o impulso do pulo sobe 40%, o que quase **dobra a altura** (a altura vai com o quadrado da velocidade). As **asas batem quase o dobro mais rápido** enquanto dura — o aviso visual de que o próximo pulo vai bem mais longe. |
+| 🪶 | **Pena Mágica** | 8 segundos com o pulo **mais alto e mais longo**: o impulso sobe 40% (a altura vai com o quadrado da velocidade, então já quase dobra) e a gravidade cai 25% enquanto dura, então o unicórnio também **demora bem mais para voltar ao chão** — medido em jogo, cerca de **2,7× mais alto e 2× mais tempo no ar**. As **asas batem quase o dobro mais rápido**, **crescem um pouco** e **mudam de cor para o violeta da pena**, acendendo — o aviso, no próprio personagem, de que o próximo pulo vai ser assim. |
 | 🧲 | **Ímã** | 8 segundos puxando os corações e estrelas por perto. Três **argolas rosa** giram em volta do unicórnio. |
 | ⚡ | **Turbo** | 5 segundos de super velocidade: o unicórnio **decola e passa voando por cima dos obstáculos**, com **anéis dourados** escapando para trás e a câmera abrindo um pouco. Ao acabar, ele pousa sozinho. |
 | 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. |

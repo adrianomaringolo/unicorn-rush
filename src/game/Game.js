@@ -153,6 +153,7 @@ export class Game {
     this.ui.onPause(() => this.togglePause());
     this.rush = false;                       // o ⚡ está apertado?
     this.rushLook = 0;                       // 0…1: o quanto as asas já cresceram
+    this.featherLook = 0;                    // 0…1: o quanto a Pena Mágica já tingiu as asas
     this.contando = false;                   // a contagem da largada está no ar?
     this.ui.onRush(() => this.toggleRush());
 
@@ -516,31 +517,44 @@ export class Game {
     if (f === 0) this.applyTrackLook();
   }
 
-  // Com o ⚡ ligado as asas crescem e acendem. A transição é suave nos dois
-  // sentidos (`rushLook` vai de 0 a 1), senão o unicórnio "pula de tamanho"
-  // no meio da corrida.
+  // Com o ⚡ ligado as asas crescem e acendem; com a 🪶 Pena Mágica elas
+  // também mudam de cor, para a cor dela — o aviso, no próprio personagem,
+  // de que o próximo pulo vai bem mais alto e mais longo. As transições são
+  // suaves nos dois sentidos (`rushLook` e `featherLook` vão de 0 a 1), senão
+  // o unicórnio "pula de tamanho" ou de cor no meio da corrida.
   //
-  // O brilho soma ao da pista: na Noite todo mundo já é aceso, e aqui as
-  // asas ficam ainda mais.
-  applyRushWings(dt) {
-    const alvo = this.state === STATE.PLAYING && this.rush && this.isFastHere() ? 1 : 0;
-    const antes = this.rushLook;
-    this.rushLook += (alvo - this.rushLook) * Math.min(1, 7 * dt);
-    if (Math.abs(alvo - this.rushLook) < 0.002) this.rushLook = alvo;
+  // Os dois se somam quando acontecem juntos: o brilho soma ao da pista (na
+  // Noite todo mundo já é aceso, e aqui as asas ficam ainda mais), e a cor
+  // que acende é a que a Pena deixou nas asas, não a original.
+  applyWingEffects(dt) {
+    const alvoRush = this.state === STATE.PLAYING && this.rush && this.isFastHere() ? 1 : 0;
+    const alvoFeather = this.state === STATE.PLAYING && this.powers.feather > 0 ? 1 : 0;
+    const antes = this.rushLook + this.featherLook;
+    this.rushLook += (alvoRush - this.rushLook) * Math.min(1, 7 * dt);
+    this.featherLook += (alvoFeather - this.featherLook) * Math.min(1, 7 * dt);
+    if (Math.abs(alvoRush - this.rushLook) < 0.002) this.rushLook = alvoRush;
+    if (Math.abs(alvoFeather - this.featherLook) < 0.002) this.featherLook = alvoFeather;
     // Nada mudou e não há o que desfazer: não gasta o quadro.
-    if (this.rushLook === antes && this.rushLook === 0) return;
+    if (this.rushLook + this.featherLook === antes && this.rushLook === 0 && this.featherLook === 0) return;
 
-    const t = this.rushLook;
+    const r = this.rushLook;
+    const f = this.featherLook;
     const wings = this.unicorn.userData.wings;
     if (!wings) return;
-    const escala = WING_SCALE * (1 + 0.5 * t);
-    const brilho = (this.track.glow?.intensity || 0) + 0.8 * t;
+    const escala = WING_SCALE * (1 + 0.5 * r + 0.18 * f);
+    const brilho = (this.track.glow?.intensity || 0) + 0.8 * r + 0.6 * f;
+    const corPena = new THREE.Color(POWERUPS.feather.color);
 
     for (const wing of wings.children) {
       wing.scale.setScalar(escala);
       wing.traverse((obj) => {
         const material = obj.isMesh ? obj.material : null;
         if (!material || !material.emissive) return;
+        // A cor original de cada pena fica guardada uma vez só: é dela que
+        // se parte a cada quadro, senão a mistura ia acumulando em cima de
+        // si mesma e as asas convergiam todas para a cor da Pena.
+        if (!material.userData.corBase) material.userData.corBase = material.color.clone();
+        material.color.copy(material.userData.corBase).lerp(corPena, f);
         material.emissive.copy(material.color).multiplyScalar(brilho);
       });
     }
@@ -2523,7 +2537,11 @@ export class Game {
     } else if (!p.grounded) {
       // `gravity` da pista é o pulo flutuante do Espaço; `airGlide` do
       // personagem é a Violeta, que é meio feita de fumaça e demora a descer.
-      p.vy -= GRAVITY * (this.track.gravity ?? 1) * (this.character.airGlide ?? 1) * dt;
+      // O da Pena Mágica soma o dela por cima: o pulo não fica só mais alto
+      // (isso já é o `jumpBoost` do power-up, no impulso inicial), fica
+      // também mais longo — demora mais para voltar ao chão.
+      const arGlide = (this.character.airGlide ?? 1) * (this.powers.feather > 0 ? POWERUPS.feather.airGlide : 1);
+      p.vy -= GRAVITY * (this.track.gravity ?? 1) * arGlide * dt;
       p.y += p.vy * dt;
       if (p.y <= 0) { p.y = 0; p.vy = 0; p.grounded = true; p.jumps = 0; }
     }
@@ -2902,7 +2920,7 @@ export class Game {
     }
 
     this.applyLightning(playing ? dt : 0);
-    this.applyRushWings(dt);
+    this.applyWingEffects(dt);
     updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
     this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;
 
