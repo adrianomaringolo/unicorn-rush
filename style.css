@@ -54,6 +54,15 @@ html, body {
 #hud[data-mode='levels'] .panel.goal,
 #hud[data-mode='levels'] .panel.hearts { display: none; }
 
+/* Pontos e Distância, empilhados: um item só na fileira do HUD, mas com
+   Distância sempre na linha logo abaixo de Pontos — não depende de quantos
+   outros painéis o modo mostra, nem de a fileira quebrar linha ou não. */
+.hud-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hud-gap);
+}
+
 .panel {
   background: rgba(255, 255, 255, .82);
   border: 3px solid #fff;
@@ -163,27 +172,34 @@ html, body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: calc(84px + env(safe-area-inset-top));
+  /* Abaixo de Pontos-e-Distância empilhados (`.hud-stack`), que agora são o
+     item mais alto do lado esquerdo do HUD — sem isto os cartões de
+     power-up nasciam por cima da Distância. */
+  top: calc(130px + env(safe-area-inset-top));
   display: flex;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 .power {
   background: rgba(255, 255, 255, .85);
   border: 3px solid #fff;
-  border-radius: 14px;
-  padding: 3px 6px 4px;
+  border-radius: 18px;
+  padding: 5px 9px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   box-shadow: 0 4px 0 rgba(122, 78, 199, .18);
+  /* Só toca ao nascer — a cada quadro que o power-up segue ativo,
+     `Ui.setPowers` reaproveita este mesmo elemento, então a animação não
+     dispara de novo (ver o comentário de `powerBars` em ui.js). Sem isso o
+     cartão inteiro parecia tremer o tempo todo em que o poder durava. */
   animation: pop .28s ease-out;
 }
-.power-face { font-size: clamp(18px, 5vw, 22px); line-height: 1; }
+.power-face { font-size: clamp(24px, 6.5vw, 30px); line-height: 1; }
 .power-bar {
-  width: clamp(30px, 9vw, 40px);
-  height: 6px;
+  width: clamp(42px, 12vw, 56px);
+  height: 9px;
   border-radius: 999px;
   background: rgba(122, 78, 199, .18);
   overflow: hidden;

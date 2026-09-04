@@ -51,6 +51,13 @@ export function createUI() {
   const flash = $('#flash');
   let toastTimer = null;
   let okTimer = null;
+  // Um `<i>` (a barrinha) por power-up ligado, guardado pelo id. `setPowers`
+  // roda a cada quadro enquanto algum está ativo: reaproveitar o elemento e
+  // só mexer na largura da barra é o que mantém o resto do cartão parado —
+  // recriar o `<div class="power">` do zero a cada quadro reiniciava a
+  // animação de entrada (`.power { animation: pop }`) antes dela terminar,
+  // e o resultado era o cartão tremendo o tempo todo, não só ao aparecer.
+  const powerBars = new Map();
 
   const showToast = (message) => {
     toast.innerHTML = withIcons(message);
@@ -157,14 +164,30 @@ export function createUI() {
     setMode: (mode) => { hud.dataset.mode = mode.id; },
 
     // Power-ups ligados agora, com a barrinha do tempo que falta.
+    //
+    // Só cria (e anima a entrada de) um cartão quando o power-up liga; nos
+    // quadros seguintes, enquanto ele continua ativo, só a largura da barra
+    // muda — o cartão em si fica parado (ver `powerBars`, acima).
     setPowers: (list) => {
-      powers.textContent = '';
+      const vistos = new Set();
       for (const item of list) {
+        vistos.add(item.id);
+        const largura = `${Math.round(item.ratio * 100)}%`;
+        const existente = powerBars.get(item.id);
+        if (existente) { existente.style.width = largura; continue; }
+
         const chip = document.createElement('div');
         chip.className = 'power';
         chip.innerHTML = `<span class="power-face">${withIcons(item.emoji)}</span>`
-          + `<span class="power-bar"><i style="width:${Math.round(item.ratio * 100)}%"></i></span>`;
+          + `<span class="power-bar"><i style="width:${largura}"></i></span>`;
         powers.appendChild(chip);
+        powerBars.set(item.id, chip.querySelector('.power-bar i'));
+      }
+      // O que não está mais na lista (acabou) sai do DOM e do mapa.
+      for (const [id, bar] of powerBars) {
+        if (vistos.has(id)) continue;
+        bar.closest('.power')?.remove();
+        powerBars.delete(id);
       }
     },
 
