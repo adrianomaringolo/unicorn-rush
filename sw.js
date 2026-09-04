@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.31.2';
+const VERSION = 'unicornrush-v0.31.3';
 
 const SHELL = [
   './',
@@ -21,6 +21,11 @@ const SHELL = [
   './assets/icons/icon-512.png',
   './vendor/three.module.js',
   './vendor/three.core.js',
+  // O `src/main.js` importa este daqui (é o Web Analytics, vendorizado como
+  // o three.js). Import estático que não resolve derruba o main.js inteiro,
+  // e com ele o jogo: se falta no cache, quem abre offline fica na tela de
+  // carregamento.
+  './vendor/vercel-analytics.js',
   './src/main.js',
   './src/game/Game.js',
   './src/game/audio.js',
@@ -178,7 +183,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
-  if (new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  // O Web Analytics mora no nosso domínio (`/_vercel/insights/…`), mas não é
+  // do jogo: é medição, e medição servida do cache mente. O `script.js`
+  // congelaria na versão do dia da instalação, e cachear é justamente o que
+  // não se quer de um farol. Vai direto para a rede — e quando não houver
+  // rede, que falhe: perder uma medição é de graça, o jogo não depende dela.
+  if (url.pathname.startsWith('/_vercel/')) return;
 
   event.respondWith(
     caches.match(request).then((cached) => {
