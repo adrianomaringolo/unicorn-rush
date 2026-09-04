@@ -556,7 +556,7 @@ conhece o jogo e vai direto para o menu: o que distingue os dois casos é um
 
 É uma corrida de verdade — o mesmo mundo, o mesmo
 unicórnio, a mesma pista —, só que a pista **não é sorteada**: é uma lição de
-15 aulas, uma coisa de cada vez, cada uma com a sua frase numa faixa no alto
+18 aulas, uma coisa de cada vez, cada uma com a sua frase numa faixa no alto
 da tela.
 
 A ordem ensina na ordem em que se precisa: primeiro andar de lado, depois o
@@ -782,17 +782,18 @@ com uma argolinha girando em volta):
 | | Power-up | O que faz |
 | --- | --- | --- |
 | 🛡️ | **Escudo** | 8 segundos atravessando obstáculos sem perder vida. O unicórnio ganha uma **bolha de energia** em volta, com uma redinha brilhando. |
+| 🪶 | **Pena Mágica** | 8 segundos pulando muito mais alto: o impulso do pulo sobe 40%, o que quase **dobra a altura** (a altura vai com o quadrado da velocidade). As **asas batem quase o dobro mais rápido** enquanto dura — o aviso visual de que o próximo pulo vai bem mais longe. |
 | 🧲 | **Ímã** | 8 segundos puxando os corações e estrelas por perto. Três **argolas rosa** giram em volta do unicórnio. |
 | ⚡ | **Turbo** | 5 segundos de super velocidade: o unicórnio **decola e passa voando por cima dos obstáculos**, com **anéis dourados** escapando para trás e a câmera abrindo um pouco. Ao acabar, ele pousa sozinho. |
 | 💖 | **Vida extra** | Devolve uma vida na hora (se já estiver com as três, vira 100 pontos), com um **estouro de anéis rosa**. |
 | 🌈 | **Bomba Arco-Íris** | Uma bola listrada de arco-íris com pavio aceso. Ao pegar, **desintegra todos os obstáculos da pista à frente**. É o mais raro de todos. |
 
-No **modo Livre** só nascem o **Ímã** e o **Turbo**. Os outros três dependem
-de coisas que aquele modo não tem: o Escudo e a Bomba precisam de obstáculo
-(um escudo numa pista sem nada para atravessar é uma promessa vazia), e a
-vida extra precisa de vidas. Cada power-up diz do que depende, no próprio
-`powerups.js` (`needsObstacles`, `needsLives`), em vez de a regra do sorteio
-carregar uma lista de exceções.
+No **modo Livre** só nascem o **Ímã**, o **Turbo** e a **Pena Mágica**. Os
+outros três dependem de coisas que aquele modo não tem: o Escudo e a Bomba
+precisam de obstáculo (um escudo numa pista sem nada para atravessar é uma
+promessa vazia), e a vida extra precisa de vidas. Cada power-up diz do que
+depende, no próprio `powerups.js` (`needsObstacles`, `needsLives`), em vez de
+a regra do sorteio carregar uma lista de exceções.
 
 Enquanto está valendo, o power-up aparece no alto da tela com uma barrinha do
 tempo que falta — e o efeito no personagem **pisca no último segundo**,

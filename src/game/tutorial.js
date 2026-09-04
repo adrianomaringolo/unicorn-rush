@@ -99,6 +99,11 @@ export const LESSONS = [
     depois: [{ o: 'rock', faixa: 0 }, { o: 'rock', faixa: 1 }, { o: 'rock', faixa: 2 }],
   },
   {
+    fala: '🪶 Pena Mágica: pula muito mais alto por um tempo',
+    itens: [{ o: 'feather', faixa: 1 }],
+    depois: [{ o: 'barrier' }, { o: 'heart', faixa: 1, altura: 1.75 }],
+  },
+  {
     fala: '🧲 Ímã: os corações vêm sozinhos até você',
     itens: [{ o: 'magnet', faixa: 1 }],
     depois: [{ o: 'heart', faixa: 0 }, { o: 'heart', faixa: 2 }],

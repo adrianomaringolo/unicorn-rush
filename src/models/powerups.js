@@ -45,6 +45,18 @@ export const POWERUPS = {
     speed: 1.65,          // multiplica a velocidade enquanto dura
     message: 'Super velocidade!',
   },
+  feather: {
+    id: 'feather',
+    name: 'Pena Mágica',
+    emoji: '🪶',
+    color: 0xcc5de8,
+    duration: 8,
+    // Multiplica a velocidade do pulo (não a altura direto: a altura vai
+    // com o quadrado da velocidade — ver o comentário do `jumpBoost` do
+    // Limão em characters.js). 1,4 rende quase o dobro de altura.
+    jumpBoost: 1.4,
+    message: 'Pulo gigante!',
+  },
   life: {
     id: 'life',
     name: 'Vida extra',
@@ -160,6 +172,45 @@ function boostModel() {
   return g;
 }
 
+// Pena Mágica: uma pena colorida, com as barbas em três tons empilhados
+// (dá o efeito de pena "de várias cores") e uma cana fininha no meio.
+function featherModel() {
+  const g = new THREE.Group();
+
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0.6);
+  shape.quadraticCurveTo(0.3, 0.4, 0.26, 0.02);
+  shape.quadraticCurveTo(0.2, -0.28, 0.05, -0.56);
+  shape.quadraticCurveTo(0.02, -0.62, 0, -0.66);
+  shape.quadraticCurveTo(-0.02, -0.62, -0.05, -0.56);
+  shape.quadraticCurveTo(-0.2, -0.28, -0.26, 0.02);
+  shape.quadraticCurveTo(-0.3, 0.4, 0, 0.6);
+  shape.closePath();
+
+  const tons = [0xcc5de8, 0xff8fa3, 0xffd43b];   // violeta, rosa, dourado
+  tons.forEach((cor, i) => {
+    const barbas = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, {
+        depth: 0.05, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02, bevelSegments: 1,
+      }).center(),
+      mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.16) })
+    );
+    const s = 1 - i * 0.24;
+    barbas.scale.set(s, s, 1);
+    barbas.position.z = i * 0.06 - 0.06;
+    barbas.rotation.z = (i - 1) * 0.06;
+    barbas.castShadow = true;
+    g.add(barbas);
+  });
+
+  const cana = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 1.2, 6), mat(0xfff6fb));
+  cana.position.z = 0.12;
+  cana.castShadow = true;
+  g.add(cana);
+
+  return g;
+}
+
 function lifeModel() {
   const shape = new THREE.Shape();
   shape.moveTo(0, -0.5);
@@ -225,7 +276,8 @@ function bombModel() {
 }
 
 const MODELS = {
-  shield: shieldModel, magnet: magnetModel, boost: boostModel, life: lifeModel, bomb: bombModel,
+  shield: shieldModel, magnet: magnetModel, boost: boostModel, feather: featherModel,
+  life: lifeModel, bomb: bombModel,
 };
 
 // A onda de arco-íris que a bomba solta: uma cortina de faixas coloridas que
