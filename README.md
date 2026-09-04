@@ -978,7 +978,14 @@ de **depois**, pelo trocador — nunca obrigatório:
   Pronto** só volta para a tela de onde veio, sem recarregar nada;
 - **➕ Novo perfil**, na mesma grade, cria um irmão de verdade: começa de um
   save limpo (`DEFAULTS`), com seu próprio idioma e sua própria passagem
-  pela história — são pessoas diferentes, então nada é herdado.
+  pela história — são pessoas diferentes, então nada é herdado. O "+"
+  desaparece ao chegar em `MAX_PROFILES` (6) — dá para um tablet inteiro de
+  irmãos, sem a grade virar uma lista para rolar.
+
+A grade (**"Quem vai brincar?"**) é redonda, como um retrato de verdade: um
+círculo por perfil, com o nome embaixo — nada de moldura quadrada. O de
+quem está jogando agora vem com o anel rosa; o lápis de editar mora
+encavalado no canto de cada círculo.
 
 Tocar num retrato diferente do atual **troca** de perfil, e isso sim dá um
 **recarregamento de verdade da página** (criar um perfil novo também) — não

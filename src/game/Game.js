@@ -27,7 +27,7 @@ import { createInput } from './input.js';
 import { sfx } from './audio.js';
 import {
   getSave, update, resetSave, isTestMode, setTestMode,
-  listProfiles, activeProfile, createProfile, updateProfile, switchProfile,
+  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, MAX_PROFILES,
 } from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
@@ -2120,14 +2120,17 @@ export class Game {
         <div class="perfil-tile-wrap">
           <button class="perfil-tile${p.id === atual?.id ? ' escolhido' : ''}" data-pick="ir:${p.id}">
             <span class="perfil-tile-avatar">${p.avatar}</span>
-            <span class="perfil-tile-nome">${p.name ? escapeHtml(p.name) : t('Amiguinho')}</span>
           </button>
           <button class="perfil-tile-editar" data-pick="editar:${p.id}" aria-label="${t('Editar perfil')}">✏️</button>
+          <span class="perfil-tile-nome">${p.name ? escapeHtml(p.name) : t('Amiguinho')}</span>
         </div>`).join('')}
-      <button class="perfil-tile novo" data-pick="novo">
-        <span class="perfil-tile-avatar">➕</span>
+      ${perfis.length < MAX_PROFILES ? `
+      <div class="perfil-tile-wrap">
+        <button class="perfil-tile novo" data-pick="novo">
+          <span class="perfil-tile-avatar">➕</span>
+        </button>
         <span class="perfil-tile-nome">${t('Novo perfil')}</span>
-      </button>
+      </div>` : ''}
     </div>`;
 
     this.ui.showOverlay({

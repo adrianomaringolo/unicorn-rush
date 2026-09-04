@@ -149,6 +149,11 @@ function writeProfiles(data) {
 
 const novoId = () => `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
+// Um tablet muda de mão entre irmãos, não entre uma sala de aula inteira —
+// seis já cobre famílias grandes sem a grade do trocador virar uma lista
+// para rolar.
+export const MAX_PROFILES = 6;
+
 let profiles = readProfiles();
 
 if (profiles.list.length === 0) {
