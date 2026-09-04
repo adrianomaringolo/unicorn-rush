@@ -319,6 +319,18 @@ html, body {
   min-height: 0;
   width: 100%;
 }
+/* Quem aperta o cinto é a grade, não a fileira de botões.
+   O flex reparte a falta de espaço proporcional ao tamanho de cada um, e a
+   grade é enorme: com o elenco inteiro ela ficava com 90% do aperto e
+   passava os outros 10% para os botões — que, com 122px de conteúdo e 61px
+   de sobra, apareciam cortados no meio do "Pronto" (numa tela de 540x960).
+   Botão pela metade não é botão: parece defeito, e some justamente o único
+   caminho para a frente. Com o fator alto a grade abre mão de todo o espaço
+   dela antes de a fileira ceder um pixel — e a grade rola, que é o que ela
+   já sabe fazer e anuncia com as pontas desbotadas. A fileira ainda encolhe
+   (e rola) depois disso, para o caso de a tela ser baixa demais até para
+   ela. */
+#overlay-extra { flex-shrink: 100; }
 .card h1 {
   margin: 0 0 6px;
   font-size: clamp(30px, 9vw, 46px);
@@ -1124,6 +1136,15 @@ html, body {
      entra em ação. */
   min-height: 0;
   overflow-y: auto;
+  /* O `overflow` recorta na borda da caixa, e o bico 3D dos botões é
+     desenhado **fora** dela (`box-shadow: 0 8px 0`, o degrau que faz o botão
+     parecer apertável). Sem esta folga o bico some cortado reto, e o botão
+     fica com cara de que a tela acabou no meio dele — foi o que aconteceu
+     com o ⬅️ Voltar do cartão "Sobre". Oito pixels é o degrau do maior
+     deles, e cobre também o instante do toque, quando ele desce 5px e o
+     degrau encolhe para 3px. O botão grande escapava por sorte: a margem
+     dele já dava a folga. */
+  padding-bottom: 8px;
 
   /* E que **se veja** que rola. No celular a barra de rolagem é invisível
      até se arrastar, então o corte parecia um bug: a sombrinha só aparece
