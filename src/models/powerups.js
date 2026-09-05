@@ -32,12 +32,17 @@ const mat = (color, opts = {}) =>
 // `Game.showPowerShop`.
 //
 // Por padrão, cada nível soma POWER_LEVEL_PERCENT% ao tempo de ativação
-// padrão (o `duration` de cada um, em Game.takePower). A Bomba não tem
+// padrão (o `duration` de cada um, em Game.takePower) — sempre do valor
+// original, nunca do que o nível anterior já tinha somado. É por isso que
+// `powerLevelMultiplier` multiplica por `nivel` direto (soma), em vez de
+// elevar `1 + pct` à potência de `nivel` (que multiplicaria o nível
+// anterior, e cada nível pesaria mais que o de antes). A Bomba não tem
 // duração (o efeito é na hora): soma `graceRowsPerLevel` linhas livres de
-// obstáculo depois da varredura em vez de tempo (ver `POWERUPS.bomb`). A
-// Vida extra fica de fora — não dura, e não tem um "mais forte" que não
-// distorça o jogo (ver `Game.showPowerShop`).
-export const POWER_LEVEL_PERCENT = 12;
+// obstáculo depois da varredura em vez de tempo (ver `POWERUPS.bomb`) — pelo
+// mesmo motivo, `graceRowsPerLevel * nivel` e não elevado a `nivel`. A Vida
+// extra fica de fora — não dura, e não tem um "mais forte" que não distorça
+// o jogo (ver `Game.showPowerShop`).
+export const POWER_LEVEL_PERCENT = 10;
 
 // O multiplicador de um campo que cresce com o nível (o `duration` de cada
 // power-up). Nível 0 (ainda não evoluído) devolve 1 — o valor padrão, sem

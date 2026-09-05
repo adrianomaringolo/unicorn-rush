@@ -188,18 +188,18 @@ Cada um tem corpo, crina, chifre, asas, marca na anca e rastro próprios:
 | 🌈 | **Uni** | branca, crina arco-íris, asas de penas, rastro de sete cores | Nasceu na ponta de um arco-íris, num dia de sol com chuva. Onde ela pisa fica colorido. |
 | ☀️ | **Sol** | dourado, crina de fogo, asas em raios de sol, rastro alaranjado | Acorda antes de todo mundo para acender o dia; seu rastro morninho faz as flores abrirem. |
 | 🌙 | **Lua** | lilás clarinho, crina azul da noite, asas de véu, rastro violeta | Só sai quando escurece, para cuidar dos sonhos de quem dorme. Conhece todos os atalhos da noite. |
-| 🔥 | **Brasa** | o único **macho** e o maior da turma (18% maior que os outros, de pernas compridas): corpo escuro, chifre grande, asas em raios de fogo e **crina e rabo em labaredas** que tremem e esticam. O rastro dele é um caminho de brasas. Fala grosso — os sons de coleta são mais graves. | Corre tão rápido que a crina pega fogo; onde ele passa fica um caminho de brasas quentinhas que some devagar. |
-| 🤍 | **Lulu** | unicórnia **bebê**: pequenina (78% do tamanho dos outros), cabeçuda, olhos grandes e perninhas curtas, toda branca com crina em tons pastel e um coração na anca. O rastro dela é **um fiozinho** de brilho e ela pega os itens com uma **vozinha bem aguda** | É a menorzinha do grupo e ainda está aprendendo a voar; branquinha como nuvem, deixa um fiozinho de brilho por onde passa. |
+| 🔥 | **Brasa** | o único **macho** e o maior da turma (18% maior que os outros, de pernas compridas): corpo escuro, chifre grande, **asa bem grande** (mais de metade maior que o normal) em raios de fogo e **crina e rabo em labaredas** que tremem e esticam. O rastro dele é um caminho de brasas. Fala grosso — os sons de coleta são mais graves. | Corre tão rápido que a crina pega fogo; onde ele passa fica um caminho de brasas quentinhas que some devagar. |
+| 🤍 | **Lulu** | unicórnia **bebê**: pequenina (78% do tamanho dos outros), cabeçuda, olhos grandes e perninhas curtas, toda branca com crina em tons pastel, **asa bem pequena** (metade do tamanho normal) e um coração na anca. O rastro dela é **um fiozinho** de brilho e ela pega os itens com uma **vozinha bem aguda** | É a menorzinha do grupo e ainda está aprendendo a voar; branquinha como nuvem, deixa um fiozinho de brilho por onde passa. |
 | ⭐ | **Estrela** | dourada clara, crina de brilho, asas cor de creme, rastro de luz | Caiu do céu numa noite de agosto e ficou para brincar. Brilha tanto que as estrelinhas correm junto. |
 | 🫧 | **Chiclete** 🔑 10 | rosa forte, crina de chiclete, olho grande e corpo pequeno de quem vive quicando; marca de bolha na anca | Faz bolhas do tamanho da cabeça dela e sai quicando pela pista; quando a bolha estoura, ri até precisar parar. |
 | 🍃 | **Musgo** 🔑 18 | verde, **atarracado** (6% maior, mas de pernas curtas), chifre de madeira, crina de mato e folha na anca; o mais lento de se olhar | O mais calmo da turma, conhece cada árvore pelo nome. Onde ele cochila de tarde, no dia seguinte nasce uma flor. |
 | 🧊 | **Floco** 🔑 34 | **azul-gelo** (não branco, para não se perder entre a Uni, a Lulu e a Estrela), crina azul-escura, parrudo e de perna curta, asas de pena bem claras, floco de neve na anca | Dorme o verão inteiro e acorda no primeiro dia frio; sopra baixinho e o ar vira purpurina de gelo. |
 | 🥥 | **Coco** 🔑 38 | o **único marrom** do elenco: cor de casca, crina verde de folha de coqueiro, redondinho e de perna curta, concha na anca | Dormiu tanto debaixo do coqueiro que ficou da cor da casca; sabe o lugar exato onde a onda faz mais espuma. |
 | 🍒 | **Cereja** 🔑 44 | o **vermelho** que faltava, crina verde-escura como o cabinho, miúda; **troca de faixa 50% mais rápido** | Não anda: desvia. Trocaria de pista duas vezes antes de a poeira do primeiro desvio assentar. |
-| 🍋 | **Limão** 🔑 48 | amarelo-limão, o segundo menor depois da Lulu, crina espetada, a voz mais aguda; **pula 25% mais alto** | O menor depois da Lulu e não para quieto; quando pula, dá até para ouvir um estalinho no ar. |
+| 🍋 | **Limão** 🔑 48 | amarelo-limão, o segundo menor depois da Lulu, crina espetada, **asa bem pequena** (quase metade do tamanho normal), a voz mais aguda; **pula 25% mais alto** | O menor depois da Lulu e não para quieto; quando pula, dá até para ouvir um estalinho no ar. |
 | 🔮 | **Violeta** 🔑 54 | **roxo saturado** (a Lua é lilás pálido), crina que parece fumaça, asas de véu; **cai mais devagar** | É meio feita de fumaça: quando salta, demora para descer, como se o ar segurasse ela. |
 | 💎 | **Cristal** 🔑 60 | **corpo translúcido** — o único de vidro no elenco —, alta e magra, brilhante de gelo | Transparente como uma janela de gelo; dá para ver o arco-íris passar por dentro dela. |
-| 🎩 | **Vovô** 🔑 66 | o **cinza/prata** que faltava, crina branca comprida, o maior do elenco; **vira devagar, mas tem o rastro mais largo do jogo** | Já correu em todas as pistas, algumas antes de elas terem nome. |
+| 🎩 | **Vovô** 🔑 66 | o **cinza/prata** que faltava, crina branca comprida, o maior do elenco, **asa bem grande** (mais de metade maior que o normal); **vira devagar, mas tem o rastro mais largo do jogo** | Já correu em todas as pistas, algumas antes de elas terem nome. |
 | 🦇 | **Sombra** 🔑 72 | **preto puro**, sem o laranja do Brasa, com **asas de morcego** em vez de pena; **acende sozinho em qualquer pista** | Preto de verdade, sem um fiozinho de cor. Brilha por conta própria, então nunca corre no escuro. |
 | ☄️ | **Cometa** 🔑 42 | índigo com crina em ciano e rosa, **perna comprida e cabeça pequena**, asas em raios que lêem como cauda | Não sabe parar: desde que nasceu está atravessando o céu. Dizem que quem o acompanha ganha um pedido. |
 | 🌊 | **Onda** 🔑 32 | **turquesa** de corpo inteiro (puxa para o verde, ao contrário do azul do Floco), com **chifre e mecha de coral** como acento quente, **esguia e de pernas compridas**, asas de véu que lêem como nadadeira | Nasceu numa espuma de onda grande e nunca aprendeu a andar devagar; debaixo d'água é a mais rápida de todas. |
@@ -442,6 +442,15 @@ tem o corpo escuro, pela mesma razão do olho: preto sobre preto não existe.
 
 **As orelhas** são baixas e largas, com o rosa por dentro. Cones altos, ao
 lado do chifre, viravam um segundo chifre — três pontas na mesma cabeça.
+
+**O tamanho da asa** é um número por personagem (`wing.scale`, em
+`characters.js`), por cima do tamanho normal de qualquer asa
+(`WING_SCALE`, em `unicorn.js`) — sem ele, `1`. A Lulu e o Limão têm asa
+bem pequena (metade do tamanho e pouco mais); o Brasa e o Vovô, bem
+grande (mais de metade maior). O mesmo número entra na conta de
+`Game.applyWingEffects` — o crescimento da asa com o ⚡ e a Pena Mágica —,
+senão a primeira vez que um dos dois ligasse devolvia a asa pequena (ou
+grande) ao tamanho padrão, e ela ficava presa lá depois.
 
 ### O rabo: cor por nó, não por mecha
 
@@ -848,14 +857,17 @@ chave é brincadeira da criança, então não fica atrás da coroa, como o
 idioma ou a voz). Não tem teto: sempre existe o próximo nível, custando um
 pouco mais.
 
-Por padrão, cada nível soma **12%** ao tempo de ativação padrão — o nível 5
-do Escudo dura 60% mais (8 s viram 12,8 s). A **Bomba Arco-Íris** não dura (o
-efeito é na hora): o nível soma linhas livres de obstáculo pista adentro em
-vez de tempo (ver abaixo).
+Por padrão, cada nível soma **10%** ao tempo de ativação padrão — sempre do
+tempo **original**, nunca do que o nível anterior já tinha somado: o nível 5
+do Escudo dura 50% mais (8 s viram 12 s), não os quase 61% que dariam 10%
+compostos nível sobre nível. A **Bomba Arco-Íris** não dura (o efeito é na
+hora): o nível soma linhas livres de obstáculo pista adentro em vez de tempo
+(ver abaixo), do mesmo jeito reto — linha por nível, sem compor.
 
-Na tela, porém, ninguém vê "12%": vê **"dura 12,8s"**, ou **"+12 linhas
-limpas"** na Bomba. Uma criança sente segundos de corrida, não porcentagem —
-uma conta que ela ainda não faz.
+Na tela, porém, ninguém vê "10%": vê **"dura 12s"**, ou **"+12 linhas
+limpas"** na Bomba (nível 4, a 3 linhas por nível — `graceRowsPerLevel`, que
+não depende do `POWER_LEVEL_PERCENT` dos outros). Uma criança sente segundos
+de corrida, não porcentagem — uma conta que ela ainda não faz.
 
 A **Vida extra** fica de fora — ela não dura (o efeito também é na hora), e
 não tem um "mais forte" que não distorça o jogo: devolve uma vida, ou vira
