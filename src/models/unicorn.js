@@ -124,21 +124,23 @@ function makeMane(colors, fiery = false) {
 function makeTail(colors, fiery = false) {
   const tail = new THREE.Group();
   const locks = [];
-  const count = 3;
+  // Uma mecha por cor — é o que faz o listrado correr **na vertical**, ao
+  // longo do rabo, como mechas de cabelo de verdade, em vez de em faixas
+  // atravessando ele (o desenho antigo, cor por nó em três fios grossos).
+  // Mais mechas e mais finas é o que evita o problema que tinha tirado essa
+  // ideia da primeira vez: com só três bem grossas, de trás — o ângulo da
+  // câmera do jogo — uma cobria as outras e virava uma placa da cor dela
+  // só (um "escudo" na garupa). Com mais fios finos, sempre sobra mais de
+  // uma cor à vista, de qualquer ângulo.
+  const count = colors.length;
 
   for (let i = 0; i < count; i++) {
-    // Três fios grossos quase no mesmo lugar — uma massa só, como na
-    // escultura — e a cor **por nó**, não por fio.
-    //
-    // Era o que faltava. Com uma cor por mecha, as mechas viram placas: de
-    // lado aparecem as listras e de trás aparece uma placa da cor da
-    // primeira (era um escudo dourado na garupa, justo no ângulo em que o
-    // jogo mostra o bicho). Com a cor por nó, o arco-íris corre ao longo do
-    // rabo em faixas, e ele é o mesmo de qualquer lado.
-    const desloca = colors.slice(i).concat(colors.slice(0, i));
-    const lock = makeLock(desloca, {
-      length: 1.5 - i * 0.09,
-      width: 0.24,                       // um tico mais fino
+    // -1 (mais à esquerda) a 1 (mais à direita), com 0 no meio — funciona
+    // para qualquer quantidade de cores, par ou ímpar.
+    const t = (i - (count - 1) / 2) / ((count - 1) / 2);
+    const lock = makeLock(colors[i], {
+      length: 1.5 - Math.abs(t) * 0.16,   // as de fora, um tico mais curtas
+      width: 0.15,                        // mais fina que antes: são mais fios
       segments: 8,
       afunila: 0.92,                     // fechando numa ponta
       // O mesmo do rabo de fogo para todo mundo: reto, varrendo para trás.
@@ -148,12 +150,12 @@ function makeTail(colors, fiery = false) {
       curva: 0,
       fiery,
     });
-    // Bem juntos, e quase sem abrir. Com 0,14 de abertura eles divergiam ao
-    // longo do comprimento e, de trás, liam como três rabos — que é o ângulo
-    // em que o jogo mostra o bicho.
-    lock.position.set((i - 1) * 0.03, 0, (i - 1) * 0.028);
-    lock.rotation.z = (i - 1) * 0.045;
-    lock.userData.phase = i * 0.6;
+    // Um leque aberto o bastante para as cores aparecerem separadas, mas
+    // sem abrir tanto que leia como vários rabos em vez de um só (o mesmo
+    // limite que a versão de três fios já respeitava).
+    lock.position.set(t * 0.1, 0, Math.abs(t) * 0.045);
+    lock.rotation.z = t * 0.16;
+    lock.userData.phase = i * 0.4;
     tail.add(lock);
     locks.push(lock);
   }

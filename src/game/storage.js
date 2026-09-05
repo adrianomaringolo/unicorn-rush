@@ -217,6 +217,22 @@ export function switchProfile(id) {
   return true;
 }
 
+// Apaga um perfil e o save de verdade dele — coisa do cantinho dos
+// adultos, nunca da criança: é a única ação do jogo que perde progresso
+// para sempre, sem volta. Apagar o perfil ativo deixa outro (o primeiro
+// que sobrar) no lugar, ou nenhum, se era o único — aí o bootstrap do
+// próximo carregamento cria um perfil padrão sozinho, do mesmo jeito que
+// cria num aparelho novo (ver o topo deste arquivo). Como troca quem está
+// ativo, precisa do mesmo `location.reload()` de `switchProfile`.
+export function deleteProfile(id) {
+  if (!profiles.list.some((p) => p.id === id)) return false;
+  const lista = profiles.list.filter((p) => p.id !== id);
+  try { localStorage.removeItem(saveKeyFor(id)); } catch { /* nada a apagar */ }
+  profiles = { activeId: profiles.activeId === id ? (lista[0]?.id ?? null) : profiles.activeId, list: lista };
+  writeProfiles(profiles);
+  return true;
+}
+
 // A chave de onde este save vem: a do perfil ativo — sempre existe um a
 // esta altura, por causa do perfil padrão logo acima.
 const KEY = saveKeyFor(profiles.activeId);
