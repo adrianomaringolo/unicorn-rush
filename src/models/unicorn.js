@@ -134,12 +134,19 @@ function makeTail(colors, fiery = false) {
   // uma cor à vista, de qualquer ângulo.
   const count = colors.length;
 
+  // Na garupa as mechas abrem em leque (é o que deixa as cores separadas);
+  // na ponta elas quase se tocam, para o rabo terminar fino e as mechas se
+  // unirem, em vez de continuarem espalhadas como uma vassourinha.
+  const abertura = 0.1;    // meio-afastamento de cada mecha na base
+  const juncao = 0.012;    // meio-afastamento que sobra na ponta
+
   for (let i = 0; i < count; i++) {
     // -1 (mais à esquerda) a 1 (mais à direita), com 0 no meio — funciona
     // para qualquer quantidade de cores, par ou ímpar.
     const t = (i - (count - 1) / 2) / ((count - 1) / 2);
+    const length = 1.5 - Math.abs(t) * 0.16;   // as de fora, um tico mais curtas
     const lock = makeLock(colors[i], {
-      length: 1.5 - Math.abs(t) * 0.16,   // as de fora, um tico mais curtas
+      length,
       width: 0.15,                        // mais fina que antes: são mais fios
       segments: 8,
       afunila: 0.92,                     // fechando numa ponta
@@ -150,11 +157,13 @@ function makeTail(colors, fiery = false) {
       curva: 0,
       fiery,
     });
-    // Um leque aberto o bastante para as cores aparecerem separadas, mas
-    // sem abrir tanto que leia como vários rabos em vez de um só (o mesmo
-    // limite que a versão de três fios já respeitava).
-    lock.position.set(t * 0.1, 0, Math.abs(t) * 0.045);
-    lock.rotation.z = t * 0.16;
+    const baseX = t * abertura;
+    const tipX = t * juncao;
+    // Gira cada mecha (reta, sem curva) o ângulo exato que leva a base
+    // aberta até a ponta quase junto ao centro — não é um leque avulso, é
+    // a mesma reta virada para dentro.
+    lock.position.set(baseX, 0, Math.abs(t) * 0.045);
+    lock.rotation.z = Math.asin(THREE.MathUtils.clamp((tipX - baseX) / length, -1, 1));
     lock.userData.phase = i * 0.4;
     tail.add(lock);
     locks.push(lock);
