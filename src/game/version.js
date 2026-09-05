@@ -7,4 +7,4 @@
 // Para subir a versão use `npm run bump` — ele mexe nos três lugares de uma
 // vez (aqui, no `package.json` e no `sw.js`), que é o que impede de um deles
 // ficar para trás.
-export const VERSION = '0.34.1';
+export const VERSION = '0.34.2';

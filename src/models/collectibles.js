@@ -61,8 +61,15 @@ function shine(mesh, color, size, kind) {
 export const heartGeo = new THREE.ExtrudeGeometry(heartShape(), extrude).center();
 const starGeo = new THREE.ExtrudeGeometry(starShape(), extrude).center();
 
-const heartMat = new THREE.MeshLambertMaterial({ color: COLORS.heart, emissive: 0x5a0f2a });
-const starMat = new THREE.MeshLambertMaterial({ color: COLORS.star, emissive: 0x6b4b00 });
+// `fog: false`: o brilho (`createGlow`, acima) já ignora a névoa de propósito
+// — é o que faz o item se destacar de longe —, mas o corpo continuava sujeito
+// a ela. Numa pista de névoa fechada (a Bruma, com a névoa engolindo tudo aos
+// 34) o item nasce a 90 de distância: o brilho já aparecia lá longe, e o
+// coração ou a estrela dentro dele só em cima da criança — sobrava uma
+// bolinha de luz sem nada dentro. A névoa continua escondendo o obstáculo,
+// que é a mecânica da pista; o prêmio não tem por quê.
+const heartMat = new THREE.MeshLambertMaterial({ color: COLORS.heart, emissive: 0x5a0f2a, fog: false });
+const starMat = new THREE.MeshLambertMaterial({ color: COLORS.star, emissive: 0x6b4b00, fog: false });
 
 export function createHeart() {
   const heart = new THREE.Mesh(heartGeo, heartMat);
@@ -77,8 +84,10 @@ const keyShaftGeo = new THREE.BoxGeometry(0.11, 0.62, 0.11);
 const keyToothGeo = new THREE.BoxGeometry(0.2, 0.11, 0.11);
 const keyGemGeo = new THREE.OctahedronGeometry(0.12, 0);
 
-const keyMat = new THREE.MeshLambertMaterial({ color: 0xffd166, emissive: 0x6b4b00, flatShading: true });
-const keyGemMat = new THREE.MeshLambertMaterial({ color: 0x9be7ff, emissive: 0x14506b, flatShading: true });
+// Mesmo motivo do coração e da estrela, logo acima: o brilho da chave já
+// ignora a névoa, o corpo dela também precisa.
+const keyMat = new THREE.MeshLambertMaterial({ color: 0xffd166, emissive: 0x6b4b00, flatShading: true, fog: false });
+const keyGemMat = new THREE.MeshLambertMaterial({ color: 0x9be7ff, emissive: 0x14506b, flatShading: true, fog: false });
 
 export function createKey() {
   const key = new THREE.Group();
