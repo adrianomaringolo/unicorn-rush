@@ -502,6 +502,18 @@ outro leque por cima, é a mesma mecha reta virada para dentro. O rabo
 segue largo e listrado perto da garupa e termina fino, com as mechas se
 unindo — como um rabo de cavalo de verdade, não uma vassourinha.
 
+### O chifre que brilha: Sol e Lua
+
+`horn.glow: true` (em `characters.js`) é para quem o chifre **é** a própria
+luz do personagem — o amanhecer do Sol, o luar da Lua. Sem ele, o chifre é
+`mat(character.horn.color)`, o material padrão (Lambert, sem emissivo) que
+todo o resto do bicho usa; com ele, ganha `emissive` na própria cor do
+chifre (`emissiveIntensity: 0.8`) — o mesmo truque do rabo de fogo do
+Brasa. Sem luz de verdade (um `PointLight` por chifre custaria caro
+repetir em cada unicórnio da tela); é só o material que deixa de escurecer
+na face virada para a sombra, o que já lê como "brilhando" num bicho todo
+em flat shading.
+
 ### As proporções da Uni
 
 Ela ganhou `proportions: { head: 1.12, legs: 0.9, eye: 1.15 }` — cabeça e
