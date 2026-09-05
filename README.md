@@ -848,14 +848,17 @@ chave é brincadeira da criança, então não fica atrás da coroa, como o
 idioma ou a voz). Não tem teto: sempre existe o próximo nível, custando um
 pouco mais.
 
-Por padrão, cada nível soma **12%** ao tempo de ativação padrão — o nível 5
-do Escudo dura 60% mais (8 s viram 12,8 s). A **Bomba Arco-Íris** não dura (o
-efeito é na hora): o nível soma linhas livres de obstáculo pista adentro em
-vez de tempo (ver abaixo).
+Por padrão, cada nível soma **10%** ao tempo de ativação padrão — sempre do
+tempo **original**, nunca do que o nível anterior já tinha somado: o nível 5
+do Escudo dura 50% mais (8 s viram 12 s), não os quase 61% que dariam 10%
+compostos nível sobre nível. A **Bomba Arco-Íris** não dura (o efeito é na
+hora): o nível soma linhas livres de obstáculo pista adentro em vez de tempo
+(ver abaixo), do mesmo jeito reto — linha por nível, sem compor.
 
-Na tela, porém, ninguém vê "12%": vê **"dura 12,8s"**, ou **"+12 linhas
-limpas"** na Bomba. Uma criança sente segundos de corrida, não porcentagem —
-uma conta que ela ainda não faz.
+Na tela, porém, ninguém vê "10%": vê **"dura 12s"**, ou **"+12 linhas
+limpas"** na Bomba (nível 4, a 3 linhas por nível — `graceRowsPerLevel`, que
+não depende do `POWER_LEVEL_PERCENT` dos outros). Uma criança sente segundos
+de corrida, não porcentagem — uma conta que ela ainda não faz.
 
 A **Vida extra** fica de fora — ela não dura (o efeito também é na hora), e
 não tem um "mais forte" que não distorça o jogo: devolve uma vida, ou vira
