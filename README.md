@@ -1618,6 +1618,16 @@ para as três pistas caberem na tela, o HUD encolhe, os botões de toque
 aparecem sozinhos (embaixo no retrato, nos cantos no modo deitado) e o
 desenho usa menos pixels e sombra menor para não engasgar.
 
+No celular deitado a tela é baixa, e a pista passa a ocupar quase a altura
+inteira — sobra pouco "céu" acima do horizonte. O toast de pegar um
+power-up e os cartões de quem está ligado, que em pé ficam à meia altura
+sem incomodar ninguém, deitados caíam bem em cima de onde os obstáculos
+aparecem. Só nesse formato (`@media (orientation: landscape) and
+(max-height: 620px)`, em `style.css`) os dois saem do meio do caminho: o
+toast sobe para a faixa de céu logo abaixo do HUD, e os cartões de power-up
+saem do centro e descem pela beira esquerda da tela, embaixo de Pontos e
+Distância — ali é grama, não pista.
+
 Nas telas de escolha o cartão nunca cobre a tela inteira: em pé ele ocupa no
 máximo dois terços, as fichas ficam sempre numa linha só e a câmera da
 pré-visualização se afasta um pouco — assim a criança vê a pista e o

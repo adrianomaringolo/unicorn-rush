@@ -1482,6 +1482,28 @@ html, body {
   #touch-controls [data-action='left'] { order: 1; }
   #touch-controls [data-action='right'] { order: 2; }
   #touch-controls [data-action='jump'] { order: 3; margin-left: auto; }
+
+  /* Deitado a tela é baixa e a pista ocupa quase a altura inteira — o
+     toast de pegar um power-up, que ficava à meia altura, caía bem em
+     cima de onde os obstáculos aparecem, tapando a hora de decidir a
+     faixa. Aqui ele sobe para a faixa de céu logo abaixo do HUD, baixo o
+     bastante para não cobrir os painéis (que só existem lá em cima). */
+  #toast { top: calc(122px + env(safe-area-inset-top)); font-size: 16px; padding: 7px 16px; }
+  #lesson-box:not([hidden]) ~ #toast { top: calc(150px + env(safe-area-inset-top)); }
+
+  /* Os cartões de power-up ligado tinham o mesmo problema, e centralizados
+     eles ainda tapavam mais: a pista inteira, não só um instante. Deitado
+     eles saem do meio e descem pela beira esquerda, embaixo de Pontos e
+     Distância — ali é grama, não pista, e sobra altura de sobra para
+     empilhar. */
+  #powers {
+    left: calc(10px + env(safe-area-inset-left));
+    right: auto;
+    transform: none;
+    top: calc(112px + env(safe-area-inset-top));
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* Celular deitado de verdade (bem baixinho): o lembrete dos controles sai,
