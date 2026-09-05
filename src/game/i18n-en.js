@@ -479,6 +479,11 @@ export const EN = {
   'Recomeçar do zero': 'Start from scratch',
   'Apagar mesmo?': 'Really erase it?',
   'toque de novo': 'tap again',
+  'Apagar perfil': 'Delete profile',
+  '🗑️ Apagar perfil': '🗑️ Delete profile',
+  'Apaga o progresso todo desse perfil para sempre — não tem como desfazer.':
+    "Erases all of that profile's progress for good — there's no undoing it.",
+  'apagar': 'delete',
   '⬅️ Voltar ao jogo': '⬅️ Back to the game',
   '🗣️ Trocar a voz': '🗣️ Change the voice',
   'toque numa voz para ouvir': 'tap a voice to hear it',

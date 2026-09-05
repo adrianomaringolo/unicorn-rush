@@ -1061,6 +1061,26 @@ save inteiro (idioma, progresso, tudo), e é fácil algum módulo ficar com um
 pedaço do perfil antigo em memória se só o `render()` rodasse de novo por
 cima.
 
+### Apagar um perfil é coisa de adulto
+
+Trocar, criar e editar um perfil são ações da criança, no trocador — mas
+**apagar** um perde progresso para sempre, sem volta, e por isso mora no
+**cantinho dos adultos** (a coroa 👑), não no trocador. Em **"👑 Dos
+adultos" → "🗑️ Apagar perfil"** aparece um retrato por perfil; tocar nele
+uma vez só **arma** o apagar (o retrato vira ⚠️ e o texto muda para "toque
+de novo"), e é preciso tocar de novo no mesmo, sem tocar em outro no meio —
+tocar num perfil diferente só troca qual está armado, sem apagar nada. É o
+mesmo desenho de dois toques do **"🧹 Recomeçar do zero"**, alguns
+parágrafos abaixo.
+
+Apagar (`deleteProfile`, em `storage.js`) remove o registro do perfil **e**
+o save de verdade dele (`unicornrush-save:<id>`) — não sobra nada para trás.
+Apagar o perfil **ativo** deixa outro no lugar (o primeiro que sobrar) e dá
+um recarregamento de verdade, como qualquer troca de perfil; apagar o
+**último** que existia não deixa o jogo sem ninguém — no carregamento
+seguinte, o mesmo perfil padrão que nasce sozinho num aparelho novo nasce de
+novo (ver acima).
+
 ## Partida, distância e recorde na pista
 
 Toda corrida começa com uma contagem: **3, 2, 1, Vai!**, em números grandes

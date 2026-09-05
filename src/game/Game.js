@@ -27,7 +27,7 @@ import { createInput } from './input.js';
 import { sfx } from './audio.js';
 import {
   getSave, update, resetSave, isTestMode, setTestMode,
-  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, MAX_PROFILES,
+  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, deleteProfile, MAX_PROFILES,
 } from './storage.js';
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
@@ -1190,6 +1190,7 @@ export class Game {
       confirmandoApagar
         ? { id: 'apagar-mesmo', icone: '⚠️', nome: t('Apagar mesmo?'), valor: t('toque de novo'), aviso: true }
         : { id: 'apagar', icone: '🧹', nome: t('Recomeçar do zero'), valor: '' },
+      { id: 'apagar-perfil', icone: '🗑️', nome: t('Apagar perfil'), valor: '' },
     ].filter(Boolean);
 
     const html = `<div class="ajustes">${linhas.map((l) => `
@@ -1213,6 +1214,7 @@ export class Game {
       if (qual === 'idioma') return this.showLanguagePicker({ voltarPara: 'grown' });
       if (qual === 'instalar') return this.installApp();
       if (qual === 'teste') return this.toggleTestMode();
+      if (qual === 'apagar-perfil') return this.showDeleteProfile();
       if (qual === 'apagar') return this.showGrownUps({ confirmandoApagar: true });
       if (qual === 'apagar-mesmo') {
         resetSave();
@@ -1224,6 +1226,53 @@ export class Game {
         return this.showGrownUps();
       }
       return undefined;
+    });
+  }
+
+  // Apagar um perfil — dos adultos, nunca da criança: é a única ação do
+  // jogo que perde progresso para sempre, sem volta. Cada perfil pede dois
+  // toques, o mesmo jeito de "Recomeçar do zero" (ver showGrownUps): tocar
+  // de novo no mesmo perfil confirma; tocar em outro só troca qual está
+  // armado, sem apagar nada ainda.
+  showDeleteProfile({ confirmandoId = null } = {}) {
+    this.state = STATE.READY;
+    this.screen = 'apagar-perfil';
+    this.ui.showPause(false);
+
+    const perfis = listProfiles();
+    const linhas = perfis.map((p) => {
+      const armado = confirmandoId === p.id;
+      return {
+        id: p.id,
+        icone: armado ? '⚠️' : p.avatar,
+        nome: p.name ? escapeHtml(p.name) : t('Amiguinho'),
+        valor: armado ? t('toque de novo') : t('apagar'),
+        aviso: armado,
+      };
+    });
+
+    const html = `<div class="ajustes">${linhas.map((l) => `
+      <button class="ajuste${l.aviso ? ' aviso' : ''}" data-pick="${l.id}">
+        <span class="ajuste-icone">${l.icone}</span>
+        <span class="ajuste-nome">${l.nome}</span>
+        <span class="ajuste-valor">${l.valor}</span>
+      </button>`).join('')}</div>`;
+
+    this.ui.showOverlay({
+      title: t('🗑️ Apagar perfil'),
+      text: t('Apaga o progresso todo desse perfil para sempre — não tem como desfazer.'),
+      html,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showGrownUps() }],
+      back: () => this.showGrownUps(),
+    });
+
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual !== confirmandoId) return this.showDeleteProfile({ confirmandoId: qual });
+      deleteProfile(qual);
+      // Apagar troca (ou zera) quem está ativo — o mesmo motivo de
+      // `switchProfile` pedir recarregamento de verdade, em storage.js.
+      location.reload();
     });
   }
 
