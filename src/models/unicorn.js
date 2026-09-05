@@ -309,7 +309,11 @@ function makeWing(side, wing) {
   pivot.add(shoulder);
 
   pivot.userData.feathers = feathers;
-  pivot.scale.setScalar(WING_SCALE);   // asa proporcional ao corpo, não gigante
+  // `wing.scale` é o tamanho **do personagem** (a Lulu e o Limão têm asa
+  // bem pequena; o Brasa e o Vovô, bem grande) — por cima do tamanho padrão
+  // de qualquer asa, que é o `WING_SCALE`. Sem personagem nenhum pedindo
+  // diferente, `?? 1` devolve o padrão de sempre.
+  pivot.scale.setScalar(WING_SCALE * (wing.scale ?? 1));
   return pivot;
 }
 

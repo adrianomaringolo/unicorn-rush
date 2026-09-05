@@ -561,7 +561,12 @@ export class Game {
     const f = this.featherLook;
     const wings = this.unicorn.userData.wings;
     if (!wings) return;
-    const escala = WING_SCALE * (1 + 0.5 * r + 0.18 * f);
+    // `this.character.wing.scale` é o tamanho que o personagem já tinha em
+    // repouso (ver makeWing, em unicorn.js) — sem ele aqui, a asa bem
+    // pequena da Lulu (ou bem grande do Brasa) voltava ao tamanho padrão
+    // assim que o Rápido ou a Pena Mágica ligavam uma vez, e ficava presa
+    // nesse tamanho errado depois.
+    const escala = WING_SCALE * (this.character.wing?.scale ?? 1) * (1 + 0.5 * r + 0.18 * f);
     const brilho = (this.track.glow?.intensity || 0) + 0.8 * r + 0.6 * f;
     const corPena = new THREE.Color(POWERUPS.feather.color);
 

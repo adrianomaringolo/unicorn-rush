@@ -104,7 +104,8 @@ export const CHARACTERS = {
     muzzle: 0xff6b3c,
     horn: { color: 0xffb02e, length: 0.78, radius: 0.1 },
     hair: [0xffd166, 0xff8a1f, 0xff4d1f, 0xffb02e, 0xff6b0f],
-    wing: { style: 'ray', colors: [0xfff0a8, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f] },
+    // Asa bem grande: o maior da turma tem a envergadura para combinar.
+    wing: { style: 'ray', colors: [0xfff0a8, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f], scale: 1.6 },
     mark: { shape: 'flame', color: 0xff8a1f },
     // Macho grandão: maior que os outros e de pernas compridas.
     scale: 1.18,
@@ -135,7 +136,8 @@ export const CHARACTERS = {
     muzzle: 0xffc2dc,
     horn: { color: 0xfff0c9, length: 0.34, radius: 0.085 },
     hair: [0xffcfe4, 0xcfe6ff, 0xffeec2, 0xe3cfff, 0xffdcec],
-    wing: { style: 'feather', colors: [0xffffff, 0xfff6fb, 0xffe9f4, 0xf2f6ff, 0xffeef8] },
+    // Asa bem pequena: ela ainda está aprendendo a voar (ver a história).
+    wing: { style: 'feather', colors: [0xffffff, 0xfff6fb, 0xffe9f4, 0xf2f6ff, 0xffeef8], scale: 0.5 },
     mark: { shape: 'heart', color: 0xffb3d1 },
     // Bebê: pequenina, cabeçuda e de perninhas curtas.
     scale: 0.78,
@@ -414,7 +416,8 @@ export const CHARACTERS = {
     muzzle: 0xf7ee8a,
     horn: { color: 0xfffbc9, length: 0.5, radius: 0.095 },
     hair: [0xc4e832, 0xf2e33a, 0xffffff, 0x8fd420, 0xfff08a],
-    wing: { style: 'ray', colors: [0xfffbc9, 0xf7ee8a, 0xf2e33a, 0xc4e832, 0x8fd420] },
+    // Asa bem pequena: miudinho, espetado, mais de pular do que de voar.
+    wing: { style: 'ray', colors: [0xfffbc9, 0xf7ee8a, 0xf2e33a, 0xc4e832, 0x8fd420], scale: 0.55 },
     mark: { shape: 'bolt', color: 0x6b8f00 },
     // Miudinho e espetado.
     scale: 0.88,
@@ -500,7 +503,9 @@ export const CHARACTERS = {
     muzzle: 0xc4c9d4,
     horn: { color: 0xe8ebf2, length: 0.66, radius: 0.115 },
     hair: [0xffffff, 0xe8ebf2, 0xd0d5e0, 0xf7f9ff, 0xc4c9d4],
-    wing: { style: 'feather', colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4] },
+    // Asa bem grande: o mais antigo já correu tudo, e tem a envergadura de
+    // quem correu mesmo.
+    wing: { style: 'feather', colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4], scale: 1.55 },
     mark: { shape: 'comet', color: 0x5c6270 },
     // Grande e de pernas firmes, sem pressa.
     scale: 1.12,
