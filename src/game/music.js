@@ -194,6 +194,23 @@ export const THEMES = {
     bass: [45, 45, 41, 41, 40, 40, 45, 43],
   },
 
+  // A fanfarra de vencer uma pista inteira — as doze fases, uma atrás da
+  // outra (ver Game.trackComplete). Mais rápida e mais brilhante que
+  // qualquer tema de pista, para não se confundir com "só mais uma fase":
+  // é o único troféu do jogo que não é por pontuação. Toca só na tela de
+  // vitória; a próxima corrida já troca de volta para o tema da pista.
+  vitoria: {
+    name: 'Fanfarra da vitória',
+    bpm: 150, wave: 'square', bassWave: 'triangle', gain: 0.07,
+    melody: [
+      72, 76, 79, 84, 79, 84, 88, null,
+      86, 84, 79, 84, 88, 91, null, null,
+      72, 76, 79, 84, 79, 84, 88, 91,
+      91, null, 88, 84, 79, null, null, null,
+    ],
+    bass: [48, 48, 55, 55, 60, 60, 55, 55],
+  },
+
   // O livro da história. Não é de pista nenhuma: toca enquanto o livro está
   // aberto e sai de cena quando ele fecha (ver Game.showStory).
   //

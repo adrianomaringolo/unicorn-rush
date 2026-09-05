@@ -783,16 +783,42 @@ export class Game {
     this.state = STATE.OVER;
     this.saveBest();
     this.ui.setBest(this.best);
+
+    if (!hasNext) return this.trackComplete(number);
+
     this.ui.showOverlay({
       title: t('Fase {n} completa! 🎉', { n: number }),
-      text: hasNext
-        ? t('{nome} juntou as {chaves} chaves. A fase {proxima} abriu!',
-          { nome: this.character.name, chaves: this.mode.keys, proxima: number + 1 })
-        : t('{nome} terminou as {total} fases do {pista}! Que corrida!',
-          { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name }),
+      text: t('{nome} juntou as {chaves} chaves. A fase {proxima} abriu!',
+        { nome: this.character.name, chaves: this.mode.keys, proxima: number + 1 }),
       buttons: [
-        ...(hasNext ? [{ label: t('▶️ Próxima fase'), onClick: () => this.startLevel(number + 1) }] : []),
-        { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: hasNext },
+        { label: t('▶️ Próxima fase'), onClick: () => this.startLevel(number + 1) },
+        { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: true },
+        { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
+      ],
+    });
+  }
+
+  // As doze fases de uma pista, de uma vez: o único troféu do jogo que não
+  // é por pontuação, e sim por terminar tudo. Ganha tratamento à parte —
+  // cartão diferente (`vitoria`, ver .card.vitoria no CSS), uma fanfarra
+  // própria por cima do som de sempre, um presente de chaves e um
+  // "parabéns" falado, para quem ainda não lê saber que a pista acabou sem
+  // precisar decifrar o texto.
+  trackComplete(number) {
+    const BONUS_KEYS = 10;
+    update((save) => { save.stats.keys = (save.stats.keys || 0) + BONUS_KEYS; });
+    this.ui.setWallet(this.wallet, true);
+    music.play('vitoria');
+    speak(t('Você venceu a pista {pista}!', { pista: this.track.name }));
+
+    this.ui.showOverlay({
+      title: t('🏆 Pista vencida!'),
+      text: t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁',
+        { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
+      vitoria: true,
+      buttons: [
+        { label: t('🌈 Escolher outra pista'), huge: true, onClick: () => this.showTrackPicker() },
+        { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: true },
         { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
       ],
     });

@@ -1570,6 +1570,27 @@ html, body {
   .big-button.huge { font-size: clamp(21px, 6.6vw, 28px); padding: 11px 24px; margin: 9px 0; }
 }
 
+/* --- Vencer uma pista inteira ------------------------------------------ */
+/* As 12 fases de uma pista, uma atrás da outra, ganham um cartão diferente
+   do branco de sempre: borda de arco-íris (as mesmas cores da barra de
+   carregamento) e um brilho dourado que respira — é o único troféu do
+   jogo que não é por pontuação, e sim por terminar tudo (ver
+   Game.trackComplete). */
+.card.vitoria {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--cream), var(--cream)) padding-box,
+    linear-gradient(120deg, #ff7b9d, #ffb26b, #ffe36b, #8ce99a, #74c0fc, #c09cff) border-box;
+  animation: vitoria-brilho 1.8s ease-in-out infinite;
+}
+@keyframes vitoria-brilho {
+  0%, 100% { box-shadow: 0 12px 0 rgba(122, 78, 199, .25), 0 0 0 0 rgba(255, 209, 102, .55); }
+  50%      { box-shadow: 0 12px 0 rgba(122, 78, 199, .25), 0 0 30px 8px rgba(255, 209, 102, .5); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.vitoria { animation: none; box-shadow: 0 12px 0 rgba(122, 78, 199, .25), 0 0 20px 4px rgba(255, 209, 102, .5); }
+}
+
 /* --- O livro da história ---------------------------------------------- */
 /* O cartão vira página de livro: a figura sangra até as bordas de cima, o
    texto fica num quadro de papel embaixo dela e a página vira num botão

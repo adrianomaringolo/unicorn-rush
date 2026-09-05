@@ -362,9 +362,12 @@ export const EN = {
   'Fase {n} completa! 🎉': 'Level {n} done! 🎉',
   '{nome} juntou as {chaves} chaves. A fase {proxima} abriu!':
     '{nome} collected all {chaves} keys. Level {proxima} is open!',
-  '{nome} terminou as {total} fases do {pista}! Que corrida!':
-    '{nome} finished all {total} levels of {pista}! What a run!',
   '▶️ Próxima fase': '▶️ Next level',
+  '🏆 Pista vencida!': '🏆 Track cleared!',
+  '{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁':
+    '{nome} finished all {total} levels of {pista}! Here\'s a gift of {chaves} magic keys. 🎁',
+  '🌈 Escolher outra pista': '🌈 Choose another track',
+  'Você venceu a pista {pista}!': 'You beat the {pista} track!',
   '🔁 Jogar de novo': '🔁 Play again',
   '🗺️ Escolher fase': '🗺️ Pick a level',
   'Faltou 1 chave na fase {fase}.': 'One key short on level {fase}.',
@@ -540,4 +543,5 @@ export const EN = {
   'Neblina': 'Fog',
   'Eco de cristal': 'Crystal echo',
   'Era uma vez': 'Once upon a time',
+  'Fanfarra da vitória': 'Victory fanfare',
 };

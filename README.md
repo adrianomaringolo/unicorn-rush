@@ -711,6 +711,32 @@ Mexer numa fase é mexer numa linha; o `npm run check` simula cada fase até
 completar a meta e confere que ela fica mais difícil que a anterior, que as
 chaves não ficam grudadas e que a fase inteira cabe num tempo razoável.
 
+### Vencer uma pista
+
+Terminar a décima segunda fase de uma pista é o único troféu do jogo que não
+é por pontuação, e sim por terminar tudo — e ganha um tratamento à parte de
+qualquer outra fase (`Game.trackComplete`, chamado por `levelComplete` no
+lugar do cartão de sempre):
+
+- um **cartão diferente**, com borda de arco-íris e um brilho dourado que
+  respira (`.card.vitoria`, em `style.css`) — a mesma linguagem de cor do
+  recorde e da barra de carregamento, só que na moldura inteira;
+- uma **música própria**, a "Fanfarra da vitória" (`THEMES.vitoria`, em
+  `music.js`) — mais rápida e mais brilhante que qualquer tema de pista, para
+  não parecer só mais uma fase. Toca por cima do som de sempre (`sfx.win()`)
+  e some sozinha assim que uma corrida nova começa, do jeito que qualquer
+  outra troca de tema já funciona;
+- um **presente de 10 chaves mágicas**, além das que a fase já dava, creditado
+  antes do cartão aparecer — quem olha para a carteira no topo já vê o número
+  novo;
+- um **"parabéns" falado** (`speak`, respeitando a voz ligada ou não, como
+  todo o resto), para quem ainda não lê saber que venceu a pista sem precisar
+  decifrar o texto;
+- e, no lugar de "Escolher fase" como botão principal, um **"🌈 Escolher
+  outra pista"** enorme — o convite natural depois de terminar uma é ir para
+  a próxima. Repetir a última fase ou escolher outra fase da mesma pista
+  continuam disponíveis, só que em segundo plano.
+
 ## Pular
 
 O pulo é **duplo**: o primeiro sai do chão e o segundo é no ar mesmo — a asa
