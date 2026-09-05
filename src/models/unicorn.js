@@ -106,7 +106,7 @@ function makeMane(colors, fiery = false) {
       curva: fiery ? 0 : 0.12,
       fiery,
     });
-    lock.position.set(0, 2.0 - u * 0.5, -0.78 + u * 0.64);
+    lock.position.set(0, 1.86 - u * 0.62, -0.76 + u * 0.5);
     // A mecha nasce apontando para baixo; isto a põe em pé e tombada para
     // trás, acompanhando a inclinação do pescoço.
     lock.rotation.x = -2.62 + u * 0.5;

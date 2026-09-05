@@ -42,7 +42,7 @@ const mat = (color, opts = {}) =>
 // mesmo motivo, `graceRowsPerLevel * nivel` e não elevado a `nivel`. A Vida
 // extra fica de fora — não dura, e não tem um "mais forte" que não distorça
 // o jogo (ver `Game.showPowerShop`).
-export const POWER_LEVEL_PERCENT = 10;
+export const POWER_LEVEL_PERCENT = 5;
 
 // O multiplicador de um campo que cresce com o nível (o `duration` de cada
 // power-up). Nível 0 (ainda não evoluído) devolve 1 — o valor padrão, sem
