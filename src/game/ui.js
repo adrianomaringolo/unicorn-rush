@@ -328,7 +328,7 @@ export function createUI() {
     showOverlay: ({
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
-      book = false, hint = false, arrows = true, scroll = null,
+      book = false, hint = false, arrows = true, scroll = null, vitoria = false,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -340,6 +340,9 @@ export function createUI() {
       // O livro é o cartão inteiro virando página: sem marca, sem borda
       // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
       card.classList.toggle('livro', book);
+      // Vencer as 12 fases de uma pista de uma vez ganha um cartão
+      // diferente do de sempre — ver .card.vitoria, no CSS.
+      card.classList.toggle('vitoria', vitoria);
       // O lembrete dos controles é para aprender o menu: só aparece nas
       // telas de escolha, e só fala em setas onde elas fazem alguma coisa.
       card.classList.toggle('no-hint', !hint);
