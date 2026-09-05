@@ -870,6 +870,13 @@ export class Game {
     // Segundos restantes de cada efeito (`flash` é só o brilho da vida extra).
     // `startShield` é a Chiclete, que começa dentro da bolha de chiclete.
     this.powers = { shield: this.character.startShield ?? 0, magnet: 0, boost: 0, flash: 0 };
+    // Quanto cada efeito ativo durava **no total**, ao ligar — é contra isto
+    // (e não o `duration` de tabela) que a barrinha do HUD mede o que falta.
+    // Sem isto, quem tem powerTime (o Sol) ou nível evoluído via chaves via
+    // um poder mais comprido que o de tabela, e a barra ficava parada em
+    // 100% até o tempo que sobrava cair dentro do `duration` de tabela — só
+    // aí ela "destravava" e começava a andar.
+    this.powerDurations = { shield: this.powers.shield };
     this.ui.setPowers([]);
     this.unicorn.position.set(0, 0, 0);
     this.unicorn.visible = true;
@@ -3035,6 +3042,7 @@ export class Game {
 
     // `powerTime` é o Sol: o dia dele é mais longo.
     this.powers[power.id] = power.duration * (this.character.powerTime ?? 1) * bonusNivel;
+    this.powerDurations[power.id] = this.powers[power.id];
     if (power.id === 'shield') this.player.invulnerable = 0;   // para de piscar
   }
 
@@ -3071,7 +3079,7 @@ export class Game {
     this.ui.setPowers(
       Object.entries(this.powers)
         .filter(([id, time]) => time > 0 && POWERUPS[id]?.duration > 0)
-        .map(([id, time]) => ({ id, emoji: POWERUPS[id].emoji, ratio: time / POWERUPS[id].duration }))
+        .map(([id, time]) => ({ id, emoji: POWERUPS[id].emoji, ratio: time / (this.powerDurations[id] || POWERUPS[id].duration) }))
     );
     if (this.powers.magnet > 0) this.attractCollectibles(dt);
   }

@@ -443,6 +443,16 @@ tem o corpo escuro, pela mesma razão do olho: preto sobre preto não existe.
 **As orelhas** são baixas e largas, com o rosa por dentro. Cones altos, ao
 lado do chifre, viravam um segundo chifre — três pontas na mesma cabeça.
 
+**A crina encosta no pescoço.** As sete mechas (`makeMane`, em
+`unicorn.js`) nascem numa posição própria, independente da geometria do
+pescoço (`CylinderGeometry`, alguns parágrafos abaixo) — e as duas contas
+não batiam: a primeira mecha (a da nuca) nascia uns 20 cm acima do ponto
+onde o pescoço realmente termina, e a última (a da cernelha, perto do
+ombro) nascia ainda mais alta e mais para a frente — sobrava céu entre a
+crina e o pescoço, mais visível de perfil. Ajustado batendo a posição de
+cada mecha contra o eixo de verdade do cilindro do pescoço (calculado à
+mão a partir da posição e da rotação dele).
+
 **O tamanho da asa** é um número por personagem (`wing.scale`, em
 `characters.js`), por cima do tamanho normal de qualquer asa
 (`WING_SCALE`, em `unicorn.js`) — sem ele, `1`. A Lulu e o Limão têm asa
@@ -840,6 +850,16 @@ tempo que falta — e o efeito no personagem **pisca no último segundo**,
 avisando que vai acabar. Os números (duração, velocidade do turbo) ficam em
 `src/models/powerups.js`, junto com o modelo 3D de cada um.
 
+A barrinha mede o tempo que falta contra `Game.powerDurations` — o quanto
+aquele power-up durava **no total**, guardado no instante em que ligou —, e
+não contra o `duration` de tabela. Os dois só coincidem para quem nunca
+evoluiu nada e não é o Sol (`powerTime`): fora daí, o power-up dura mais que
+o `duration` de tabela, e medir contra ele fazia a barra nascer em mais de
+100% — travada no cheio até o tempo que sobrava cair dentro do `duration` de
+tabela, e só então "destravar" e começar a andar. A Chiclete, com o escudo
+inicial de 20 s contra um `duration` de 8, é o caso mais visível: a barra
+ficava parada nos primeiros 12 segundos inteiros.
+
 O cartãozinho do power-up nasce uma vez só: `Ui.setPowers` roda a cada
 quadro enquanto o poder dura (é ela que anda a barrinha), mas só cria o
 elemento na primeira vez — depois só muda a largura da barra no que já
@@ -857,14 +877,18 @@ chave é brincadeira da criança, então não fica atrás da coroa, como o
 idioma ou a voz). Não tem teto: sempre existe o próximo nível, custando um
 pouco mais.
 
-Por padrão, cada nível soma **10%** ao tempo de ativação padrão — sempre do
+Por padrão, cada nível soma **5%** ao tempo de ativação padrão — sempre do
 tempo **original**, nunca do que o nível anterior já tinha somado: o nível 5
-do Escudo dura 50% mais (8 s viram 12 s), não os quase 61% que dariam 10%
-compostos nível sobre nível. A **Bomba Arco-Íris** não dura (o efeito é na
-hora): o nível soma linhas livres de obstáculo pista adentro em vez de tempo
-(ver abaixo), do mesmo jeito reto — linha por nível, sem compor.
+do Escudo dura 25% mais (8 s viram 10 s), não os quase 28% que dariam 5%
+compostos nível sobre nível. É devagar de propósito: o sistema não tem teto
+(ver acima), então um ritmo mais lento é o que deixa cada nível continuar
+parecendo um reforço, em vez de um pulo grande logo nos primeiros — e é para
+sempre existir um próximo que valha a pena, mesmo depois de muitos. A
+**Bomba Arco-Íris** não dura (o efeito é na hora): o nível soma linhas
+livres de obstáculo pista adentro em vez de tempo (ver abaixo), do mesmo
+jeito reto — linha por nível, sem compor.
 
-Na tela, porém, ninguém vê "10%": vê **"dura 12s"**, ou **"+12 linhas
+Na tela, porém, ninguém vê "5%": vê **"dura 10s"**, ou **"+12 linhas
 limpas"** na Bomba (nível 4, a 3 linhas por nível — `graceRowsPerLevel`, que
 não depende do `POWER_LEVEL_PERCENT` dos outros). Uma criança sente segundos
 de corrida, não porcentagem — uma conta que ela ainda não faz.
