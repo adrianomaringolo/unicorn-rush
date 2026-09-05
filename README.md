@@ -462,43 +462,36 @@ grande (mais de metade maior). O mesmo número entra na conta de
 senão a primeira vez que um dos dois ligasse devolvia a asa pequena (ou
 grande) ao tamanho padrão, e ela ficava presa lá depois.
 
-### O rabo: cor por nó, não por mecha
+### O rabo: uma mecha por cor, fina o bastante para não virar escudo
 
-Este custou quatro tentativas, e vale registrar por quê.
+Este já passou por duas fases, e vale registrar por quê.
 
 A mecha (`makeLock`) é uma corrente de nós, fina num eixo. Com **uma cor por
-mecha**, qualquer arranjo falha em algum ângulo:
+mecha** e só três fios grossos, qualquer arranjo falhava de algum ângulo —
+o pior era de trás (o ângulo do jogo), onde o fio da frente cobria os
+outros e virava um escudo achatado da cor dele só na garupa.
 
-| arranjo | de lado | de trás (o ângulo do jogo) |
-| --- | --- | --- |
-| lado a lado, grossas | várias tranças | várias tranças |
-| em anel, face na volta | fileira de lâminas | fileira de lâminas |
-| empilhadas em profundidade | massa de uma cor só | idem |
-| finas, espalhadas em Z | listras certas ✓ | **placa da cor da primeira** |
+A correção anterior trocou **onde a cor mora**: em vez de uma cor por mecha,
+uma cor por nó (o `makeLock` aceita uma lista), fazendo o arco-íris correr
+em faixas ao longo do rabo. Resolvia o escudo, mas o pedido era o oposto:
+listras **na vertical**, como mechas de cabelo de verdade, não faixas
+atravessando o rabo.
 
-A última quase funcionou — e foi a que entrou em jogo por uma versão, com um
-escudo dourado achatado na garupa, justo no ângulo em que o jogo mostra o
-bicho.
+A solução final volta para uma cor por mecha — mas com **uma mecha por cor**
+(`count = colors.length`, tipicamente 5) em vez de três. Mais fios, mais
+finos (`width: 0,15`, contra o grosso de antes), dispostos lado a lado num
+leque raso (`t` de −1 a 1, com posição e rotação em `z` proporcionais a
+`t`). É o que evita o escudo sem abrir mão da mecha: com só três fios
+grossos, um cobre os outros de qualquer ângulo perigoso; com cinco finos,
+sempre sobra mais de uma cor à vista, inclusive quase de ponta (o ângulo que
+antes derrubava essa ideia). Verificado de lado e de um ângulo quase de
+trás, na Uni e no Brasa (rabo de fogo) — listrado vertical nítido nos dois,
+sem escudo em nenhum.
 
-O que resolve é mudar **onde a cor mora**: em vez de uma cor por mecha, uma
-**cor por nó** (o `makeLock` aceita uma lista). Aí o arco-íris corre em
-faixas ao longo do rabo e é o mesmo de qualquer lado. São três fios grossos
-quase no mesmo lugar, com as cores defasadas entre eles, formando uma massa
-só — como na escultura.
-
-**A forma é a do rabo de fogo**, que era o único sem curva e acabou sendo o
-melhor de todos: sai da garupa para trás (−0,72 rad — quase na vertical ele
-lia como vareta pendurada) e varre reto, acompanhando a linha da garupa. A
-curva que os outros tinham enrolava a ponta para baixo e engrossava a
-silhueta. Fecha numa ponta (`afunila: 0,92`, contra os 0,66 da crina, que
-precisa terminar arredondada).
-
-Os três fios ficam **quase colados**: abrindo 0,14 eles divergiam ao longo do
-comprimento e, de trás, liam como três rabos.
-
-A lição que ficou: largura da mecha é o que se vê **por trás**, espalhamento
-é o que se vê **de lado**. São eixos diferentes, e dá para consertar um
-estragando o outro sem perceber, se só se olhar de um ângulo.
+A lição que ficou: largura da mecha é o que se vê **por trás**, quantidade
+de mechas é o que evita que uma tampe as outras nesse mesmo ângulo. São
+eixos diferentes, e dá para consertar um estragando o outro sem perceber,
+se só se olhar de um ângulo.
 
 ### As proporções da Uni
 
