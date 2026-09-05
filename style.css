@@ -1591,6 +1591,37 @@ html, body {
   .card.vitoria { animation: none; box-shadow: 0 12px 0 rgba(122, 78, 199, .25), 0 0 20px 4px rgba(255, 209, 102, .5); }
 }
 
+/* A chuva das 10 chaves de presente: uma leva de chaves caindo por cima do
+   cartão de vitória, cada uma com sua posição e seu atraso (ver
+   Game.chuvaDeChaves) — decoração pura, por isso `pointer-events: none` e
+   sem tocar em nada do layout (a `position: absolute` some do fluxo). */
+.chaves-presente {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.chave-caindo {
+  position: absolute;
+  top: -12%;
+  font-size: clamp(20px, 6vw, 30px);
+  opacity: 0;
+  animation: chave-cai 1.6s cubic-bezier(.3, .6, .4, 1) forwards;
+}
+@keyframes chave-cai {
+  /* `top`, e não `transform: translateY()`: a porcentagem de `top` é do
+     cartão (o container tem `inset: 0`), a de `translateY()` seria da
+     própria chavinha — o dobro de nada não anda coisa nenhuma. */
+  0%   { top: -12%; transform: rotate(-18deg) scale(.6); opacity: 0; }
+  12%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { top: 112%; transform: rotate(28deg) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chaves-presente { display: none; }
+}
+
 /* --- O livro da história ---------------------------------------------- */
 /* O cartão vira página de livro: a figura sangra até as bordas de cima, o
    texto fica num quadro de papel embaixo dela e a página vira num botão

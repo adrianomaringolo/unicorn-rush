@@ -815,6 +815,7 @@ export class Game {
       title: t('🏆 Pista vencida!'),
       text: t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁',
         { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
+      html: this.chuvaDeChaves(BONUS_KEYS),
       vitoria: true,
       buttons: [
         { label: t('🌈 Escolher outra pista'), huge: true, onClick: () => this.showTrackPicker() },
@@ -822,6 +823,20 @@ export class Game {
         { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
       ],
     });
+  }
+
+  // A chuva de chaves do presente: uma por chave ganha, caindo do topo do
+  // cartão com um atraso e uma posição meio aleatórios, para não parecer
+  // uma fileira certinha (ver .chaves-presente no CSS). É só decoração —
+  // sem `data-pick`, ninguém toca nela — por isso pode ir puro emoji: o
+  // `withIcons` troca pela imagem sozinho, e não há atributo para quebrar.
+  chuvaDeChaves(quantas) {
+    const chaves = Array.from({ length: quantas }, (_, i) => {
+      const esquerda = (6 + (i / Math.max(1, quantas - 1)) * 88 + (Math.random() * 8 - 4)).toFixed(1);
+      const atraso = (Math.random() * 0.9).toFixed(2);
+      return `<span class="chave-caindo" style="left:${esquerda}%; animation-delay:${atraso}s">🔑</span>`;
+    }).join('');
+    return `<div class="chaves-presente">${chaves}</div>`;
   }
 
   reset() {

@@ -728,7 +728,12 @@ lugar do cartão de sempre):
   outra troca de tema já funciona;
 - um **presente de 10 chaves mágicas**, além das que a fase já dava, creditado
   antes do cartão aparecer — quem olha para a carteira no topo já vê o número
-  novo;
+  novo, e uma **chuva de dez chavinhas** cai por cima do cartão para ninguém
+  duvidar de onde vieram (`Game.chuvaDeChaves`, `.chaves-presente` no CSS) —
+  cada uma com sua posição e seu atraso, então não parecem uma fileira
+  certinha. É decoração pura (`pointer-events: none`) e some sozinha ao
+  acabar; some de vez, sem cair, para quem prefere menos movimento
+  (`prefers-reduced-motion`);
 - um **"parabéns" falado** (`speak`, respeitando a voz ligada ou não, como
   todo o resto), para quem ainda não lê saber que venceu a pista sem precisar
   decifrar o texto;
