@@ -493,6 +493,15 @@ de mechas é o que evita que uma tampe as outras nesse mesmo ângulo. São
 eixos diferentes, e dá para consertar um estragando o outro sem perceber,
 se só se olhar de um ângulo.
 
+O leque de `t * abertura` (na base, perto da garupa) abria as mechas e
+**as deixava assim até a ponta** — um rabo largo o comprimento inteiro, em
+vez de afinar como um rabo de verdade. A correção calcula, por mecha, o
+ângulo exato (`Math.asin`) que leva a base aberta até quase o centro na
+ponta (`t * juncao`, um resto bem menor que a abertura da base): não é
+outro leque por cima, é a mesma mecha reta virada para dentro. O rabo
+segue largo e listrado perto da garupa e termina fino, com as mechas se
+unindo — como um rabo de cavalo de verdade, não uma vassourinha.
+
 ### As proporções da Uni
 
 Ela ganhou `proportions: { head: 1.12, legs: 0.9, eye: 1.15 }` — cabeça e
