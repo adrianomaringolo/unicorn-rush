@@ -1628,6 +1628,16 @@ Todo item que dá para pegar — coração, estrela, chave e power-up — tem um
 criança enxerga primeiro. Os itens são espalhados (menos de um por linha da
 pista), então vale a pena mudar de faixa para pegá-los.
 
+O brilho ignora a névoa da pista de propósito (`fog: false`, em
+`createGlow`) — é o que garante que ele apareça de longe em qualquer pista.
+O corpo do item (o coração, a estrela, a chave, o desenho de cada power-up)
+precisa da mesma isenção: sem ela, numa pista de névoa fechada como a Bruma
+— que engole tudo aos 34, contra os 90 onde os itens nascem — o brilho já
+aparecia lá longe, mas o desenho de dentro só surgia em cima da criança, e
+sobrava uma bolinha de luz sem nada dentro até então. A névoa continua
+escondendo o **obstáculo**, que é a mecânica da pista; o prêmio não tem
+por quê.
+
 Regras: cada 💗 vale 10 pontos, cada ⭐ vale 5 corações e 50 pontos.
 Completar uma fase toca uma **fanfarra** — dó–mi–sol–dó subindo, com a última
 nota segurada e um brilhinho por cima. É o som mais comprido do jogo de

@@ -15,8 +15,13 @@
 import * as THREE from 'three';
 import { createGlow } from './collectibles.js';
 
+// `fog: false`: o brilho de cada power-up (`createGlow`, em createPowerup)
+// já ignora a névoa de propósito, para se destacar de longe — sem isto o
+// corpo continuava sujeito a ela, e numa pista de névoa fechada (a Bruma)
+// sobrava só a bolinha de luz, sem o desenho do power-up dentro (o mesmo
+// problema do coração e da estrela, em collectibles.js).
 const mat = (color, opts = {}) =>
-  new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
+  new THREE.MeshLambertMaterial({ color, flatShading: true, fog: false, ...opts });
 
 // --- Evolução por chaves ----------------------------------------------------
 //
