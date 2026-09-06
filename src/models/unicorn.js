@@ -658,9 +658,14 @@ export function createUnicorn(character = CHARACTERS.uni) {
   }
 
   // Chifre (cada personagem tem o seu: mais curto e grosso, mais fino e longo…)
+  // `glow` é para quem o chifre é a própria luz do personagem — o Sol e a
+  // Lua —, e usa o mesmo truque do rabo de fogo: emissivo na cor do chifre,
+  // sem luz de verdade (custaria caro repetir por bicho).
   const horn = new THREE.Mesh(
     new THREE.ConeGeometry(character.horn.radius, character.horn.length, 7),
-    mat(character.horn.color)
+    character.horn.glow
+      ? mat(character.horn.color, { emissive: character.horn.color, emissiveIntensity: 0.8 })
+      : mat(character.horn.color)
   );
   horn.position.set(0, 0.52, -0.16);
   horn.rotation.x = -0.35;
