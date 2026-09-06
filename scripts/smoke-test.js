@@ -7,7 +7,7 @@ import { createObstacle, createDecoration, createStartLine } from '../src/models
 import { CHARACTER_LIST } from '../src/models/characters.js';
 import { World } from '../src/game/world.js';
 import { Game } from '../src/game/Game.js';
-import { MODES } from '../src/game/config.js';
+import { MODES, DIFFICULTY_LIST } from '../src/game/config.js';
 import { TRACK_LIST } from '../src/game/tracks.js';
 import { POWERUP_LIST, createPowerup } from '../src/models/powerups.js';
 import { LEVELS, levelData } from '../src/game/levels.js';
@@ -140,6 +140,7 @@ for (const track of TRACK_LIST) {
   lessonsFor({ rapido: true }).forEach((l, i) => ver(l, ['fala'], `lição/${i + 1}`));
   POWERUP_LIST.forEach((p) => ver(p, ['name', 'message'], `power-up/${p.id}`));
   [...Object.values(MODES), TUTORIAL_MODE].forEach((m) => ver(m, ['name', 'tagline'], `modo/${m.id}`));
+  DIFFICULTY_LIST.forEach((d) => ver(d, ['name', 'tagline'], `dificuldade/${d.id}`));
   Object.entries(THEMES).forEach(([id, tema]) => ver(tema, ['name'], `música/${id}`));
 
   if (semTraducao.length) {
