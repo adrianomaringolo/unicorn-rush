@@ -83,9 +83,13 @@ export const CHARACTERS = {
     mark: { shape: 'moon', color: 0xbcaef5 },
     // a Noite é a hora dela, e a Geada tem o mesmo silêncio
     fast: ['noite', 'geada'],
-    // Conhece os atalhos: os itens vêm um pouquinho até ela, sempre.
-    magnetRange: 3.4,
-    power: 'os corações chegam mais perto dela sozinhos',
+    // Na pista Noite ela brilha mais que o padrão de lá (0,34): é a própria
+    // unicórnia da noite, não só mais uma pegando o brilho da pista.
+    nightGlow: 0.62,
+    // Conhece os atalhos: o item mais perto de cada faixa vem até ela,
+    // sempre — nas três ao mesmo tempo, além do que ela pega no caminho.
+    laneMagnet: 7,
+    power: 'ela puxa até um item de cada faixa para perto',
     aura: { kind: 'faisca', color: [0xe3dcff, 0xbcaef5, 0xfff6bf], count: 8 },
     trail: { colors: [0xe3dcff, 0xbcaef5, 0x9a7ae0, 0x6d7fe0, 0x5b6bd6, 0x8ea3ff], width: 0.75 },
   },
