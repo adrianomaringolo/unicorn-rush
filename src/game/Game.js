@@ -1107,7 +1107,7 @@ export class Game {
       const bolhas = DIFFICULTY_LIST.map((nivel) => (
         `<button class="speed${nivel.id === this.difficulty.id ? ' escolhido' : ''}"`
         + ` data-pick="vel:${nivel.id}" aria-pressed="${nivel.id === this.difficulty.id}">`
-        + `<b>${nivel.emoji}</b>${nivel.name}</button>`
+        + `<b>${nivel.emoji}</b>${t(nivel.name)}</button>`
       )).join('');
       return `${card}<div class="speeds">${bolhas}</div>`;
     }).join('');
@@ -1142,7 +1142,7 @@ export class Game {
     this.difficulty = nivel;
     update((save) => { save.choices.difficulty = nivel.id; });
     sfx.pick();
-    speak(nivel.name);
+    speak(t(nivel.name));
     this.showModePicker();
   }
 

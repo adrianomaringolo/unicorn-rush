@@ -1547,13 +1547,26 @@ Como a chave é a própria frase, **um acento trocado faz a tradução sumir em
 silêncio**: o jogo continua rodando e mostra o português. Por isso o teste
 verifica, e falha:
 
-- todo texto dos dados e da interface tem tradução (384 frases);
+- todo texto dos dados e da interface tem tradução (415 frases);
 - nenhuma chave do dicionário deixou de bater com algum texto;
 - **nenhuma chave repetida** — a segunda apaga a primeira quando o objeto é
   montado, e isso não dá erro nenhum. Foi assim que se descobriu que
   `'Pular'` era ao mesmo tempo o `aria-label` do botão de pulo e o botão de
   pular a história: em inglês um é *Jump* e o outro é *Skip*;
 - ida e volta pt → en → pt devolve o português exato.
+
+A primeira checagem (a de "todo texto dos dados tem tradução") só cobre o
+que está listado ali dentro — `CHARACTER_LIST`, `TRACK_LIST`, `MODES`, os
+power-ups, a música, o livro… Foi assim que os três **níveis de
+dificuldade do Desafio** (`DIFFICULTY_LIST`, em `config.js`) ficaram sem
+tradução por um tempo sem o teste acusar nada: a lista simplesmente não
+estava na conta. O nome de cada nível (`nivel.name`) também precisou ir
+para dentro de um `t(...)` no HTML das pílulas de velocidade — sem isso
+`Devagarinho`/`Normal`/`Voando` continuavam em português mesmo com a
+tradução no dicionário, porque ninguém pedia a tradução deles. Um lembrete
+para o próximo campo de dados novo: além de traduzir, é preciso **entrar
+na lista de `ver(...)`** do `npm run check` e ser lido com `t(...)` onde
+aparece na tela.
 
 O `manifest.webmanifest` é a única coisa que fica de fora: o navegador o lê
 antes de o jogo abrir, então não há como escolher o idioma dele. A descrição

@@ -215,6 +215,14 @@ export const EN = {
   'Com obstáculos e 3 vidas': 'With obstacles and 3 lives',
   'Os comandos e os power-ups, um de cada vez': 'The controls and the power-ups, one at a time',
 
+  // --- Níveis de dificuldade do Desafio ---------------------------------------
+  'Devagarinho': 'Slowpoke',
+  'Pouca coisa no caminho': 'Not much in the way',
+  'Normal': 'Normal',
+  'Do jeitinho certo': 'Just right',
+  'Voando': 'Flying',
+  'Pista cheia, sem moleza': 'Packed track, no mercy',
+
   // --- O livro da história ---------------------------------------------------
   'As Terras Mágicas': 'The Magic Lands',
   'Muito longe daqui existe um reino onde o céu é cor-de-rosa e o arco-íris encosta no chão. Ali viviam todos os unicórnios do mundo, correndo juntos o dia inteiro.':
