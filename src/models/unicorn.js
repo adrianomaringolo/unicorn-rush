@@ -670,6 +670,11 @@ export function createUnicorn(character = CHARACTERS.uni) {
   horn.position.set(0, 0.52, -0.16);
   horn.rotation.x = -0.35;
   horn.castShadow = true;
+  // Marca para Game.applyTrackGlow deixar este emissivo em paz: o chifre
+  // brilha sozinho, com a própria cor — não é o brilho-no-escuro da pista
+  // (Noite, Espaço…), que reaproveita o mesmo `material.emissive` para
+  // acender o bicho inteiro.
+  if (character.horn.glow) horn.userData.ownGlow = true;
   head.add(horn);
 
   // Franja caindo na testa

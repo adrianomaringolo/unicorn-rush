@@ -380,8 +380,18 @@ export class Game {
   applyTrackGlow() {
     // A pista acende o unicórnio (Noite, Espaço) — e o Sombra acende sozinho
     // em qualquer pista, porque brilhar no escuro é o jeitão dele.
-    const glow = this.track.glow || this.character.glow;
+    //
+    // A Lua é a própria unicórnia da noite: na pista Noite ela brilha mais
+    // que o padrão da pista (`nightGlow`), não só o brilho que todo mundo
+    // ganha lá. Nas outras pistas ela é uma unicórnia normal.
+    const propria = this.track.id === 'noite' && this.character.nightGlow;
+    const glow = propria
+      ? { intensity: this.character.nightGlow, halo: this.track.glow.halo }
+      : (this.track.glow || this.character.glow);
     this.unicorn.traverse((obj) => {
+      // `ownGlow` é o chifre do Sol e da Lua: brilha sozinho, na própria
+      // cor, e não deve virar o brilho-no-escuro genérico da pista.
+      if (obj.userData.ownGlow) return;
       const material = obj.isMesh ? obj.material : null;
       if (!material || !material.emissive || material === this.nightGlow.material) return;
       if (glow) material.emissive.copy(material.color).multiplyScalar(glow.intensity);
@@ -877,6 +887,8 @@ export class Game {
     // 100% até o tempo que sobrava cair dentro do `duration` de tabela — só
     // aí ela "destravava" e começava a andar.
     this.powerDurations = { shield: this.powers.shield };
+    // Quem cada faixa está entregando para a Lua agora — ver `attractNearby`.
+    this.laneMagnetTargets = new Array(LANES.length).fill(null);
     this.ui.setPowers([]);
     this.unicorn.position.set(0, 0, 0);
     this.unicorn.visible = true;
@@ -3136,25 +3148,47 @@ export class Game {
     if (this.powers.magnet > 0) this.attractCollectibles(dt);
   }
 
-  // `magnetRange` é a Lua: sem power-up nenhum, os itens que passam perto
-  // vêm um pouquinho até ela. É bem mais fraco que o ímã de verdade, que
-  // puxa a pista inteira.
+  // `laneMagnet` é a Lua: sem power-up nenhum, o item mais perto de cada
+  // faixa vem até ela — nas três ao mesmo tempo, e não só o que já está
+  // quase do lado dela. Ela ainda precisa **coletar** o que vem: isto só
+  // traz o item para perto, quem pega de verdade é `checkCollisions`, como
+  // sempre. É bem mais fraco que o ímã de verdade, que puxa a pista
+  // inteira: aqui é sempre um por faixa, e a uma velocidade constante, não
+  // a toda-força do power-up.
   attractNearby(dt) {
-    const alcance = this.character.magnetRange;
+    const alcance = this.character.laneMagnet;
     if (!alcance) return;
     const p = this.player;
     const alvo = new THREE.Vector3(p.x, p.y + 1.15, 0);
 
-    for (const e of this.world.entities) {
-      if (e.userData.kind === 'obstacle') continue;
-      if (e.position.z < -6 || e.position.z > 4) continue;
-      const rumo = alvo.clone().sub(e.position);
+    LANES.forEach((faixa, i) => {
+      // Uma vez escolhido, o alvo da faixa continua sendo puxado até ser
+      // coletado (ou sumir da pista) — ele mesmo sai do x de nascença ao
+      // ser puxado, então checar "ainda está na faixa `faixa`" a cada
+      // quadro perderia o alvo no meio do caminho.
+      let alvoDaFaixa = this.laneMagnetTargets[i];
+      if (alvoDaFaixa && !this.world.entities.includes(alvoDaFaixa)) alvoDaFaixa = null;
+
+      if (!alvoDaFaixa) {
+        // O mais perto é o de maior z: o item nasce em z bem negativo e se
+        // aproxima de 0, então quem já andou mais é quem chega primeiro.
+        // Só concorre quem ainda está no x de nascença — quem já é alvo de
+        // outra faixa não é roubado.
+        for (const e of this.world.entities) {
+          if (e.userData.kind === 'obstacle') continue;
+          if (Math.abs(e.position.x - faixa) > 0.15) continue;
+          if (e.position.z < -alcance || e.position.z > 4) continue;
+          if (!alvoDaFaixa || e.position.z > alvoDaFaixa.position.z) alvoDaFaixa = e;
+        }
+        this.laneMagnetTargets[i] = alvoDaFaixa;
+      }
+      if (!alvoDaFaixa) return;
+
+      const rumo = alvo.clone().sub(alvoDaFaixa.position);
       const distancia = rumo.length();
-      if (distancia < 0.001 || distancia > alcance) continue;
-      // Puxa proporcional à proximidade: de longe quase não sente.
-      const forca = (1 - distancia / alcance) * 5.5;
-      e.position.addScaledVector(rumo.divideScalar(distancia), Math.min(distancia, forca * dt));
-    }
+      if (distancia < 0.001) return;
+      alvoDaFaixa.position.addScaledVector(rumo.divideScalar(distancia), Math.min(distancia, 4 * dt));
+    });
   }
 
   // O obstáculo atingido sai voando e girando, com poeira na cor dele. Vale

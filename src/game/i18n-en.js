@@ -57,7 +57,7 @@ export const EN = {
 
   // --- Unicórnios: o poder de cada um -------------------------------------
   'os power-ups duram mais tempo com ele': 'power-ups last longer with him',
-  'os corações chegam mais perto dela sozinhos': 'hearts drift closer to her on their own',
+  'ela puxa até um item de cada faixa para perto': 'she pulls in one item from each lane',
   'ele ganha velocidade muito mais rápido': 'he picks up speed much faster',
   'ela corre com uma vidinha extra': 'she runs with one extra little life',
   'as estrelas ⭐ valem o dobro para ela': 'stars ⭐ are worth double for her',

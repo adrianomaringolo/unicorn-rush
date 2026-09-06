@@ -78,7 +78,8 @@ Cada número abaixo foi **medido em jogo**, não estimado:
 | Unicórnio | Campo | O que muda |
 | --- | --- | --- |
 | ☀️ Sol | `powerTime: 1.5` | power-ups duram **12 s em vez de 8** |
-| 🌙 Lua | `magnetRange: 3.4` | os itens que passam perto **vêm um pouquinho até ela**, sem power-up |
+| 🌙 Lua | `laneMagnet: 7` | **puxa um item de cada faixa** para perto, nas três ao mesmo tempo, sem power-up |
+| 🌙 Lua | `nightGlow: 0.62` | na pista **Noite** ela brilha mais que todo mundo (0,34 é o padrão de lá) |
 | 🔥 Brasa | `speedRamp: 1.6` | a velocidade sobe a **0,56/s contra 0,35** |
 | 🤍 Lulu | `extraLives: 1` | corre com **4 vidas** em vez de 3 |
 | ⭐ Estrela | `starValue: 2` | a estrela vale **10 corações em vez de 5** |
@@ -513,6 +514,26 @@ Brasa. Sem luz de verdade (um `PointLight` por chifre custaria caro
 repetir em cada unicórnio da tela); é só o material que deixa de escurecer
 na face virada para a sombra, o que já lê como "brilhando" num bicho todo
 em flat shading.
+
+`Game.applyTrackGlow` mexe no `emissive` do bicho inteiro para o
+brilho-no-escuro das pistas (Noite, Espaço, Caverna) — inclusive nas
+pistas **sem** esse brilho, para apagar o que uma pista anterior tinha
+acendido. Sem cuidado, essa varredura genérica passava por cima do
+emissivo próprio do chifre e apagava o brilho dele em toda pista sem
+brilho-no-escuro (a maioria): o chifre parecia brilhar só no cartão de
+personagem, porque ali `applyTrackGlow` nunca tinha rodado com a pista
+errada. A correção marca o chifre com `userData.ownGlow` na montagem
+(`unicorn.js`), e `applyTrackGlow` pula quem tem essa marca.
+
+### A Lua brilha mais na pista dela
+
+Na pista Noite todo mundo acende (`track.glow.intensity: 0,34`) — menos a
+Lua, que é a própria unicórnia da noite e tem um brilho maior só ali
+(`character.nightGlow: 0,62`, contra o padrão dela nas outras pistas, que é
+nenhum). `applyTrackGlow` prioriza `nightGlow` sobre o brilho da pista só
+quando as duas coisas — `track.id === 'noite'` e o personagem ter
+`nightGlow` — são verdadeiras; em qualquer outra pista ela é uma unicórnia
+normal, e em qualquer outro personagem na Noite vale o padrão de 0,34.
 
 ### As proporções da Uni
 
