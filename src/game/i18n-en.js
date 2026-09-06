@@ -374,6 +374,8 @@ export const EN = {
   '🏆 Pista vencida!': '🏆 Track cleared!',
   '{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁':
     '{nome} finished all {total} levels of {pista}! Here\'s a gift of {chaves} magic keys. 🎁',
+  '{nome} terminou as {total} fases do {pista} de novo! 🎉':
+    '{nome} finished all {total} levels of {pista} again! 🎉',
   '🌈 Escolher outra pista': '🌈 Choose another track',
   'Você venceu a pista {pista}!': 'You beat the {pista} track!',
   '🔁 Jogar de novo': '🔁 Play again',

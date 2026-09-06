@@ -787,6 +787,10 @@ export class Game {
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
     const number = this.level;
     const trackId = this.track.id;
+    // Guardado antes do `update`: é o que diz se a pista **já** estava
+    // com as doze fases feitas antes desta vitória — sem isso, repetir a
+    // última fase rendia outras 10 chaves de presente a cada vez.
+    const jaTinhaVencido = !!this.save.levels[trackId]?.done[LEVEL_COUNT];
     update((save) => {
       const fases = save.levels[trackId] || (save.levels[trackId] = { unlocked: 1, done: {} });
       fases.done[number] = true;
@@ -799,7 +803,7 @@ export class Game {
     this.saveBest();
     this.ui.setBest(this.best);
 
-    if (!hasNext) return this.trackComplete(number);
+    if (!hasNext) return this.trackComplete(number, jaTinhaVencido);
 
     this.ui.showOverlay({
       title: t('Fase {n} completa! 🎉', { n: number }),
@@ -819,18 +823,29 @@ export class Game {
   // própria por cima do som de sempre, um presente de chaves e um
   // "parabéns" falado, para quem ainda não lê saber que a pista acabou sem
   // precisar decifrar o texto.
-  trackComplete(number) {
+  //
+  // `jaTinhaVencido` é repetir a última fase depois de já ter ganhado o
+  // presente uma vez: a festa continua (a criança pediu "🔁 Jogar de
+  // novo" desta mesma tela, é natural ela aparecer de novo), só sem as
+  // chaves — sem isso dava para juntar 10 chaves de graça repetindo uma
+  // fase só.
+  trackComplete(number, jaTinhaVencido = false) {
     const BONUS_KEYS = 10;
-    update((save) => { save.stats.keys = (save.stats.keys || 0) + BONUS_KEYS; });
-    this.ui.setWallet(this.wallet, true);
+    if (!jaTinhaVencido) {
+      update((save) => { save.stats.keys = (save.stats.keys || 0) + BONUS_KEYS; });
+      this.ui.setWallet(this.wallet, true);
+    }
     music.play('vitoria');
     speak(t('Você venceu a pista {pista}!', { pista: this.track.name }));
 
     this.ui.showOverlay({
       title: t('🏆 Pista vencida!'),
-      text: t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁',
-        { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
-      html: this.chuvaDeChaves(BONUS_KEYS),
+      text: jaTinhaVencido
+        ? t('{nome} terminou as {total} fases do {pista} de novo! 🎉',
+          { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name })
+        : t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁',
+          { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
+      html: jaTinhaVencido ? '' : this.chuvaDeChaves(BONUS_KEYS),
       vitoria: true,
       buttons: [
         { label: t('🌈 Escolher outra pista'), huge: true, onClick: () => this.showTrackPicker() },
