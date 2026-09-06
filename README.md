@@ -1768,13 +1768,25 @@ desenho usa menos pixels e sombra menor para não engasgar.
 
 No celular deitado a tela é baixa, e a pista passa a ocupar quase a altura
 inteira — sobra pouco "céu" acima do horizonte. O toast de pegar um
-power-up e os cartões de quem está ligado, que em pé ficam à meia altura
-sem incomodar ninguém, deitados caíam bem em cima de onde os obstáculos
-aparecem. Só nesse formato (`@media (orientation: landscape) and
-(max-height: 620px)`, em `style.css`) os dois saem do meio do caminho: o
-toast sobe para a faixa de céu logo abaixo do HUD, e os cartões de power-up
-saem do centro e descem pela beira esquerda da tela, embaixo de Pontos e
-Distância — ali é grama, não pista.
+power-up e os cartões de quem está ligado caíam bem em cima de onde os
+obstáculos aparecem. Só nesse formato (`@media (orientation: landscape)
+and (max-height: 620px)`, em `style.css`) o toast sobe para a faixa de céu
+logo abaixo do HUD, e os cartões de power-up saem do centro e descem pela
+beira esquerda da tela, embaixo de Pontos e Distância — ali é grama, não
+pista.
+
+**O toast em pé tinha o mesmo problema, só que escondido.** `top: 38%` da
+altura da tela parecia ficar "à meia altura, sem incomodar ninguém" — e
+até ficava, numa tela baixa. Numa tela alta (a maioria dos celulares em
+pé), 38% caem bem no meio do corredor da pista, onde a criança olha para
+ver o que vem, e o aviso tapava a visão bem na hora de decidir a faixa.
+`#lesson-box` (a faixa da lição do Aprender) já não tinha esse problema
+porque nunca usou porcentagem de altura — fica perto do HUD
+(`top: clamp(178px, 45vw, 224px)`), que é uma distância parecida em
+qualquer tamanho de tela. O toast passou a seguir o mesmo endereço
+(`top: clamp(150px, 38vw, 200px)`, e um pouco mais abaixo quando a faixa
+da lição também está na tela), então agora ele sobe para o céu tanto em pé
+quanto deitado.
 
 Nas telas de escolha o cartão nunca cobre a tela inteira: em pé ele ocupa no
 máximo dois terços, as fichas ficam sempre numa linha só e a câmera da

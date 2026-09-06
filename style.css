@@ -220,7 +220,11 @@ html, body {
   z-index: 18;
   position: absolute;
   left: 50%;
-  top: 38%;
+  /* Em pé, 38% de uma tela alta caía bem no meio do corredor da pista —
+     onde a criança olha para ver o que vem — e tampava a visão. `#lesson-box`
+     já resolvia o mesmo problema ficando perto do HUD em vez de a uma
+     fração da altura; o toast segue o mesmo endereço. */
+  top: clamp(150px, 38vw, 200px);
   transform: translate(-50%, -50%) scale(.8);
   padding: 10px 22px;
   border-radius: 999px;
@@ -239,7 +243,7 @@ html, body {
    e no modo Aprender os avisos de power-up aparecem o tempo todo. Quem some
    é a caixa inteira (#lesson-box), que é irmã do toast — o <p> de dentro
    não é, e o seletor deixava de valer. */
-#lesson-box:not([hidden]) ~ #toast { top: 56%; }
+#lesson-box:not([hidden]) ~ #toast { top: clamp(270px, 62vw, 320px); }
 
 #toast.show {
   opacity: 1;
