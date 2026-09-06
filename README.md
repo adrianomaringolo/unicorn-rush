@@ -787,7 +787,13 @@ lugar do cartão de sempre):
   cada uma com sua posição e seu atraso, então não parecem uma fileira
   certinha. É decoração pura (`pointer-events: none`) e some sozinha ao
   acabar; some de vez, sem cair, para quem prefere menos movimento
-  (`prefers-reduced-motion`);
+  (`prefers-reduced-motion`). **Só na primeira vez**: `levelComplete` guarda,
+  antes de marcar a fase 12 como feita, se a pista já não estava com todas
+  as doze — repetir a última fase (o "🔁 Jogar de novo" desta mesma tela)
+  continua abrindo o cartão de vitória, com a fanfarra e tudo, mas sem a
+  chuva de chaves nem o crédito na carteira, e o texto vira "terminou de
+  novo!" em vez de prometer um presente que não vem. Sem essa guarda dava
+  para juntar 10 chaves de graça só repetindo uma fase;
 - um **"parabéns" falado** (`speak`, respeitando a voz ligada ou não, como
   todo o resto), para quem ainda não lê saber que venceu a pista sem precisar
   decifrar o texto;
