@@ -1350,7 +1350,10 @@ A história vive em `src/game/story.js` e a tela em `Game.showStory`:
   mais baixa que qualquer tema de pista — a criança está lendo, ou ouvindo a
   voz do aparelho ler. Ao fechar o livro volta o tema da pista escolhida;
 - com a **voz** ligada (no cantinho dos adultos), cada página é lida em voz
-  alta — o livro funciona para quem ainda não lê;
+  alta — o livro funciona para quem ainda não lê; fechar o livro no meio de
+  uma página (`speech.stop()`, chamada de `closeStory`) corta a fala ali —
+  sem isso a voz continuava sozinha por cima do menu, lendo uma página que
+  não estava mais na tela;
 - fechar o livro grava `storySeen` no save. Da segunda vez em diante o jogo
   abre no menu, e a história volta pelo botão **📖 A história**, na tela
   inicial, quantas vezes a criança quiser.

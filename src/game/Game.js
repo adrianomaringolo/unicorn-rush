@@ -32,7 +32,7 @@ import {
 import * as music from './music.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import {
-  speak, canSpeak, isOn as speechOn, setOn as setSpeech,
+  speak, canSpeak, isOn as speechOn, setOn as setSpeech, stop as stopSpeech,
   vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes,
 } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
@@ -1993,6 +1993,9 @@ export class Game {
   // Fechar o livro é o que marca a história como contada: quem viu até aqui
   // não precisa vê-la de novo toda vez que abrir o jogo.
   closeStory() {
+    // Fechar no meio de uma página não deixa a voz terminando sozinha por
+    // cima da tela seguinte.
+    stopSpeech();
     if (!this.save.storySeen) update((save) => { save.storySeen = true; });
     // Leu até a última página do livro completo: o 📖 para de piscar.
     if (this.storyEndUnlocked && this.storyPage >= this.storyBook.length - 1

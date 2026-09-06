@@ -109,6 +109,12 @@ export function canSpeak() {
   return suporta();
 }
 
+// Corta a fala em andamento sem desligar a voz — para fechar uma tela que
+// estava sendo narrada (o livro da história) sem esperar a frase acabar.
+export function stop() {
+  if (suporta()) speechSynthesis.cancel();
+}
+
 export function isOn() {
   return ligado && suporta();
 }
