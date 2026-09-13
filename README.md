@@ -557,6 +557,24 @@ som sem poder ouvi-lo: **43% da energia nos primeiros 50 ms** e 74% nos
 primeiros 150, seguidos dos quatro brilhos. É a forma de um estouro; o arpejo
 antigo era quatro batidas iguais espalhadas por 210 ms.
 
+### A vibração ao bater ou pegar power-up
+
+`haptics.js` chama `navigator.vibrate()` por cima do som e do tremor de tela
+que já existiam — um toque de **80 ms** ao bater num obstáculo (as três
+formas de bater em `Game.hit`: a casca do Coco aguentando, a batida "de
+brincar" do Aprender e a que tira vida de verdade tocam `sfx.hit()` e
+sacodem a tela igual, então vibram igual também), **25 ms** ao pegar um
+power-up comum e um padrão de dois toques (`[30, 40, 30]`) para a 🌈 Bomba
+Arco-Íris, o maior estouro do jogo.
+
+`navigator.vibrate` é Android/Chrome só — o Safari/iOS nunca implementou.
+Por isso segue o mesmo cuidado da voz em `speech.js`: checa o suporte antes
+de chamar, embrulha a chamada em `try/catch`, e não tem toggle nenhum no
+cantinho dos adultos — ao contrário do som (que tem o botãozinho 🔊) e da
+voz (que tem a pergunta na primeira abertura), ninguém precisa decidir
+nada: quem sente, sente; quem não sente (metade das crianças, em iPhone)
+nem percebe que existe.
+
 O `safe()` que embrulha todos os sons deixou de engolir o erro em silêncio e
 passou a avisar no console — foi assim que deu para conferir, de uma vez, que
 os 16 sons do jogo rodam sem estourar.
@@ -1832,6 +1850,7 @@ src/
     input.js          teclado, arrastar e botões de toque
     install.js        o convite de instalar o PWA (e o passo a passo no iPhone)
     audio.js          efeitos sonoros gerados na hora (WebAudio)
+    haptics.js        vibra o aparelho ao bater ou pegar power-up (Android só)
     icons.js          troca os emoji do código pelos ícones de assets/emoji/
     speech.js         lê os nomes em voz alta, para quem ainda não lê
     story.js          a história em nove páginas (texto, imagem e o SVG reserva)

@@ -25,6 +25,7 @@ import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createCharacterAura, updateCharacterAura } from '../models/characterAura.js';
 import { createInput } from './input.js';
 import { sfx } from './audio.js';
+import { haptics } from './haptics.js';
 import {
   getSave, update, resetSave, isTestMode, setTestMode,
   listProfiles, activeProfile, createProfile, updateProfile, switchProfile, deleteProfile, MAX_PROFILES,
@@ -3078,7 +3079,7 @@ export class Game {
     this.world.group.remove(entity);
     this.world.entities.splice(index, 1);
     // A bomba tem estouro próprio; os outros power-ups compartilham o arpejo.
-    if (power.id === 'bomb') sfx.bomb(); else sfx.power();
+    if (power.id === 'bomb') { sfx.bomb(); haptics.bomb(); } else { sfx.power(); haptics.power(); }
     this.ui.toast(`${power.emoji} ${power.message}`);
     update((save) => {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;
@@ -3231,6 +3232,7 @@ export class Game {
       this.powers.dizzy = INVULNERABLE_TIME;
       this.knockAway(entity);
       sfx.hit();
+      haptics.hit();
       this.ui.flash();
       this.ui.shake();
       this.ui.toast(t('🥥 A casca aguentou!'));
@@ -3242,6 +3244,7 @@ export class Game {
       this.powers.dizzy = INVULNERABLE_TIME;
       this.knockAway(entity);
       sfx.hit();
+      haptics.hit();
       this.ui.flash();
       this.ui.shake();
       // Numa aula de desviar ou pular, bater é errar: não adianta ter
@@ -3258,6 +3261,7 @@ export class Game {
     this.knockAway(entity);
 
     sfx.hit();
+    haptics.hit();
     this.ui.setLives(this.lives);
     this.ui.flash();
     this.ui.shake();
