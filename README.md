@@ -563,9 +563,16 @@ antigo era quatro batidas iguais espalhadas por 210 ms.
 que já existiam — um toque de **80 ms** ao bater num obstáculo (as três
 formas de bater em `Game.hit`: a casca do Coco aguentando, a batida "de
 brincar" do Aprender e a que tira vida de verdade tocam `sfx.hit()` e
-sacodem a tela igual, então vibram igual também), **25 ms** ao pegar um
-power-up comum e um padrão de dois toques (`[30, 40, 30]`) para a 🌈 Bomba
-Arco-Íris, o maior estouro do jogo.
+sacodem a tela igual, então vibram igual também) e **25 ms** ao pegar
+**qualquer** power-up — a chamada mora em `Game.takePower`, antes de
+qualquer `if` por tipo, então vale para os seis (escudo, ímã, turbo,
+pena, vida extra e bomba) sem precisar listar um por um.
+
+A 🌈 Bomba Arco-Íris, o maior estouro do jogo, foge da regra: em vez do
+toque comum, um padrão de dois toques (`[40, 30, 110]`) no mesmo desenho
+do som dela (`sfx.bomb`) — um estalo curto primeiro, e só depois o "buum"
+de verdade — terminando no toque mais forte e mais comprido do jogo, mais
+forte até que o de bater num obstáculo.
 
 `navigator.vibrate` é Android/Chrome só — o Safari/iOS nunca implementou.
 Por isso segue o mesmo cuidado da voz em `speech.js`: checa o suporte antes

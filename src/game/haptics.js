@@ -27,6 +27,9 @@ export const haptics = {
   hit: () => vibrar(80),
   // Pegou um power-up comum: um toque leve, rápido.
   power: () => vibrar(25),
-  // A Bomba Arco-Íris é o maior estouro do jogo — dois toques em vez de um.
-  bomb: () => vibrar([30, 40, 30]),
+  // A Bomba Arco-Íris é o maior estouro do jogo — o mesmo desenho do som
+  // dela (sfx.bomb: um estalo curto, e só depois o "buum" de verdade): um
+  // toque rápido seguido do toque mais forte e mais comprido do jogo,
+  // mais forte até que o de bater num obstáculo (hit, acima).
+  bomb: () => vibrar([40, 30, 110]),
 };
