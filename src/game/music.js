@@ -194,6 +194,30 @@ export const THEMES = {
     bass: [45, 45, 41, 41, 40, 40, 45, 43],
   },
 
+  outono: {
+    name: 'Folhas ao vento',
+    bpm: 100, wave: 'triangle', bassWave: 'sine', gain: 0.075,
+    melody: [
+      69, null, 72, null, 74, 72, 69, null,
+      67, null, 69, null, 72, 69, 67, null,
+      69, null, 72, 76, 74, 72, 69, null,
+      67, 69, 67, 65, 64, null, null, null,
+    ],
+    bass: [45, 45, 50, 50, 48, 48, 43, 43],
+  },
+
+  selva: {
+    name: 'Batida da selva',
+    bpm: 128, wave: 'square', bassWave: 'triangle', gain: 0.065,
+    melody: [
+      74, null, 77, null, 79, 77, 74, null,
+      72, null, 74, null, 77, null, null, null,
+      74, null, 77, 81, 79, 77, 74, null,
+      72, 74, 72, 69, 67, null, null, null,
+    ],
+    bass: [50, 50, 45, 45, 52, 52, 43, 43],
+  },
+
   // A fanfarra de vencer uma pista inteira — as doze fases, uma atrás da
   // outra (ver Game.trackComplete). Mais rápida e mais brilhante que
   // qualquer tema de pista, para não se confundir com "só mais uma fase":

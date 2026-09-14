@@ -429,6 +429,56 @@ export const TRACKS = {
     obstacles: ['stalagmite', 'crystalSpike', 'rock'],
     ambience: [{ kind: 'firefly', count: 40 }],
   },
+
+  outono: {
+    id: 'outono',
+    name: 'Outono',
+    emoji: '🍂',
+    tagline: 'Folhas caindo e um tapete quentinho no chão',
+    story: 'As árvores trocam de cor e derrubam as folhas devagar, formando um tapete laranja e dourado. O ar cheira a abóbora e a chão molhado — é a pista mais aconchegante do reino.',
+    price: 54,
+    sky: ['#f5a25c', '#ffd9a0'],
+    fog: { color: 0xf0c896, near: 42, far: 100 },
+    ground: 0xc9822f,
+    path: 0xf5d9a8,
+    kerb: 0xfff3d6,
+    stripe: 0xffedc2,
+    stripeOpacity: 0.4,
+    hemisphere: { sky: 0xffe3b8, ground: 0xb8672f, intensity: 1.1 },
+    sun: { color: 0xffdca0, intensity: 1.3 },
+    backdrop: 'sun',
+    cloud: 0xffe6c4,
+    mountains: [0xd9822b, 0xc94f2f, 0xe0a83f],
+    decorations: ['autumnTree', 'leafPile', 'mushroom', 'pumpkin', 'autumnTree', 'mossRock'],
+    obstacles: ['pumpkin', 'logObstacle', 'rock'],
+    // Folhas caindo, mais devagar e balançando mais que a neve da Geada, e
+    // uns passarinhos cruzando o céu de tarde.
+    ambience: [{ kind: 'leaf', count: 55 }, { kind: 'bird', count: 8 }],
+  },
+
+  selva: {
+    id: 'selva',
+    name: 'Selva',
+    emoji: '🦜',
+    tagline: 'Verde fechado, cipós e som de passarinho',
+    story: 'Mata fechada, cipós pendurados e raízes grossas espalhadas pelo chão. Os papagaios gritam de galho em galho, e ninguém nunca conta a mesma coisa duas vezes por lá.',
+    price: 60,
+    sky: ['#2f7a4a', '#d9e88a'],
+    fog: { color: 0x4a8f4a, near: 40, far: 96 },
+    ground: 0x2f7a3f,
+    path: 0xc9a876,
+    kerb: 0x8a6a44,
+    stripe: 0xd9e88a,
+    stripeOpacity: 0.4,
+    hemisphere: { sky: 0xc9e88a, ground: 0x1f4a2f, intensity: 1.0 },
+    sun: { color: 0xfff3c4, intensity: 1.2 },
+    backdrop: null,
+    cloud: 0xdfeecb,
+    mountains: [0x246b38, 0x3fae55, 0x1f4a2f],
+    decorations: ['jungleTree', 'hangingVine', 'mossRock', 'jungleTree', 'hangingVine'],
+    obstacles: ['vineTangle', 'logObstacle', 'rock'],
+    ambience: [{ kind: 'butterfly', count: 14 }, { kind: 'parrot', count: 10 }],
+  },
 };
 
 export const TRACK_LIST = Object.values(TRACKS);
@@ -439,4 +489,4 @@ export const trackPrice = (track) => track?.price || 0;
 
 // O tamanho final do mapa. A grade desenha um espaço vazio para cada pista
 // que ainda falta criar.
-export const TRACK_SLOTS = 15;
+export const TRACK_SLOTS = 17;
