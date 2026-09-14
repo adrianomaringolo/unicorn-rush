@@ -160,13 +160,13 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 🤍 Lulu | Céu | branquinha como as nuvens |
 | ⭐ Estrela | Espaço, Noite | ela caiu de lá: no espaço está em casa |
 | 🫧 Chiclete | Doces | os doces são a casa dela |
-| 🍃 Musgo | Campo, Frutas | mato e pomar são o quintal dele |
+| 🍃 Musgo | Campo, Selva | o campo e a mata fechada são o quintal dele |
 | 🌊 Onda | Oceano, Praia | nasceu na espuma: o mar inteiro é dela |
 | 🧊 Floco | Geada, Noite | a geada é dele, e a noite gela do mesmo jeito |
 | 🥥 Coco | Praia, Frutas | a praia é dele, e no pomar também se dá bem |
 | ☄️ Cometa | Espaço | ele é de lá |
 | 🍒 Cereja | **Parque**, Doces | o parque é dela: é onde mais se desvia |
-| 🍋 Limão | **Tempestade**, Frutas | elétrico como a tempestade, e é fruta |
+| 🍋 Limão | **Tempestade**, Frutas, Selva | elétrico como a tempestade, é fruta, e não para quieto na mata |
 | 🔮 Violeta | **Bruma**, Noite | ela é meio feita de névoa |
 | 💎 Cristal | **Caverna**, Geada | os cristais da caverna são parentes dela |
 | 🎩 Vovô | **Vilarejo**, Campo | o vilarejo é a rua onde ele cresceu |
@@ -369,7 +369,7 @@ pistas não tem mais espaço vazio (`TRACK_SLOTS`, em `tracks.js`). Só o
 | 🎪 | **Parque** | Tendas listradas de circo, **roda-gigante** de verdade — pé em A, eixo, aro duplo e doze cabines com capota que ficam **sempre em pé** enquanto a roda gira —, **carrossel** com toldo de gomos, cavalinhos em barras douradas e bandeirinhas, algodão-doce e balões. No ar não voam bichos: voam **cifras de música**, que sobem girando, e **confete**, que cai rodopiando. A fila de obstáculos é a mais apertada do jogo. |
 | 🚀 | **Espaço** | **Não tem chão, nem serra no horizonte, nem nuvem** — só a faixa da pista flutuando no vazio, e é isso que dá a sensação de voo. As **estrelas ficam em cima e embaixo** da linha da pista, então dá para vê-las por baixo. Em volta, **discos voadores** com cúpula de vidro, luzinhas e facho apontando para baixo, muito **cascalho e pedaços de asteroide** espalhados, e — raros, mais ou menos um em dez enfeites — **planetas**, que saem em quatro tipos sorteados: listrado como Júpiter, de anéis múltiplos, cheio de crateras ou com lua e órbita próprias; atravessando o campo de visão, **meteoritos** com núcleo de pedra irregular, a frente em brasa, cauda de três camadas que pulsa e fagulhas tremendo na esteira. O unicórnio acende e ganha halo, e a **gravidade é baixa**: o pulo sobe 1,85× e desce devagar. |
 | 🍂 | **Outono** | Chão e céu em tons quentes: árvores de copa rala em laranja, vermelho e dourado (a mesma construção da árvore do Campo, só que com menos folha e outra paleta), montinhos de folhas caídas rente ao chão, cogumelos e pedras com musgo. **Folhas caindo de verdade** no ar — mais devagar que a neve da Geada, e balançando de lado a lado em vez de girar reto — e passarinhos cruzando o céu. Obstáculos de abóbora, tronco caído e pedra. |
-| 🦜 | **Selva** | Mata fechada: árvores altas com **raízes que se espalham na base** e folhas largas saindo da copa bem verde e saturada (nada do tom pastel do Campo), cipós pendurados em elos com folhinhas de vez em quando, e pedras com musgo. No ar, **borboletas e papagaios coloridos** — o papagaio é o passarinho do Céu com cor viva e cauda comprida. Obstáculos de nó de cipós, tronco caído e pedra. |
+| 🦜 | **Selva** | Mata fechada: mais árvore que qualquer outra pista de mato, com **raízes que se espalham na base**, folhas largas saindo da copa bem verde e saturada (nada do tom pastel do Campo), e de vez em quando uma **árvore bem maior que as outras** (mesma árvore, escala 2,3×). Cipós pendurados de um galho com apoio de tronco até o chão — sem tronco, o cipó parecia flutuar no nada — em elos com folhinhas de vez em quando, e pedras com musgo. No ar, **borboletas, papagaios coloridos e moscas** — o papagaio é o passarinho do Céu com cor viva e cauda comprida, a mosca é bem menor e mais escura que a abelha, com voo em ziguezague nervoso em vez da curva suave de qualquer outro bichinho. Obstáculos de nó de cipós, tronco caído e pedra. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
 pista, então nenhuma cai em cima do caminho.

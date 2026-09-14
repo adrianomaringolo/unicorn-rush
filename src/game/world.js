@@ -47,6 +47,7 @@ const AMBIENCE_SPOT = {
   firefly:   { alto: [0.6, 4.2], longe: 5 },
   butterfly: { alto: [0.5, 2.6], longe: 5 },
   bee:       { alto: [0.4, 2.2], longe: 5 },
+  fly:       { alto: [0.3, 1.8], longe: 4 },
   bird:      { alto: [4, 11],    longe: 0 },   // passarinho pode cruzar por cima
   fish:      { alto: [0.9, 5.5], longe: 4.5 },
   bubble:    { alto: [0.1, 1.2],  longe: 4.5 },   // sobe sozinha na animação
