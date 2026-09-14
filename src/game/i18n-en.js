@@ -140,6 +140,8 @@ export const EN = {
   'Tempestade': 'Storm',
   'Bruma': 'Mist',
   'Caverna': 'Cave',
+  'Outono': 'Autumn',
+  'Selva': 'Jungle',
 
   'O campo encantado do arco-íris': 'The enchanted rainbow meadow',
   'Pirulitos, bolinhos e calda de morango': 'Lollipops, cupcakes and strawberry syrup',
@@ -156,6 +158,8 @@ export const EN = {
   'Chuva, poças e o vento empurrando de lado': 'Rain, puddles and the wind pushing you sideways',
   'Névoa fechada: o caminho aparece na hora': 'Thick fog: the path shows up just in time',
   'Cristais acesos no escuro e poças que brilham': 'Crystals glowing in the dark and puddles that shine',
+  'Folhas caindo e um tapete quentinho no chão': 'Leaves falling and a cozy carpet on the ground',
+  'Verde fechado, cipós e som de passarinho': 'Thick green, vines and the sound of birdsong',
 
   // --- Pistas: a descrição da ficha ----------------------------------------
   "Onde tudo começou. A grama é macia, o arco-íris encosta no chão e há flores e cogumelos por toda parte — é a pista mais calma do reino.":
@@ -188,6 +192,10 @@ export const EN = {
     "The fog is so thick that the path only shows up just in time. Lanterns float with nobody holding them, and they say there is a tower somewhere inside.",
   "O fundo da terra, onde os cristais acendem sozinhos e as poças brilham. Cada passo ecoa duas vezes.":
     "Deep underground, where the crystals light up on their own and the puddles shine. Every step echoes twice.",
+  "As árvores trocam de cor e derrubam as folhas devagar, formando um tapete laranja e dourado. O ar cheira a abóbora e a chão molhado — é a pista mais aconchegante do reino.":
+    "The trees change color and drop their leaves slowly, laying down an orange and gold carpet. The air smells of pumpkin and wet ground — the coziest track in the kingdom.",
+  "Mata fechada, cipós pendurados e raízes grossas espalhadas pelo chão. Os papagaios gritam de galho em galho, e ninguém nunca conta a mesma coisa duas vezes por lá.":
+    "Thick jungle, vines hanging down and thick roots spread across the ground. Parrots shriek from branch to branch, and no one ever tells the same story about it twice.",
 
   '⚡ Correm mais rápido aqui: {unicornios}': '⚡ These run faster here: {unicornios}',
 
@@ -557,6 +565,8 @@ export const EN = {
   'Trovoada': 'Thunderstorm',
   'Neblina': 'Fog',
   'Eco de cristal': 'Crystal echo',
+  'Folhas ao vento': 'Leaves in the wind',
+  'Batida da selva': 'Jungle beat',
   'Era uma vez': 'Once upon a time',
   'Fanfarra da vitória': 'Victory fanfare',
 };

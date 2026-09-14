@@ -3,7 +3,7 @@
 **Jogar: <https://unicorn-rush-ten.vercel.app>**
 
 Jogo infantil de corrida feito com [three.js](https://threejs.org/): vinte e
-dois unicórnios correm por quinze pistas mágicas juntando corações e chaves,
+dois unicórnios correm por dezessete pistas mágicas juntando corações e chaves,
 desviando de obstáculos e pegando power-ups. Fala português e inglês, e lê as
 fichas em voz alta para quem ainda não lê. Roda no navegador, sem build e sem
 nada vindo de fora — dá até para instalar no celular e jogar offline.
@@ -350,8 +350,9 @@ nada girando nem caindo.
 
 Também dá para escolher por onde correr — a pista muda o céu, a neblina, a
 luz, o chão, os enfeites das laterais, os bichinhos que voam por perto e até
-os obstáculos. São **15 pistas**, e **as quinze estão prontas** — a grade de pistas não tem
-mais espaço vazio. Só o **Campo** vem liberado — as outras são trocadas por chaves:
+os obstáculos. São **17 pistas**, e **as dezessete estão prontas** — a grade de
+pistas não tem mais espaço vazio (`TRACK_SLOTS`, em `tracks.js`). Só o
+**Campo** vem liberado — as outras são trocadas por chaves:
 
 | | Pista | Como é |
 | --- | --- | --- |
@@ -367,6 +368,8 @@ mais espaço vazio. Só o **Campo** vem liberado — as outras são trocadas por
 | 🌙 | **Noite** | Céu estrelado com lua cheia, pinheiros escuros, cogumelos que brilham, **vagalumes voando em volta da pista** e chão enluarado. **O unicórnio brilha no escuro**: as cores dele viram luz e um halo suave pulsa em volta. Os obstáculos também são acesos — espinho de cristal, pedra de luar e cogumelão brilhante —, cada um com um disco de luz no chão para dar para ver de longe. |
 | 🎪 | **Parque** | Tendas listradas de circo, **roda-gigante** de verdade — pé em A, eixo, aro duplo e doze cabines com capota que ficam **sempre em pé** enquanto a roda gira —, **carrossel** com toldo de gomos, cavalinhos em barras douradas e bandeirinhas, algodão-doce e balões. No ar não voam bichos: voam **cifras de música**, que sobem girando, e **confete**, que cai rodopiando. A fila de obstáculos é a mais apertada do jogo. |
 | 🚀 | **Espaço** | **Não tem chão, nem serra no horizonte, nem nuvem** — só a faixa da pista flutuando no vazio, e é isso que dá a sensação de voo. As **estrelas ficam em cima e embaixo** da linha da pista, então dá para vê-las por baixo. Em volta, **discos voadores** com cúpula de vidro, luzinhas e facho apontando para baixo, muito **cascalho e pedaços de asteroide** espalhados, e — raros, mais ou menos um em dez enfeites — **planetas**, que saem em quatro tipos sorteados: listrado como Júpiter, de anéis múltiplos, cheio de crateras ou com lua e órbita próprias; atravessando o campo de visão, **meteoritos** com núcleo de pedra irregular, a frente em brasa, cauda de três camadas que pulsa e fagulhas tremendo na esteira. O unicórnio acende e ganha halo, e a **gravidade é baixa**: o pulo sobe 1,85× e desce devagar. |
+| 🍂 | **Outono** | Chão e céu em tons quentes: árvores de copa rala em laranja, vermelho e dourado (a mesma construção da árvore do Campo, só que com menos folha e outra paleta), montinhos de folhas caídas rente ao chão, cogumelos e pedras com musgo. **Folhas caindo de verdade** no ar — mais devagar que a neve da Geada, e balançando de lado a lado em vez de girar reto — e passarinhos cruzando o céu. Obstáculos de abóbora, tronco caído e pedra. |
+| 🦜 | **Selva** | Mata fechada: árvores altas com **raízes que se espalham na base** e folhas largas saindo da copa bem verde e saturada (nada do tom pastel do Campo), cipós pendurados em elos com folhinhas de vez em quando, e pedras com musgo. No ar, **borboletas e papagaios coloridos** — o papagaio é o passarinho do Céu com cor viva e cauda comprida. Obstáculos de nó de cipós, tronco caído e pedra. |
 
 As montanhas do fundo nascem sempre a pelo menos 20 unidades do meio da
 pista, então nenhuma cai em cima do caminho.
@@ -377,6 +380,15 @@ vagalume ou peixinho, cada um com o seu jeito de voar — e, se for escura, um
 `glow` que acende o personagem), então uma
 pista nova é só mais uma entrada — os enfeites
 disponíveis estão em `src/models/scenery.js`.
+
+O Outono e a Selva trouxeram **`abóbora` e `tronco caído`**, que aparecem
+como enfeite pequeno espalhado e como obstáculo com a mesma forma — igual
+`stalagmite`, na Caverna, já fazia; a abóbora é decoração nas duas pistas,
+mas o tronco é obstáculo nas duas (uma árvore caída não muda de cara entre
+uma pista e outra). A barreira também ganhou dois enfeites de topo novos
+(`folha`, `cipo`) em `BARRIER_TOPS`, e cada pista nova precisa de uma
+entrada própria em `BARRIER_LOOKS` — sem ela, a barreira cai na cor do
+Campo por padrão, o que destoa em qualquer pista escura ou muito colorida.
 
 ### Música
 
@@ -1438,7 +1450,7 @@ torre da neblina, o selo de preço, o caminho das doze fases).
 ## A tela de carregamento
 
 Antes de qualquer coisa aparecer, o navegador baixa **1,9 MB de three.js** e
-só então o jogo monta 21 unicórnios, 15 pistas e o mundo 3D — tempo
+só então o jogo monta 21 unicórnios, 17 pistas e o mundo 3D — tempo
 suficiente, num celular, para uma criança achar que travou.
 
 A espera é uma **barra de progresso, e quem a enche é a Uni**: ela galopa da

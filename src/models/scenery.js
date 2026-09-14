@@ -10,6 +10,8 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const PASTEL = [0xffb3d1, 0xb8f2c9, 0xbfd7ff, 0xffe6a7, 0xd9c2ff];
 const CANDY = [0xff8fc0, 0xffd166, 0x9ce0ff, 0xffb3e6, 0xc4f0a8];
+const AUTUMN = [0xd9822b, 0xc94f2f, 0xe0a83f, 0xb8672f];
+const JUNGLE_GREENS = [0x2f8f4a, 0x3fae55, 0x246b38, 0x4fbf63];
 
 // --- Enfeites das laterais --------------------------------------------------
 
@@ -1988,6 +1990,235 @@ function crate() {
   return g;
 }
 
+// --- Outono -------------------------------------------------------------
+
+// Árvore de outono: o mesmo desenho de tronco e galhos da árvore do Campo,
+// mas a copa é mais rala (o outono já derrubou metade das folhas) e sai em
+// tons quentes — laranja, vermelho, dourado — em vez do pastel do Campo.
+function autumnTree() {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 1.6, 7), mat(0x6b4a35));
+  trunk.position.y = 0.8;
+  trunk.castShadow = true;
+  g.add(trunk);
+
+  for (const lado of [-1, 1]) {
+    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.08, 0.45, 5), mat(0x5c3f2c));
+    galho.position.set(lado * 0.2, 1.4, lado * 0.08);
+    galho.rotation.z = lado * -0.65;
+    galho.castShadow = true;
+    g.add(galho);
+  }
+
+  const copa = new THREE.Group();
+  copa.position.y = 1.95;
+  g.add(copa);
+
+  const cor = new THREE.Color(pick(AUTUMN));
+  const clara = cor.clone().lerp(new THREE.Color(0xfff3d6), 0.3);
+  const escura = cor.clone().multiplyScalar(0.78);
+
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + Math.random() * 0.35;
+    const raio = 0.4 + Math.random() * 0.2;
+    const bolota = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(raio, 0),
+      mat(i % 2 === 0 ? cor.getHex() : escura.getHex())
+    );
+    bolota.position.set(Math.cos(a) * 0.5, Math.random() * 0.5, Math.sin(a) * 0.5);
+    bolota.castShadow = true;
+    copa.add(bolota);
+  }
+  const topo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), mat(clara.getHex()));
+  topo.position.y = 0.4;
+  topo.castShadow = true;
+  copa.add(topo);
+
+  return g;
+}
+
+// Montinho de folhas caídas: discos achatados espalhados rente ao chão,
+// quase deitados — é a versão parada do que a `leaf` faz voando.
+function leafPile() {
+  const g = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const folha = new THREE.Mesh(
+      new THREE.CircleGeometry(0.2 + Math.random() * 0.1, 5),
+      mat(pick(AUTUMN), { side: THREE.DoubleSide })
+    );
+    folha.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+    folha.rotation.z = Math.random() * Math.PI;
+    folha.position.set((Math.random() - 0.5) * 0.7, 0.02 + i * 0.012, (Math.random() - 0.5) * 0.5);
+    g.add(folha);
+  }
+  return g;
+}
+
+// Abóbora: usada como enfeite pequeno espalhado e como obstáculo — a mesma
+// forma nos dois papéis, igual `stalagmite` na Caverna.
+function pumpkin() {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.52, 10, 8), mat(0xe8792f));
+  corpo.scale.y = 0.82;
+  corpo.position.y = 0.43;
+  corpo.castShadow = true;
+  g.add(corpo);
+  // Gomos: reforços mais escuros ao redor do "equador" da abóbora, o que
+  // dá a silhueta enrugada sem precisar de mais polígonos.
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const gomo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 5, 4), mat(0xd0651f));
+    gomo.scale.set(0.6, 0.82, 2.1);
+    gomo.position.set(Math.cos(a) * 0.48, 0.43, Math.sin(a) * 0.48);
+    gomo.rotation.y = a;
+    g.add(gomo);
+  }
+  const talo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.26, 6), mat(0x5c7a3f));
+  talo.position.y = 0.86;
+  talo.rotation.z = 0.15;
+  talo.castShadow = true;
+  g.add(talo);
+  return g;
+}
+
+// Tronco caído: obstáculo baixo, deitado atravessando a faixa. Serve tanto
+// para o Outono quanto para a Selva — uma árvore caída não muda de cara
+// entre uma pista e outra.
+function logObstacle() {
+  const g = new THREE.Group();
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.7, 9), mat(0x8a5c3c));
+  tronco.rotation.z = Math.PI / 2;
+  tronco.position.y = 0.34;
+  tronco.castShadow = true;
+  g.add(tronco);
+  for (const x of [-0.85, 0.85]) {
+    const anel = new THREE.Mesh(new THREE.CircleGeometry(0.33, 9), mat(0xc9a876));
+    anel.rotation.y = Math.PI / 2;
+    anel.position.set(x, 0.34, 0);
+    g.add(anel);
+  }
+  for (let i = 0; i < 2; i++) {
+    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.4, 5), mat(0x6b4a35));
+    galho.position.set((Math.random() - 0.5) * 1.2, 0.6, (Math.random() < 0.5 ? -1 : 1) * 0.2);
+    galho.rotation.z = 0.3;
+    galho.castShadow = true;
+    g.add(galho);
+  }
+  return g;
+}
+
+// --- Selva ----------------------------------------------------------------
+
+// Folha larga: um cone bem achatado, para ler como lâmina e não como
+// espinho. É o que faz a copa da árvore de selva se diferenciar da copa
+// arredondada do Campo — folhas grandes saindo para fora, não bolotas.
+function jungleLeaf(cor) {
+  const folha = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.85, 4), mat(cor));
+  folha.scale.z = 0.28;
+  folha.castShadow = true;
+  return folha;
+}
+
+// Árvore de selva: tronco alto com raízes que se espalham na base, copa
+// verde bem saturada (sem o tom pastel do Campo) e folhas largas na
+// beirada — a silhueta que lê "selva" de longe.
+function jungleTree() {
+  const g = new THREE.Group();
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 2.5, 8), mat(0x6b4a35));
+  tronco.position.y = 1.25;
+  tronco.castShadow = true;
+  g.add(tronco);
+
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2;
+    const raiz = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.5, 5), mat(0x5c3f2c));
+    raiz.position.set(Math.cos(a) * 0.26, 0.2, Math.sin(a) * 0.26);
+    raiz.rotation.z = Math.cos(a) * 0.55;
+    raiz.rotation.x = Math.sin(a) * 0.55;
+    raiz.castShadow = true;
+    g.add(raiz);
+  }
+
+  const copa = new THREE.Group();
+  copa.position.y = 2.6;
+  g.add(copa);
+
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + Math.random() * 0.3;
+    const bolota = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.16, 1),
+      mat(pick(JUNGLE_GREENS))
+    );
+    bolota.position.set(Math.cos(a) * 0.45, Math.random() * 0.3, Math.sin(a) * 0.45);
+    bolota.castShadow = true;
+    copa.add(bolota);
+  }
+
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + Math.random() * 0.4;
+    const folha = jungleLeaf(pick(JUNGLE_GREENS));
+    folha.position.set(Math.cos(a) * 0.75, 0.1 + Math.random() * 0.4, Math.sin(a) * 0.75);
+    folha.rotation.z = Math.PI / 2 + Math.cos(a) * 0.4;
+    folha.rotation.y = -a;
+    copa.add(folha);
+  }
+
+  return g;
+}
+
+// Cipó pendurado: um galho curto (para não parecer flutuando) com fios de
+// elos descendo, cada um com folhinhas de vez em quando — a mesma ideia de
+// corrente de elos do rabo e da crina do unicórnio, só que parada.
+function hangingVine() {
+  const g = new THREE.Group();
+  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.6, 6), mat(0x5c3f2c));
+  galho.rotation.z = Math.PI / 2;
+  galho.position.y = 2.4;
+  galho.castShadow = true;
+  g.add(galho);
+
+  for (const x of [-0.22, 0.05, 0.28]) {
+    const elos = 6 + Math.floor(Math.random() * 3);
+    let y = 2.35;
+    for (let i = 0; i < elos; i++) {
+      const comprimento = 0.32;
+      const elo = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.026, comprimento, 5),
+        mat(0x3f7d4d)
+      );
+      elo.position.set(x + Math.sin(i * 0.6) * 0.06, y - comprimento / 2, 0);
+      g.add(elo);
+      y -= comprimento;
+      if (i % 2 === 0) {
+        const folhinha = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), mat(pick(JUNGLE_GREENS)));
+        folhinha.scale.set(1.3, 0.5, 0.7);
+        folhinha.position.set(x + 0.08, y + comprimento / 2, 0.04);
+        g.add(folhinha);
+      }
+    }
+  }
+  return g;
+}
+
+// Nó de cipós: obstáculo em forma de tangle — um miolo com laços soltos em
+// volta, como uma trepadeira que cresceu presa em si mesma.
+function vineTangle() {
+  const g = new THREE.Group();
+  const nucleo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), mat(0x2f7a3f));
+  nucleo.position.y = 0.6;
+  nucleo.castShadow = true;
+  g.add(nucleo);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const raio = 0.15 + Math.random() * 0.12;
+    const laco = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.045, 5, 8), mat(pick(JUNGLE_GREENS)));
+    laco.position.set(Math.cos(a) * 0.3, 0.5 + Math.random() * 0.5, Math.sin(a) * 0.3);
+    laco.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+    g.add(laco);
+  }
+  return g;
+}
+
 const DECORATIONS = {
   tree, pineTree, mushroom, glowMushroom, crystal, flower, flowerPatch,
   lollipop, cupcake, candyCane, sprinkles, chocolate,
@@ -2004,6 +2235,8 @@ const DECORATIONS = {
   ghostTree, floatingLantern, mossRock,
   crystalVein, stalagmite, glowPool,
   cottage, lamppost, well,
+  autumnTree, leafPile, pumpkin,
+  jungleTree, hangingVine,
 };
 
 // `nomes` deixa a pista pedir um conjunto específico — é como a Praia põe
@@ -2228,6 +2461,7 @@ const OBSTACLES = {
   watermelon, pineapple, coconutPile, seaUrchin, clam,
   lavaBoulder, iceBlock, meteor,
   popcornBox, barrel, crate, stalagmite,
+  pumpkin, logObstacle, vineTangle,
 };
 
 export function createObstacle(track) {
@@ -2268,6 +2502,8 @@ const BARRIER_LOOKS = {
   bruma:  { bar: 0x9a93a8, post: 0x6b6478, warn: 0xd9c2ff, top: 'nuvem' },
   caverna: { bar: 0x6b6478, post: 0x413c52, warn: 0x8ce9ff, top: 'cristal' },
   vilarejo: { bar: 0xb08a5c, post: 0x8a6a44, warn: 0xffb02e, top: 'flor' },
+  outono: { bar: 0x8a5c3c, post: 0x6b4a35, warn: 0xe0a83f, top: 'folha' },
+  selva: { bar: 0x5c3f2c, post: 0x3f7d4d, warn: 0xffd166, top: 'cipo' },
 };
 
 // Setas chapadas no chão, apontando para a barreira: o aviso que a criança
@@ -2373,6 +2609,23 @@ const BARRIER_TOPS = {
       mat(color, { emissive: color, emissiveIntensity: 0.95 })
     );
     return c;
+  },
+  folha: () => {
+    const g = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 4), mat(pick(AUTUMN)));
+      f.scale.z = 0.3;
+      f.rotation.z = (i / 3) * Math.PI * 2;
+      g.add(f);
+    }
+    return g;
+  },
+  cipo: () => {
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), mat(pick(JUNGLE_GREENS))));
+    const laco = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.025, 5, 8), mat(0x3f7d4d));
+    g.add(laco);
+    return g;
   },
 };
 
@@ -2552,6 +2805,54 @@ function bird() {
     const asa = asaSimples(color, 0.24);
     asa.scale.set(1, 0.45, 1);
     asa.position.set(-0.02, 0, side * 0.16);
+    asa.rotation.x = Math.PI / 2;
+    wing.add(asa);
+    wing.userData.side = side;
+    g.add(wing);
+    wings.push(wing);
+  }
+
+  g.userData.parts = { wings };
+  return g;
+}
+
+// Papagaio: o mesmo desenho do passarinho do Céu, mas em cor viva (não
+// pastel) e com uma cauda comprida — é o que faz reconhecer "selva" no ar,
+// mesmo de longe.
+function parrot() {
+  const g = new THREE.Group();
+  const color = pick([0xff4d4d, 0x2f9bff, 0x4fbf63, 0xffd166]);
+  const corAsa = pick([0xffd166, 0x2f9bff, 0xff4d4d, 0x4fbf63]);
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 7, 6),
+    new THREE.MeshBasicMaterial({ color, fog: false })
+  );
+  body.scale.set(1.2, 1, 1);
+  g.add(body);
+
+  const beak = new THREE.Mesh(
+    new THREE.ConeGeometry(0.05, 0.12, 5),
+    new THREE.MeshBasicMaterial({ color: 0xffab1f, fog: false })
+  );
+  beak.rotation.z = -Math.PI / 2;
+  beak.position.x = 0.24;
+  g.add(beak);
+
+  const cauda = new THREE.Mesh(
+    new THREE.ConeGeometry(0.06, 0.5, 4),
+    new THREE.MeshBasicMaterial({ color, fog: false })
+  );
+  cauda.rotation.z = Math.PI / 2;
+  cauda.position.x = -0.32;
+  g.add(cauda);
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    const asa = asaSimples(corAsa, 0.22);
+    asa.scale.set(1, 0.5, 1);
+    asa.position.set(-0.02, 0, side * 0.15);
     asa.rotation.x = Math.PI / 2;
     wing.add(asa);
     wing.userData.side = side;
@@ -2889,6 +3190,18 @@ export function createRaindrop() {
   return pingo;
 }
 
+// Folha caindo: um disco achatado numa cor quente, que balança e gira
+// devagar enquanto desce — bem mais devagar que o floco de neve, para ler
+// como folha boiando no ar e não como neve caindo reto.
+function leaf() {
+  const disco = new THREE.Mesh(
+    new THREE.CircleGeometry(0.16, 5),
+    new THREE.MeshBasicMaterial({ color: pick(AUTUMN), side: THREE.DoubleSide, fog: false })
+  );
+  disco.userData.parts = { queda: 0.55 + Math.random() * 0.5 };
+  return disco;
+}
+
 // Nota musical: a cabeça oval deitada, a haste e a bandeirinha. É o que
 // voa no Parque, onde a música nunca para.
 function musicNote() {
@@ -2933,6 +3246,7 @@ const AMBIENCE = {
   spark: createSpark, smoke: createSmoke, snow: createSnowflake,
   seagull: createSeagull, meteorite: createMeteorite, rain: createRaindrop,
   note: musicNote, confetti,
+  leaf, parrot,
 };
 
 // Cria um bichinho do tipo pedido pela pista.
@@ -3027,6 +3341,15 @@ export function animateAmbience(item, elapsed) {
     return { x: Math.sin(t * 0.7) * 2.4, y: Math.sin(t * 1.1) * 0.8 };
   }
 
+  // O papagaio bate asa mais rápido e some mais para os lados que o
+  // passarinho do Céu — é o que faz ler como voo de selva, e não plano.
+  if (kind === 'parrot') {
+    const bate = Math.sin(elapsed * 7 + phase);
+    for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.8;
+    item.rotation.y = Math.sin(t * 0.6) * 0.4;
+    return { x: Math.sin(t * 0.9) * 2.9, y: Math.sin(t * 1.3) * 1.0 };
+  }
+
   if (kind === 'bubble') {
     // Sobe sempre, balançando de leve; quem devolve para baixo é o mundo.
     const alturaCiclo = 9;
@@ -3073,6 +3396,16 @@ export function animateAmbience(item, elapsed) {
     const caiu = (elapsed * parts.queda + phase * 3) % ciclo;
     item.rotation.z = t * 1.2;
     return { x: Math.sin(t * 0.9) * 1.4, y: ciclo - caiu };
+  }
+
+  if (kind === 'leaf') {
+    // Bem mais devagar que a neve, e balançando de lado a lado como folha
+    // boiando no ar — a neve cai quase reto, a folha zigue-zagueia.
+    const ciclo = 9;
+    const caiu = (elapsed * parts.queda + phase * 3) % ciclo;
+    item.rotation.x = Math.sin(t * 1.4) * 0.6;
+    item.rotation.z = t * 0.6;
+    return { x: Math.sin(t * 0.6) * 2.2, y: ciclo - caiu };
   }
 
   if (kind === 'ant') {

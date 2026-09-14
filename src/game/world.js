@@ -58,7 +58,11 @@ const AMBIENCE_SPOT = {
   // cima; pode cair em cima da pista, que é o que faz parecer nevando.
   snow:      { alto: [0, 0.5],    longe: 0 },
   rain:      { alto: [0, 0.5],    longe: 0 },   // igual ao floco: cai na animação
+  // A folha também cai na animação, mas nasce um pouco mais alta que a
+  // neve — ela vem das copas das árvores, não do céu inteiro.
+  leaf:      { alto: [0, 1.4],    longe: 0 },
   seagull:   { alto: [3.5, 10],   longe: 0 },   // planando por cima da pista
+  parrot:    { alto: [4, 10],     longe: 0 },   // cruza sobre a pista, como o passarinho
   // O meteorito atravessa: o x vem da animação, então nasce no meio.
   meteorite: { alto: [-6, 16],    longe: 0 },
 };
