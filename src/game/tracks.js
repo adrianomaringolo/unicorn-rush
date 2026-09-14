@@ -475,9 +475,14 @@ export const TRACKS = {
     backdrop: null,
     cloud: 0xdfeecb,
     mountains: [0x246b38, 0x3fae55, 0x1f4a2f],
-    decorations: ['jungleTree', 'hangingVine', 'mossRock', 'jungleTree', 'hangingVine'],
+    // Mata fechada: mais árvore que qualquer outra pista de mato (o dobro
+    // do Campo), com uma `bigJungleTree` rara — uma em sete — para dar a
+    // sensação de mata antiga, com algumas árvores bem maiores que as
+    // outras.
+    decorations: ['jungleTree', 'jungleTree', 'hangingVine', 'mossRock', 'jungleTree', 'bigJungleTree', 'hangingVine'],
+    decorationCount: 54,
     obstacles: ['vineTangle', 'logObstacle', 'rock'],
-    ambience: [{ kind: 'butterfly', count: 14 }, { kind: 'parrot', count: 10 }],
+    ambience: [{ kind: 'butterfly', count: 14 }, { kind: 'parrot', count: 10 }, { kind: 'fly', count: 12 }],
   },
 };
 

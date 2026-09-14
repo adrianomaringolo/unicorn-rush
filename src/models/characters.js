@@ -231,8 +231,10 @@ export const CHARACTERS = {
     scale: 1.06,
     proportions: { head: 1.05, legs: 0.92, eye: 1.05 },
     voice: 0.92,
-    // mato e pomar são o quintal dele
-    fast: ['campo', 'frutas'],
+    // o campo e a mata fechada são o quintal dele — trocou o pomar da
+    // Frutas pela Selva, que combina mais com "conhece cada árvore pelo
+    // nome".
+    fast: ['campo', 'selva'],
     // O mais calmo: a velocidade sobe bem devagar. É o mais fácil de guiar.
     speedRamp: 0.55,
     power: 'a corrida dele acelera bem devagarinho',
@@ -431,7 +433,7 @@ export const CHARACTERS = {
     // 1,12 vira ×1,25 de altura — o suficiente para a criança notar sem
     // desequilibrar a corrida.
     jumpBoost: 1.12,
-    fast: ['tempestade', 'frutas'],
+    fast: ['tempestade', 'frutas', 'selva'],
     power: 'ele pula mais alto que os outros',
     aura: { kind: 'raio', color: [0xfff44f, 0xffe066], count: 7 },
     trail: { colors: [0xffffff, 0xfffbc9, 0xf2e33a, 0xc4e832, 0x8fd420, 0xfff08a], width: 0.55 },

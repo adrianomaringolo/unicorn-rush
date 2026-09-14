@@ -2166,20 +2166,39 @@ function jungleTree() {
   return g;
 }
 
-// Cipó pendurado: um galho curto (para não parecer flutuando) com fios de
-// elos descendo, cada um com folhinhas de vez em quando — a mesma ideia de
-// corrente de elos do rabo e da crina do unicórnio, só que parada.
+// Árvore de selva bem grande: a mesma árvore, só que maior — para dar a
+// sensação de mata antiga, com uma ou outra árvore que passou dos outros
+// no tamanho. Sorteada bem menos vezes que a árvore normal (ver
+// tracks.js), senão a mata parecia feita só de gigantes.
+function bigJungleTree() {
+  const g = jungleTree();
+  g.scale.setScalar(2.3);
+  return g;
+}
+
+// Cipó pendurado: um tronco de apoio com um galho saindo dele, e fios de
+// elos descendo do galho, cada um com folhinhas de vez em quando — a
+// mesma ideia de corrente de elos do rabo e da crina do unicórnio, só que
+// parada. Sem o tronco, o galho e o cipó ficavam boiando no ar, sem nada
+// embaixo — era a "árvore" mais fácil de plantar, e a que mais parecia
+// errada.
 function hangingVine() {
   const g = new THREE.Group();
-  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.6, 6), mat(0x5c3f2c));
+
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.22, 2.4, 7), mat(0x5c3f2c));
+  tronco.position.y = 1.2;
+  tronco.castShadow = true;
+  g.add(tronco);
+
+  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.7, 6), mat(0x5c3f2c));
   galho.rotation.z = Math.PI / 2;
-  galho.position.y = 2.4;
+  galho.position.set(0.35, 2.35, 0);
   galho.castShadow = true;
   g.add(galho);
 
-  for (const x of [-0.22, 0.05, 0.28]) {
+  for (const x of [0.35, 0.55, 0.7]) {
     const elos = 6 + Math.floor(Math.random() * 3);
-    let y = 2.35;
+    let y = 2.3;
     for (let i = 0; i < elos; i++) {
       const comprimento = 0.32;
       const elo = new THREE.Mesh(
@@ -2236,7 +2255,7 @@ const DECORATIONS = {
   crystalVein, stalagmite, glowPool,
   cottage, lamppost, well,
   autumnTree, leafPile, pumpkin,
-  jungleTree, hangingVine,
+  jungleTree, bigJungleTree, hangingVine,
 };
 
 // `nomes` deixa a pista pedir um conjunto específico — é como a Praia põe
@@ -2779,6 +2798,34 @@ function bee() {
   return g;
 }
 
+// Mosca: bem menor que a abelha, corpo escuro fosco e asas que quase não
+// aparecem — é do zigue-zague errático (ver animateAmbience) que se
+// reconhece mosca, não da forma.
+function fly() {
+  const g = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.055, 6, 5),
+    new THREE.MeshBasicMaterial({ color: 0x2a2a2f, fog: false })
+  );
+  g.add(body);
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    const asa = asaSimples(0xcfd8e6, 0.07);
+    asa.material.opacity = 0.5;
+    asa.position.set(0.01, 0.03, side * 0.045);
+    wing.add(asa);
+    wing.userData.side = side;
+    g.add(wing);
+    wings.push(wing);
+  }
+
+  g.userData.parts = { wings };
+  return g;
+}
+
 // Passarinho: corpo redondinho, bico e asas planando.
 function bird() {
   const g = new THREE.Group();
@@ -3242,7 +3289,7 @@ function confetti() {
 }
 
 const AMBIENCE = {
-  firefly: createFirefly, butterfly, bee, bird, fish, bubble, ant,
+  firefly: createFirefly, butterfly, bee, fly, bird, fish, bubble, ant,
   spark: createSpark, smoke: createSmoke, snow: createSnowflake,
   seagull: createSeagull, meteorite: createMeteorite, rain: createRaindrop,
   note: musicNote, confetti,
@@ -3304,6 +3351,18 @@ export function animateAmbience(item, elapsed) {
     const bate = Math.sin(elapsed * 26 + phase);
     for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.5;
     return { x: Math.sin(t * 2.6) * 1.2, y: Math.sin(t * 3.4) * 0.5 };
+  }
+
+  // A mosca soma duas frequências bem diferentes em cada eixo, em vez de
+  // um só seno — é o que faz o caminho ficar espasmódico, sem a curva
+  // suave de qualquer outro bichinho do jogo.
+  if (kind === 'fly') {
+    const bate = Math.sin(elapsed * 32 + phase);
+    for (const wing of parts.wings) wing.rotation.x = wing.userData.side * bate * 0.5;
+    return {
+      x: Math.sin(t * 3.2) * 0.9 + Math.sin(t * 7.3 + 1) * 0.35,
+      y: Math.sin(t * 4.1 + 2) * 0.5 + Math.sin(t * 9.7) * 0.2,
+    };
   }
 
   if (kind === 'meteorite') {
