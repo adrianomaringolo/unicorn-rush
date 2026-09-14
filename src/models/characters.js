@@ -56,8 +56,9 @@ export const CHARACTERS = {
     hair: [0xffb02e, 0xffd75e, 0xff7a3c, 0xffe9a3, 0xff9433],
     wing: { style: 'ray', colors: [0xfff3c4, 0xffe38a, 0xffcf5c, 0xffb92e, 0xffa11f] },
     mark: { shape: 'sun', color: 0xffab1f },
-    // o sol mora no Céu e amadurece as Frutas
-    fast: ['ceu', 'frutas'],
+    // o sol mora no Céu, amadurece as Frutas, e o rastro dele — "laranja e
+    // dourado" — é a mesma cor do tapete de folhas do Outono
+    fast: ['ceu', 'frutas', 'outono'],
     // O dia dele é mais longo: os power-ups duram metade a mais.
     powerTime: 1.5,
     power: 'os power-ups duram mais tempo com ele',
@@ -330,8 +331,9 @@ export const CHARACTERS = {
     scale: 0.98,
     proportions: { head: 1.08, legs: 0.94, eye: 1.08 },
     voice: 1.05,
-    // a Praia é dele, e no pomar ele também se dá bem
-    fast: ['praia', 'frutas'],
+    // a Praia é dele, no pomar ele também se dá bem, e é o único marrom do
+    // elenco — a cor certa para o tapete de folhas e troncos do Outono
+    fast: ['praia', 'frutas', 'outono'],
     // Casca dura: a primeira batida de cada corrida não custa vida.
     firstHitFree: true,
     power: 'a primeira batida não machuca ele',
