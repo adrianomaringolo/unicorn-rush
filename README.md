@@ -154,7 +154,7 @@ corrida. Fora das pistas dele o botão nem aparece.
 | Unicórnio | Voa em | Por quê |
 | --- | --- | --- |
 | 🌈 Uni | Campo | o arco-íris do Campo é dela |
-| ☀️ Sol | Céu, Frutas | o sol mora no céu e amadurece as frutas |
+| ☀️ Sol | Céu, Frutas, Outono | o sol mora no céu, amadurece as frutas, e o rastro dele é do mesmo laranja e dourado do tapete de folhas |
 | 🌙 Lua | Noite, Geada | a noite é a hora dela, e a geada tem o mesmo silêncio |
 | 🔥 Brasa | Vulcão, Noite | o vulcão é a casa dele, e as brasas iluminam a noite |
 | 🤍 Lulu | Céu | branquinha como as nuvens |
@@ -163,7 +163,7 @@ corrida. Fora das pistas dele o botão nem aparece.
 | 🍃 Musgo | Campo, Selva | o campo e a mata fechada são o quintal dele |
 | 🌊 Onda | Oceano, Praia | nasceu na espuma: o mar inteiro é dela |
 | 🧊 Floco | Geada, Noite | a geada é dele, e a noite gela do mesmo jeito |
-| 🥥 Coco | Praia, Frutas | a praia é dele, e no pomar também se dá bem |
+| 🥥 Coco | Praia, Frutas, Outono | a praia é dele, no pomar também se dá bem, e é o único marrom do elenco — a cor do tapete de folhas e troncos |
 | ☄️ Cometa | Espaço | ele é de lá |
 | 🍒 Cereja | **Parque**, Doces | o parque é dela: é onde mais se desvia |
 | 🍋 Limão | **Tempestade**, Frutas, Selva | elétrico como a tempestade, é fruta, e não para quieto na mata |
