@@ -2840,15 +2840,20 @@ html, body {
   box-shadow: 0 2px 0 rgba(122, 78, 199, .3);
 }
 
-/* O JOGAR do lobby é o maior botão do jogo: arco-íris andando por dentro e
-   respirando, para não haver dúvida de por onde se começa. */
+/* O JOGAR é o botão que leva para a pista: arco-íris andando por dentro,
+   no lobby e na tela das brincadeiras (o botão leva `arcoiris: true`). */
+.big-button.arcoiris {
+  background: linear-gradient(100deg, #ff5d8f, #ff9a3c, #ffcf3c, #46c97a, #3fa9f5, #a777f5, #ff5d8f);
+  background-size: 300% 100%;
+  text-shadow: 0 2px 0 rgba(90, 30, 110, .45);
+  animation: jogar-arco 6s linear infinite;
+}
+/* No lobby ele é o maior botão do jogo e ainda respira, para não haver
+   dúvida de por onde se começa. */
 #stage.lobby .big-button.huge {
   margin: 0;
   font-size: clamp(28px, min(9vw, 5.4vh), 46px);
   padding: clamp(10px, 1.8vh, 18px) 24px;
-  background: linear-gradient(100deg, #ff5d8f, #ff9a3c, #ffcf3c, #46c97a, #3fa9f5, #a777f5, #ff5d8f);
-  background-size: 300% 100%;
-  text-shadow: 0 2px 0 rgba(90, 30, 110, .45);
   animation: jogar-arco 6s linear infinite, jogar-respira 1.8s ease-in-out infinite;
 }
 @keyframes jogar-arco {
@@ -2936,7 +2941,340 @@ html, body {
   .bolha-icone,
   #stage.lobby .figurinha,
   #stage.lobby .lobby-fala,
-  #stage.lobby .big-button.huge { animation: none; }
+  #stage.lobby .big-button.huge,
+  .big-button.arcoiris { animation: none; }
   .lobby-brilho { animation: none; opacity: .8; }
   .big-button.huge::after { display: none; }
+}
+
+/* --- As telas de escolha, no estilo do lobby ---------------------------- */
+/* Quem vai correr, por onde vamos, como vamos brincar, as fases, a ficha de
+   cada item e o 3D: o cartão branco do meio da tela vira uma **bandeja**
+   presa embaixo (deitado, à direita), e o resto da tela é palco — o
+   unicórnio escolhido fica à vista (a câmera enquadra ele ali, ver
+   ESCOLHA_CAMERA no Game.js). O título vira uma fita, como o "RUSH" do
+   logo; o voltar e a carteira vão para os cantos, como no lobby; e os
+   retratos viram figurinhas — rosa para unicórnio, azul para pista, as
+   mesmas cores das figurinhas da tela inicial.
+
+   Como no lobby, tudo vem prefixado com `#stage.escolha` (a classe que o
+   ui.js liga só nessas telas), para vencer as regras do cartão comum. */
+
+#stage.escolha #hud,
+#stage.escolha #touch-controls { opacity: 0; visibility: hidden; }
+
+#stage.escolha #overlay {
+  align-content: end;
+  padding:
+    calc(72px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right))
+    calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+  background: radial-gradient(ellipse 85% 60% at 50% 22%, rgba(122, 78, 199, 0) 40%, rgba(122, 78, 199, .34) 100%);
+}
+
+/* A bandeja. */
+#stage.escolha .card.escolha {
+  width: min(560px, 100%);
+  max-height: 64vh;
+  max-height: 64dvh;
+  max-height: calc(var(--vh1, 1vh) * 64);
+  padding: 36px 12px 12px;
+  border: 5px solid #fff;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #fff9fd, #fdeaf6);
+  box-shadow: 0 10px 0 rgba(122, 78, 199, .32), 0 18px 34px rgba(60, 20, 110, .28);
+}
+#stage.escolha .card.escolha::before { display: none; }
+#stage.escolha .card.escolha .hint { display: none; }
+#stage.escolha #overlay-buttons {
+  background: none;
+  padding-top: 4px;
+}
+#stage.escolha .big-button.huge { margin: 8px 0 0; }
+
+/* O título é uma fita colada na borda de cima da bandeja. */
+#stage.escolha .card.escolha h1 {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% -58%;
+  rotate: -2.5deg;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: .16em .9em .22em;
+  font-size: clamp(19px, min(5.8vw, 3.6vh), 30px);
+  line-height: 1.15;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(90deg, #ff5d8f, #b46cf0);
+  border: 4px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 rgba(122, 78, 199, .45);
+  text-shadow: 0 2px 0 rgba(90, 30, 110, .35);
+}
+
+/* O voltar e a carteira nos cantos da tela, como a coroa e a carteira do
+   lobby — fora da bandeja, onde o dedo já sabe que eles moram. */
+#stage.escolha .card.escolha .corner-button.back {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  width: clamp(48px, 13vw, 58px);
+  height: clamp(48px, 13vw, 58px);
+  font-size: clamp(20px, 5.6vw, 26px);
+  border: 4px solid #fff;
+  box-shadow: 0 5px 0 rgba(122, 78, 199, .35);
+}
+#stage.escolha .card.escolha .brand {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  height: clamp(48px, 13vw, 58px);
+  margin: 0;
+  font-size: 0;
+  opacity: 1;
+}
+#stage.escolha .card.escolha .brand-mark { display: none; }
+#stage.escolha .wallet {
+  font-size: clamp(14px, 4vw, 17px);
+  padding: 5px 13px;
+  border: 3px solid #fff;
+  background: linear-gradient(180deg, #fff3c4, #ffd56b);
+  box-shadow: 0 4px 0 rgba(201, 132, 0, .45);
+}
+
+/* A legenda das pistas (de quem é o ⚡), logo abaixo da fita. */
+#stage.escolha .card.picker #overlay-text { margin: 0 0 6px !important; }
+
+/* --- As figurinhas da grade (unicórnios e pistas) --- */
+#stage.escolha .cast-grid {
+  gap: clamp(12px, 3.2vw, 18px) clamp(10px, 3vw, 16px);
+  margin: 0;
+  /* O respiro dos lados é o do ✅ e do cadeado, que saem da quina da
+     figurinha: a área que rola corta tudo o que passa da borda dela. */
+  padding: 14px 14px 10px;
+}
+#stage.escolha .cast-card {
+  --fundo: linear-gradient(165deg, #fff, #ffe1ee);
+  --sombra: #f0b3cb;
+  border: 4px solid #fff;
+  border-radius: 20px;
+  background: var(--fundo);
+  box-shadow: 0 5px 0 var(--sombra), 0 8px 14px rgba(80, 40, 140, .12);
+  rotate: var(--giro, 0deg);
+}
+#stage.escolha .cast-grid.track .cast-card { --fundo: linear-gradient(165deg, #fff, #dcf1ff); --sombra: #a6d3f2; }
+/* Tortinhas alternadas, como figurinhas coladas à mão. */
+#stage.escolha .cast-card:nth-child(3n+1) { --giro: -1.6deg; }
+#stage.escolha .cast-card:nth-child(3n) { --giro: 1.6deg; }
+#stage.escolha .cast-face {
+  background: rgba(255, 255, 255, .9);
+  border-radius: 14px;
+}
+#stage.escolha .cast-name { font-weight: 700; }
+#stage.escolha .cast-card:active { transform: scale(.94); }
+
+/* A escolhida: na cor cheia, reta, um tico maior, com o ✅ na quina e um
+   anel dourado pulsando. */
+#stage.escolha .cast-card.escolhido {
+  --fundo: linear-gradient(165deg, #ffc4dc, #ff6f9f);
+  --sombra: #d63e6d;
+  --giro: 0deg;
+  scale: 1.05;
+  z-index: 1;
+  animation: escolhida-chama 1.6s ease-in-out infinite;
+}
+#stage.escolha .cast-grid.track .cast-card.escolhido { --fundo: linear-gradient(165deg, #b5ecff, #45b0ee); --sombra: #2a7fbf; }
+#stage.escolha .cast-card.escolhido .cast-name { color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .2); }
+#stage.escolha .cast-card.escolhido::after,
+#stage.escolha .mode-card.escolhido::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 32px;
+  height: 32px;
+  background: url('./assets/icones/check_mark_button.svg') center / contain no-repeat;
+}
+@keyframes escolhida-chama {
+  0%, 100% { box-shadow: 0 5px 0 var(--sombra), 0 0 0 0 rgba(255, 209, 102, .85); }
+  60%      { box-shadow: 0 5px 0 var(--sombra), 0 0 0 10px rgba(255, 209, 102, 0); }
+}
+
+/* Trancada: lilás acinzentado, o retrato desbotado e o cadeado numa
+   bolinha branca na quina. */
+#stage.escolha .cast-card.trancado { --fundo: linear-gradient(165deg, #f7f3fc, #e4daf1); --sombra: #cbbde2; }
+#stage.escolha .cast-lock,
+#stage.escolha .cast-fast {
+  top: -11px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(122, 78, 199, .3);
+}
+#stage.escolha .cast-lock { right: -11px; }
+#stage.escolha .cast-fast { left: -11px; }
+#stage.escolha .cast-price { border-color: #fff; background: linear-gradient(180deg, #fff3c4, #ffd56b); }
+#stage.escolha .cast-card.vazio {
+  --fundo: rgba(255, 255, 255, .45);
+  border: 3px dashed #d4c3ec;
+  box-shadow: none;
+}
+
+/* --- As três brincadeiras, cada uma da sua cor --- */
+#stage.escolha .mode-list { gap: clamp(12px, 3vw, 18px); padding: 12px 14px 6px; }
+#stage.escolha .mode-card {
+  --sombra: #d63e6d;
+  position: relative;
+  border: 4px solid #fff;
+  border-radius: 22px;
+  background: var(--fundo);
+  box-shadow: 0 6px 0 var(--sombra), 0 10px 16px rgba(80, 40, 140, .14);
+  rotate: var(--giro, 0deg);
+  color: #fff;
+}
+#stage.escolha .mode-card[data-pick="modo:baby"] { --fundo: linear-gradient(165deg, #ffd0e2, #ff7fac); --sombra: #d63e6d; --giro: -1.4deg; }
+#stage.escolha .mode-card[data-pick="modo:levels"] { --fundo: linear-gradient(165deg, #cdefff, #5cbaf2); --sombra: #2a7fbf; --giro: 1deg; }
+#stage.escolha .mode-card[data-pick="modo:adventure"] { --fundo: linear-gradient(165deg, #fff1b0, #ffbd38); --sombra: #c98400; --giro: -1deg; color: #6b4600; }
+#stage.escolha .mode-card.escolhido { --giro: 0deg; scale: 1.03; z-index: 1; animation: escolhida-chama 1.6s ease-in-out infinite; }
+#stage.escolha .mode-card:active { transform: scale(.96); }
+#stage.escolha .mode-emoji {
+  flex: none;
+  width: 1.7em;
+  height: 1.7em;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+}
+#stage.escolha .mode-name { color: inherit; text-shadow: 0 2px 0 rgba(0, 0, 0, .16); }
+#stage.escolha .mode-card[data-pick="modo:adventure"] .mode-name { text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
+#stage.escolha .mode-hint { opacity: .95; font-weight: 600; }
+#stage.escolha .map-dot { border-color: #fff; }
+#stage.escolha .map-dot.done { background: #ffd166; border-color: #fff; }
+#stage.escolha .map-dot.locked { border-color: rgba(255, 255, 255, .45); }
+
+/* A velocidade do Desafio: bolhas, como as do lobby. */
+#stage.escolha .speeds { gap: 10px; margin: 2px 4px 4px; }
+#stage.escolha .speed {
+  border: 4px solid #fff;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(122, 78, 199, .25);
+  font-weight: 700;
+}
+#stage.escolha .speed.escolhido {
+  background: linear-gradient(180deg, #ffe08a, #ffab1f);
+  box-shadow: 0 4px 0 #c97a00;
+  color: #6b4600;
+}
+
+/* --- As fases --- */
+#stage.escolha .levels-grid { gap: clamp(12px, 3vw, 16px) clamp(10px, 2.6vw, 14px); padding: 14px 14px 10px; margin: 0; }
+#stage.escolha .level-tile {
+  --fundo: linear-gradient(165deg, #fff, #ffe1ee);
+  --sombra: #f0b3cb;
+  border: 4px solid #fff;
+  border-radius: 18px;
+  background: var(--fundo);
+  box-shadow: 0 5px 0 var(--sombra);
+  rotate: var(--giro, 0deg);
+}
+#stage.escolha .level-tile:nth-child(odd) { --giro: -1.6deg; }
+#stage.escolha .level-tile:nth-child(even) { --giro: 1.4deg; }
+/* A próxima a jogar chama, na cor cheia; as feitas ficam douradas. */
+#stage.escolha .level-tile.open {
+  --fundo: linear-gradient(165deg, #ffc4dc, #ff6f9f);
+  --sombra: #d63e6d;
+  color: #fff;
+  animation: escolhida-chama 1.6s ease-in-out infinite;
+}
+#stage.escolha .level-tile.done { --fundo: linear-gradient(165deg, #fff3b8, #ffc13c); --sombra: #c98400; color: #6b4600; }
+#stage.escolha .level-tile.locked { --fundo: linear-gradient(165deg, #f7f3fc, #e4daf1); --sombra: #cbbde2; opacity: 1; }
+#stage.escolha .level-tile.open .level-number { text-shadow: 0 2px 0 rgba(0, 0, 0, .18); }
+#stage.escolha .level-done { top: -12px; right: -10px; }
+
+/* --- A ficha --- */
+/* O retrato vira uma figurinha grande, tortinha. */
+#stage.escolha .shop-face {
+  border: 5px solid #fff;
+  border-radius: 24px;
+  background: linear-gradient(165deg, #fff, #ffd2e4);
+  box-shadow: 0 6px 0 #f0a8c6, 0 10px 18px rgba(80, 40, 140, .18);
+  rotate: -3deg;
+}
+#stage.escolha .shop-face.sombra { background: none; border-color: transparent; box-shadow: none; }
+#stage.escolha .shop-retrato { margin-top: 4px; }
+#stage.escolha .ver3d {
+  border: 3px solid #fff;
+  background: linear-gradient(180deg, #d4fcff, #7fdcef);
+  color: #1f6f86;
+  box-shadow: 0 3px 0 rgba(42, 127, 191, .45);
+  font-weight: 700;
+}
+#stage.escolha .shop-power,
+#stage.escolha .shop-fast,
+#stage.escolha .shop-price { border-color: #fff; box-shadow: 0 3px 0 rgba(122, 78, 199, .15); }
+
+/* Deitado: a bandeja à direita, o palco com o unicórnio à esquerda. */
+@media (orientation: landscape) {
+  #stage.escolha #overlay {
+    align-content: center;
+    justify-items: end;
+    padding:
+      calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+      calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    background: radial-gradient(ellipse 60% 85% at 24% 50%, rgba(122, 78, 199, 0) 40%, rgba(122, 78, 199, .34) 100%);
+  }
+  #stage.escolha .card.escolha {
+    width: min(600px, 60vw);
+    margin-top: 24px;
+    max-height: calc(100vh - 46px);
+    max-height: calc(100dvh - 46px);
+    max-height: calc(var(--vh1, 1vh) * 100 - 46px);
+    padding-top: 30px;
+  }
+  #stage.escolha .card.escolha .brand { right: auto; left: calc(12px + env(safe-area-inset-left)); top: auto; bottom: calc(12px + env(safe-area-inset-bottom)); }
+  #stage.escolha .cast-grid { grid-template-columns: repeat(4, 1fr); }
+  #stage.escolha .levels-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Celular em pé e baixinho (iPhone SE e parecidos): a bandeja cresce um
+   pouco — senão as velocidades do Desafio ficavam escondidas embaixo dos
+   três cards —, e a câmera encolhe o unicórnio na faixa que sobra. */
+@media (orientation: portrait) and (max-height: 720px) {
+  #stage.escolha #overlay { padding-top: calc(64px + env(safe-area-inset-top)); }
+  #stage.escolha .card.escolha {
+    max-height: 74vh;
+    max-height: 74dvh;
+    max-height: calc(var(--vh1, 1vh) * 74);
+  }
+  #stage.escolha .mode-list { gap: 10px; }
+  #stage.escolha .mode-card { padding-block: 5px; }
+}
+
+/* Celular deitado: a bandeja é baixa, e as três brincadeiras com as
+   velocidades embaixo só cabem apertando os respiros. */
+@media (orientation: landscape) and (max-height: 620px) {
+  #stage.escolha .mode-list { gap: 8px; padding: 8px 14px 2px; }
+  #stage.escolha .mode-card { padding: 3px 10px; border-width: 3px; }
+  #stage.escolha .mode-emoji { font-size: 20px; }
+  #stage.escolha .speeds { gap: 6px; margin: 0 4px 2px; }
+  #stage.escolha .speed { padding: 2px; border-width: 3px; }
+  #stage.escolha .cast-grid,
+  #stage.escolha .levels-grid { gap: 10px; padding: 12px 14px 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #stage.escolha .cast-card.escolhido,
+  #stage.escolha .mode-card.escolhido,
+  #stage.escolha .level-tile.open { animation: none; }
 }

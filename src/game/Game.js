@@ -56,6 +56,14 @@ const LOBBY_CAMERA = {
   portrait: { height: 2.4, distance: 9.4, look: 1.0 },
   landscape: { height: 2.0, distance: 5.2, look: 0.9, aspect: 2.2 },
 };
+// Nas telas de escolha a câmera é calculada (ver enquadrarEscolha): estes
+// são só os parâmetros — a altura dela, os pixels do topo que são dos
+// botões, quanto da faixa livre o unicórnio ocupa e os limites da distância.
+const ESCOLHA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto: 4.5, longe: 22 };
+const TELAS_DE_ESCOLHA = new Set(['character', 'track', 'mode', 'sheet', 'viewer', 'levels']);
+// Na ficha e no 3D a figura é de quem está sendo olhado, que pode não ser
+// o escolhido: o unicórnio do palco sai de cena, senão seriam dois.
+const FICHAS = new Set(['sheet', 'viewer']);
 
 // Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
@@ -775,6 +783,7 @@ export class Game {
     this.ui.showOverlay({
       // O nome da pista no título: cada pista tem o seu caminho de fases, e
       // é preciso ficar claro em qual delas a criança está.
+      escolha: true,
       title: t('Fases · {emoji} {pista}', { emoji: this.track.emoji, pista: this.track.name }),
       html: `<div class="levels-grid">${tiles}</div>`,
       back: () => this.showModePicker(),
@@ -1044,7 +1053,7 @@ export class Game {
           </div>
         </div>
       `,
-      buttons: [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
+      buttons: [{ label: t('▶️ JOGAR'), huge: true, arcoiris: true, onClick: () => this.playNow() }],
       grown: () => this.showGrownUps(),
     });
     this.ui.bindExtra((qual) => {
@@ -1161,10 +1170,11 @@ export class Game {
     }).join('');
 
     this.ui.showOverlay({
+      escolha: true,
       hint: true,
       title: t('Como vamos brincar?'),
       html: `<div class="mode-list">${cards}</div>`,
-      buttons: [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
+      buttons: [{ label: t('▶️ JOGAR'), huge: true, arcoiris: true, onClick: () => this.playNow() }],
       back: () => this.showHome(),
     });
     this.ui.bindExtra((valor) => {
@@ -1431,7 +1441,9 @@ export class Game {
         + `<span class="cast-name">${t('em breve')}</span></button>`);
     }
 
-    return `<div class="cast-grid">${cartoes.join('')}</div>`;
+    // O tipo vai na classe: no estilo do lobby a figurinha do unicórnio é
+    // rosa e a da pista é azul, as mesmas cores das figurinhas da tela inicial.
+    return `<div class="cast-grid ${kind}">${cartoes.join('')}</div>`;
   }
 
   // Um toque na grade abre a ficha — a mesma para quem já é seu e para quem
@@ -1471,6 +1483,7 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
+      escolha: true,
       hint: true,
       title: t('Quem vai correr?'),
       html: this.gridHtml('character'),
@@ -1642,6 +1655,7 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
+      escolha: true,
       title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
       html: `
         <div class="shop">
@@ -1689,6 +1703,7 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
+      escolha: true,
       title: `${item.emoji} ${item.name}`,
       html: '<div class="viewer-vaga"></div>'
         + `<p class="viewer-dica">${t('gire com o dedo ou o mouse')}</p>`,
@@ -1712,6 +1727,46 @@ export class Game {
   fecharViewer() {
     this.viewer?.dispose();
     this.viewer = null;
+  }
+
+  // A câmera das telas de escolha: põe o unicórnio no meio do pedaço de
+  // palco que a bandeja deixa livre — em pé, a faixa entre os botões do topo
+  // e a fita do título; deitado, a parte à esquerda da bandeja —, e longe o
+  // bastante para ele caber ali. A conta parte de onde a bandeja está de
+  // verdade (ver ui.palco): ela tem uma altura em cada tela, e números fixos
+  // deixavam o unicórnio escondido atrás da grade de 22 retratos.
+  enquadrarEscolha() {
+    const palco = this.ui.palco();
+    if (!palco) return null;
+    const { height: h, topo, fita, preenche, perto, longe } = ESCOLHA_CAMERA;
+    const { top, left, largura, altura } = palco;
+    const meiaV = Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2));
+    const meiaH = meiaV * this.camera.aspect;
+    const escala = this.character.scale || 1;
+
+    const emPe = this.portrait;
+    const faixaV = emPe ? Math.max(40, top - fita - topo) : altura;
+    const faixaH = emPe ? largura : left;
+    const cy = emPe ? topo + faixaV / 2 : altura / 2;
+    const cx = emPe ? largura / 2 : left / 2;
+
+    // Meia altura do unicórnio (com o chifre) e meia largura — de lado, com
+    // a cauda e as asas, ele passa de 4 de comprimento.
+    const pelaAltura = (1.15 * escala) / ((preenche * faixaV / altura) * meiaV);
+    const pelaLargura = (2.1 * escala) / ((preenche * faixaH / largura) * meiaH);
+    const distancia = THREE.MathUtils.clamp(Math.max(pelaAltura, pelaLargura), perto, longe);
+
+    // Do ponto da tela (cx, cy) para o ângulo da câmera: quanto ela olha
+    // para baixo e quanto anda para o lado.
+    const ny = 1 - (2 * cy) / altura;
+    const nx = (2 * cx) / largura - 1;
+    const abaixo = Math.atan((h - 1) / distancia) + Math.atan(ny * meiaV);
+    return {
+      height: h,
+      distance: distancia,
+      look: h - (distancia + 3) * Math.tan(abaixo),
+      lado: -nx * distancia * meiaH,
+    };
   }
 
   // Quantos unicórnios ainda faltam libertar (para a ficha do Eco).
@@ -1875,6 +1930,7 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
+      escolha: true,
       hint: true,
       title: t('Por onde vamos?'),
       // A legenda vai no `text`, que fica acima da grade e fora da área que
@@ -3383,24 +3439,31 @@ export class Game {
     // mais perto, para o personagem escolhido aparecer bem.
     const preview = this.state === STATE.READY;
     const follow = Math.min(1, 4 * dt);
-    this.camera.position.x += (this.player.x * 0.4 - this.camera.position.x) * follow;
     // Em pé o cartão ocupa mais tela, então na pré-visualização a câmera se
     // afasta um pouco e mira mais alto — o personagem cai na faixa livre
     // embaixo do cartão.
     const previewZoom = preview ? (this.portrait ? 0.88 : 0.72) : 1;
     const previewLook = preview ? (this.portrait ? 5.0 : 3.4) : 1.5;
-    const lobby = preview && this.screen === 'home'
-      ? LOBBY_CAMERA[this.portrait ? 'portrait' : 'landscape']
-      : null;
+    // O lobby e as telas de escolha têm enquadramento próprio (ver
+    // LOBBY_CAMERA e ESCOLHA_CAMERA).
+    let lobby = null;
+    if (preview && this.screen === 'home') {
+      const base = LOBBY_CAMERA[this.portrait ? 'portrait' : 'landscape'];
+      const recuo = base.aspect ? THREE.MathUtils.clamp(base.aspect / this.camera.aspect, 1, 1.6) : 1;
+      // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
+      // medida, senão as asas deles invadiam as bolhas das laterais.
+      lobby = { ...base, distance: base.distance * recuo * (this.character.scale || 1) };
+    } else if (preview && TELAS_DE_ESCOLHA.has(this.screen)) {
+      lobby = this.enquadrarEscolha();
+    }
+    this.unicorn.visible = !(preview && FICHAS.has(this.screen));
+    const lado = lobby?.lado || 0;
     const alturaAlvo = lobby ? lobby.height : this.camView.height * (preview ? 0.95 : 1);
-    const recuo = lobby?.aspect ? THREE.MathUtils.clamp(lobby.aspect / this.camera.aspect, 1, 1.6) : 1;
-    // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
-    // medida, senão as asas deles invadiam as bolhas das laterais.
-    const escala = this.character.scale || 1;
-    const distanciaAlvo = lobby ? lobby.distance * recuo * escala : this.camView.distance * previewZoom;
+    const distanciaAlvo = lobby ? lobby.distance : this.camView.distance * previewZoom;
+    this.camera.position.x += (this.player.x * 0.4 + lado - this.camera.position.x) * follow;
     this.camera.position.y += (alturaAlvo + this.player.y * 0.35 - this.camera.position.y) * follow;
     this.camera.position.z += (distanciaAlvo - this.camera.position.z) * follow;
-    this.camera.lookAt(this.player.x * 0.25, (lobby ? lobby.look : previewLook) + this.player.y * 0.3, preview ? -3 : -8);
+    this.camera.lookAt(this.player.x * 0.25 + lado, (lobby ? lobby.look : previewLook) + this.player.y * 0.3, preview ? -3 : -8);
 
     this.renderer.render(this.scene, this.camera);
   }

@@ -103,6 +103,18 @@ export function createUI() {
   }
   grownButton.addEventListener('contextmenu', (e) => e.preventDefault());
 
+  // Onde a bandeja das telas de escolha está agora: a câmera usa isso para
+  // pôr o unicórnio no pedaço de palco que sobra (ver
+  // Game.enquadrarEscolha). A bandeja muda de altura de tela para tela — e
+  // quando as figuras carregam —, então a medida acompanha o tamanho dela.
+  let palco = null;
+  const medirPalco = () => {
+    const r = card.getBoundingClientRect();
+    palco = { top: r.top, left: r.left, largura: innerWidth, altura: innerHeight };
+  };
+  new ResizeObserver(medirPalco).observe(card);
+  addEventListener('resize', medirPalco);
+
   let onBack = null;
   backButton.addEventListener('click', () => {
     if (!onBack) return;
@@ -329,6 +341,7 @@ export function createUI() {
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
       book = false, hint = false, arrows = true, scroll = null, vitoria = false,
+      escolha = false,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -340,6 +353,10 @@ export function createUI() {
       // No lobby o cartão some e a tela inteira vira palco: o placar e os
       // botões de toque, que ficavam apagados atrás do cartão, saem de vez.
       stage.classList.toggle('lobby', home);
+      // As telas de escolha seguem o lobby: o cartão vira uma bandeja presa
+      // embaixo (deitado, à direita) e o palco com o unicórnio fica à vista.
+      card.classList.toggle('escolha', escolha);
+      stage.classList.toggle('escolha', escolha);
       // O livro é o cartão inteiro virando página: sem marca, sem borda
       // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
       card.classList.toggle('livro', book);
@@ -382,6 +399,7 @@ export function createUI() {
         const classes = ['big-button'];
         if (item.secondary) classes.push('secondary');
         if (item.huge) classes.push('huge');
+        if (item.arcoiris) classes.push('arcoiris');
         button.className = classes.join(' ');
         button.innerHTML = withIcons(item.hint
           ? `<span class="button-label">${item.label}</span><small>${item.hint}</small>`
@@ -401,7 +419,10 @@ export function createUI() {
       // útil da área que rola) o `scrollTop` "pega". Atribuir junto com o
       // `innerHTML`, lá em cima, ficava preso em zero.
       if (scroll !== null) extra.scrollTop = scroll;
+      medirPalco();
     },
+
+    palco: () => palco,
 
     // O número gigante da largada. `null` apaga.
     setCountdown: (texto) => {
@@ -417,7 +438,7 @@ export function createUI() {
 
     hideOverlay: () => {
       overlay.classList.add('hidden');
-      stage.classList.remove('lobby');
+      stage.classList.remove('lobby', 'escolha');
       hud.classList.remove('dim');
     },
 
