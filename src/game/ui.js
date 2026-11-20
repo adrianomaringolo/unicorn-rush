@@ -103,11 +103,11 @@ export function createUI() {
   }
   grownButton.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  // Onde a bandeja das telas de escolha está agora: a câmera usa isso para
-  // pôr o unicórnio no pedaço de palco que sobra (ver
-  // Game.enquadrarEscolha). A bandeja muda de altura de tela para tela — e
+  // Onde a bandeja está agora: a câmera usa isso para pôr o unicórnio no
+  // pedaço de palco que sobra (ver Game.enquadrarBandeja). A bandeja muda de altura de tela para tela — e
   // quando as figuras carregam —, então a medida acompanha o tamanho dela.
   let palco = null;
+  let bandeja = false;
   const medirPalco = () => {
     const r = card.getBoundingClientRect();
     palco = { top: r.top, left: r.left, largura: innerWidth, altura: innerHeight };
@@ -341,7 +341,6 @@ export function createUI() {
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
       book = false, hint = false, arrows = true, scroll = null, vitoria = false,
-      escolha = false,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -353,10 +352,12 @@ export function createUI() {
       // No lobby o cartão some e a tela inteira vira palco: o placar e os
       // botões de toque, que ficavam apagados atrás do cartão, saem de vez.
       stage.classList.toggle('lobby', home);
-      // As telas de escolha seguem o lobby: o cartão vira uma bandeja presa
-      // embaixo (deitado, à direita) e o palco com o unicórnio fica à vista.
-      card.classList.toggle('escolha', escolha);
-      stage.classList.toggle('escolha', escolha);
+      // Toda tela que não é o lobby nem o livro segue o lobby: o cartão vira
+      // uma bandeja presa embaixo (deitado, à direita) e o resto da tela é
+      // palco, com o unicórnio à vista.
+      bandeja = !home && !book;
+      card.classList.toggle('bandeja', bandeja);
+      stage.classList.toggle('bandeja', bandeja);
       // O livro é o cartão inteiro virando página: sem marca, sem borda
       // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
       card.classList.toggle('livro', book);
@@ -422,7 +423,9 @@ export function createUI() {
       medirPalco();
     },
 
-    palco: () => palco,
+    // A tela aberta agora é uma bandeja? (A câmera do Game enquadra o
+    // unicórnio no palco que ela deixa livre.)
+    palco: () => (bandeja ? palco : null),
 
     // O número gigante da largada. `null` apaga.
     setCountdown: (texto) => {
@@ -438,7 +441,8 @@ export function createUI() {
 
     hideOverlay: () => {
       overlay.classList.add('hidden');
-      stage.classList.remove('lobby', 'escolha');
+      stage.classList.remove('lobby', 'bandeja');
+      bandeja = false;
       hud.classList.remove('dim');
     },
 
