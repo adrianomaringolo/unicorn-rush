@@ -337,6 +337,9 @@ export function createUI() {
       card.classList.toggle('picker', picker);
       card.classList.toggle('wide', wide);
       card.classList.toggle('home', home);
+      // No lobby o cartão some e a tela inteira vira palco: o placar e os
+      // botões de toque, que ficavam apagados atrás do cartão, saem de vez.
+      stage.classList.toggle('lobby', home);
       // O livro é o cartão inteiro virando página: sem marca, sem borda
       // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
       card.classList.toggle('livro', book);
@@ -414,6 +417,7 @@ export function createUI() {
 
     hideOverlay: () => {
       overlay.classList.add('hidden');
+      stage.classList.remove('lobby');
       hud.classList.remove('dim');
     },
 

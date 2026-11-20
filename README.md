@@ -1253,10 +1253,34 @@ exatamente de onde estava.
 
 ## Como começa
 
-A tela inicial é um **hub**, não uma fila de passos. Ela mostra em três
-figuras o que está escolhido — o unicórnio, a pista e a brincadeira — e um
-botão **▶️ JOGAR** enorme. Quem quer jogar joga com um toque, na mesma
-combinação de ontem; quem quer trocar alguma coisa toca na figura daquilo.
+A tela inicial é um **hub**, não uma fila de passos — e tem cara de
+**saguão de jogo**, não de formulário. Não há cartão: o **unicórnio 3D
+escolhido fica no meio do palco**, girando de frente para a câmera com o
+cenário da pista atrás (a câmera do lobby é `LOBBY_CAMERA`, em `Game.js`), e
+o resto se arruma em volta dele:
+
+- em cima, o **logo**: "Unicorn" em letras de bala de goma, cada uma de uma
+  cor do arco-íris, pulando em onda, e o "RUSH" numa fita torta;
+- um **balão de fala** saindo do unicórnio: *Vamos correr?*;
+- nas laterais, **bolhas redondas** — à esquerda as duas grandes e coloridas
+  (📖 A história, ⬆️ Poderes), à direita as miúdas (📊 Estatísticas,
+  ℹ️ Sobre, 👆 Aprender);
+- embaixo, **três figurinhas** com o que está escolhido — o unicórnio (rosa),
+  a pista (azul) e a brincadeira (amarela) —, tortinhas como figurinha colada
+  no caderno, boiando fora de compasso, com um 🔄 na quina dizendo que tocar
+  ali troca;
+- e o **▶️ JOGAR** enorme, com um arco-íris andando por dentro e respirando.
+
+Quem quer jogar joga com um toque, na mesma combinação de ontem; quem quer
+trocar alguma coisa toca na figurinha daquilo. O placar e os botões de toque,
+que antes ficavam apagados atrás do cartão, somem do lobby (a classe
+`lobby` no `#stage`, ligada pelo `ui.js` só no hub).
+
+Em pé, as figurinhas ficam lado a lado embaixo; deitado, descem em coluna à
+esquerda e as bolhas vão para a direita, com o unicórnio no meio. Numa tela
+mais quadrada (tablet) a câmera recua para ele caber na coluna do meio, e o
+Brasa e o Vovô, que são maiores, também ganham uma câmera mais afastada.
+Todas as animações param com *reduzir movimento* ligado no aparelho.
 
 Cada figura abre uma tela só, com **todas as opções à vista**:
 
@@ -1275,19 +1299,20 @@ Cada figura abre uma tela só, com **todas as opções à vista**:
 O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
 cartão.
 
-Embaixo das três figuras, dois botões **cheios e coloridos** — nem do
-tamanho do JOGAR, nem desbotados como o resto: **📖 A história** (roxo, reabre
-o livro; ver *A história*) e **⬆️ Poderes** (dourado, a tela de evoluir os
-power-ups com chaves; ver *Evoluir com chaves*, em *Power-ups*). São as duas
-coisas que valem a pena destacar mesmo sem ser o botão de jogar — uma é o
-porquê do jogo, a outra é para onde as chaves continuam servindo depois de
-já ter tudo o mais. Quando o fim do livro abre, **📖 A história** ganha um
-pulso dourado (a mesma linguagem do ⚡ pedindo toque), para não se perder
-mesmo já sendo colorido.
+As duas bolhas grandes da esquerda são as que valem um botão de verdade
+mesmo sem ser o de jogar: **📖 A história** (roxa, reabre o livro; ver *A
+história*) e **⬆️ Poderes** (dourada, a tela de evoluir os power-ups com
+chaves; ver *Evoluir com chaves*, em *Power-ups*) — uma é o porquê do jogo, a
+outra é para onde as chaves continuam servindo depois de já ter tudo o mais.
+Quando o fim do livro abre, **📖 A história** ganha um ✨ na quina e um pulso
+dourado (a mesma linguagem do ⚡ pedindo toque).
 
-Abaixo deles, a fileira miúda de sempre — estatísticas e "sobre" —, e
-**instalar** sai do caminho da criança: moram atrás do **👑**, no canto
-oposto, que só abre segurando o dedo.
+As miúdas da direita são de adulto, e **instalar** sai do caminho da criança:
+mora atrás do **👑**, no canto oposto ao perfil, que só abre segurando o dedo.
+
+As outras telas continuam em cartão, com uma faixinha de arco-íris pendurada
+no alto (o mesmo arco-íris do logo) e o botão grande de cada uma com um
+reflexo de luz passando de tempos em tempos.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
 avisa, em vez de ignorar (toque que não faz nada parece defeito). No cantinho

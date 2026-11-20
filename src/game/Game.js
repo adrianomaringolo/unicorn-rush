@@ -46,6 +46,16 @@ import { hasUpdate, applyUpdate, onUpdate, updateVersion } from './update.js';
 const STATE = { READY: 'ready', PLAYING: 'playing', PAUSED: 'paused', OVER: 'over' };
 
 const CAMERA = { height: 5.1, distance: 9.4, fov: 55 };
+// A câmera no lobby (a tela inicial): baixa e de frente para o unicórnio,
+// com o céu atrás, enquadrando ele no palco entre o logo e as figurinhas.
+// Em pé a tela é estreita: ela recua para o modelo girando caber entre as
+// bolhas das laterais. Deitado, a distância vale para um celular (tela bem
+// larga); numa tela mais quadrada, como a do tablet, a coluna do meio fica
+// estreita e a câmera recua junto (ver `update`).
+const LOBBY_CAMERA = {
+  portrait: { height: 2.4, distance: 9.4, look: 1.0 },
+  landscape: { height: 2.0, distance: 5.2, look: 0.9, aspect: 2.2 },
+};
 
 // Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
@@ -970,46 +980,68 @@ export class Game {
 
     const perfil = activeProfile();
 
+    // A tela inicial é um lobby, e não um cartão: o unicórnio 3D escolhido
+    // fica no meio do palco (a câmera enquadra ele ali, ver `update`), e o
+    // resto se arruma em volta — logo em cima, bolhas nas laterais, as três
+    // figurinhas e o JOGAR embaixo. Antes um cartão branco tampava justamente
+    // o personagem que a criança acabou de escolher.
+    const letras = [...'Unicorn']
+      .map((letra, i) => `<span style="--i:${i}">${letra}</span>`).join('');
+    const brilhos = [[8, 14, 0], [86, 8, 0.7], [16, 62, 1.3], [90, 54, 0.4], [30, 30, 1.8], [74, 76, 1]]
+      .map(([x, y, d]) => `<i class="lobby-brilho" style="left:${x}%;top:${y}%;animation-delay:${d}s"></i>`)
+      .join('');
+    const bolha = (pick, emoji, nome, extra = '', selo = '') => (
+      `<button class="bolha ${extra}" data-pick="${pick}">`
+      + `<span class="bolha-icone">${emoji}${selo ? `<span class="bolha-selo">${selo}</span>` : ''}</span>`
+      + `<span class="bolha-nome">${nome}</span></button>`
+    );
+
     this.ui.showOverlay({
       home: true,
-      picker: true,
-      hint: true,
       arrows: false,        // no hub as setas não têm o que percorrer
-      title: t('Vamos correr?'),
       html: `
-        ${perfil ? `
-        <button class="perfil-chip" data-pick="perfil" aria-label="${t('Trocar de quem está jogando')}">
-          <span class="perfil-chip-avatar">${perfil.avatar}</span>
-          <span class="perfil-chip-nome">${perfil.name ? escapeHtml(perfil.name) : t('Amiguinho')}</span>
-          <span class="perfil-chip-trocar">🔀</span>
-        </button>` : ''}
-        <div class="picks">
-          <button class="pick" data-pick="character" aria-label="${t('Trocar de unicórnio')}">
-            <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
-            <span class="pick-name">${this.character.name}</span>
-          </button>
-          <button class="pick" data-pick="track" aria-label="${t('Trocar de pista')}">
-            <img class="pick-face" src="${cenarios[this.track.id]}" alt="" />
-            <span class="pick-name">${this.track.name}</span>
-          </button>
-          <button class="pick" data-pick="mode" aria-label="${t('Trocar de brincadeira')}">
-            <span class="pick-emoji">${modo.emoji}${selo}</span>
-            <span class="pick-name">${modo.name}</span>
-          </button>
-        </div>
-        <div class="destaques">
-          <button class="destaque historia${this.storyEndNew ? ' nova' : ''}" data-pick="story">
-            <span class="destaque-emoji">📖</span>${t('A história')}${this.storyEndNew ? ' ✨' : ''}
-          </button>
-          <button class="destaque poderes" data-pick="powers">
-            <span class="destaque-emoji">⬆️</span>${t('Poderes')}
-          </button>
-        </div>
-        <div class="extras">
-          <button class="mini-button" data-pick="stats">📊 ${t('Estatísticas')}</button>
-          <button class="mini-button" data-pick="about">ℹ️ ${t('Sobre')}</button>
-          <button class="mini-button aprender" data-pick="tutorial">👆 ${t('Aprender')}</button>
-          ${hasUpdate() ? `<button class="mini-button nova" data-pick="update">🔄 ${t('Atualizar')}</button>` : ''}
+        <div class="lobby">
+          ${perfil ? `
+          <button class="perfil-chip lobby-chip" data-pick="perfil" aria-label="${t('Trocar de quem está jogando')}">
+            <span class="perfil-chip-avatar">${perfil.avatar}</span>
+            <span class="perfil-chip-nome">${perfil.name ? escapeHtml(perfil.name) : t('Amiguinho')}</span>
+            <span class="perfil-chip-trocar">🔀</span>
+          </button>` : ''}
+          <div class="lobby-logo" role="img" aria-label="UnicornRush">
+            <span class="lobby-logo-uni" aria-hidden="true">${letras}</span>
+            <span class="lobby-logo-rush" aria-hidden="true">Rush</span>
+          </div>
+          <div class="lobby-rail esq">
+            ${bolha('story', '📖', t('A história'), `historia${this.storyEndNew ? ' nova' : ''}`, this.storyEndNew ? '✨' : '')}
+            ${bolha('powers', '⬆️', t('Poderes'), 'poderes')}
+          </div>
+          <div class="lobby-palco">
+            ${brilhos}
+            <h1 class="lobby-fala">${t('Vamos correr?')}</h1>
+          </div>
+          <div class="lobby-rail dir">
+            ${bolha('stats', '📊', t('Estatísticas'), 'mini')}
+            ${bolha('about', 'ℹ️', t('Sobre'), 'mini')}
+            ${bolha('tutorial', '👆', t('Aprender'), 'mini aprender')}
+            ${hasUpdate() ? bolha('update', '🔄', t('Atualizar'), 'mini nova') : ''}
+          </div>
+          <div class="picks">
+            <button class="pick figurinha unicornio" data-pick="character" aria-label="${t('Trocar de unicórnio')}">
+              <img class="pick-face" src="${retratos[this.character.id]}" alt="" />
+              <span class="pick-name">${this.character.name}</span>
+              <span class="pick-troca" aria-hidden="true">🔄</span>
+            </button>
+            <button class="pick figurinha pista" data-pick="track" aria-label="${t('Trocar de pista')}">
+              <img class="pick-face" src="${cenarios[this.track.id]}" alt="" />
+              <span class="pick-name">${this.track.name}</span>
+              <span class="pick-troca" aria-hidden="true">🔄</span>
+            </button>
+            <button class="pick figurinha modo" data-pick="mode" aria-label="${t('Trocar de brincadeira')}">
+              <span class="pick-emoji">${modo.emoji}${selo}</span>
+              <span class="pick-name">${modo.name}</span>
+              <span class="pick-troca" aria-hidden="true">🔄</span>
+            </button>
+          </div>
         </div>
       `,
       buttons: [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
@@ -3357,9 +3389,18 @@ export class Game {
     // embaixo do cartão.
     const previewZoom = preview ? (this.portrait ? 0.88 : 0.72) : 1;
     const previewLook = preview ? (this.portrait ? 5.0 : 3.4) : 1.5;
-    this.camera.position.y += (this.camView.height * (preview ? 0.95 : 1) + this.player.y * 0.35 - this.camera.position.y) * follow;
-    this.camera.position.z += (this.camView.distance * previewZoom - this.camera.position.z) * follow;
-    this.camera.lookAt(this.player.x * 0.25, previewLook + this.player.y * 0.3, preview ? -3 : -8);
+    const lobby = preview && this.screen === 'home'
+      ? LOBBY_CAMERA[this.portrait ? 'portrait' : 'landscape']
+      : null;
+    const alturaAlvo = lobby ? lobby.height : this.camView.height * (preview ? 0.95 : 1);
+    const recuo = lobby?.aspect ? THREE.MathUtils.clamp(lobby.aspect / this.camera.aspect, 1, 1.6) : 1;
+    // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
+    // medida, senão as asas deles invadiam as bolhas das laterais.
+    const escala = this.character.scale || 1;
+    const distanciaAlvo = lobby ? lobby.distance * recuo * escala : this.camView.distance * previewZoom;
+    this.camera.position.y += (alturaAlvo + this.player.y * 0.35 - this.camera.position.y) * follow;
+    this.camera.position.z += (distanciaAlvo - this.camera.position.z) * follow;
+    this.camera.lookAt(this.player.x * 0.25, (lobby ? lobby.look : previewLook) + this.player.y * 0.3, preview ? -3 : -8);
 
     this.renderer.render(this.scene, this.camera);
   }
