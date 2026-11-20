@@ -1284,20 +1284,41 @@ Todas as animações param com *reduzir movimento* ligado no aparelho.
 
 Cada figura abre uma tela só, com **todas as opções à vista**:
 
-- **Quem vai correr?** — os seis retratos numa grade. Tocar num retrato já
-  troca o modelo 3D atrás do cartão, sem confirmar nada; tocar de novo em
-  quem já está escolhido conta a historinha dele;
+- **Quem vai correr?** — todos os retratos numa grade. Tocar num retrato
+  abre a ficha dele — a historinha, o poder e as pistas rápidas —, com um
+  botão só embaixo: ✅ escolher, 🔑 trocar chaves ou 🗺️ buscar chaves;
 - **Por onde vamos?** — a mesma tela, com o mesmo gesto: tocar numa
-  miniatura troca o cenário ao vivo, e tocar de novo mostra a música da
-  pista;
+  miniatura abre a ficha da pista, com a música dela e quem corre mais
+  rápido ali;
 - **Como vamos brincar?** — os três modos em cards que mostram *como é* cada
   um: a pista limpa do Livre, o mini-mapa das doze fases da pista (cheio = feita,
   contornado = aberta) e a pista cheia do Desafio. A velocidade do Desafio
   (🐢 Devagarinho, 🌞 Normal, ⚡ Voando) abre dentro do próprio card, sem
   outra tela.
 
-O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto do
-cartão.
+O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto da
+tela.
+
+Essas telas de escolha — e também a ficha de cada unicórnio ou pista, o 3D
+e a grade das fases — seguem o estilo do lobby. Não há cartão no meio da
+tela: a escolha mora numa **bandeja** presa embaixo (com o celular deitado,
+à direita), e o resto é palco, com o unicórnio escolhido à vista. O título
+é uma **fita** colada na borda da bandeja, como o "RUSH" do logo; o ⬅️ e a
+carteira de chaves vão para os cantos; e os retratos viram **figurinhas**
+tortinhas — rosa para unicórnio, azul para pista —, com a escolhida na cor
+cheia, reta, com um ✅ na quina e um anel dourado pulsando. As trancadas
+ficam num lilás acinzentado, com o cadeado numa bolinha. As brincadeiras
+têm uma cor cada (Livre rosa, Fases azul, Desafio amarelo), as
+velocidades viram bolhas, e o JOGAR tem o mesmo arco-íris do lobby. Nas
+fases, a próxima a jogar chama em rosa e as feitas ficam douradas.
+
+A bandeja tem uma altura em cada tela (a grade de 22 retratos é alta, a
+das brincadeiras é baixa), então a câmera dessas telas é **calculada**: o
+`Game.enquadrarEscolha` lê onde a bandeja está (o `ui.palco()`, medido com
+um `ResizeObserver`) e põe o unicórnio no meio da faixa livre, longe o
+bastante para ele caber nela. Na ficha e no 3D o retrato é de quem está
+sendo olhado — que pode não ser o escolhido —, então o unicórnio do palco
+sai de cena.
 
 As duas bolhas grandes da esquerda são as que valem um botão de verdade
 mesmo sem ser o de jogar: **📖 A história** (roxa, reabre o livro; ver *A
@@ -1310,9 +1331,10 @@ dourado (a mesma linguagem do ⚡ pedindo toque).
 As miúdas da direita são de adulto, e **instalar** sai do caminho da criança:
 mora atrás do **👑**, no canto oposto ao perfil, que só abre segurando o dedo.
 
-As outras telas continuam em cartão, com uma faixinha de arco-íris pendurada
-no alto (o mesmo arco-íris do logo) e o botão grande de cada uma com um
-reflexo de luz passando de tempos em tempos.
+As outras telas (estatísticas, sobre, cantinho dos adultos, perfis…)
+continuam em cartão, com uma faixinha de arco-íris pendurada no alto (o
+mesmo arco-íris do logo) e o botão grande de cada uma com um reflexo de
+luz passando de tempos em tempos.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
 avisa, em vez de ignorar (toque que não faz nada parece defeito). No cantinho
