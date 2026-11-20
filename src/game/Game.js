@@ -56,11 +56,10 @@ const LOBBY_CAMERA = {
   portrait: { height: 2.4, distance: 9.4, look: 1.0 },
   landscape: { height: 2.0, distance: 5.2, look: 0.9, aspect: 2.2 },
 };
-// Nas telas de escolha a câmera é calculada (ver enquadrarEscolha): estes
+// Nas telas em bandeja a câmera é calculada (ver enquadrarBandeja): estes
 // são só os parâmetros — a altura dela, os pixels do topo que são dos
 // botões, quanto da faixa livre o unicórnio ocupa e os limites da distância.
-const ESCOLHA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto: 4.5, longe: 22 };
-const TELAS_DE_ESCOLHA = new Set(['character', 'track', 'mode', 'sheet', 'viewer', 'levels']);
+const BANDEJA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto: 4.5, longe: 22 };
 // Na ficha e no 3D a figura é de quem está sendo olhado, que pode não ser
 // o escolhido: o unicórnio do palco sai de cena, senão seriam dois.
 const FICHAS = new Set(['sheet', 'viewer']);
@@ -783,7 +782,6 @@ export class Game {
     this.ui.showOverlay({
       // O nome da pista no título: cada pista tem o seu caminho de fases, e
       // é preciso ficar claro em qual delas a criança está.
-      escolha: true,
       title: t('Fases · {emoji} {pista}', { emoji: this.track.emoji, pista: this.track.name }),
       html: `<div class="levels-grid">${tiles}</div>`,
       back: () => this.showModePicker(),
@@ -1170,7 +1168,6 @@ export class Game {
     }).join('');
 
     this.ui.showOverlay({
-      escolha: true,
       hint: true,
       title: t('Como vamos brincar?'),
       html: `<div class="mode-list">${cards}</div>`,
@@ -1483,7 +1480,6 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
-      escolha: true,
       hint: true,
       title: t('Quem vai correr?'),
       html: this.gridHtml('character'),
@@ -1655,7 +1651,6 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
-      escolha: true,
       title: oculto ? '❓ ???' : `${item.emoji} ${item.name}`,
       html: `
         <div class="shop">
@@ -1703,7 +1698,6 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
-      escolha: true,
       title: `${item.emoji} ${item.name}`,
       html: '<div class="viewer-vaga"></div>'
         + `<p class="viewer-dica">${t('gire com o dedo ou o mouse')}</p>`,
@@ -1729,16 +1723,16 @@ export class Game {
     this.viewer = null;
   }
 
-  // A câmera das telas de escolha: põe o unicórnio no meio do pedaço de
+  // A câmera das telas em bandeja: põe o unicórnio no meio do pedaço de
   // palco que a bandeja deixa livre — em pé, a faixa entre os botões do topo
   // e a fita do título; deitado, a parte à esquerda da bandeja —, e longe o
   // bastante para ele caber ali. A conta parte de onde a bandeja está de
   // verdade (ver ui.palco): ela tem uma altura em cada tela, e números fixos
   // deixavam o unicórnio escondido atrás da grade de 22 retratos.
-  enquadrarEscolha() {
+  enquadrarBandeja() {
     const palco = this.ui.palco();
     if (!palco) return null;
-    const { height: h, topo, fita, preenche, perto, longe } = ESCOLHA_CAMERA;
+    const { height: h, topo, fita, preenche, perto, longe } = BANDEJA_CAMERA;
     const { top, left, largura, altura } = palco;
     const meiaV = Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2));
     const meiaH = meiaV * this.camera.aspect;
@@ -1930,7 +1924,6 @@ export class Game {
 
     this.ui.showOverlay({
       picker: true,
-      escolha: true,
       hint: true,
       title: t('Por onde vamos?'),
       // A legenda vai no `text`, que fica acima da grade e fora da área que
@@ -3444,8 +3437,8 @@ export class Game {
     // embaixo do cartão.
     const previewZoom = preview ? (this.portrait ? 0.88 : 0.72) : 1;
     const previewLook = preview ? (this.portrait ? 5.0 : 3.4) : 1.5;
-    // O lobby e as telas de escolha têm enquadramento próprio (ver
-    // LOBBY_CAMERA e ESCOLHA_CAMERA).
+    // O lobby e as telas em bandeja têm enquadramento próprio (ver
+    // LOBBY_CAMERA e enquadrarBandeja).
     let lobby = null;
     if (preview && this.screen === 'home') {
       const base = LOBBY_CAMERA[this.portrait ? 'portrait' : 'landscape'];
@@ -3453,8 +3446,8 @@ export class Game {
       // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
       // medida, senão as asas deles invadiam as bolhas das laterais.
       lobby = { ...base, distance: base.distance * recuo * (this.character.scale || 1) };
-    } else if (preview && TELAS_DE_ESCOLHA.has(this.screen)) {
-      lobby = this.enquadrarEscolha();
+    } else if (preview) {
+      lobby = this.enquadrarBandeja();
     }
     this.unicorn.visible = !(preview && FICHAS.has(this.screen));
     const lado = lobby?.lado || 0;

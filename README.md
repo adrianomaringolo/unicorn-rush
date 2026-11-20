@@ -1300,7 +1300,8 @@ O ✅ **Pronto** volta para o hub. O **⬅️** fica sempre no mesmo canto da
 tela.
 
 Essas telas de escolha — e também a ficha de cada unicórnio ou pista, o 3D
-e a grade das fases — seguem o estilo do lobby. Não há cartão no meio da
+e a grade das fases — seguem o estilo do lobby (e as outras telas também:
+ver logo abaixo). Não há cartão no meio da
 tela: a escolha mora numa **bandeja** presa embaixo (com o celular deitado,
 à direita), e o resto é palco, com o unicórnio escolhido à vista. O título
 é uma **fita** colada na borda da bandeja, como o "RUSH" do logo; o ⬅️ e a
@@ -1314,7 +1315,7 @@ fases, a próxima a jogar chama em rosa e as feitas ficam douradas.
 
 A bandeja tem uma altura em cada tela (a grade de 22 retratos é alta, a
 das brincadeiras é baixa), então a câmera dessas telas é **calculada**: o
-`Game.enquadrarEscolha` lê onde a bandeja está (o `ui.palco()`, medido com
+`Game.enquadrarBandeja` lê onde a bandeja está (o `ui.palco()`, medido com
 um `ResizeObserver`) e põe o unicórnio no meio da faixa livre, longe o
 bastante para ele caber nela. Na ficha e no 3D o retrato é de quem está
 sendo olhado — que pode não ser o escolhido —, então o unicórnio do palco
@@ -1331,10 +1332,21 @@ dourado (a mesma linguagem do ⚡ pedindo toque).
 As miúdas da direita são de adulto, e **instalar** sai do caminho da criança:
 mora atrás do **👑**, no canto oposto ao perfil, que só abre segurando o dedo.
 
-As outras telas (estatísticas, sobre, cantinho dos adultos, perfis…)
-continuam em cartão, com uma faixinha de arco-íris pendurada no alto (o
-mesmo arco-íris do logo) e o botão grande de cada uma com um reflexo de
-luz passando de tempos em tempos.
+O mesmo vale para **todas as outras telas** — os resultados da corrida
+(fase completa, pista vencida, "Quase!", fim da aula), a pausa, o convite
+de versão nova, o cantinho dos adultos, os perfis, o idioma, os convites,
+as estatísticas, o sobre e os poderes: a bandeja é o padrão de toda tela
+que não é o lobby nem o livro da história (o `ui.showOverlay` liga a
+classe `bandeja` sozinho). Título comprido quebra a fita em duas linhas,
+em vez de ser cortado. A vitória de uma pista inteira continua com a
+bandeja de borda de arco-íris e o brilho dourado. Com o jogo parado no
+menu, o unicórnio aparece no palco; na pausa e nos resultados, o palco
+mostra a pista onde a corrida parou. O botão grande de cada tela tem um
+reflexo de luz passando de tempos em tempos.
+
+O livro da história fica de fora de propósito: ele é a página inteira de
+um livro, com a figura sangrando até a borda — outro objeto, não uma
+bandeja.
 
 Todo toque faz som, inclusive a fase que ainda não abriu — ela chacoalha e
 avisa, em vez de ignorar (toque que não faz nada parece defeito). No cantinho
