@@ -614,16 +614,9 @@ html, body {
 
 #overlay-text[hidden], #overlay-extra[hidden], #overlay-buttons[hidden] { display: none; }
 
-/* --- Escolha do personagem -------------------------------------------- */
-/* --- Hub: a tela de onde tudo sai ------------------------------------- */
-/* O botão de jogar vem antes das figuras, e as figuras são o único jeito de
-   trocar alguma coisa — cada uma abre a grade daquilo. */
-.card.home .brand { order: 0; }
-.card.home h1, .card.home #overlay-text { order: 1; }
-.card.home #overlay-buttons { order: 2; }
-.card.home #overlay-extra { order: 3; }
-.card.home .hint { order: 4; }
-
+/* --- As três figuras do hub (unicórnio, pista, brincadeira) ----------- */
+/* A base delas; o visual de figurinha do lobby fica lá embaixo, em
+   "O lobby". */
 .picks {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -676,53 +669,6 @@ html, body {
   white-space: nowrap;
 }
 
-/* A história e os poderes são as duas coisas que valem um botão de
-   verdade, mesmo sem ser o de jogar: uma é o porquê do jogo, a outra é o
-   que segurar a atenção de quem já tem tudo. Preenchidos e coloridos, e
-   não desbotados como a fileira miúda logo abaixo. */
-.destaques {
-  display: flex;
-  gap: clamp(6px, 2vw, 10px);
-  width: 100%;
-  margin-top: clamp(10px, 3vw, 16px);
-}
-.destaque {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  border-radius: 16px;
-  padding: clamp(9px, 2.6vw, 13px) 6px;
-  font: inherit;
-  font-size: clamp(13px, 3.6vw, 16px);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.destaque-emoji { font-size: 1.25em; line-height: 1; }
-.destaque.historia {
-  color: #fff;
-  background: linear-gradient(180deg, #c7a6f5, #9a6fe0);
-  box-shadow: 0 5px 0 #7247b8;
-}
-.destaque.poderes {
-  color: #6b4600;
-  background: linear-gradient(180deg, #ffd875, #ffab1f);
-  box-shadow: 0 5px 0 #c97a00;
-}
-.destaque:active { transform: translateY(3px); }
-.destaque.historia:active { box-shadow: 0 2px 0 #7247b8; }
-.destaque.poderes:active { box-shadow: 0 2px 0 #c97a00; }
-/* A história ganha novidade quando o fim dela abre (todo mundo livre): o
-   mesmo pulso do ⚡ pedindo toque, para não se perder no botão já colorido. */
-.destaque.historia.nova { animation: destaque-nova .9s ease-in-out infinite; }
-@keyframes destaque-nova {
-  0%, 100% { box-shadow: 0 5px 0 #7247b8, 0 0 0 0 rgba(255, 209, 102, .8); }
-  70%      { box-shadow: 0 5px 0 #7247b8, 0 0 0 10px rgba(255, 209, 102, 0); }
-}
 
 /* --- Perfis: mais de uma criança no mesmo aparelho ---------------------- */
 
@@ -878,47 +824,6 @@ html, body {
 }
 .perfil-tile-editar:active { transform: scale(.9); }
 
-/* Estatísticas e "sobre" ficam à mão, mas miúdos: são de adulto, e não
-   podem disputar o olho com o botão de jogar. */
-.extras {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: clamp(10px, 3vw, 16px);
-}
-.mini-button {
-  border: 2px solid #e9dcf7;
-  background: #fff;
-  border-radius: 999px;
-  padding: 5px 13px;
-  font: inherit;
-  font-size: clamp(10.5px, 2.9vw, 12.5px);
-  font-weight: 600;
-  color: var(--purple);
-  opacity: .75;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.mini-button:active { transform: scale(.94); }
-/* O de aprender é o único da fileira que *faz* alguma coisa — os outros
-   abrem informação. Por isso é tingido e não desbotado: numa tela estreita
-   ele cai numa linha só para ele, e assim a quebra parece intenção, que é o
-   que é. */
-.mini-button.aprender {
-  border-color: #ffc9de;
-  background: #fff0f6;
-  color: var(--pink);
-  opacity: 1;
-}
-
-/* O de atualizar chama atenção, porque só existe quando há o que atualizar. */
-.mini-button.nova {
-  border-color: #ffd166;
-  background: #fff6dd;
-  color: #b07a12;
-  opacity: 1;
-}
 
 /* A legenda das grades fica logo abaixo do título, acima do bloco que rola:
    é o texto que diz quem está escolhido e de quem é o ⚡ das pistas. */
@@ -1416,6 +1321,9 @@ html, body {
 /* O botão que faz a coisa acontecer (jogar, pronto) é o maior da tela e o
    único desse tamanho — não dá para confundir com os outros. */
 .big-button.huge {
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #fff;
   font-size: clamp(24px, 8vw, 36px);
   padding: clamp(14px, 4vw, 20px) clamp(24px, 7vw, 40px);
   letter-spacing: .02em;
@@ -1425,6 +1333,43 @@ html, body {
   margin: clamp(12px, 3.6vw, 22px) 0;
 }
 .big-button.huge:active { transform: translateY(5px); box-shadow: 0 3px 0 #d63e6d; }
+/* Um reflexo de luz que passa pelo botão de tempos em tempos — o botão
+   principal parece de verdade, brilhante, e chama o dedo sem piscar. */
+.big-button.huge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 28%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  animation: huge-reflexo 3.2s ease-in-out infinite;
+}
+@keyframes huge-reflexo {
+  0%, 55% { left: -45%; }
+  100%    { left: 130%; }
+}
+
+/* Uma faixinha de arco-íris pendurada no alto de cada cartão: o mesmo
+   arco-íris do logo e da barra de carregamento, para os menus parecerem
+   do mesmo jogo. O cartão de vitória já tem a borda inteira de arco-íris,
+   e o livro é só o livro. */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  translate: -50% 0;
+  width: 42%;
+  height: 9px;
+  border-radius: 0 0 9px 9px;
+  background: linear-gradient(90deg, #ff7b9d, #ffb26b, #ffe36b, #8ce99a, #74c0fc, #c09cff);
+  pointer-events: none;
+}
+.card.vitoria::before,
+.card.livro::before { display: none; }
 
 /* Tela baixa e larga (celular deitado, janela pequena): tudo encolhe e os
    botões ficam lado a lado, para o menu caber sem rolar. */
@@ -1462,8 +1407,6 @@ html, body {
   .level-tile { min-height: 50px; padding: 5px 2px; border-width: 2px; }
   .corner-button { width: 36px; height: 36px; font-size: 16px; border-width: 2px; }
   .big-button.huge { font-size: 20px; padding: 9px 22px; margin: 6px 0; }
-  .extras { margin-top: 6px; gap: 6px; }
-  .mini-button { padding: 3px 10px; font-size: 10px; }
   .card .hint { margin-top: 6px; font-size: 10.5px; }
   .stats-grid { grid-template-columns: repeat(6, 1fr); }
   .stat { padding: 5px 2px 4px; border-radius: 12px; }
@@ -1544,9 +1487,6 @@ html, body {
   .card h1 { font-size: clamp(24px, 7vw, 34px); }
   .card p { font-size: clamp(13px, 3.6vw, 16px); line-height: 1.35; }
   .levels-grid { gap: 7px; }
-  /* O cartão do hub é curtinho de propósito: o unicórnio girando tem que
-     aparecer embaixo dele. */
-  .card.home { max-height: 72vh; max-height: 72dvh; max-height: calc(var(--vh1, 1vh) * 72); }
 }
 
 /* Celular em pé e baixinho (iPhone SE e parecidos): aqui ver os seis de uma
@@ -2506,4 +2446,497 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   #contagem.pop { animation: none; }
+}
+
+/* --- O lobby: a tela inicial ------------------------------------------- */
+/* A tela inicial não é mais um cartão: é um palco. O unicórnio 3D escolhido
+   fica no meio (a câmera enquadra ele ali, ver LOBBY_CAMERA no Game.js) e o
+   resto se arruma em volta, como no saguão de um jogo de verdade — o logo em
+   cima, bolhas redondas nas laterais, as três figurinhas e o JOGAR embaixo.
+   Antes um cartão branco tampava justamente o personagem que a criança
+   tinha acabado de escolher.
+
+   Tudo aqui vem prefixado com `#stage.lobby` (a classe que o ui.js liga só
+   no hub): é o que vence as regras do cartão comum, inclusive as das
+   media queries lá de cima, sem precisar de `!important`. */
+
+#stage.lobby #hud,
+#stage.lobby #touch-controls { opacity: 0; visibility: hidden; }
+
+#stage.lobby #overlay {
+  align-content: stretch;
+  grid-template-rows: minmax(100%, auto);
+  padding:
+    calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right))
+    calc(10px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+  /* Nada de véu roxo por cima de tudo: só as bordas escurecem um pouco,
+     para o que fica nelas (bolhas, figurinhas) ler bem sobre qualquer
+     pista, e o meio — o unicórnio — fica limpo. */
+  background: radial-gradient(ellipse 80% 62% at 50% 46%, rgba(122, 78, 199, 0) 52%, rgba(122, 78, 199, .34) 100%);
+}
+
+#stage.lobby .card.home {
+  width: 100%;
+  max-width: 1100px;
+  max-height: none;
+  min-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+#stage.lobby .card.home::before { display: none; }
+#stage.lobby .card.home #overlay-extra {
+  order: 1;
+  flex: 1 1 auto;
+  display: flex;
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+#stage.lobby .card.home #overlay-buttons {
+  order: 2;
+  width: min(460px, 100%);
+  margin-top: clamp(6px, 1.6vh, 14px);
+  overflow: visible;
+  background: none;
+}
+
+/* A marca do cartão vira só a carteira de chaves (e o selo de teste), ao
+   lado da coroa: o nome do jogo já está grandão no logo. */
+#stage.lobby .card.home .brand {
+  position: absolute;
+  top: clamp(6px, 1.6vw, 10px);
+  right: calc(clamp(40px, 11vw, 48px) + clamp(12px, 3vw, 18px));
+  height: clamp(40px, 11vw, 48px);
+  font-size: 0;
+  opacity: 1;
+}
+#stage.lobby .card.home .brand-mark { display: none; }
+
+.lobby {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "chip  chip  chip"
+    "logo  logo  logo"
+    "esq   palco dir"
+    "picks picks picks";
+  column-gap: clamp(6px, 2vw, 16px);
+  row-gap: clamp(4px, 1.2vh, 12px);
+  align-items: center;
+}
+
+#stage.lobby .lobby-chip {
+  grid-area: chip;
+  justify-self: start;
+  align-self: start;
+  margin: 0;
+  border-width: 3px;
+  box-shadow: 0 4px 0 rgba(122, 78, 199, .28);
+}
+
+/* O logo: "Unicorn" em letras de bala de goma, cada uma de uma cor do
+   arco-íris, pulando em onda; e o "Rush" numa fita torta embaixo, com
+   risquinhos de velocidade. As medidas do contorno vão em `em` para
+   acompanhar o tamanho da letra em qualquer tela. */
+.lobby-logo {
+  grid-area: logo;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+}
+.lobby-logo-uni {
+  display: flex;
+  font-size: clamp(42px, min(14vw, 8.5vh), 84px);
+  font-weight: 700;
+  line-height: 1;
+}
+.lobby-logo-uni span {
+  display: inline-block;
+  color: var(--cor);
+  text-shadow:
+    .05em 0 0 #fff, -.05em 0 0 #fff, 0 .05em 0 #fff, 0 -.05em 0 #fff,
+    .035em .035em 0 #fff, -.035em -.035em 0 #fff, .035em -.035em 0 #fff, -.035em .035em 0 #fff,
+    0 .11em 0 rgba(122, 78, 199, .5);
+  animation: logo-pula 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * .11s);
+}
+.lobby-logo-uni span:nth-child(1) { --cor: #ff5d8f; }
+.lobby-logo-uni span:nth-child(2) { --cor: #ff8a3c; }
+.lobby-logo-uni span:nth-child(3) { --cor: #ffbf1f; }
+.lobby-logo-uni span:nth-child(4) { --cor: #3fc06a; }
+.lobby-logo-uni span:nth-child(5) { --cor: #36a5f2; }
+.lobby-logo-uni span:nth-child(6) { --cor: #8f6bf0; }
+.lobby-logo-uni span:nth-child(7) { --cor: #f25cc4; }
+@keyframes logo-pula {
+  0%, 55%, 100% { translate: 0 0; rotate: 0deg; }
+  18%           { translate: 0 -.16em; rotate: -6deg; }
+  34%           { translate: 0 .02em; rotate: 3deg; }
+}
+
+.lobby-logo-rush {
+  position: relative;
+  margin-top: -.15em;
+  padding: .1em .85em .16em;
+  font-size: clamp(16px, min(5.4vw, 3.4vh), 32px);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(90deg, #ff5d8f, #b46cf0);
+  border: 3px solid #fff;
+  border-radius: 999px;
+  rotate: -5deg;
+  box-shadow: 0 4px 0 rgba(122, 78, 199, .45);
+}
+/* Risquinhos de velocidade saindo de trás da fita. */
+.lobby-logo-rush::before {
+  content: '';
+  position: absolute;
+  right: calc(100% + .3em);
+  top: 22%;
+  width: 1.5em;
+  height: 56%;
+  background: repeating-linear-gradient(to bottom, #fff 0 .14em, transparent .14em .3em);
+  border-radius: 4px;
+  -webkit-mask-image: linear-gradient(to left, #000, transparent);
+  mask-image: linear-gradient(to left, #000, transparent);
+}
+
+/* O palco: o miolo vazio onde o unicórnio aparece. Só tem o balão de fala
+   e umas estrelinhas piscando — nada que tape o personagem. */
+.lobby-palco {
+  grid-area: palco;
+  position: relative;
+  align-self: stretch;
+  min-height: clamp(130px, 28vh, 420px);
+  pointer-events: none;
+}
+#stage.lobby .lobby-fala {
+  position: absolute;
+  left: 50%;
+  top: 2%;
+  translate: -50% 0;
+  rotate: -3deg;
+  margin: 0;
+  padding: .32em .95em .4em;
+  font-size: clamp(16px, min(4.8vw, 3vh), 24px);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--pink);
+  text-shadow: none;
+  white-space: nowrap;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 rgba(122, 78, 199, .28);
+  animation: fala-entra .55s cubic-bezier(.3, 1.6, .5, 1) both, fala-boia 3.2s ease-in-out .55s infinite;
+}
+/* O bico do balão, apontando para o unicórnio embaixo. */
+#stage.lobby .lobby-fala::after {
+  content: '';
+  position: absolute;
+  left: 46%;
+  bottom: -11px;
+  width: 22px;
+  height: 14px;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 0, 25% 100%);
+}
+/* Em pé o palco é alto e o unicórnio fica no meio dele: o balão desce
+   para perto da cabeça, em vez de ficar colado no logo. */
+@media (orientation: portrait) {
+  #stage.lobby .lobby-fala { top: 16%; }
+}
+@keyframes fala-entra {
+  from { scale: 0; }
+  to   { scale: 1; }
+}
+@keyframes fala-boia {
+  0%, 100% { translate: -50% 0; }
+  50%      { translate: -50% -6px; }
+}
+
+.lobby-brilho {
+  position: absolute;
+  width: clamp(12px, 3.4vw, 20px);
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #fff, #ffe36b);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  opacity: 0;
+  animation: brilha 2.4s ease-in-out infinite;
+}
+@keyframes brilha {
+  0%, 100% { opacity: 0; scale: .3; rotate: 0deg; }
+  50%      { opacity: 1; scale: 1;  rotate: 90deg; }
+}
+
+/* As bolhas das laterais. A da esquerda tem as duas que valem um botão de
+   verdade (a história e os poderes), grandes e coloridas; a da direita, as
+   miúdas de adulto (estatísticas, sobre) e o aprender. */
+.lobby-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 2vh, 18px);
+}
+.lobby-rail.esq { grid-area: esq; }
+.lobby-rail.dir { grid-area: dir; }
+
+.bolha {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+  animation: bolha-boia 3.4s ease-in-out infinite;
+}
+.lobby-rail .bolha:nth-child(2) { animation-delay: .6s; }
+.lobby-rail .bolha:nth-child(3) { animation-delay: 1.2s; }
+.lobby-rail .bolha:nth-child(4) { animation-delay: 1.8s; }
+@keyframes bolha-boia {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -4px; }
+}
+.bolha-icone {
+  --sombra: rgba(122, 78, 199, .3);
+  position: relative;
+  width: clamp(44px, min(15vw, 11vh), 72px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  display: grid;
+  place-items: center;
+  font-size: clamp(20px, min(6.6vw, 5vh), 32px);
+  line-height: 1;
+  box-shadow: 0 5px 0 var(--sombra);
+  transition: transform .12s, box-shadow .12s;
+}
+/* O reflexo de bolha de sabão, no alto à esquerda. */
+.bolha-icone::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 18%;
+  width: 30%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .6);
+  rotate: -30deg;
+}
+.bolha:active .bolha-icone { transform: translateY(3px); box-shadow: 0 2px 0 var(--sombra); }
+/* O ✨ de novidade, na quina da bolha (o fim da história acabou de abrir). */
+.bolha-selo {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: .62em;
+  line-height: 1;
+  padding: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(122, 78, 199, .3);
+}
+.bolha-nome {
+  font-size: clamp(11px, 3vw, 13px);
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  /* Contorno roxo: o nome fica em cima do cenário, que muda de pista para
+     pista — do céu claro do Campo ao escuro da Noite. */
+  text-shadow:
+    1.5px 0 0 #6a3fb5, -1.5px 0 0 #6a3fb5, 0 1.5px 0 #6a3fb5, 0 -1.5px 0 #6a3fb5,
+    1px 1px 0 #6a3fb5, -1px -1px 0 #6a3fb5, 1px -1px 0 #6a3fb5, -1px 1px 0 #6a3fb5,
+    0 3px 3px rgba(106, 63, 181, .5);
+}
+.bolha.historia .bolha-icone { --sombra: #7247b8; background: linear-gradient(180deg, #d2b6fa, #9a6fe0); }
+.bolha.poderes .bolha-icone { --sombra: #c97a00; background: linear-gradient(180deg, #ffe08a, #ffab1f); }
+/* A história ganha novidade quando o fim dela abre: o mesmo pulso dourado
+   que ela tinha no botão comprido. */
+.bolha.historia.nova .bolha-icone { animation: bolha-chama .9s ease-in-out infinite; }
+@keyframes bolha-chama {
+  0%, 100% { box-shadow: 0 5px 0 var(--sombra), 0 0 0 0 rgba(255, 209, 102, .85); }
+  70%      { box-shadow: 0 5px 0 var(--sombra), 0 0 0 12px rgba(255, 209, 102, 0); }
+}
+.bolha.mini .bolha-icone {
+  width: clamp(36px, min(11.5vw, 8vh), 54px);
+  font-size: clamp(16px, min(5vw, 3.6vh), 24px);
+  border-width: 3px;
+  background: #fff;
+}
+.bolha.aprender .bolha-icone { background: #ffe3ee; --sombra: rgba(214, 62, 109, .4); }
+.bolha.nova:not(.historia) .bolha-icone { background: #fff1c4; --sombra: #c99a1f; animation: bolha-chama 1.2s ease-in-out infinite; }
+
+/* As três figurinhas: cada uma de uma cor (rosa do unicórnio, azul da
+   pista, amarelo da brincadeira), tortinhas como figurinha colada no
+   caderno, boiando devagar fora de compasso. O 🔄 da quina diz que tocar
+   ali troca. */
+#stage.lobby .picks {
+  grid-area: picks;
+  justify-self: center;
+  width: 100%;
+  max-width: 540px;
+  gap: clamp(10px, 3vw, 18px);
+  padding: 8px 6px 2px;
+}
+#stage.lobby .figurinha {
+  --sombra: #d63e6d;
+  position: relative;
+  border: 4px solid #fff;
+  border-radius: 22px;
+  padding: 7px 6px 8px;
+  background: var(--fundo);
+  box-shadow: 0 6px 0 var(--sombra), 0 10px 18px rgba(80, 40, 140, .22);
+  rotate: var(--giro);
+  animation: figurinha-boia 3.6s ease-in-out infinite;
+  animation-delay: var(--atraso);
+}
+#stage.lobby .figurinha:active { transform: scale(.94); }
+#stage.lobby .figurinha.unicornio { --fundo: linear-gradient(165deg, #ffc4dc, #ff6f9f); --sombra: #d63e6d; --giro: -4deg; --atraso: 0s; }
+#stage.lobby .figurinha.pista     { --fundo: linear-gradient(165deg, #b5ecff, #45b0ee); --sombra: #2a7fbf; --giro: 2.5deg; --atraso: .5s; }
+#stage.lobby .figurinha.modo      { --fundo: linear-gradient(165deg, #fff0a6, #ffb52e); --sombra: #c98400; --giro: -2deg; --atraso: 1s; }
+@keyframes figurinha-boia {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -5px; }
+}
+/* A figura fica numa janelinha branca, como foto colada na figurinha. */
+#stage.lobby .figurinha .pick-face,
+#stage.lobby .figurinha .pick-emoji {
+  background: rgba(255, 255, 255, .9);
+  border-radius: 14px;
+}
+#stage.lobby .figurinha .pick-emoji { display: block; width: 100%; }
+#stage.lobby .figurinha .pick-name {
+  color: #fff;
+  font-size: clamp(13px, 3.7vw, 17px);
+  font-weight: 700;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .2);
+}
+#stage.lobby .figurinha.modo .pick-name { color: #7a4a00; text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
+.pick-troca {
+  position: absolute;
+  top: -11px;
+  right: -11px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  box-shadow: 0 2px 0 rgba(122, 78, 199, .3);
+}
+
+/* O JOGAR do lobby é o maior botão do jogo: arco-íris andando por dentro e
+   respirando, para não haver dúvida de por onde se começa. */
+#stage.lobby .big-button.huge {
+  margin: 0;
+  font-size: clamp(28px, min(9vw, 5.4vh), 46px);
+  padding: clamp(10px, 1.8vh, 18px) 24px;
+  background: linear-gradient(100deg, #ff5d8f, #ff9a3c, #ffcf3c, #46c97a, #3fa9f5, #a777f5, #ff5d8f);
+  background-size: 300% 100%;
+  text-shadow: 0 2px 0 rgba(90, 30, 110, .45);
+  animation: jogar-arco 6s linear infinite, jogar-respira 1.8s ease-in-out infinite;
+}
+@keyframes jogar-arco {
+  to { background-position: -300% 0; }
+}
+@keyframes jogar-respira {
+  0%, 100% { scale: 1; }
+  50%      { scale: 1.04; }
+}
+
+/* Deitado sobra largura e falta altura: as figurinhas descem em coluna à
+   esquerda, as bolhas vão para a coluna da direita e o unicórnio fica no
+   meio, com o JOGAR embaixo dele. */
+@media (orientation: landscape) {
+  .lobby {
+    grid-template-columns: clamp(150px, 24vw, 280px) minmax(0, 1fr) clamp(150px, 24vw, 280px);
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "chip  logo  ."
+      "picks palco esq"
+      "picks palco dir";
+  }
+  .lobby-logo { flex-direction: row; gap: .4em; align-items: center; }
+  .lobby-logo-uni { font-size: clamp(34px, min(8vw, 11vh), 76px); }
+  .lobby-logo-rush { margin-top: 0; font-size: clamp(14px, min(3vw, 5vh), 30px); }
+  #stage.lobby .lobby-fala { top: 0; }
+  .lobby-logo-rush::before { display: none; }
+  #stage.lobby .card.home #overlay-buttons { margin-top: 4px; }
+  #stage.lobby .big-button.huge { font-size: clamp(22px, 7vh, 40px); padding: clamp(6px, 1.6vh, 16px) 24px; }
+  /* A figura das figurinhas tem altura pela tela (e um teto): é ela que
+     define o tamanho de cada figurinha. No tablet, sem o teto, viravam três
+     blocos enormes; num celular baixinho, sem medir pela altura, a coluna
+     passava da tela e empurrava o JOGAR para fora. */
+  #stage.lobby .picks {
+    grid-template-columns: 1fr;
+    align-content: center;
+    align-self: stretch;
+    max-width: none;
+    padding: 4px 8px 4px 2px;
+    gap: clamp(8px, 2.4vh, 16px);
+  }
+  #stage.lobby .figurinha {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 0;
+    padding: 5px 10px 5px 6px;
+  }
+  #stage.lobby .figurinha .pick-face,
+  #stage.lobby .figurinha .pick-emoji {
+    width: auto;
+    height: clamp(40px, 15vh, 96px);
+    aspect-ratio: 1;
+    flex: none;
+  }
+  #stage.lobby .figurinha .pick-emoji {
+    display: grid;
+    place-items: center;
+    font-size: clamp(26px, 7vh, 46px);
+    line-height: 1;
+  }
+  #stage.lobby .figurinha .pick-name { white-space: normal; text-align: left; }
+  .lobby-rail.esq { flex-direction: row; justify-content: center; align-self: end; gap: clamp(10px, 2.4vw, 22px); }
+  .lobby-rail.dir {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+    align-self: start;
+    gap: clamp(6px, 1.6vh, 12px) clamp(12px, 2.6vw, 24px);
+  }
+}
+
+/* Celular em pé e baixinho (iPhone SE e parecidos): tudo um tico menor
+   para o palco não sumir entre o logo e as figurinhas. */
+@media (orientation: portrait) and (max-height: 720px) {
+  .lobby-logo-uni { font-size: clamp(38px, 12vw, 60px); }
+  #stage.lobby .figurinha .pick-face,
+  #stage.lobby .figurinha .pick-emoji { height: clamp(46px, 13vw, 64px); line-height: clamp(46px, 13vw, 64px); }
+  .lobby-rail { gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby-logo-uni span,
+  .bolha,
+  .bolha-icone,
+  #stage.lobby .figurinha,
+  #stage.lobby .lobby-fala,
+  #stage.lobby .big-button.huge { animation: none; }
+  .lobby-brilho { animation: none; opacity: .8; }
+  .big-button.huge::after { display: none; }
 }
