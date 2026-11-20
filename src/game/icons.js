@@ -5,16 +5,17 @@
 // 2021) viram quadradinho em aparelho velho. Como o jogo é para instalar no
 // celular, cada criança acabava vendo um jogo um pouco diferente.
 //
-// Aqui os ícones são arquivos nossos: Fluent Emoji, da Microsoft, na versão
-// 3D — que combina com o low-poly do jogo — reduzidos para 128px e guardados
-// em `assets/emoji/`. Licença MIT (ver assets/emoji/LICENSE).
+// Aqui os ícones são arquivos nossos, desenhados para o jogo: SVG em
+// `assets/icones/`, todos no mesmo estilo do lobby (contorno roxo, gradiente,
+// reflexo de bala de goma). Quem desenha é `scripts/icones/` — para mudar um
+// ícone, mexa lá e rode `node scripts/icones/gerar.mjs`.
 //
 // O texto do código continua escrito com emoji de verdade: quem escreve lê
 // `🔑 10` no fonte, e a troca acontece na hora de desenhar (`withIcons`).
 // Se uma imagem faltar, o `alt` é o próprio emoji — volta ao que era antes,
 // sem buraco na tela.
 
-const PASTA = './assets/emoji/';
+const PASTA = './assets/icones/';
 
 const ARQUIVOS = {
   '🥇': '1st_place_medal',
@@ -92,6 +93,22 @@ const ARQUIVOS = {
   '🌊': 'water_wave',
   '🤍': 'white_heart',
   '🗺️': 'world_map',
+  '🔄': 'counterclockwise_arrows_button',
+  '🔀': 'shuffle_tracks_button',
+  'ℹ️': 'information',
+  '❓': 'red_question_mark',
+  '➕': 'plus',
+  '✏️': 'pencil',
+  '🗑️': 'wastebasket',
+  '🗣️': 'speaking_head',
+  '👋': 'waving_hand',
+  '🎁': 'wrapped_gift',
+  '🌍': 'globe_showing_americas',
+  '🍂': 'fallen_leaf',
+  '🦜': 'parrot',
+  '🪶': 'feather',
+  '🇧🇷': 'flag_brazil',
+  '🇺🇸': 'flag_united_states',
 };
 
 // O mesmo emoji aparece com e sem o seletor de variação (U+FE0F) dependendo
@@ -112,15 +129,15 @@ const PADRAO = new RegExp(
 
 export function iconUrl(emoji) {
   const arquivo = MAPA.get(emoji);
-  return arquivo ? `${PASTA}${arquivo}.png` : null;
+  return arquivo ? `${PASTA}${arquivo}.svg` : null;
 }
 
 // Troca todo emoji conhecido de um texto pela imagem correspondente.
 export function withIcons(texto) {
   if (texto === null || texto === undefined || texto === '') return texto;
   return String(texto).replace(PADRAO, (emoji) =>
-    `<img class="fi" src="${PASTA}${MAPA.get(emoji)}.png" alt="${emoji}" draggable="false" />`);
+    `<img class="fi" src="${PASTA}${MAPA.get(emoji)}.svg" alt="${emoji}" draggable="false" />`);
 }
 
 // A lista dos arquivos, para o service worker guardar todos.
-export const ICON_FILES = [...new Set(Object.values(ARQUIVOS))].map((a) => `${PASTA}${a}.png`);
+export const ICON_FILES = [...new Set(Object.values(ARQUIVOS))].map((a) => `${PASTA}${a}.svg`);

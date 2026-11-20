@@ -546,8 +546,8 @@ export const EN = {
   'Criado por <b>Adriano Maringolo</b>': 'Created by <b>Adriano Maringolo</b>',
   'código do jogo': "the game's code",
   'versão {v}': 'version {v}',
-  'Feito com three.js · fonte Fredoka (SIL Open Font License) · ícones Fluent Emoji, da Microsoft (MIT)':
-    'Made with three.js · Fredoka font (SIL Open Font License) · Fluent Emoji icons by Microsoft (MIT)',
+  'Feito com three.js · fonte Fredoka (SIL Open Font License) · ícones desenhados para o UnicornRush':
+    'Made with three.js · Fredoka font (SIL Open Font License) · icons drawn for UnicornRush',
 
   // --- As músicas (aparecem na ficha de cada pista) --------------------------
   'Passeio no campo': 'A walk in the meadow',

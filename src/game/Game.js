@@ -2343,7 +2343,7 @@ export class Game {
             </a>
           </div>
           <p class="about-version">${t('versão {v}', { v: VERSION })}</p>
-          <p class="about-note">${t('Feito com three.js · fonte Fredoka (SIL Open Font License) · ícones Fluent Emoji, da Microsoft (MIT)')}</p>
+          <p class="about-note">${t('Feito com three.js · fonte Fredoka (SIL Open Font License) · ícones desenhados para o UnicornRush')}</p>
         </div>
       `,
       buttons: [

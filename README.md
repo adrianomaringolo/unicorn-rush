@@ -1746,18 +1746,41 @@ Windows — e os mais recentes (o 🫧 é de 2021) viram um quadradinho em apare
 velho. Como o jogo é feito para instalar no celular, cada criança acabava
 vendo um jogo um pouco diferente.
 
-Em vez disso, o jogo carrega os seus: **Fluent Emoji**, da Microsoft, na
-versão **3D** — que combina com o low-poly do resto —, reduzidos para 128px,
-passados no `pngquant` e guardados em `assets/emoji/` (56 arquivos, ~400 KB
-no total, licença MIT, incluída em `assets/emoji/LICENSE`).
+Em vez disso, o jogo carrega **ícones próprios, desenhados para ele**: 91
+SVG em `assets/icones/` (~120 KB no total), todos no mesmo estilo do lobby —
+formas gordinhas, contorno roxo-escuro arredondado, gradiente de cima para
+baixo e um reflexo branco de bala de goma. Os botões (setas, play, pause,
+✅, ➕, ℹ️…) são quadradinhos coloridos com o desenho em branco.
+
+Os ícones são **desenhados por código**, em `scripts/icones/`: `base.mjs`
+tem o kit (cores, contorno, reflexo, coração, estrela, espiral, lua
+crescente…), e os desenhos ficam em `interface.mjs`, `natureza.mjs` e
+`objetos.mjs`. Para mudar um ícone ou criar um novo, mexa lá e rode:
+
+```bash
+node scripts/icones/gerar.mjs                 # regrava assets/icones/*.svg
+node scripts/icones/gerar.mjs folha.html      # e uma folha de prova com todos
+```
+
+A folha de prova mostra cada ícone grande e, no fim, todos no tamanho do jogo
+sobre o cartão claro e sobre o roxo — é onde se vê se um desenho ainda lê em
+28px. (Foi nela que o 👆 da primeira versão, com o dedo no meio de um punho
+liso, apareceu lendo como outro gesto; agora o indicador fica na beirada da
+mão, com as juntas dos outros dedos à vista.)
+
+Antes eles eram o Fluent Emoji 3D da Microsoft em PNG; trocar por desenhos
+próprios deu ao jogo uma cara só dele e cobriu os 16 emojis que ainda
+dependiam da fonte do aparelho (🔄 🔀 ✏️ 🗑️ 🗣️ 👋 🎁 🌍 🍂 🦜 🪶 ℹ️ ❓ ➕ e as
+bandeiras 🇧🇷 🇺🇸).
 
 O código continua escrito com emoji de verdade: quem lê o fonte vê
 `🔑 ${preco}`, e a troca acontece na hora de desenhar. Quem faz isso é o
 `withIcons()` do `src/game/icons.js`, ligado nos poucos pontos por onde toda
 a tela passa — o título, o texto, o bloco livre e os botões do
 `ui.showOverlay`, mais o toast, as vidas, a carteira e os power-ups. Para
-usar um emoji novo basta baixar o arquivo dele e acrescentar uma linha na
-tabela `ARQUIVOS`.
+usar um emoji novo: desenhe o ícone em `scripts/icones/`, gere os SVG e
+acrescente uma linha na tabela `ARQUIVOS` — o `sw.js` precisa da linha do
+arquivo novo também, senão o jogo instalado abre offline sem ele.
 
 O `alt` de cada imagem é o próprio emoji: se um arquivo faltar, a tela volta
 a mostrar o emoji do sistema em vez de deixar um buraco.
@@ -1874,7 +1897,7 @@ assets/logo.png       logo do jogo (dele saem todos os ícones)
 docs/prints/          capturas das pistas usadas aqui no README
 docs/prompts-historia.md  prompts para gerar as figuras da história no ChatGPT
 assets/icons/         PNGs do ícone para instalar no aparelho
-assets/emoji/         ícones Fluent Emoji 3D (Microsoft, MIT) usados na tela
+assets/icones/        os ícones do jogo, em SVG (gerados por scripts/icones/)
 assets/story/         as nove ilustrações do livro da história (WebP)
 assets/loading/       a Uni galopando na tela de carregamento (WebP animado)
 fonts.css             fonte Fredoka hospedada localmente
@@ -1895,7 +1918,7 @@ src/
     install.js        o convite de instalar o PWA (e o passo a passo no iPhone)
     audio.js          efeitos sonoros gerados na hora (WebAudio)
     haptics.js        vibra o aparelho ao bater ou pegar power-up (Android só)
-    icons.js          troca os emoji do código pelos ícones de assets/emoji/
+    icons.js          troca os emoji do código pelos ícones de assets/icones/
     speech.js         lê os nomes em voz alta, para quem ainda não lê
     story.js          a história em nove páginas (texto, imagem e o SVG reserva)
     ui.js             ponte com o HUD e com as telas de escolha
@@ -1919,10 +1942,10 @@ scripts/gravar-uni.js    grava esses quadros no WebP do carregamento
 
 Todos os modelos 3D são gerados por código a partir de formas simples
 (esferas, cones, cápsulas) e de curvas 2D extrudadas — por isso o jogo
-carrega instantaneamente e é fácil de ajustar. As duas exceções são a fonte
-**Fredoka** (Google Fonts, SIL Open Font License 1.1) e os **ícones**
-(Fluent Emoji, MIT), ambos guardados dentro do repositório para o jogo
-funcionar sem internet.
+carrega instantaneamente e é fácil de ajustar. Os **ícones** também são
+desenhados por código (ver *Ícones*). A única exceção é a fonte **Fredoka**
+(Google Fonts, SIL Open Font License 1.1), guardada dentro do repositório
+para o jogo funcionar sem internet.
 
 ## Versão
 
