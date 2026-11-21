@@ -291,4 +291,24 @@ for (const track of TRACK_LIST) {
   console.log('recorde: distância, uma por pista e brincadeira');
 }
 
+// --- Narração gravada -------------------------------------------------------
+// Não falha: fala sem gravação ainda funciona (cai na voz do aparelho). Mas
+// avisa, para uma frase nova não ficar sem a voz da Aria sem ninguém notar —
+// o remédio é `npm run vozes`.
+{
+  const { todasAsFalas, chaveDaFala } = await import('../src/game/falas.js');
+  for (const lang of ['pt', 'en']) {
+    setIdioma(lang, { salvar: false });
+    let gravadas = {};
+    try {
+      gravadas = JSON.parse(readFileSync(new URL(`../assets/voz/${lang}/index.json`, import.meta.url))).falas || {};
+    } catch { /* sem gravação nenhuma ainda */ }
+    const falas = todasAsFalas();
+    const faltam = falas.filter((f) => !gravadas[chaveDaFala(f)]);
+    console.log(`narração ${lang}: ${falas.length - faltam.length} de ${falas.length} falas gravadas`
+      + (faltam.length ? ` — rode \`npm run vozes\` (ex.: "${faltam[0].slice(0, 50)}")` : ''));
+  }
+  setIdioma('pt', { salvar: false });
+}
+
 console.log('✅ tudo montou sem erros');

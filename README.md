@@ -291,6 +291,46 @@ mesma informação que a criança que lê recebe.
 Só aparece com a voz ligada: sem ela o botão não faria nada, e um botão que
 não faz nada é pior do que nenhum.
 
+### A voz da Aria (narração gravada)
+
+Quem lê em voz alta é a **Aria**, a narradora do jogo — a mesma voz em
+português e em inglês, alegre e jovial. As falas não são geradas na hora:
+foram **gravadas antes**, no ElevenLabs, e moram em `assets/voz/<idioma>/`,
+um mp3 por fala. O jogo só toca arquivo, então continua valendo o que a voz
+do aparelho garantia — nada sai do aparelho, não custa nada para quem joga
+e funciona offline (cada fala entra no cache do service worker na primeira
+vez que toca).
+
+- **Como o jogo acha o arquivo:** o nome é a chave do próprio texto
+  (`chaveDaFala`, FNV-1a do texto sem emoji nem HTML). Por isso todas as
+  frases são montadas em `src/game/falas.js`, pelas mesmas funções que o
+  script de gravação usa: o texto pedido é letra por letra o gravado.
+- **O que não tem gravação** — uma frase nova, ainda não gravada — cai na
+  voz do aparelho, como era antes. Nada fica mudo. O `npm run check` avisa
+  quantas falas de cada idioma estão sem gravação.
+- **Para gravar:** `npm run vozes` grava só o que falta e apaga a gravação
+  de textos que mudaram. A chave é `ELEVENLABS_API_KEY`, do ambiente ou de
+  um `.env` na raiz (fora do git). `--simular` só conta falas e caracteres;
+  `--forcar` regrava tudo (para trocar a voz ou o tom); `--idioma pt` e
+  `--limite 5` servem para testar.
+- **O tom:** as comemorações ("… é sua!", "Você venceu a pista…") vão com
+  `[excited]`, o resto com `[cheerfully]`. Em português o texto leva
+  também `[Brazilian Portuguese accent]`: a Aria é americana, e sem a marca
+  ela fala português com sotaque de fora.
+- **Pronúncia:** `PRONUNCIA`, em `scripts/vozes.mjs`, troca palavras **só no
+  texto enviado** ao ElevenLabs — a chave do arquivo continua sendo o texto
+  do jogo. Sem acento, a Aria lia "Uní"; o nome é "Úni", então em português
+  ela recebe "Úni". O `index.json` guarda o texto exato enviado de cada fala
+  (`enviados`): mudou a pronúncia, o tom ou a marca, o `npm run vozes`
+  regrava só as falas afetadas, sem precisar de `--forcar`.
+- **Tocando:** a fala sai pelo contexto de áudio do jogo, e não por um
+  `<audio>` — o contexto já foi liberado pelo primeiro toque, e o iPhone
+  recusa um `<audio>` que comece depois de um `await`. O arquivo vem por
+  `fetch` inteiro, porque o service worker não guarda resposta parcial. A
+  música abaixa enquanto a Aria fala, e cada fala nova corta a anterior.
+- **O cantinho dos adultos** não mostra mais "Trocar a voz" onde há
+  gravação: ali a voz é sempre a da Aria.
+
 ### Ver de perto e girar
 
 A ficha de cada unicórnio tem o botão **🔄 Ver em 3D**: abre o modelo de
@@ -360,7 +400,7 @@ pistas não tem mais espaço vazio (`TRACK_SLOTS`, em `tracks.js`). Só o
 | 🍭 | **Doces** | Mundo de confeitaria: chão de cobertura rosa, pista de biscoito, pirulitos, cupcakes, bengalas doces, **granulado colorido**, **pedacinhos de chocolate** espalhados pelo chão e **formigas** andando em fila pelas beiradas. Obstáculos de bala de goma, rosquinha e barra de doce. |
 | 🎩 | **Vilarejo** | Uma rua de pedra ao pôr do sol: casinhas de telhado de barro com a luz acesa na janela, lampiões, poço com telhadinho e pombos. É a **pista mansa** — pouca coisa no caminho e nenhuma barreira —, e é barata de propósito: quem mais precisa dela é quem tem menos chaves. |
 | ☁️ | **Céu** | Em cima das nuvens: chão de algodão, estrada dourada, sol grandão com raios, balões, arquinhos de arco-íris, morrinhos de nuvem e **passarinhos cruzando o céu**. Obstáculos de nuvem carregada, pipa e cacho de balões. |
-| 🍓 | **Frutas** | Pomar cheio: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, as mesmas árvores frondosas do Campo dando fruta e, espalhados pelo chão, bananas, melancias, montinhos de laranja, cachos de uva e kiwis cortados — com **abelhas** zunindo por perto. Obstáculos de fatia de melancia, abacaxi e monte de cocos. |
+| 🍓 | **Frutas** | Pomar cheio: grama, caminho de areia clara, morangos do tamanho de arbusto, laranjeiras carregadas, **parreirinhas com cachos de uva pendurados**, as mesmas árvores frondosas do Campo dando fruta e, espalhados pelo chão, bananas, melancias listradas (uma aberta ao meio), montinhos de laranja, kiwis cortados, **maçãs com uma metade cortada, cerejas e peras** — com **abelhas** zunindo por perto. Obstáculos de fatia de melancia, abacaxi e monte de cocos. |
 | 🏖️ | **Praia** | Pista de beira-mar: **um lado é areia e o outro é água**, cada um com os seus enfeites — guarda-sóis, **coqueiros** (tronco curvo feito de gomos, com folhas compridas que arqueiam para baixo), **cadeiras listradas**, castelinhos, conchas e estrelas-do-mar na areia; **barcos a vela, pranchas de surfe e boias** flutuando na água. A água tem **cristas de espuma** que sobem, descem e esticam, e o que flutua **balança junto**; na beirada, uma linha de espuma marca onde a água encontra a pista. No céu, só **gaivotas** planando. |
 | 🐠 | **Oceano** | Fundo do mar: água azul por todos os lados, trilha de areia, corais, algas, estrelas-do-mar, **cardumes de peixinhos** e **bolhas de ar subindo** — e **nenhuma nuvem**, porque debaixo da água não há céu. Aqui o unicórnio ganha uma **bolha de ar na cabeça**, para respirar debaixo d'água. Obstáculos de ouriço, concha gigante e pedra. |
 | ❄️ | **Geada** | Tudo branco e azul-gelo: pinheiros nevados, iglus, cristais de gelo e bonecos de neve, com **neve caindo de verdade** (o único bichinho do jogo que desce em vez de subir). O chão é **escorregadio** — trocar de faixa demora mais que o dobro para pegar. |
@@ -404,6 +444,60 @@ Quando a aba sai de foco — a criança troca de app ou bloqueia a tela — o
 áudio inteiro é suspenso e a corrida entra em pausa sozinha, para ninguém
 perder vida enquanto está fora.
 As melodias ficam em `src/game/music.js`, uma nota MIDI por colcheia.
+
+Os primeiros temas eram um laço de 4 compassos — uns 8 segundos que se
+repetiam a fase inteira. Hoje **todas as pistas** têm um **tema com forma**:
+partes de 4 compassos (A, A2, B) tocadas na ordem A–A2–B–A2, de meio minuto
+a quase um minuto antes de repetir. A parte A é a melodia de sempre e
+termina "no ar", a A2 fecha a frase, e a B sai para outro acorde. Cada parte
+escreve a melodia e os acordes (um por meio compasso), e deles saem o baixo,
+o acorde de fundo e uma harpinha em arpejo. A percussão (bumbo, caixa e
+chimbal de ruído filtrado) vem de padrões em texto, `'x...o...'`, um por
+peça, com uma virada no último compasso. Esses temas tocam numa cadeia com
+filtro, reverb gerado por código e compressor. Os temas sem forma passam pela
+mesma cadeia, sem reverb e sem filtro, e soam como antes — hoje só a
+*Fanfarra da vitória* e o *Era uma vez* do livro, que não são de pista.
+
+A música também acompanha o que acontece na corrida:
+
+- **Pausa:** a música fica abafada e mais baixa (filtro fechando, como se
+  viesse do outro cômodo) e volta inteira quando a corrida continua
+  (`music.setPaused`).
+- **Fase vencida, fim de jogo e lição concluída:** a música sai de cena em
+  um instante (`music.cut`) e a fanfarra toca sozinha. Toda tela de escolha
+  (início, fases, pistas) chama `music.play` de novo, e quem já está
+  tocando não reinicia.
+- **Ducking:** a fanfarra, o trovão, a Bomba Arco-Íris e os power-ups
+  avisam a música (`onLoudSfx`, em `audio.js`), que abaixa para menos da
+  metade enquanto eles tocam e volta devagar.
+- **Efeitos na tonalidade:** coração, estrela, chave, power-up e fanfarra
+  tocam notas do acorde da tônica da pista (o acorde em que a forma
+  termina). A voz do unicórnio continua mudando o registro — a Lulu mais
+  aguda, o Brasa mais grave —, mas o arpejo começa sempre na nota do acorde
+  mais perto, então nunca sai da escala. A fanfarra é sempre em maior e
+  começa na tônica, mesmo numa pista em tom menor.
+- **Batida:** na trombada a música "afunda" meio segundo — o filtro fecha e o
+  volume cai para um terço — e volta (`music.bump`).
+- **Poder ativo:** enquanto houver um poder com barrinha no HUD, entra uma
+  harpinha em semicolcheias uma oitava acima (`music.setSparkle`). Fora da
+  corrida ela desliga.
+- **Troca suave:** ao trocar de tema (lobby, livro, pista), o que sai desce
+  e o novo sobe em meio segundo, em vez de um corte seco.
+- **Botão 🔇:** cala a música **e** os efeitos — todos os efeitos passam por
+  um volume só em `audio.js`. A narração (a voz da Aria) é outra via e
+  não passa por ele.
+
+**Modo leve.** Medido num Mac, a mesa de som inteira gasta uns 2% da thread
+de áudio, e o reverb sozinho é mais da metade disso; num Android simples,
+dez a vinte vezes mais lento, isso vira 20–45%. Por isso a cauda do reverb
+encurtou para 1,6 s (o fim da de 2,2 s já estava 30 dB abaixo) e existe um
+modo leve: sem reverb, sem a oitava de brilho, sem harpinha e sem chimbal,
+acorde de fundo com duas notas. Ele liga sozinho quando o navegador diz que
+o aparelho tem 2 GB de memória ou menos, ou quando o agendador da música se
+atrasa três vezes em vinte segundos (sinal de que a página está engasgando).
+Atrasado, o agendador pula as notas perdidas em vez de tocá-las todas de uma
+vez. `musicaLeve()` no console liga à mão; `musicaLeve(false)` desliga. O formato completo
+está comentado em `music.js`, em *Temas com forma*.
 
 O **trovão** da Tempestade é o único som que não sai de um oscilador: ele
 precisa de ruído. A primeira versão era só grave (55–90 Hz) e sumia em
@@ -1635,7 +1729,7 @@ nomes das músicas (Valsa de açúcar → Sugar waltz).
 | Prosa dentro dos dados (`name`, `story`, `tagline`, `fala`…) | `traduzItens()` reescreve os campos **uma vez**, na troca de idioma |
 | Frases da interface (`Game.js`, `ui.js`) | `t('…')` no lugar |
 | Texto já escrito no `index.html` | marcado com `data-t`; `traduzHtml()` troca no DOM |
-| A voz que lê em voz alta | `speech.js` segue o idioma (`pt-BR` / `en-US`) e escolhe outra voz |
+| A voz que lê em voz alta | a Aria tem uma gravação por idioma (`assets/voz/pt`, `assets/voz/en`); a voz do aparelho, de reserva, segue o idioma (`pt-BR` / `en-US`) |
 
 Traduzir os dados **mutando as listas** foi o que evitou espalhar `t()` por
 dezenas de lugares que leem `personagem.name`: o resto do jogo continua sem
@@ -1673,6 +1767,111 @@ aparece na tela.
 O `manifest.webmanifest` é a única coisa que fica de fora: o navegador o lê
 antes de o jogo abrir, então não há como escolher o idioma dele. A descrição
 está nos dois.
+
+## Vídeo de anúncio
+
+```bash
+npm run video               # o vídeo inteiro
+npm run video -- --fotos    # uma foto de cada cena, para conferir o roteiro
+npm run video -- --montar   # só remonta, reaproveitando os quadros já gravados
+```
+
+Sai `assets/video/unicornrush-anuncio.mp4`: 1080x1920, ~55 s, com som — o formato
+de Reels, TikTok e Shorts. Precisa do **Google Chrome** e do **ffmpeg**
+(`brew install ffmpeg`).
+
+Ele abre com a **contagem do próprio jogo** — "3, 2, 1, Vai!", um número por
+batida da música, com a pista ainda vazia e o portal de partida no chão.
+Depois: onze das quinze pistas, uma corrida só de power-ups (Ímã, Pena
+Mágica, Escudo e Bomba Arco-Íris, cada um posto na pista de propósito — ver
+`__poderes`, em `scripts/video.js`), a grade dos 22 unicórnios rolando
+inteira, a ficha de um deles, três páginas do livro e os três modos de jogo
+em cartões. Fecha no letreiro com o endereço, que fica 7,3 s no ar.
+
+### O jogo se grava sozinho
+
+Não é uma filmagem da tela. O jogo abre num Chrome sem janela e o
+`scripts/video.js` chama o `game.tick()` **na mão**, um por quadro, com o
+relógio preso em 1/30 de segundo:
+
+```js
+game.renderer.setAnimationLoop(null);
+game.clock.getDelta = () => 1 / 30;
+```
+
+Isso troca a pressa por qualidade. Sem GPU o three.js roda por software, uns
+oito quadros por segundo, e uma filmagem sairia aos pedaços; chamando quadro
+a quadro, cada um leva o tempo que tiver de levar e o vídeo sai liso, com
+sombra e antisserrilhado ligados. De brinde, sai igualzinho toda vez que
+roda.
+
+A foto de cada quadro é da **página inteira** (`Page.captureScreenshot`, do
+protocolo do DevTools), e não do `<canvas>`: é o que põe o HUD, os cartões e
+o 3D no mesmo quadro.
+
+Cada cena roda 900 quadros antes de valer — menos a da contagem, que é
+justamente o primeiro instante da corrida. Não é enfeite: o mundo sorteia o
+que nasce conforme a distância andada, e a primeira fileira de corações só
+alcança o unicórnio depois de uns sessenta metros — gravando antes disso, o
+anúncio abria com pista vazia e o HUD marcando zero.
+
+### Quem joga
+
+O `scripts/video-piloto.js`. Ele lê o `world.entities`, dá nota a cada faixa
+pelo que vem chegando e vai para a melhor; quando o obstáculo não dá para
+desviar, pula com o ápice em cima dele.
+
+A decisão que mais mudou o resultado foi **encurtar o medo**. Com o perigo
+pesando na conta a distância inteira, o piloto passava a corrida fugindo: em
+Aventura nasce obstáculo em duas das três faixas a cada fileira, então há
+sempre um lá longe empurrando ele para o lado, e ele terminava com um
+coração pego e sete perdidos. Contando só o que está a menos de 0,95 s, ele
+passou a pegar cerca de metade de tudo o que nasce na pista — e atravessou
+as oito pistas do anúncio, a 18 de velocidade, sem perder uma vida.
+
+### A trilha
+
+`scripts/video-musica.html` monta um medley com os `THEMES` de verdade do
+jogo — Campo, Frutas (três laços, o trecho mais longo), Campo — num
+`OfflineAudioContext`, com bateria entrando por camadas, e devolve um WAV. Não há licença de música para
+resolver: o jogo nunca teve arquivo de áudio, as melodias são notas MIDI em
+osciladores (ver `src/game/music.js`), e o anúncio toca as mesmas.
+
+### Os cortes caem no tempo
+
+A duração de cada cena está em **batidas da música**, não em segundos (o
+`ROTEIRO`, em `scripts/video.js`), e o quadro de cada corte sai do tempo
+acumulado, arredondado uma vez só. Arredondar a duração de cada cena
+separadamente somava o erro de todas elas, e no fim do vídeo os cortes já
+estavam meio quadro atrás da música.
+
+As três seções do medley são um número **inteiro** de laços do tema, e as
+cenas de cada uma somam exatamente as batidas desse trecho — 32 do Campo,
+48 das Frutas, 32 do Campo. É o que faz a virada de tema cair no corte, e
+não no meio de uma pista.
+
+### Duas animações que precisaram de rédea
+
+Gravando quadro a quadro, o relógio da máquina não tem nada a ver com o
+tempo do vídeo — e animação de CSS anda pelo relógio da máquina. Duas
+apareceram tortas por isso:
+
+- **os números da contagem** (`#contagem.pop`, meio segundo) sairiam num
+  ponto qualquer a cada foto, tremendo. São **pausados e adiantados na mão**,
+  com o `currentTime` no ponto exato do quadro: é a animação de verdade, do
+  arquivo de estilo do jogo, no tempo do vídeo;
+- **a página do livro**, que entra esmaecendo. A foto tirada logo depois de
+  virar pegava o desenho lavado. Ali as animações são **terminadas na hora**,
+  que é o que se quer de uma página que já virou.
+
+### Os textos
+
+`scripts/video-cartelas.html`, em HTML, capturados com fundo transparente e
+sobrepostos pelo ffmpeg. Não é o `drawtext` do ffmpeg porque a Fredoka é um
+`woff2`, que ele não lê — o texto sairia numa letra qualquer, que num
+anúncio é o mesmo que sair errado. O letreiro do fim usa a foto que o
+`npm run anuncio` gera, cortada por baixo: ela já traz o nome do jogo
+pintado, e com o letreiro em cima ele apareceria duas vezes.
 
 ## Publicar (Vercel)
 
@@ -1953,7 +2152,8 @@ src/
     audio.js          efeitos sonoros gerados na hora (WebAudio)
     haptics.js        vibra o aparelho ao bater ou pegar power-up (Android só)
     icons.js          troca os emoji do código pelos ícones de assets/icones/
-    speech.js         lê os nomes em voz alta, para quem ainda não lê
+    speech.js         lê em voz alta (a voz gravada da Aria; a do aparelho de reserva)
+    falas.js          monta tudo o que a narração diz (e a chave de cada fala)
     story.js          a história em nove páginas (texto, imagem e o SVG reserva)
     ui.js             ponte com o HUD e com as telas de escolha
   models/
@@ -1970,8 +2170,15 @@ src/
                       arco-íris, lua, estrelas, montanhas, o chão, as placas
                       de distância e a faixa do recorde
 scripts/smoke-test.js monta tudo fora do navegador (npm run check)
+scripts/vozes.mjs     grava a narração no ElevenLabs (npm run vozes)
 scripts/gravar-uni.html  o modelo 3D da Uni galopando, quadro a quadro
 scripts/gravar-uni.js    grava esses quadros no WebP do carregamento
+scripts/anuncio.html     os 22 unicórnios posando atrás do letreiro
+scripts/anuncio.js       exporta essa cena no PNG de divulgação
+scripts/video.js         o vídeo de anúncio: grava o jogo e monta (npm run video)
+scripts/video-piloto.js  quem joga as corridas do vídeo
+scripts/video-musica.html a trilha do vídeo, um medley dos temas do jogo
+scripts/video-cartelas.html os textos e o letreiro do fim
 ```
 
 Todos os modelos 3D são gerados por código a partir de formas simples
@@ -2038,6 +2245,7 @@ para experimentar a loja sem ter de jogar tudo antes:
 chaves(500)   // guarda 500 chaves mágicas (e salva)
 destravar()   // libera todos os unicórnios e todas as pistas
 zerar()       // devolve o save ao começo: uma Uni, um Campo, zero chaves
+musicaLeve()  // liga o modo leve da música (com false, desliga)
 game          // o jogo inteiro, para bisbilhotar
 ```
 

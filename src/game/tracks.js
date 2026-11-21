@@ -138,6 +138,7 @@ export const TRACKS = {
       'tree', 'strawberry', 'orangeTree', 'bananaPile',
       'watermelonPatch', 'tree', 'orangePile', 'grapes', 'kiwi',
       'strawberry', 'orangePile', 'grapes', 'tree',
+      'apple', 'cherries', 'pear', 'apple',
     ],
     decorationCount: 58,          // pomar cheio dos dois lados
     obstacles: ['watermelon', 'pineapple', 'coconutPile'],

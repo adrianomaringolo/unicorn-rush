@@ -12,6 +12,7 @@ import {
   createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
   createRainbow, createMountains, createMoon, createStars, createSun, createLightningBolt,
   createDistanceMarker, createRecordBanner, createStartLine, createAmbience, animateAmbience,
+  swaySeaweed,
 } from '../models/scenery.js';
 
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
@@ -643,6 +644,8 @@ export class World {
     for (const deco of this.decorations) {
       deco.position.z += move;
       if (deco.position.z > DESPAWN_DISTANCE + 6) this.placeDecoration(deco, SPAWN_DISTANCE - Math.random() * 20);
+      // A alga balança na correnteza (ver swaySeaweed em scenery.js).
+      if (deco.userData.algas) swaySeaweed(deco, elapsed);
       // A roda-gigante gira, e as cabines penduradas ficam sempre em pé —
       // é o giro contrário que faz isso, o mesmo truque de uma roda de
       // verdade (ver ferrisWheel em scenery.js).

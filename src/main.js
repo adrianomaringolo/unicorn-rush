@@ -7,6 +7,7 @@ import { update, resetSave } from './game/storage.js';
 import { watchUpdates } from './game/update.js';
 import { CHARACTER_LIST } from './models/characters.js';
 import { TRACK_LIST } from './game/tracks.js';
+import * as music from './game/music.js';
 
 // Initialize Vercel Web Analytics
 inject();
@@ -58,6 +59,7 @@ window.game = game; // útil para brincar no console
 //   chaves()      o mesmo, com 500
 //   destravar()   libera todos os unicórnios e pistas de uma vez
 //   zerar()       devolve o save ao começo (uma Uni, um Campo, zero chaves)
+//   musicaLeve()  liga (ou, com false, desliga) o modo leve da música
 //
 // Não há tela para isso de propósito: são para quem está desenvolvendo, não
 // para quem está jogando.
@@ -76,6 +78,10 @@ window.destravar = () => {
   game.render();
   return `${CHARACTER_LIST.length} unicórnios e ${TRACK_LIST.length} pistas liberados`;
 };
+
+window.musicaLeve = (ligar = true) => (music.setLight(ligar)
+  ? 'música em modo leve: sem reverb, sem harpinha, sem chimbal'
+  : 'música completa');
 
 window.zerar = () => {
   resetSave();

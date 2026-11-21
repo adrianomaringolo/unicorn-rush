@@ -31,10 +31,15 @@ import {
   listProfiles, activeProfile, createProfile, updateProfile, switchProfile, deleteProfile, MAX_PROFILES,
 } from './storage.js';
 import * as music from './music.js';
+import {
+  falaHistoria as montarFalaHistoria, falaPoder as montarFalaPoder,
+  rapidasDaPista as rapidasDaPistaHtml, rapidasDoUnicornio,
+  falaVitoria, falaEhSua, falaApresentacao, falaLigou, falaPagina,
+} from './falas.js';
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import {
   speak, canSpeak, isOn as speechOn, setOn as setSpeech, stop as stopSpeech,
-  vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes,
+  vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes, temVozGravada,
 } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
 import { storyPages, STORY_END } from './story.js';
@@ -193,6 +198,7 @@ export class Game {
     this.rushLook = 0;                       // 0…1: o quanto as asas já cresceram
     this.featherLook = 0;                    // 0…1: o quanto a Pena Mágica já tingiu as asas
     this.contando = false;                   // a contagem da largada está no ar?
+    this.retomando = false;                  // ...e ela é a da volta da pausa?
     this.ui.onRush(() => this.toggleRush());
 
     this.setupMuteButton();
@@ -763,6 +769,10 @@ export class Game {
   // nada parece defeito.
   showLevels() {
     this.state = STATE.READY;
+    // A vitória e o fim de jogo calam a música (`music.cut`); toda tela de
+    // escolha a traz de volta. Se o tema já está tocando, não reinicia.
+    music.play(this.track.id);
+    music.setSparkle(false);    // fora da corrida não há poder valendo
     this.ui.showPause(false);
     this.screen = 'levels';
     this.mode = this.levelMode(this.level);
@@ -801,6 +811,8 @@ export class Game {
 
   levelComplete() {
     this.ui.showPause(false);
+    // A música sai e a fanfarra toca sozinha, na tonalidade da pista.
+    music.cut();
     sfx.win();
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
     const number = this.level;
@@ -854,7 +866,7 @@ export class Game {
       this.ui.setWallet(this.wallet, true);
     }
     music.play('vitoria');
-    speak(t('Você venceu a pista {pista}!', { pista: this.track.name }));
+    speak(falaVitoria(this.track));
 
     this.ui.showOverlay({
       title: t('🏆 Pista vencida!'),
@@ -920,6 +932,7 @@ export class Game {
     // 100% até o tempo que sobrava cair dentro do `duration` de tabela — só
     // aí ela "destravava" e começava a andar.
     this.powerDurations = { shield: this.powers.shield };
+    music.setSparkle(false);
     // Quem cada faixa está entregando para a Lua agora — ver `attractNearby`.
     this.laneMagnetTargets = new Array(LANES.length).fill(null);
     this.ui.setPowers([]);
@@ -970,6 +983,10 @@ export class Game {
     this.pararContagem();
     this.state = STATE.READY;
     this.screen = 'home';
+    // A vitória e o fim de jogo calam a música (`music.cut`); toda tela de
+    // escolha a traz de volta. Se o tema já está tocando, não reinicia.
+    music.play(this.track.id);
+    music.setSparkle(false);    // fora da corrida não há poder valendo
     this.ui.showPause(false);
     // Quem sai da lição pela pausa passa por aqui: as escolhas voltam
     // também nesse caminho, não só ao terminar.
@@ -1233,8 +1250,10 @@ export class Game {
         valor: speechOn() ? t('ligada') : t('desligada'),
       },
       // Trocar a voz só faz sentido com ela ligada e com mais de uma
-      // instalada — em aparelho que só tem uma, não há o que oferecer.
-      canSpeak() && speechOn() && vozesDoIdioma().length > 1 && {
+      // instalada — em aparelho que só tem uma, não há o que oferecer. E
+      // não aparece onde há narração gravada: ali a voz é sempre a da Aria,
+      // e a do aparelho só cobre uma frase que ainda não foi gravada.
+      canSpeak() && speechOn() && !temVozGravada() && vozesDoIdioma().length > 1 && {
         id: 'trocar-voz', icone: '🗣️', nome: t('Trocar a voz'), valor: nomeDaVoz(),
       },
       // O idioma mora aqui, e não no menu: é escolha de quem instala o jogo,
@@ -1382,7 +1401,7 @@ export class Game {
       this.save = getSave();
       // A amostra é o unicórnio escolhido: é a frase que a criança mais vai
       // ouvir, então é por ela que a voz tem de ser julgada.
-      speak(`${this.character.name}. ${this.character.title || ''}`);
+      speak(falaApresentacao(this.character));
       this.showVoicePicker();
     });
   }
@@ -1390,7 +1409,7 @@ export class Game {
   toggleSpeech() {
     const ligado = setSpeech(!speechOn());
     update((save) => { save.speech = ligado; });
-    if (ligado) speak(t('Pronto, agora eu falo'));
+    if (ligado) speak(falaLigou());
     this.showGrownUps();
   }
 
@@ -1569,35 +1588,10 @@ export class Game {
     //
     // O Eco fica de fora enquanto for mistério: ele corre rápido na Bruma e
     // no Vilarejo, e o nome dele ali entregaria que existe um 22º.
-    const rapidasDaPista = kind === 'track'
-      ? (() => {
-        const donos = CHARACTER_LIST.filter((c) => c.fast?.includes(item.id))
-          .filter((c) => !c.earned || this.isOwned('character', c.id));
-        if (!donos.length) return '';
-        const nomes = donos.map((c) => `<b>${c.emoji} ${c.name}</b>`);
-        const lista = nomes.length > 1
-          ? t('{primeiras} e {ultima}', {
-            primeiras: nomes.slice(0, -1).join(', '),
-            ultima: nomes[nomes.length - 1],
-          })
-          : nomes[0];
-        return t('⚡ Correm mais rápido aqui: {unicornios}', { unicornios: lista });
-      })()
-      : '';
+    const possui = (c) => this.isOwned('character', c.id);
+    const rapidasDaPista = kind === 'track' ? rapidasDaPistaHtml(item, possui) : '';
 
-    const rapidas = !oculto && kind === 'character' && item.fast?.length
-      ? (() => {
-        const nomes = item.fast.map((pista) =>
-          `<b>${TRACKS[pista]?.emoji || ''} ${TRACKS[pista]?.name || pista}</b>`);
-        const lista = nomes.length > 1
-          ? t('{primeiras} e {ultima}', {
-            primeiras: nomes.slice(0, -1).join(', '),
-            ultima: nomes[nomes.length - 1],
-          })
-          : nomes[0];
-        return t('⚡ Corre mais rápido em {pistas}', { pistas: lista });
-      })()
-      : '';
+    const rapidas = !oculto && kind === 'character' ? rapidasDoUnicornio(item) : '';
 
     // O preço só aparece em quem ainda não é seu; na pista, o lugar dele é a
     // música, que é o outro jeito de reconhecer o cenário.
@@ -1625,25 +1619,11 @@ export class Game {
     // Só aparecem com a voz ligada — sem ela o botão não faria nada, e um
     // botão que não faz nada é pior que nenhum.
     //
-    // A voz lê texto, não figurinha: sem tirar os emoji, o "⭐" no meio de
-    // "as estrelas ⭐ valem o dobro" vira "estrela branca média" em alguns
-    // aparelhos, no meio da frase.
-    const semEmoji = (texto) => String(texto)
-      .replace(/<[^>]*>/g, '')
-      .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{2600}-\u{27BF}]/gu, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const falaHistoria = semEmoji([
-      oculto ? t('Ninguém sabe quem é.') : `${item.name}.`,
-      !oculto && loja.subtitulo(item) ? `${loja.subtitulo(item)}.` : '',
-      oculto ? t('Dizem que alguém espera na torre da neblina.') : loja.descricao(item),
-    ].filter(Boolean).join(' '));
-
-    const falaPoder = semEmoji([
-      !oculto && kind === 'character' && item.power ? `${item.power}.` : '',
-      rapidas || rapidasDaPista,
-    ].filter(Boolean).join(' '));
+    // As falas são montadas em falas.js, onde o script de gravação também as
+    // monta: o texto tem de ser idêntico ao gravado para achar o arquivo da
+    // voz. (É lá também que saem os emoji e o HTML.)
+    const falaHistoria = montarFalaHistoria(kind, item, oculto);
+    const falaPoder = montarFalaPoder(kind, item, oculto, possui);
 
     const botaoOuvir = (qual) => `<button class="ouvir" data-pick="${qual}" title="${t('Ouvir')}">🔊</button>`;
     const ouvir = speechOn() ? botaoOuvir('ouvir') : '';
@@ -1882,7 +1862,7 @@ export class Game {
     // fanfarra quando o retrato aparece.
     const chave = setTimeout(() => sfx.key(), 800);      // o cadeado cede
     const fanfarra = setTimeout(() => sfx.win(), 1450);   // o retrato aparece
-    const fala = setTimeout(() => speak(t('{nome} é sua!', { nome: item.name })), 2100);
+    const fala = setTimeout(() => speak(falaEhSua(item)), 2100);
 
     // Sai sozinho, ou no primeiro toque de quem já viu (e vai ver de novo a
     // cada compra — impaciência aqui é justa).
@@ -1918,6 +1898,10 @@ export class Game {
   // usa nas duas.
   showTrackPicker() {
     this.state = STATE.READY;
+    // A vitória e o fim de jogo calam a música (`music.cut`); toda tela de
+    // escolha a traz de volta. Se o tema já está tocando, não reinicia.
+    music.play(this.track.id);
+    music.setSparkle(false);    // fora da corrida não há poder valendo
     this.screen = 'track';
     this.ui.showPause(false);
     this.ui.setWallet(this.wallet, true);
@@ -2070,7 +2054,7 @@ export class Game {
     if (!ultima) new Image().src = livro[indice + 1].image;
 
     // Para quem ainda não lê: a voz do aparelho conta a página em voz alta.
-    speak(`${folha.title}. ${folha.text}`);
+    speak(falaPagina(folha));
   }
 
   turnPage(dir) {
@@ -2224,7 +2208,7 @@ export class Game {
     const escolher = (ligar) => {
       const ligado = setSpeech(ligar);
       update((save) => { save.speech = ligado; });
-      if (ligado) speak(t('Pronto, agora eu falo'));
+      if (ligado) speak(falaLigou());
       this.showStory(0);
     };
 
@@ -2577,6 +2561,7 @@ export class Game {
 
   pause() {
     this.state = STATE.PAUSED;
+    music.setPaused(true);      // abafada, como se viesse do outro cômodo
     this.ui.showPause(false);
     const naFase = this.mode.id === 'levels';
     this.ui.showOverlay({
@@ -2599,6 +2584,7 @@ export class Game {
   resume() {
     if (this.state !== STATE.PAUSED) return;
     this.state = STATE.PLAYING;
+    music.setPaused(false);
     this.ui.hideOverlay();
     this.ui.showRush(this.isFastHere(), this.rush);
     this.clock.getDelta();       // descarta o tempo parado
@@ -2607,7 +2593,13 @@ export class Game {
     // larga de novo com a pista já andando e um obstáculo em cima — a
     // contagem devolve o mesmo instante de se preparar que a corrida teve
     // no começo.
-    this.largar(() => this.ui.showPause(true));
+    //
+    // Mas aqui, ao contrário da largada, nada se mexe durante a contagem:
+    // nem a pista nem o unicórnio (ver `congelado` no tick). Na largada o
+    // mundo escorre devagar para a criança ver o caminho; na volta ela já
+    // está no meio da corrida, e a pista andando sem colisão deixava um
+    // obstáculo chegar perto enquanto ela ainda não podia desviar.
+    this.largar(() => this.ui.showPause(true), { retomando: true });
   }
 
   start(modeId = this.mode.id, difficultyId = this.difficulty.id) {
@@ -2652,6 +2644,7 @@ export class Game {
   pararContagem() {
     clearTimeout(this.timerContagem);
     this.contando = false;
+    this.retomando = false;
     this.ui.setCountdown(null);
   }
 
@@ -2664,16 +2657,20 @@ export class Game {
   //
   // O botão de pausa e a lição só entram depois — pausar no meio da contagem
   // deixaria os tempos rodando por trás do cartão.
-  largar(aoTerminar) {
+  //
+  // `retomando` é a contagem da volta da pausa: nela o mundo fica parado.
+  largar(aoTerminar, { retomando = false } = {}) {
     const passos = ['3', '2', '1', t('Vai!')];
     let i = 0;
     this.contando = true;
+    this.retomando = retomando;
     clearTimeout(this.timerContagem);
 
     const passo = () => {
       // Saiu da corrida no meio da contagem (voltou para o menu): abandona.
       if (this.state !== STATE.PLAYING) {
         this.contando = false;
+        this.retomando = false;
         this.ui.setCountdown(null);
         return;
       }
@@ -2686,6 +2683,7 @@ export class Game {
         if (i < passos.length) return passo();
         this.ui.setCountdown(null);
         this.contando = false;
+        this.retomando = false;
         if (this.state === STATE.PLAYING) aoTerminar?.();
         return undefined;
       }, ultimo ? 420 : 520);
@@ -2825,6 +2823,7 @@ export class Game {
     // guardado, senão o hub ficaria mostrando "Aprender" e o botão JOGAR
     // repetiria a aula.
     this.mode = MODES[this.save.choices.mode] || MODES[DEFAULT_MODE];
+    music.cut();
     sfx.win();
     this.ui.showOverlay({
       title: t('Você aprendeu tudo! 🎉'),
@@ -2852,6 +2851,7 @@ export class Game {
   }
 
   gameOver() {
+    music.cut();
     sfx.gameOver();
 
     if (this.mode.id === 'levels') {
@@ -3237,6 +3237,10 @@ export class Game {
     }
     if (!changed) return;
 
+    // A harpinha do poder (ver music.setSparkle): toca enquanto houver um
+    // poder com tempo valendo — os mesmos que têm barrinha no HUD.
+    music.setSparkle(Object.entries(this.powers).some(([id, tempo]) => tempo > 0 && POWERUPS[id]?.duration > 0));
+
     this.ui.setPowers(
       Object.entries(this.powers)
         .filter(([id, time]) => time > 0 && POWERUPS[id]?.duration > 0)
@@ -3306,6 +3310,7 @@ export class Game {
 
   hit(entity) {
     this.player.invulnerable = INVULNERABLE_TIME;
+    music.bump();               // a música afunda meio segundo com a trombada
     // A casca do Coco: a primeira trombada da corrida não custa vida. Ela
     // ainda dói (piscada, tremida, o obstáculo sai voando), só não tira vida.
     if (this.hitShield) {
@@ -3375,9 +3380,13 @@ export class Game {
     const boosting = playing && this.powers.boost > 0;
     const rushing = playing && this.rush && this.isFastHere();
     const paused = this.state === STATE.PAUSED;
+    // Pausado, ou contando para voltar da pausa: a pista para e o unicórnio
+    // fica exatamente onde estava, na mesma pose — sem galope, sem crina
+    // balançando, sem rastro andando.
+    const congelado = paused || (this.contando && this.retomando);
     const worldSpeed = playing
       ? this.speed * (boosting ? POWERUPS.boost.speed : rushing ? RUSH_SPEED : 1)
-      : paused ? 0 : this.mode.startSpeed * 0.35;
+      : congelado ? 0 : this.mode.startSpeed * 0.35;
 
     // No turbo a câmera abre um pouco: dá sensação de velocidade. No ⚡ ela
     // abre menos, porque ali o unicórnio continua no chão.
@@ -3403,10 +3412,12 @@ export class Game {
     }
 
     this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
-    animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
-    this.updateEchoes(worldSpeed);
+    if (!congelado) {
+      animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
+      this.updateEchoes(worldSpeed);
+      updateCharacterAura(this.charAura, dt, this.elapsed, worldSpeed);
+    }
     updateAuras(this.auras, this.powers, this.elapsed);
-    updateCharacterAura(this.charAura, dt, this.elapsed, worldSpeed);
     if (this.nightGlow.visible) {
       this.nightGlow.scale.setScalar(1.8 * (1 + Math.sin(this.elapsed * 2.2) * 0.05));
     }
@@ -3421,7 +3432,7 @@ export class Game {
 
     this.applyLightning(playing ? dt : 0);
     this.applyWingEffects(dt);
-    updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
+    if (!congelado) updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
     this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;
 
     // Na tela inicial o personagem gira devagar, para dar para ver o modelo

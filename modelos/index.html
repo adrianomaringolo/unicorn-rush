@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff5d8f" />
+  <title>Modelos · UnicornRush</title>
+  <link rel="icon" href="/assets/icons/icon-64.png" type="image/png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <!-- Caminhos absolutos de propósito: a página pode abrir como /modelos ou
+       /modelos/, e um caminho relativo só funciona num dos dois. -->
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three.module.js", "three/": "/vendor/" } }
+  </script>
+  <style>
+    :root {
+      --rosa: #ff5d8f;
+      --tinta: #4a2a5e;
+      --tinta-leve: #8a6f9c;
+      --fundo: #fff6fb;
+      --cartao: #ffffff;
+      --borda: #f3dcec;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+    body {
+      margin: 0;
+      font-family: 'Fredoka', system-ui, sans-serif;
+      color: var(--tinta);
+      background: var(--fundo);
+    }
+    header {
+      padding: 28px 16px 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { margin: 0; font-size: 2rem; }
+    h1 a { color: inherit; text-decoration: none; }
+    .sub { margin: 4px 0 0; color: var(--tinta-leve); }
+    #progresso { margin: 8px 0 0; font-size: 0.9rem; color: var(--rosa); min-height: 1.2em; }
+
+    nav {
+      position: sticky; top: 0; z-index: 5;
+      background: color-mix(in srgb, var(--fundo) 92%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--borda);
+    }
+    nav ul {
+      list-style: none; margin: 0 auto; padding: 10px 16px;
+      max-width: 1200px;
+      display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+    }
+    nav a {
+      display: inline-block; white-space: nowrap;
+      padding: 6px 12px; border-radius: 999px;
+      background: var(--cartao); border: 1px solid var(--borda);
+      color: var(--tinta); text-decoration: none; font-size: 0.9rem;
+    }
+    nav a:hover { border-color: var(--rosa); }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 64px; }
+    section.grupo { margin-top: 36px; }
+    section.grupo > h2 {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      margin: 0 0 4px; font-size: 1.5rem;
+    }
+    h2 .conta { font-size: 0.9rem; font-weight: 400; color: var(--tinta-leve); }
+    .tagline { margin: 0 0 4px; color: var(--tinta-leve); }
+    .rapidos { margin: 0 0 8px; font-size: 0.9rem; color: var(--tinta-leve); }
+    h3 {
+      margin: 18px 0 8px; font-size: 0.85rem; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--tinta-leve);
+    }
+
+    .grade {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+    .cartao {
+      appearance: none; border: 1px solid var(--borda); padding: 0;
+      font: inherit; color: inherit; text-align: left; cursor: pointer;
+      background: var(--cartao); border-radius: 14px; overflow: hidden;
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .cartao:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgb(74 42 94 / 0.12); }
+    .cartao:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+    .foto {
+      position: relative; aspect-ratio: 1; display: grid; place-items: center;
+      background: var(--ceu, linear-gradient(#fde7f3, #fff6fb));
+    }
+    .foto img { width: 100%; height: 100%; display: block; }
+    .foto .vezes {
+      position: absolute; top: 6px; right: 6px;
+      font-size: 0.75rem; padding: 1px 7px; border-radius: 999px;
+      background: rgb(255 255 255 / 0.85);
+    }
+    .foto .lado {
+      position: absolute; top: 6px; left: 6px;
+      font-size: 0.75rem; padding: 1px 7px; border-radius: 999px;
+      background: rgb(255 255 255 / 0.85);
+    }
+    .legenda { padding: 8px 10px 10px; }
+    .legenda strong { display: block; font-weight: 500; line-height: 1.2; }
+    .legenda code {
+      font-size: 0.75rem; color: var(--tinta-leve);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* --- o modelo de perto -------------------------------------------- */
+    dialog {
+      border: none; border-radius: 20px; padding: 0;
+      width: min(560px, calc(100vw - 32px));
+      background: var(--cartao); color: var(--tinta);
+      box-shadow: 0 20px 60px rgb(74 42 94 / 0.3);
+    }
+    dialog::backdrop { background: rgb(74 42 94 / 0.45); }
+    #palco {
+      position: relative; aspect-ratio: 1;
+      background: var(--ceu, linear-gradient(#fde7f3, #fff6fb));
+      touch-action: none; cursor: grab;
+    }
+    #palco:active { cursor: grabbing; }
+    #palco canvas { width: 100%; height: 100%; display: block; }
+    .ficha { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+    .ficha div { flex: 1; min-width: 0; }
+    .ficha strong { display: block; font-size: 1.2rem; font-weight: 500; }
+    .ficha small { color: var(--tinta-leve); }
+    .ficha button {
+      font: inherit; border: none; border-radius: 999px; cursor: pointer;
+      padding: 8px 16px; background: var(--rosa); color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="/">🦄 UnicornRush</a> · Modelos</h1>
+    <p class="sub">Todos os modelos 3D do jogo, montados pelas mesmas funções que o jogo usa. Toque num para girar.</p>
+    <p id="progresso" role="status"></p>
+  </header>
+  <nav><ul id="indice"></ul></nav>
+  <main id="conteudo"></main>
+
+  <dialog id="perto" aria-label="Modelo de perto">
+    <div id="palco"></div>
+    <div class="ficha">
+      <div>
+        <strong id="perto-nome"></strong>
+        <small id="perto-info"></small>
+      </div>
+      <button type="button" id="perto-novo" title="Monta de novo (os modelos sorteiam cor e forma)">🎲 Outro</button>
+      <button type="button" id="perto-fechar">Fechar</button>
+    </div>
+  </dialog>
+
+  <script type="module" src="/src/modelos.js"></script>
+</body>
+</html>

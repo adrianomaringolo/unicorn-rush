@@ -10,3 +10,14 @@ node_modules/
 # originais (PNG, 13 MB) das figuras da história: só servem para gerar de
 # novo os .webp que o jogo carrega. Ficam na máquina, fora do repositório.
 assets/story/originais/
+
+# do `npm run video`: os 1174 quadros do vídeo de anúncio, a trilha, o
+# perfil do Chrome que os grava e as fotos de conferência. É tudo material
+# de trabalho — o que sai de verdade é o .mp4, e um `npm run video` refaz
+# todo o resto do zero.
+.quadros-video/
+.quadros-video-chrome/
+assets/video/fotos/
+
+# chaves de API (o `npm run vozes` lê ELEVENLABS_API_KEY daqui, se existir)
+.env

@@ -311,7 +311,7 @@ export const EN = {
   'Carregando o jogo': 'Loading the game',
   'Preparando a pista': 'Getting the track ready',
   'Pausar o jogo': 'Pause the game',
-  'Ligar ou desligar a música': 'Turn the music on or off',
+  'Ligar ou desligar o som': 'Turn the sound on or off',
   'Correr mais rápido': 'Run faster',
   'RÁPIDO': 'FAST',
   'Ir para a esquerda': 'Go left',

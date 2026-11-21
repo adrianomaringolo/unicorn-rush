@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Cartelas do anúncio</title>
+<link rel="stylesheet" href="../fonts.css">
+<style>
+/* As cartelas do vídeo de anúncio: os textos que entram por cima do jogo e
+   o letreiro do fim.
+
+   São feitas aqui, em HTML, e não com o `drawtext` do ffmpeg, por um motivo
+   só: a fonte. A Fredoka do jogo é um `woff2`, e o ffmpeg não lê woff2 — o
+   texto sairia numa letra qualquer, que num anúncio é o mesmo que sair
+   errado. Aqui é o próprio navegador que pinta, com a fonte do jogo, os
+   emojis do jogo e as cores do jogo.
+
+   O fundo é transparente (ver `Emulation.setDefaultBackgroundColorOverride`,
+   em scripts/video.js): sai um PNG com canal alfa que o ffmpeg sobrepõe ao
+   quadro do jogo. A exceção é o letreiro do fim, que é opaco. */
+
+:root {
+  --pink: #ff5d8f;
+  --purple: #7a4ec7;
+  --cream: #fff6fb;
+  font-family: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  width: 540px; height: 960px;
+  overflow: hidden;
+  background: transparent;
+}
+
+#palco { position: relative; width: 540px; height: 960px; }
+
+/* --- Texto por cima do jogo ---------------------------------------------
+
+   Fica no terço de baixo, que é a faixa que o HUD deixa livre (em cima
+   ficam os corações e a pontuação; embaixo, no cantinho, os botões). E vem
+   com um véu escuro por trás: sem ele o mesmo texto que lê bem no Céu
+   desaparecia na pista de Doces, que é clara e cheia de coisa. */
+.faixa {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 0 34px 118px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: linear-gradient(to top,
+    rgba(46, 26, 82, .60) 0%,
+    rgba(46, 26, 82, .42) 42%,
+    rgba(46, 26, 82, 0) 100%);
+  padding-top: 150px;
+}
+
+.faixa .linha {
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1.14;
+  text-align: center;
+  color: #fff;
+  /* Contorno roxo por fora das letras e uma sombra macia embaixo: é o que
+     faz o texto grudar na tela em vez de flutuar por cima dela. */
+  paint-order: stroke fill;
+  -webkit-text-stroke: 9px rgba(64, 38, 118, .92);
+  text-shadow: 0 5px 14px rgba(30, 14, 60, .55);
+}
+
+.faixa .miudo {
+  font-size: 25px;
+  font-weight: 600;
+  color: #ffe6f3;
+  text-align: center;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 6px rgba(64, 38, 118, .85);
+}
+
+.faixa .emoji { font-size: 40px; line-height: 1; }
+
+/* --- O letreiro do fim ---------------------------------------------------
+
+   Opaco, e montado em volta da foto que o `npm run anuncio` já gera: os 22
+   unicórnios posando atrás do nome. Ela é deitada (2400x1350) e o vídeo é
+   em pé, então ela entra como um cartão no meio, com o céu do jogo em cima
+   e embaixo. */
+#fim {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 30px;
+  padding: 36px 16px;
+  background: linear-gradient(#bfe9ff 0%, #dcd6ff 46%, #ffe3f4 100%);
+}
+body.fim #fim { display: flex; }
+
+/* A foto entra cortada por baixo. Ela já traz o nome do jogo pintado nela
+   (é o mesmo PNG que o `npm run anuncio` gera para postar sozinho), e aqui
+   em cima já tem o nome em letra grande — os dois juntos era o nome duas
+   vezes na mesma tela. A moldura é mais baixa que a imagem, então a faixa
+   do letreiro dela fica de fora e sobram só os unicórnios. */
+#fim .moldura {
+  width: 100%;
+  aspect-ratio: 2400 / 1010;
+  overflow: hidden;
+  border-radius: 26px;
+  box-shadow: 0 18px 44px rgba(90, 60, 150, .34);
+}
+#fim .moldura img { width: 100%; display: block; }
+
+#fim .nome {
+  font-size: 84px; font-weight: 700;
+  color: var(--pink);
+  text-shadow: 3px 4px 0 #fff, 6px 9px 0 rgba(122, 78, 199, .22);
+  letter-spacing: -.5px;
+}
+
+#fim .chamada {
+  font-size: 32px; font-weight: 600; line-height: 1.32;
+  color: var(--purple);
+  text-align: center;
+  max-width: 13em;
+}
+
+#fim .selos {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+#fim .selo {
+  font-size: 21px; font-weight: 600;
+  color: var(--purple);
+  background: rgba(255, 255, 255, .8);
+  border-radius: 999px;
+  padding: 9px 17px;
+  box-shadow: 0 3px 0 rgba(122, 78, 199, .14);
+}
+
+#fim .link {
+  margin-top: 4px;
+  font-size: 31px; font-weight: 700;
+  color: #fff;
+  background: var(--pink);
+  border-radius: 999px;
+  padding: 15px 34px;
+  box-shadow: 0 7px 0 #e04a79, 0 14px 26px rgba(224, 74, 121, .3);
+}
+</style>
+</head><body>
+
+<div id="palco">
+  <div class="faixa" id="faixa"></div>
+
+  <div id="fim">
+    <div class="nome">UnicornRush</div>
+    <div class="moldura"><img id="foto" src="../assets/anuncio/unicornrush-campo.png" alt=""></div>
+    <div class="chamada">Um jogo de corrida para os pequenos</div>
+    <div class="selos">
+      <span class="selo">🆓 grátis</span>
+      <span class="selo">🌐 no navegador</span>
+      <span class="selo">✈️ joga offline</span>
+      <span class="selo">🗣 português e inglês</span>
+    </div>
+    <div class="link">unicorn-rush-ten.vercel.app</div>
+  </div>
+</div>
+
+<script type="module">
+// As cartelas, uma por vez. O `scripts/video.js` chama `window.cartela(...)`
+// e tira uma foto; com janela, o `?ver=` mostra uma delas para conferir.
+//
+// O texto de cada uma **não** mora aqui: mora no ROTEIRO, em
+// scripts/video.js, junto do segundo em que ela entra. Foi de propósito —
+// mudar o texto e mudar a hora dele é a mesma decisão, e separar as duas
+// coisas em dois arquivos só criava a chance de uma ficar para trás.
+
+const faixa = document.getElementById('faixa');
+
+// Espera a Fredoka chegar antes de dizer que está pronto: uma foto tirada
+// meio milissegundo antes sai com a letra do sistema, e não dá erro nenhum
+// — só sai feia, que é pior.
+await document.fonts.load('700 46px Fredoka');
+await document.fonts.load('600 25px Fredoka');
+await document.fonts.ready;
+
+window.cartela = ({ emoji, linhas = [], miudo } = {}) => {
+  document.body.classList.remove('fim');
+  faixa.style.display = '';
+  faixa.replaceChildren();
+  if (emoji) {
+    const e = document.createElement('div');
+    e.className = 'emoji';
+    e.textContent = emoji;
+    faixa.append(e);
+  }
+  for (const linha of linhas) {
+    const l = document.createElement('div');
+    l.className = 'linha';
+    l.textContent = linha;
+    faixa.append(l);
+  }
+  if (miudo) {
+    const m = document.createElement('div');
+    m.className = 'miudo';
+    m.textContent = miudo;
+    faixa.append(m);
+  }
+};
+
+window.letreiro = () => {
+  faixa.style.display = 'none';
+  document.body.classList.add('fim');
+  return document.getElementById('foto').complete;
+};
+
+window.prontoCartelas = true;
+
+// Com janela: `?ver=fim` mostra o letreiro, `?ver=texto` uma cartela de
+// exemplo. Serve para olhar sem ter de gerar o vídeo inteiro.
+const ver = new URLSearchParams(location.search).get('ver');
+if (ver === 'fim') {
+  document.body.style.background = '#fff';
+  window.letreiro();
+} else if (ver) {
+  document.body.style.background = '#8fd0a8';
+  window.cartela({ emoji: '🌈', linhas: ['15 pistas mágicas'], miudo: 'do Campo ao Espaço' });
+}
+</script>
+</body></html>
