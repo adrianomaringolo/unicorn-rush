@@ -3600,8 +3600,12 @@ export class Game {
     );
 
     const cor = entity.children.find((c) => c.isMesh)?.material?.color?.getHex() ?? 0xffffff;
-    // A cortina no alto se desfaz lá em cima, onde o chifre bateu.
-    const onde = entity.userData.alto ? entity.position.clone().setY(ALTO_LIVRE) : entity.position;
+    // A cortina no alto se desfaz lá em cima, onde o chifre bateu — em cima
+    // do unicórnio, e não no meio dela, que numa cortina de duas ou três
+    // pistas pode ser bem longe dele.
+    const onde = entity.userData.alto
+      ? new THREE.Vector3(this.player.x, ALTO_LIVRE, entity.position.z)
+      : entity.position;
     this.world.burst(onde, cor);
     this.world.burst(onde.clone().setY(onde.y + 1.2), 0xffffff);
   }

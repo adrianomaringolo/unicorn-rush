@@ -965,6 +965,42 @@ aprende a desviar, e pular vem depois. Os números ficam em `BARRIER`, em
 `src/game/config.js`, e a chance por fase na coluna `barrierChance` de
 `src/game/levels.js`.
 
+### A cortina no alto
+
+O contrário da barreira: uma **cortina pendurada numa trave alta**, que se
+passa **por baixo**, correndo no chão — quem pula encosta o chifre nela e
+bate. É o que ensina a outra metade do "quando pular": às vezes o certo é
+ficar no chão. Cada pista tem a sua (`createOverhead`, em
+`src/models/scenery.js`): **folhas** penduradas num tronco no Campo, Frutas,
+Selva, Outono, Bruma e Oceano; **pingentes** de gelo ou de pedra na Geada,
+Caverna e Vulcão; **lanternas** de papel acesas no Vilarejo, Noite, Parque e
+Espaço; e **bandeirolas** de festa nas outras.
+
+Ela cobre **duas ou três pistas** de uma vez. Era de uma pista só, e aí
+bastava desviar para o lado: virava mais um obstáculo de desviar, e o "fica
+no chão" quase nunca era a resposta. Agora:
+
+- a de **três pistas** fecha a pista inteira — não há desvio, só passar por
+  baixo (é também a da aula de "não pule", no modo Aprender);
+- a de **duas** deixa uma faixa livre, e a criança escolhe entre desviar e
+  passar por baixo.
+
+Os postes ficam só nas pontas, na divisa de fora das faixas cobertas, para
+nada atrapalhar quem troca de faixa por baixo; a trave, a corda e o que
+pendura dela crescem com a largura. Nada desce abaixo de `ALTO_LIVRE`
+(2,85 — acima do chifre do unicórnio mais alto), e a colisão vale na largura
+inteira (`userData.halfWidth`, como a barreira), a partir de um pulinho de
+`ALTO_BATE`. Embaixo dela nascem **corações** na altura de quem passa
+correndo — o prêmio de ficar no chão.
+
+Como a barreira, ela toma a linha inteira: nada de obstáculo de chão junto,
+e nunca vem colada nela — no mínimo 4 linhas entre uma cortina e a próxima
+cortina ou barreira (`OVERHEAD`, em `src/game/config.js`, onde fica também a
+chance de ela fechar as três pistas, 40%). A chance de uma linha ser cortina
+é o `overheadChance` de cada velocidade do Desafio (8%, 15%, 22%) e, nas
+Fases, uma rampa que começa na fase 4 (`levels.js`). A página `/modelos`
+mostra as duas larguras de cada pista.
+
 #### As três de fim de lista
 
 | | Pista | O que tem |

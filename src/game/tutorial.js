@@ -93,15 +93,12 @@ export const LESSONS = [
   },
   {
     // Depois de três aulas de pular, a que ensina quando *não* pular: a
-    // cortina no alto (createOverhead), nas três faixas para não ter desvio
-    // — o único jeito de passar é ficar no chão. O coração embaixo dela é o
-    // prêmio de quem passou correndo.
+    // cortina no alto (createOverhead) cobrindo as três faixas, para não ter
+    // desvio — o único jeito de passar é ficar no chão. O coração embaixo
+    // dela é o prêmio de quem passou correndo.
     fala: 'Essa fica no alto: não pule, passe correndo por baixo 🏃',
     acao: 'chao',
-    itens: [
-      { o: 'overhead', faixa: 0 }, { o: 'overhead', faixa: 1 }, { o: 'overhead', faixa: 2 },
-      { o: 'heart', faixa: 1 },
-    ],
+    itens: [{ o: 'overhead', faixas: 3 }, { o: 'heart', faixa: 1 }],
   },
   {
     fala: '🔑 A chave mágica: é ela que liberta os amigos',

@@ -5446,19 +5446,30 @@ export function createObstacle(track) {
 // o unicórnio passa por baixo correndo — e em que bate se pular. Ensina a
 // segunda metade do "quando pular": às vezes o certo é ficar no chão.
 //
+// A cortina ocupa **duas ou três pistas** de uma vez (`faixas`). Era de uma
+// pista só, e aí bastava desviar para o lado — ela virava mais um obstáculo
+// de desviar, e o "fica no chão" quase nunca era a resposta. Com três, não
+// há desvio; com duas, sobra uma faixa livre, e a criança escolhe entre
+// desviar e passar por baixo.
+//
 // A medida que importa é ALTO_LIVRE: nada pendura abaixo dela, e ela fica
 // acima do chifre de todo unicórnio parado no chão (o mais alto chega a
 // ~2,7). A colisão (Game.checkCollisions, `userData.alto`) bate a partir de
-// um pulinho de ALTO_BATE — o chifre já encostaria na cortina.
+// um pulinho de ALTO_BATE — o chifre já encostaria na cortina — e vale em
+// toda a largura dela (`userData.halfWidth`, como a barreira).
 //
-// Os postes ficam na divisa entre as faixas (±1,02 — as faixas estão a 2,2
-// uma da outra), para a trave cobrir a faixa inteira e deixar claro que
-// desviar para o lado também vale. No chão, uma sombra comprida debaixo da
+// Os postes ficam só nas pontas, na divisa de fora das faixas cobertas (as
+// faixas estão a 2,2 uma da outra): nada fica no meio do caminho de quem
+// troca de faixa por baixo. No chão, uma sombra comprida debaixo da
 // cortina: é o aviso que chega antes, como a faixa da barreira.
 export const ALTO_LIVRE = 2.85;
 export const ALTO_BATE = 0.35;
 const TRAVE = 3.75;
-const POSTE_X = 1.02;
+const POSTE_X = 1.02;            // do meio de uma faixa até a divisa dela
+const ENTRE_FAIXAS = 2.2;        // a distância entre as faixas (LANES, no config)
+
+// Do meio da cortina até cada poste, para `faixas` pistas lado a lado.
+const meiaCortina = (faixas) => POSTE_X + (faixas - 1) * (ENTRE_FAIXAS / 2);
 
 const CORTINAS = {
   campo: 'folhas', frutas: 'folhas', selva: 'folhas', outono: 'folhas', bruma: 'folhas', oceano: 'folhas',
@@ -5479,15 +5490,15 @@ const PINGENTE = {
 };
 
 // Uma corda que cede no meio, de poste a poste.
-function cordaCaida(alto, cede) {
+function cordaCaida(alto, cede, meia) {
   return new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(-POSTE_X, alto, 0), new THREE.Vector3(0, alto - cede * 2, 0), new THREE.Vector3(POSTE_X, alto, 0));
+    new THREE.Vector3(-meia, alto, 0), new THREE.Vector3(0, alto - cede * 2, 0), new THREE.Vector3(meia, alto, 0));
 }
 
 // Os dois postes e o que fica em cima deles.
-function postes(cor, corTopo, { grosso = 0.07, alto = TRAVE } = {}) {
+function postes(cor, corTopo, meia, { grosso = 0.07, alto = TRAVE } = {}) {
   const pecas = [];
-  for (const x of [-POSTE_X, POSTE_X]) {
+  for (const x of [-meia, meia]) {
     pecas.push([new THREE.CylinderGeometry(grosso, grosso * 1.25, alto, 8), naPosicao(x, alto / 2, 0), cor]);
     pecas.push([new THREE.SphereGeometry(grosso * 1.6, 10, 8), naPosicao(x, alto + grosso, 0), corTopo]);
     pecas.push([new THREE.CylinderGeometry(grosso * 2.4, grosso * 2.8, 0.1, 10), naPosicao(x, 0.05, 0), corTopo]);
@@ -5495,8 +5506,8 @@ function postes(cor, corTopo, { grosso = 0.07, alto = TRAVE } = {}) {
   return pecas;
 }
 
-function sombraNoChao() {
-  const sombra = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.9),
+function sombraNoChao(meia) {
+  const sombra = new THREE.Mesh(new THREE.PlaneGeometry(meia * 2 - 0.04, 0.9),
     new THREE.MeshBasicMaterial({ color: 0x2a1f3d, transparent: true, opacity: 0.16, depthWrite: false }));
   sombra.rotation.x = -Math.PI / 2;
   sombra.position.y = 0.025;
@@ -5504,13 +5515,15 @@ function sombraNoChao() {
 }
 
 // Bandeirolas de festa: a corda caída e as bandeirinhas compridas.
-function bandeirolas() {
+function bandeirolas(trackId, faixas) {
   const g = new THREE.Group();
+  const meia = meiaCortina(faixas);
   const cores = [...PLASTICO].sort(() => Math.random() - 0.5);
-  g.add(new THREE.Mesh(juntarColorido(postes(0xfff6ec, cores[0])), tintaDaMalha()));
-  const corda = cordaCaida(TRAVE - 0.15, 0.12);
-  const pecas = [[new THREE.TubeGeometry(corda, 20, 0.018, 4), new THREE.Matrix4(), 0xfff6ec]];
-  const N = 8;
+  g.add(new THREE.Mesh(juntarColorido(postes(0xfff6ec, cores[0], meia)), tintaDaMalha()));
+  // Corda mais comprida cede mais — mas nunca até a linha de ALTO_LIVRE.
+  const corda = cordaCaida(TRAVE - 0.15, 0.12 + 0.05 * (faixas - 1), meia);
+  const pecas = [[new THREE.TubeGeometry(corda, 20 * faixas, 0.018, 4), new THREE.Matrix4(), 0xfff6ec]];
+  const N = 8 * faixas;
   for (let i = 0; i < N; i++) {
     const p = corda.getPoint((i + 0.5) / N);
     const largura = 0.24;
@@ -5524,23 +5537,25 @@ function bandeirolas() {
   }
   const fita = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha({ side: THREE.DoubleSide }));
   fita.castShadow = true;
-  g.add(fita, sombraNoChao());
+  g.add(fita, sombraNoChao(meia));
   return g;
 }
 
 // Pingentes: gelo (Geada), pedra lilás (Caverna) ou pedra escura com a
 // ponta em brasa (Vulcão), pendurados numa trave do mesmo material.
-function pingentes(trackId) {
+function pingentes(trackId, faixas) {
   const g = new THREE.Group();
+  const meia = meiaCortina(faixas);
   const estilo = PINGENTE[trackId] || PINGENTE.geada;
-  const pecas = postes(estilo.trave, estilo.cor, { grosso: 0.09 });
-  pecas.push([new THREE.BoxGeometry(POSTE_X * 2 + 0.3, 0.24, 0.32), naPosicao(0, TRAVE - 0.05, 0), estilo.trave]);
-  if (estilo.neve) pecas.push([new THREE.BoxGeometry(POSTE_X * 2 + 0.36, 0.08, 0.36), naPosicao(0, TRAVE + 0.1, 0), 0xffffff]);
+  const pecas = postes(estilo.trave, estilo.cor, meia, { grosso: 0.09 });
+  pecas.push([new THREE.BoxGeometry(meia * 2 + 0.3, 0.24, 0.32), naPosicao(0, TRAVE - 0.05, 0), estilo.trave]);
+  if (estilo.neve) pecas.push([new THREE.BoxGeometry(meia * 2 + 0.36, 0.08, 0.36), naPosicao(0, TRAVE + 0.1, 0), 0xffffff]);
   const pontas = [];
-  const N = 9;
+  const N = 9 * faixas;
   const embaixo = TRAVE - 0.17;
+  const borda = meia - 0.12;
   for (let i = 0; i < N; i++) {
-    const x = -0.9 + (i / (N - 1)) * 1.8 + (Math.random() - 0.5) * 0.06;
+    const x = -borda + (i / (N - 1)) * borda * 2 + (Math.random() - 0.5) * 0.06;
     // Os do meio e alguns soltos descem até a linha; os outros, menos.
     const longo = i % 2 === 0 || Math.random() < 0.3;
     const comprimento = (embaixo - ALTO_LIVRE) * (longo ? 1 : 0.45 + Math.random() * 0.3);
@@ -5550,23 +5565,25 @@ function pingentes(trackId) {
   }
   const corpo = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha(estilo.neve ? { transparent: true, opacity: 0.92 } : {}));
   corpo.castShadow = true;
-  g.add(corpo, sombraNoChao());
+  g.add(corpo, sombraNoChao(meia));
   if (pontas.length) g.add(new THREE.Mesh(juntar(pontas), LAVA_ACESA(estilo.brasa)));
   return g;
 }
 
 // Cortina de folhas: um tronco atravessado em dois postes de madeira e os
 // cipós pendurados, cheios de folhas, até a linha.
-function cortinaDeFolhas(trackId) {
+function cortinaDeFolhas(trackId, faixas) {
   const g = new THREE.Group();
+  const meia = meiaCortina(faixas);
   const verdes = FOLHAGEM[trackId] || FOLHAGEM.campo;
   const madeira = 0x8a5c3c;
-  const pecas = postes(madeira, 0x6b4a35, { grosso: 0.09 });
-  pecas.push([new THREE.CylinderGeometry(0.13, 0.13, POSTE_X * 2 + 0.4, 8), pose(0, TRAVE, 0, 0, 0, Math.PI / 2), madeira]);
-  const N = 7;
+  const pecas = postes(madeira, 0x6b4a35, meia, { grosso: 0.09 });
+  pecas.push([new THREE.CylinderGeometry(0.13, 0.13, meia * 2 + 0.4, 8), pose(0, TRAVE, 0, 0, 0, Math.PI / 2), madeira]);
+  const N = 7 * faixas;
   const folha = new THREE.SphereGeometry(0.11, 6, 4);
+  const borda = meia - 0.17;
   for (let i = 0; i < N; i++) {
-    const x = -0.85 + (i / (N - 1)) * 1.7;
+    const x = -borda + (i / (N - 1)) * borda * 2;
     const comprimento = TRAVE - 0.1 - ALTO_LIVRE;
     const balanco = (Math.random() - 0.5) * 0.08;
     const cipo = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x, TRAVE - 0.1, 0),
@@ -5581,18 +5598,19 @@ function cortinaDeFolhas(trackId) {
   }
   const corpo = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
   corpo.castShadow = true;
-  g.add(corpo, sombraNoChao());
+  g.add(corpo, sombraNoChao(meia));
   return g;
 }
 
 // Lanternas de papel acesas numa corda caída.
-function lanternas() {
+function lanternas(trackId, faixas) {
   const g = new THREE.Group();
-  g.add(new THREE.Mesh(juntarColorido(postes(0x5c3f2c, 0xffd166)), tintaDaMalha()));
-  const corda = cordaCaida(TRAVE - 0.1, 0.1);
-  const fios = [[new THREE.TubeGeometry(corda, 20, 0.016, 4), new THREE.Matrix4()]];
+  const meia = meiaCortina(faixas);
+  g.add(new THREE.Mesh(juntarColorido(postes(0x5c3f2c, 0xffd166, meia)), tintaDaMalha()));
+  const corda = cordaCaida(TRAVE - 0.1, 0.1 + 0.04 * (faixas - 1), meia);
+  const fios = [[new THREE.TubeGeometry(corda, 20 * faixas, 0.016, 4), new THREE.Matrix4()]];
   const tampas = [];
-  const N = 5;
+  const N = 5 * faixas;
   const cores = [0xff6b6b, 0xffd166, 0xff9ecd, 0x8ce9ff, 0xffa94d].sort(() => Math.random() - 0.5);
   for (let i = 0; i < N; i++) {
     const p = corda.getPoint((i + 0.5) / N);
@@ -5607,7 +5625,7 @@ function lanternas() {
     bola.position.set(p.x, centro, 0);
     g.add(bola);
   }
-  g.add(new THREE.Mesh(juntar(fios), mat(0x3a2f2a)), new THREE.Mesh(juntar(tampas), mat(0x5c3f2c)), sombraNoChao());
+  g.add(new THREE.Mesh(juntar(fios), mat(0x3a2f2a)), new THREE.Mesh(juntar(tampas), mat(0x5c3f2c)), sombraNoChao(meia));
   return g;
 }
 
@@ -5615,12 +5633,17 @@ const NO_ALTO = { bandeirolas, pingentes, cortinaDeFolhas, lanternas };
 const CORTINA_PADRAO = { folhas: 'cortinaDeFolhas', pingentes: 'pingentes', lanternas: 'lanternas' };
 
 // O modelo da pista: cada uma tem a sua cortina (ver CORTINAS); a que não
-// tem, ganha as bandeirolas de festa. `qual` força um modelo (página /modelos).
-export function createOverhead(track, qual) {
+// tem, ganha as bandeirolas de festa. `faixas` é quantas pistas ela cobre (2
+// ou 3); quem a põe na pista centraliza no meio delas. `qual` força um
+// modelo (página /modelos).
+export function createOverhead(track, faixas = 3, qual) {
   const nome = qual || CORTINA_PADRAO[CORTINAS[track.id]] || 'bandeirolas';
-  const obj = (NO_ALTO[nome] || bandeirolas)(track.id);
+  const obj = (NO_ALTO[nome] || bandeirolas)(track.id, faixas);
   obj.userData.kind = 'obstacle';
   obj.userData.alto = true;
+  obj.userData.faixas = faixas;
+  // A colisão pega a largura inteira: metade de cada faixa coberta.
+  obj.userData.halfWidth = (ENTRE_FAIXAS / 2) * faixas;
   return obj;
 }
 
