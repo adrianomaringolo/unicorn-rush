@@ -363,6 +363,8 @@ export function createUI() {
       bandeja = !home && !book;
       card.classList.toggle('bandeja', bandeja);
       stage.classList.toggle('bandeja', bandeja);
+      // O livro também tira o placar e os botões de toque de trás da página.
+      stage.classList.toggle('livro', book);
       // O livro é o cartão inteiro virando página: sem marca, sem borda
       // rosa, com a figura sangrando até o topo (ver .card.livro no CSS).
       card.classList.toggle('livro', book);
@@ -446,7 +448,7 @@ export function createUI() {
 
     hideOverlay: () => {
       overlay.classList.add('hidden');
-      stage.classList.remove('lobby', 'bandeja');
+      stage.classList.remove('lobby', 'bandeja', 'livro');
       bandeja = false;
       hud.classList.remove('dim');
     },

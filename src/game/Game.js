@@ -68,9 +68,19 @@ const LOBBY_CAMERA = {
 // são só os parâmetros — a altura dela, os pixels do topo que são dos
 // botões, quanto da faixa livre o unicórnio ocupa e os limites da distância.
 const BANDEJA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto: 4.5, longe: 22 };
-// Na ficha e no 3D a figura é de quem está sendo olhado, que pode não ser
-// o escolhido: o unicórnio do palco sai de cena, senão seriam dois.
-const FICHAS = new Set(['sheet', 'viewer']);
+// Os truques do unicórnio do lobby, um por toque, nesta ordem: o pulo com a
+// cambalhota do pulo duplo, a empinada e o giro. `tempo` é quanto cada um
+// dura, em segundos.
+// A altura do meio do corpo do unicórnio (sem escala): é em volta dela que a
+// cambalhota do lobby gira.
+const MEIO_DO_CORPO = 1.0;
+const EIXO_X = new THREE.Vector3(1, 0, 0);
+const EIXO_Y = new THREE.Vector3(0, 1, 0);
+const TRUQUES = [
+  { tipo: 'pulo', tempo: 0.8, som: () => sfx.doubleJump() },
+  { tipo: 'empina', tempo: 0.9, som: () => sfx.jump() },
+  { tipo: 'giro', tempo: 0.75, som: () => sfx.star() },
+];
 
 // Quanto tempo o portal fica aberto antes de sair sozinho. Cabe a
 // animação inteira (cadeado, portas, retrato, nome) e mais um respiro.
@@ -361,6 +371,11 @@ export class Game {
     }
 
     this.unicorn = createUnicorn(this.character);
+    // Primeiro o giro (y), depois a inclinação (x): assim a cambalhota e a
+    // empinada acontecem no corpo do próprio unicórnio, para onde quer que ele
+    // esteja virado — no menu ele fica girando, e na ordem padrão (x antes)
+    // a empinada virava um tombo para o lado.
+    this.unicorn.rotation.order = 'YXZ';
     vestirEnfeites(this.unicorn, this.vestindoDe(this.character.id));
     this.auras = createAuras();          // bolha, argolas e anéis de turbo
     this.unicorn.add(this.auras);
@@ -844,6 +859,7 @@ export class Game {
     // A música sai e a fanfarra toca sozinha, na tonalidade da pista.
     music.cut();
     sfx.win();
+    this.comemorando = true;
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
     const number = this.level;
     const trackId = this.track.id;
@@ -952,6 +968,9 @@ export class Game {
     // costas — durante toda a contagem, até o primeiro comando endireitá-lo.
     this.unicorn.rotation.x = 0;
     this.unicorn.rotation.y = 0;
+    this.unicorn.position.y = 0;
+    this.comemorando = false;
+    this.truque = null;
     // Segundos restantes de cada efeito (`flash` é só o brilho da vida extra).
     // `startShield` é a Chiclete, que começa dentro da bolha de chiclete.
     this.powers = { shield: this.character.startShield ?? 0, magnet: 0, boost: 0, flash: 0 };
@@ -1112,6 +1131,10 @@ export class Game {
       buttons: [{ label: t('▶️ JOGAR'), huge: true, arcoiris: true, onClick: () => this.playNow() }],
       grown: () => this.showGrownUps(),
     });
+    // O palco do lobby escuta o toque: em cima do unicórnio, ele faz um
+    // truque (ver tocarNoUnicornio).
+    document.querySelector('#overlay-extra .lobby-palco')
+      ?.addEventListener('pointerdown', (evento) => this.tocarNoUnicornio(evento));
     this.ui.bindExtra((qual) => {
       sfx.tap();
       if (qual === 'character') return this.showCharacterPicker();
@@ -1576,6 +1599,8 @@ export class Game {
     // história, nem poder, nem as pistas dele. É o que a história pede — na
     // página do livro ninguém sabe quem mora na torre.
     const oculto = !meu && !!item.earned;
+    // Quem o palco mostra enquanto a ficha está aberta (ver atualizarProvador).
+    this.fichaAberta = { kind, id, oculto };
     const preco = loja.preco(item);
     const tenho = this.wallet;
     const falta = preco - tenho;
@@ -1746,6 +1771,120 @@ export class Game {
     this.viewer = null;
   }
 
+  // O provador: na ficha de um unicórnio que não é o escolhido, quem fica no
+  // palco é **ele** — girando, com os enfeites que tiver, para a criança ver
+  // de corpo inteiro antes de escolher ou de juntar as chaves. O escolhido
+  // sai de cena enquanto isso, e volta quando a ficha fecha (o provador some
+  // sozinho em qualquer outra tela).
+  //
+  // Também saem do palco: todo mundo no 3D (a figura já gira na bandeja, e
+  // seriam dois) e no mistério — o Eco ainda não pode ser visto.
+  atualizarProvador(preview) {
+    const ficha = preview && this.screen === 'sheet' ? this.fichaAberta : null;
+    const quem = ficha && ficha.kind === 'character' && !ficha.oculto && ficha.id !== this.character.id
+      ? ficha.id : null;
+
+    if (this.provador && this.provador.userData.id !== quem) {
+      this.scene.remove(this.provador);
+      disposeObject(this.provador);
+      this.provador = null;
+    }
+    if (quem && !this.provador) {
+      this.provador = createUnicorn(CHARACTERS[quem]);
+      this.provador.rotation.order = 'YXZ';
+      vestirEnfeites(this.provador, this.vestindoDe(quem));
+      this.provador.userData.id = quem;
+      this.scene.add(this.provador);
+    }
+    if (this.provador) {
+      // Gira junto com o escolhido, para a troca não dar um pulo de ângulo.
+      this.provador.rotation.y = this.unicorn.rotation.y;
+      animateUnicorn(this.provador, this.elapsed, this.mode.startSpeed * 0.35 * 0.14, true);
+    }
+
+    const sai = preview && (this.screen === 'viewer'
+      || (this.screen === 'sheet' && (!!this.provador || !!ficha?.oculto)));
+    this.unicorn.visible = !sai;
+  }
+
+  // O resultado no palco: a pista parou, e o unicórnio vem para o meio dela,
+  // girando devagar para se mostrar. Quem venceu (fase, pista, a meta do
+  // Livre, o fim da aula) comemora aos pulinhos e gira mais rápido.
+  noPalcoDoResultado(dt) {
+    const p = this.player;
+    p.x += (0 - p.x) * Math.min(1, 3 * dt);
+    // A batida pode ter deixado o corpo no meio da piscada.
+    if (this.bodyVisible === false) this.setBodyVisible(true);
+    const pulinho = this.comemorando ? Math.abs(Math.sin(this.elapsed * 4.2)) * 0.9 : 0;
+    this.unicorn.position.set(p.x, pulinho, 0);
+    this.unicorn.rotation.x = 0;
+    this.unicorn.rotation.z = 0;
+    this.unicorn.rotation.y += dt * (this.comemorando ? 1.6 : 0.7);
+  }
+
+  // Tocar no unicórnio do lobby: ele faz um truque. O toque vale só em cima
+  // dele (um raio da câmera até o modelo), e não no palco inteiro — senão
+  // um toque perto das bolhas também o faria pular.
+  tocarNoUnicornio(evento) {
+    if (this.screen !== 'home' || this.state !== STATE.READY) return;
+    const tela = this.renderer.domElement.getBoundingClientRect();
+    const ponto = new THREE.Vector2(
+      ((evento.clientX - tela.left) / tela.width) * 2 - 1,
+      -((evento.clientY - tela.top) / tela.height) * 2 + 1
+    );
+    this.raio ??= new THREE.Raycaster();
+    this.raio.setFromCamera(ponto, this.camera);
+    if (!this.raio.intersectObject(this.unicorn, true).length) return;
+    this.fazerTruque();
+  }
+
+  fazerTruque() {
+    if (this.truque) return;      // um de cada vez: o toque no meio não corta o truque
+    this.proximoTruque = this.proximoTruque ?? 0;
+    const truque = TRUQUES[this.proximoTruque % TRUQUES.length];
+    this.proximoTruque += 1;
+    this.truque = { ...truque, t: 0 };
+    truque.som();
+    haptics.power();
+  }
+
+  // O truque em andamento, quadro a quadro. Os três sobem e descem num arco
+  // (seno de 0 a π); o que muda é o que o corpo faz no alto.
+  animarTruque(dt) {
+    const truque = this.truque;
+    if (!truque) return;
+    truque.t += dt;
+    const k = Math.min(1, truque.t / truque.tempo);
+    const arco = Math.sin(Math.PI * k);
+    const u = this.unicorn;
+    if (truque.tipo === 'pulo') {
+      // A cambalhota do pulo duplo, para a frente — girando em volta do meio
+      // do corpo. O modelo gira em volta das patas, e aí no meio da volta ele
+      // parecia cair de cara no chão: o deslocamento abaixo devolve o meio do
+      // corpo para onde ele estaria sem giro, já virado para onde ele olha.
+      const giro = -k * Math.PI * 2;
+      u.rotation.x = giro;
+      const meio = MEIO_DO_CORPO * (CHARACTERS[this.character.id].scale || 1);
+      const desvio = new THREE.Vector3(0, meio, 0)
+        .sub(new THREE.Vector3(0, meio, 0).applyAxisAngle(EIXO_X, giro))
+        .applyAxisAngle(EIXO_Y, u.rotation.y);
+      u.position.set(desvio.x, 2.0 * arco + desvio.y, desvio.z);
+    } else if (truque.tipo === 'empina') {
+      // Sobe um pouco ao mesmo tempo, senão as patas de trás afundariam no
+      // chão quando o corpo inclina.
+      u.position.y = 0.45 * arco;
+      u.rotation.x = 0.55 * arco;
+    } else {
+      u.position.y = 0.6 * arco;
+      u.rotation.y += (Math.PI * 4 * dt) / truque.tempo;
+    }
+    if (k < 1) return;
+    u.position.set(0, 0, 0);
+    u.rotation.x = 0;
+    this.truque = null;
+    this.world.burst(u.position.clone().setY(1.6), COLORS.star);
+  }
+
   // A câmera das telas em bandeja: põe o unicórnio no meio do pedaço de
   // palco que a bandeja deixa livre — em pé, a faixa entre os botões do topo
   // e a fita do título; deitado, a parte à esquerda da bandeja —, e longe o
@@ -1759,7 +1898,8 @@ export class Game {
     const { top, left, largura, altura } = palco;
     const meiaV = Math.tan(THREE.MathUtils.degToRad(this.baseFov / 2));
     const meiaH = meiaV * this.camera.aspect;
-    const escala = this.character.scale || 1;
+    // Quem está no palco: o do provador, na ficha de outro unicórnio.
+    const escala = (this.provador ? CHARACTERS[this.provador.userData.id].scale : this.character.scale) || 1;
 
     const emPe = this.portrait;
     const faixaV = emPe ? Math.max(40, top - fita - topo) : altura;
@@ -2643,31 +2783,96 @@ export class Game {
   //
   //   está usando ......... tira
   //   é seu ............... veste (e tira o que estava na mesma vaga)
-  //   dá para comprar ..... compra e já veste
+  //   dá para comprar ..... pergunta antes (ver confirmarEnfeite)
   //   faltam corações ..... chacoalha e diz quantos faltam
   tocarEnfeite(id, el) {
     const enfeite = ENFEITE[id];
     if (!enfeite) return;
-    const personagem = this.character.id;
-    const usando = this.vestindoDe(personagem)[enfeite.vaga] === id;
-
-    if (!this.temEnfeite(id)) {
-      if (this.coracoes < enfeite.preco) {
-        sfx.deny();
-        this.ui.shakeElement(el);
-        this.ui.toast(t('💗 Faltam {n} corações', { n: enfeite.preco - this.coracoes }));
-        return;
-      }
-      update((save) => {
-        save.enfeites.coracoes = (save.enfeites.coracoes || 0) - enfeite.preco;
-        save.enfeites.meus = [...(save.enfeites.meus || []), id];
-      });
-      sfx.power();
-      this.ui.toast(t('{emoji} {nome} é seu!', { emoji: enfeite.emoji, nome: enfeite.name }));
-    } else {
+    if (this.temEnfeite(id)) {
       sfx.tap();
+      this.vestirEnfeite(id);
+      return;
     }
+    if (this.coracoes < enfeite.preco) {
+      sfx.deny();
+      this.ui.shakeElement(el);
+      this.ui.toast(t('💗 Faltam {n} corações', { n: enfeite.preco - this.coracoes }));
+      return;
+    }
+    sfx.tap();
+    this.confirmarEnfeite(id);
+  }
 
+  // Antes de gastar os corações, a pergunta. Eles custam muitas corridas para
+  // juntar, e um toque sem querer na grade — que rola com o mesmo dedo —
+  // gastava tudo de uma vez, sem volta.
+  //
+  // Enquanto a criança decide, o enfeite já aparece **vestido** no unicórnio
+  // do palco: é o provador, o mesmo da ficha dos unicórnios. "Agora não" tira
+  // e volta para a grade no mesmo lugar em que ela estava.
+  confirmarEnfeite(id) {
+    const enfeite = ENFEITE[id];
+    const personagem = this.character.id;
+    const scroll = this.ui.extraScroll();
+    this.screen = 'enfeite-compra';
+    vestirEnfeites(this.unicorn, { ...this.vestindoDe(personagem), [enfeite.vaga]: id });
+    this.applyTrackGlow();
+    this.world.burst(this.unicorn.position.clone().setY(2.2), 0xff8fc6);
+    speak(enfeite.name);
+
+    const voltar = () => {
+      vestirEnfeites(this.unicorn, this.vestindoDe(personagem));
+      this.applyTrackGlow();
+      this.showEnfeites({ scroll });
+    };
+    const preco = enfeite.preco;
+    this.ui.showOverlay({
+      title: `${enfeite.emoji} ${enfeite.name}`,
+      html: `
+        <div class="shop">
+          <span class="shop-retrato">
+            <img class="shop-face" src="${getAccessoryPortraits()[id]}" alt="" />
+          </span>
+          <p class="shop-story">${t('Quer trocar os corações por este enfeite?')}</p>
+          <p class="shop-price">${t('Custa <b>💗 {preco}</b> · você tem <b>💗 {tenho}</b>', { preco, tenho: this.coracoes })}</p>
+        </div>
+      `,
+      buttons: [
+        {
+          label: t('💗 Trocar {preco} corações', { preco }),
+          hint: t('ele fica seu para sempre, para todos os unicórnios'),
+          huge: true,
+          onClick: () => this.comprarEnfeite(id, scroll),
+        },
+        { label: t('Agora não'), secondary: true, onClick: voltar },
+      ],
+      back: voltar,
+    });
+  }
+
+  comprarEnfeite(id, scroll) {
+    const enfeite = ENFEITE[id];
+    // Confere de novo na hora de debitar: a tela pode ter ficado aberta.
+    if (!enfeite || this.temEnfeite(id) || this.coracoes < enfeite.preco) {
+      sfx.deny();
+      return this.showEnfeites({ scroll });
+    }
+    update((save) => {
+      save.enfeites.coracoes = (save.enfeites.coracoes || 0) - enfeite.preco;
+      save.enfeites.meus = [...(save.enfeites.meus || []), id];
+    });
+    sfx.power();
+    this.ui.toast(t('{emoji} {nome} é seu!', { emoji: enfeite.emoji, nome: enfeite.name }));
+    // Comprou para vestir: já sai vestido, como estava no provador.
+    this.vestirEnfeite(id, { scroll, vestir: true });
+  }
+
+  // Veste ou tira um enfeite que já é seu. `vestir: true` força vestir (a
+  // compra recém-feita), em vez de alternar.
+  vestirEnfeite(id, { scroll = this.ui.extraScroll(), vestir = false } = {}) {
+    const enfeite = ENFEITE[id];
+    const personagem = this.character.id;
+    const usando = !vestir && this.vestindoDe(personagem)[enfeite.vaga] === id;
     update((save) => {
       const atual = { ...(save.enfeites.vestindo?.[personagem] || {}) };
       atual[enfeite.vaga] = usando ? null : id;
@@ -2680,7 +2885,7 @@ export class Game {
       this.world.burst(this.unicorn.position.clone().setY(2.2), 0xff8fc6);
       speak(enfeite.name);
     }
-    this.showEnfeites({ scroll: this.ui.extraScroll() });
+    this.showEnfeites({ scroll });
   }
 
   // Toca em um power-up na tela de evoluir: sobe de nível se der, ou avisa
@@ -2976,6 +3181,7 @@ export class Game {
 
   finishTutorial() {
     this.state = STATE.OVER;
+    this.comemorando = true;
     this.licao = null;
     this.restoreAfterTutorial();
     this.ui.showPause(false);
@@ -3048,6 +3254,7 @@ export class Game {
 
   victory() {
     sfx.star();
+    this.comemorando = true;
     this.world.burst(this.unicorn.position.clone().setY(1.6), COLORS.star);
 
     const done = this.goal;
@@ -3686,9 +3893,12 @@ export class Game {
     // fica exatamente onde estava, na mesma pose — sem galope, sem crina
     // balançando, sem rastro andando.
     const congelado = paused || (this.contando && this.retomando);
+    // Fim de corrida com a bandeja do resultado aberta: a pista para e o
+    // unicórnio vem para o palco (ver noPalcoDoResultado).
+    const resultado = this.state === STATE.OVER && !!this.ui.palco();
     const worldSpeed = playing
       ? this.speed * (boosting ? POWERUPS.boost.speed : rushing ? RUSH_SPEED : 1)
-      : congelado ? 0 : this.mode.startSpeed * 0.35;
+      : congelado || resultado ? 0 : this.mode.startSpeed * 0.35;
 
     // No turbo a câmera abre um pouco: dá sensação de velocidade. No ⚡ ela
     // abre menos, porque ali o unicórnio continua no chão.
@@ -3735,11 +3945,13 @@ export class Game {
     this.applyLightning(playing ? dt : 0);
     this.applyWingEffects(dt);
     if (!congelado) updateRainbowTrail(this.trail, dt, worldSpeed, this.player.x, this.player.y, this.elapsed, rushing);
-    this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY;
+    this.trail.visible = this.bodyVisible !== false && this.state !== STATE.READY && !resultado;
 
     // Na tela inicial o personagem gira devagar, para dar para ver o modelo
     // inteiro antes de escolher.
     if (this.state === STATE.READY) this.unicorn.rotation.y += dt * 0.7;
+    if (this.state === STATE.READY) this.animarTruque(dt);
+    if (resultado) this.noPalcoDoResultado(dt);
 
     // Câmera segue o unicórnio com um atraso suave. Na tela inicial ela chega
     // mais perto, para o personagem escolhido aparecer bem.
@@ -3759,17 +3971,17 @@ export class Game {
       // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
       // medida, senão as asas deles invadiam as bolhas das laterais.
       lobby = { ...base, distance: base.distance * recuo * (this.character.scale || 1) };
-    } else if (preview) {
+    } else if (preview || resultado) {
       lobby = this.enquadrarBandeja();
     }
-    this.unicorn.visible = !(preview && FICHAS.has(this.screen));
+    this.atualizarProvador(preview);
     const lado = lobby?.lado || 0;
     const alturaAlvo = lobby ? lobby.height : this.camView.height * (preview ? 0.95 : 1);
     const distanciaAlvo = lobby ? lobby.distance : this.camView.distance * previewZoom;
     this.camera.position.x += (this.player.x * 0.4 + lado - this.camera.position.x) * follow;
     this.camera.position.y += (alturaAlvo + this.player.y * 0.35 - this.camera.position.y) * follow;
     this.camera.position.z += (distanciaAlvo - this.camera.position.z) * follow;
-    this.camera.lookAt(this.player.x * 0.25 + lado, (lobby ? lobby.look : previewLook) + this.player.y * 0.3, preview ? -3 : -8);
+    this.camera.lookAt(this.player.x * 0.25 + lado, (lobby ? lobby.look : previewLook) + this.player.y * 0.3, preview || resultado ? -3 : -8);
 
     this.renderer.render(this.scene, this.camera);
   }

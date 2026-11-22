@@ -1183,7 +1183,17 @@ estouro visual já é o "uau".
 
 A bolha **🎀 Enfeites**, no lobby, abre a tela de enfeitar o unicórnio
 escolhido: a grade embaixo e o próprio unicórnio 3D em cima, girando. Cada
-toque veste ou tira na hora, e a criança vê o resultado nele, não num ícone.
+toque num enfeite que já é seu veste ou tira na hora, e a criança vê o
+resultado nele, não num ícone.
+
+**Comprar pergunta antes.** Os corações custam muitas corridas para juntar,
+e um toque sem querer na grade — que rola com o mesmo dedo — gastava tudo
+de uma vez, sem volta. Agora o toque num enfeite que dá para comprar abre a
+confirmação (`Game.confirmarEnfeite`): o enfeite já aparece **vestido** no
+unicórnio do palco enquanto a criança decide (o mesmo provador da ficha dos
+unicórnios), com o preço e quantos corações ela tem. **💗 Trocar** compra e
+já deixa vestido; **Agora não** tira e volta para a grade no mesmo lugar.
+Quando faltam corações, o toque chacoalha o enfeite e diz quantos faltam.
 
 São trinta e quatro, em seis **vagas**: um por vaga, como vestir boneca. A
 coroa tira a cartola, mas fica junto dos óculos, do colar, das patas, da
@@ -1491,6 +1501,15 @@ mais quadrada (tablet) a câmera recua para ele caber na coluna do meio, e o
 Brasa e o Vovô, que são maiores, também ganham uma câmera mais afastada.
 Todas as animações param com *reduzir movimento* ligado no aparelho.
 
+**Tocar no unicórnio do lobby faz ele brincar.** Cada toque é um truque, um
+depois do outro: o **pulo com a cambalhota** do pulo duplo (girando em volta
+do meio do corpo, no ar), a **empinada** e o **giro**, cada um com o seu som
+e uma chuva de estrelinhas no fim. O toque vale só em cima dele — um raio da
+câmera até o modelo (`Game.tocarNoUnicornio`) —, e não no palco inteiro,
+senão um toque perto das bolhas também o faria pular. Para a cambalhota e a
+empinada acontecerem no corpo dele, para onde quer que ele esteja virado, a
+rotação do unicórnio aplica primeiro o giro (`rotation.order = 'YXZ'`).
+
 Cada figura abre uma tela só, com **todas as opções à vista**:
 
 - **Quem vai correr?** — todos os retratos numa grade. Tocar num retrato
@@ -1526,9 +1545,14 @@ A bandeja tem uma altura em cada tela (a grade de 22 retratos é alta, a
 das brincadeiras é baixa), então a câmera dessas telas é **calculada**: o
 `Game.enquadrarBandeja` lê onde a bandeja está (o `ui.palco()`, medido com
 um `ResizeObserver`) e põe o unicórnio no meio da faixa livre, longe o
-bastante para ele caber nela. Na ficha e no 3D o retrato é de quem está
-sendo olhado — que pode não ser o escolhido —, então o unicórnio do palco
-sai de cena.
+bastante para ele caber nela.
+
+Na ficha de um unicórnio que não é o escolhido, quem fica no palco é **ele**:
+o **provador** (`Game.atualizarProvador`) monta o modelo daquele unicórnio,
+com os enfeites que ele tiver, girando no lugar do escolhido — é o que dá
+vontade de juntar as chaves. Ele some sozinho quando a ficha fecha. No 3D
+ninguém fica no palco (a figura já gira na bandeja), nem na ficha do mistério:
+o Eco ainda não pode ser visto.
 
 As duas bolhas grandes da esquerda são as que valem um botão de verdade
 mesmo sem ser o de jogar: **📖 A história** (roxa, reabre o livro; ver *A
@@ -1549,9 +1573,15 @@ que não é o lobby nem o livro da história (o `ui.showOverlay` liga a
 classe `bandeja` sozinho). Título comprido quebra a fita em duas linhas,
 em vez de ser cortado. A vitória de uma pista inteira continua com a
 bandeja de borda de arco-íris e o brilho dourado. Com o jogo parado no
-menu, o unicórnio aparece no palco; na pausa e nos resultados, o palco
-mostra a pista onde a corrida parou. O botão grande de cada tela tem um
-reflexo de luz passando de tempos em tempos.
+menu, o unicórnio aparece no palco; na pausa, o palco mostra a pista onde a
+corrida parou. Nos **resultados**, a pista para e o unicórnio vem para o
+meio do palco, girando devagar para se mostrar — e quem venceu (a fase, a
+pista inteira, a meta do Livre, o fim da aula) **comemora aos pulinhos**,
+girando mais rápido (`Game.noPalcoDoResultado`). O botão grande de cada tela
+tem um reflexo de luz passando de tempos em tempos.
+
+No livro da história o placar e os botões de toque também saem de trás da
+página (a classe `livro` no `#stage`).
 
 O livro da história fica de fora de propósito: ele é a página inteira de
 um livro, com a figura sangrando até a borda — outro objeto, não uma

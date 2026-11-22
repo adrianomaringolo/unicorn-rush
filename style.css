@@ -2461,7 +2461,9 @@ html, body {
    media queries lá de cima, sem precisar de `!important`. */
 
 #stage.lobby #hud,
-#stage.lobby #touch-controls { opacity: 0; visibility: hidden; }
+#stage.lobby #touch-controls,
+#stage.livro #hud,
+#stage.livro #touch-controls { opacity: 0; visibility: hidden; }
 
 #stage.lobby #overlay {
   align-content: stretch;
@@ -2619,8 +2621,11 @@ html, body {
   position: relative;
   align-self: stretch;
   min-height: clamp(130px, 28vh, 420px);
-  pointer-events: none;
+  /* O palco escuta o toque: em cima do unicórnio, ele faz um truque (ver
+     Game.tocarNoUnicornio). O balão e as estrelinhas não pegam o toque. */
+  pointer-events: auto;
 }
+.lobby-palco > * { pointer-events: none; }
 #stage.lobby .lobby-fala {
   position: absolute;
   left: 50%;
