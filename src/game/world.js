@@ -657,6 +657,10 @@ export class World {
         }
       }
 
+      // As pás do moinho giram no vento da tempestade (ver windmill).
+      const helice = deco.userData.helice;
+      if (helice) helice.rotation.z = elapsed * 1.1 + helice.userData.fase;
+
       // O que flutua balança na água em vez de ficar parado.
       if (deco.userData.side && this.track.shore && deco.userData.side === -this.track.shore.side) {
         deco.position.y = -0.12 + Math.sin(elapsed * 1.6 + deco.position.z * 0.35) * 0.09;

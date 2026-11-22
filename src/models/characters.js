@@ -110,7 +110,7 @@ export const CHARACTERS = {
     horn: { color: 0xffb02e, length: 0.78, radius: 0.1 },
     hair: [0xffd166, 0xff8a1f, 0xff4d1f, 0xffb02e, 0xff6b0f],
     // Asa bem grande: o maior da turma tem a envergadura para combinar.
-    wing: { style: 'ray', colors: [0xfff0a8, 0xffd166, 0xffab1f, 0xff7a1f, 0xff4d1f], scale: 1.6 },
+    wing: { style: 'ray', colors: [0xff4d1f, 0xff7a1f, 0xffab1f, 0xffd166, 0xfff0a8], scale: 1.6 },
     mark: { shape: 'flame', color: 0xff8a1f },
     // Macho grandão: maior que os outros e de pernas compridas.
     scale: 1.18,

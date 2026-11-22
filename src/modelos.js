@@ -42,7 +42,7 @@ const NOMES = {
   ufo: 'Disco voador', parasol: 'Guarda-sol', sandcastle: 'Castelo de areia',
   palmTree: 'Coqueiro', beachChair: 'Cadeira de praia', boat: 'Barquinho',
   surfboard: 'Prancha', buoy: 'Boia', circusTent: 'Tenda de circo',
-  ferrisWheel: 'Roda-gigante', cottonCandy: 'Algodão-doce', carousel: 'Carrossel',
+  ferrisWheel: 'Roda-gigante', cottonCandy: 'Algodão-doce', carousel: 'Carrossel', balloonStand: 'Buquê de balões',
   windmill: 'Moinho', lightningRod: 'Para-raios', puddle: 'Poça',
   ghostTree: 'Árvore fantasma', floatingLantern: 'Lanterna flutuante',
   mossRock: 'Pedra com musgo', crystalVein: 'Veio de cristal', stalagmite: 'Estalagmite',
@@ -476,7 +476,7 @@ function quadro() {
   }
   // Mexe do jeito que mexe no jogo: o unicórnio galopa, o bichinho bate asa.
   // O deslocamento que o bichinho devolve fica de fora — aqui ele voa parado.
-  if (vivo.item.unicornio) animateUnicorn(vivo.objeto, tempo, 2.4, true);
+  if (vivo.item.unicornio) animateUnicorn(vivo.objeto, tempo, 2.4, true, false, { asasAbertas: true });
   else if (vivo.item.ambiente) animateAmbience(vivo.objeto, tempo);
   else if (vivo.objeto.userData.algas) swaySeaweed(vivo.objeto, tempo);
   vivo.renderer.render(vivo.cena, vivo.camera);

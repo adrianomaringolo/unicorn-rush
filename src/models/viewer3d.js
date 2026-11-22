@@ -164,7 +164,7 @@ export function createViewer3d(personagem, { altura = 300 } = {}) {
       else girar(GIRO_SOZINHO * dt, 0);
     }
 
-    animateUnicorn(unicornio, tempo, 2.4, true);
+    animateUnicorn(unicornio, tempo, 2.4, true, false, { asasAbertas: true });
 
     renderer.render(scene, camera);
     requestAnimationFrame(quadro);

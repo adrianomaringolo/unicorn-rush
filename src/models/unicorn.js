@@ -27,7 +27,10 @@ const mat = (color, opts = {}) =>
 // `afunila` é o quanto a mecha estreita da base até a ponta: 0,66 deixa a
 // ponta com um terço da largura (mecha de cabelo), 0,92 fecha quase num bico
 // (a ponta do rabo da escultura).
-function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0, achatarEm = 'x', afunila = 0.66 } = {}) {
+// `juntas` põe uma bolinha em cada junta, do tamanho da mecha ali: com a
+// mecha dobrando, os elos abriam uma quina em cada junta e a mecha saía em
+// degraus. Com a bolinha a curva fica contínua, como um cacho.
+function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0.45, fiery = false, curva = 0, achatarEm = 'x', afunila = 0.66, juntas = false } = {}) {
   const root = new THREE.Group();
   const joints = [];
   const segLength = length / segments;
@@ -59,6 +62,11 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
     mesh.castShadow = true;
 
     joint.add(mesh);
+    if (juntas && i > 0) {
+      const bolinha = new THREE.Mesh(new THREE.SphereGeometry(top, 8, 6), material);
+      bolinha.scale[achatarEm] = flatten;
+      joint.add(bolinha);
+    }
     parent.add(joint);
     parent = joint;
     joints.push(joint);
@@ -81,9 +89,85 @@ function makeLock(color, { length = 0.9, width = 0.14, segments = 5, flatten = 0
   return root;
 }
 
-// Crina: fileira de mechas finas ao longo da crista do pescoço, caindo dos
-// dois lados — curtinhas na nuca, compridas no meio do pescoço.
+// Um cacho de crina: um tubo liso que segue uma curva e afina da raiz até
+// a ponta, numa peça só. As mechas montadas em elos (makeLock), dobradas
+// em cacho, saíam como cones empilhados: cada elo uma quina. Aqui a curva
+// é contínua e o sombreado é suave, como o cabelo de desenho.
+//
+// Fica dentro de um "elo" só, para o animateLock balançar o cacho inteiro
+// com o vento, do mesmo jeito que balança as outras mechas.
+function makeCacho(color, pontos, raio) {
+  const curva = new THREE.CatmullRomCurve3(pontos, false, 'catmullrom', 0.5);
+  const ANEIS = 16, LADOS = 8;
+  const geo = new THREE.TubeGeometry(curva, ANEIS, raio, LADOS);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.floor(i / (LADOS + 1)) / ANEIS;
+    const centro = curva.getPoint(t);
+    // Gordinho logo depois da raiz e fechando numa ponta.
+    const k = Math.sin(Math.min(1, t * 3 + 0.35) * Math.PI / 2) * (1 - t * 0.85);
+    pos.setXYZ(i,
+      centro.x + (pos.getX(i) - centro.x) * k,
+      centro.y + (pos.getY(i) - centro.y) * k,
+      centro.z + (pos.getZ(i) - centro.z) * k);
+  }
+  geo.computeVertexNormals();
+  const root = new THREE.Group();
+  const joint = new THREE.Group();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color }));
+  mesh.castShadow = true;
+  joint.add(mesh);
+  root.add(joint);
+  root.userData.joints = [joint];
+  root.userData.curva = 0;
+  root.userData.phase = 0;
+  return root;
+}
+
+// Crina: uma fileira de cachos lisos ao longo da crista do pescoço. Cada um
+// sobe da crista, vira para trás e cai para um lado, enrolando a ponta para
+// cima. Os lados se alternam, então de trás (a câmera do jogo) se vê a
+// crina dos dois lados do pescoço, e de perfil a silhueta é de ondas.
+//
+// A crina de fogo do Brasa continua sendo a fileira em pé de antes (ver
+// makeManeDeFogo): labareda sobe, não cai.
 function makeMane(colors, fiery = false) {
+  if (fiery) return makeManeDeFogo(colors);
+  const mane = new THREE.Group();
+  const locks = [];
+  const rows = 9;
+  for (let row = 0; row < rows; row++) {
+    const u = row / (rows - 1);        // 0 = nuca, 1 = cernelha
+    const lado = row % 2 ? 1 : -1;
+    const k = 0.8 + Math.sin(u * Math.PI * 0.85) * 0.35;   // maiores no meio
+    const P = (x, y, z) => new THREE.Vector3(lado * x * k, y * k, z * k);
+    const lock = makeCacho(colors[row % colors.length], [
+      P(0, -0.04, 0), P(0.04, 0.12, 0.08), P(0.13, 0.1, 0.22),
+      P(0.22, -0.06, 0.26), P(0.24, -0.2, 0.18), P(0.18, -0.2, 0.1),
+    ], 0.15);
+    lock.position.set(0, 1.9 - u * 0.62, -0.76 + u * 0.5);
+    // Acompanha a inclinação do pescoço.
+    lock.rotation.x = 0.35 - u * 0.25;
+    lock.userData.phase = row * 0.5;
+    mane.add(lock);
+    locks.push(lock);
+  }
+  // A raiz da crina: uma faixa lisa em cima da crista, onde os cachos
+  // nascem — sem ela, entre um cacho e outro aparecia o pescoço careca.
+  const raiz = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.1, 0.62, 4, 10),
+    new THREE.MeshLambertMaterial({ color: colors[0] })
+  );
+  raiz.scale.set(1.05, 1, 0.9);
+  raiz.position.set(0, 1.62, -0.52);
+  raiz.rotation.x = Math.PI / 2 - 0.9;
+  mane.add(raiz);
+
+  mane.userData.locks = locks;
+  return mane;
+}
+
+function makeManeDeFogo(colors, fiery = true) {
   const mane = new THREE.Group();
   const locks = [];
   const rows = 7;
@@ -120,8 +204,45 @@ function makeMane(colors, fiery = false) {
 }
 
 
-// Rabo: um punhado de mechas saindo da garupa.
+// Rabo: um feixe de mechas grossas e redondas, uma por cor, agrupadas em
+// roda (e não lado a lado), saindo da garupa e caindo numa curva que vira
+// para trás na ponta. Em roda, sempre se vê mais de uma cor, de qualquer
+// ângulo; redondas, elas têm volume.
+//
+// O de antes eram mechas chapadas lado a lado, retas e quase na
+// horizontal: de lado lia como uma espátula e de trás como uma placa. O de
+// fogo do Brasa continua como era (ver makeTailDeFogo).
 function makeTail(colors, fiery = false) {
+  if (fiery) return makeTailDeFogo(colors);
+  const tail = new THREE.Group();
+  const locks = [];
+  const count = Math.max(colors.length, 3);
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2;
+    const lock = makeLock(colors[i % colors.length], {
+      length: 1.25 - (i % 2) * 0.12,
+      width: 0.15,
+      segments: 7,
+      flatten: 0.78,
+      afunila: 0.85,
+      // Positiva: cada junta puxa a mecha para baixo — o rabo sai para trás
+      // da garupa e cai numa vírgula.
+      curva: 0.08,
+      juntas: true,
+    });
+    // Em roda na raiz, quase paralelas: o feixe fica unido do começo ao
+    // fim, e as pontas não abrem em leque.
+    lock.position.set(Math.cos(a) * 0.06, 0, Math.sin(a) * 0.05);
+    lock.rotation.set(Math.sin(a) * 0.05, 0, -Math.cos(a) * 0.05);
+    lock.userData.phase = i * 0.6;
+    tail.add(lock);
+    locks.push(lock);
+  }
+  tail.userData.locks = locks;
+  return tail;
+}
+
+function makeTailDeFogo(colors, fiery = true) {
   const tail = new THREE.Group();
   const locks = [];
   // Uma mecha por cor — é o que faz o listrado correr **na vertical**, ao
@@ -193,14 +314,14 @@ function makeFeather(length, width) {
   return shape;
 }
 
-// Raio de sol: comprido e pontudo.
+// Raio de sol, ou labareda: comprido, pontudo e curvo — a borda de cima
+// abaulada e a de baixo voltando em S até a raiz. Era um losango de quatro
+// retas, e o leque deles saía quadrado, de tábuas.
 function makeRay(length, width) {
   const shape = new THREE.Shape();
   shape.moveTo(0, 0);
-  shape.lineTo(length * 0.55, width);
-  shape.lineTo(length, width * 0.06);
-  shape.lineTo(length * 0.5, -width * 0.75);
-  shape.closePath();
+  shape.bezierCurveTo(length * 0.3, width * 1.1, length * 0.7, width * 0.95, length, width * 0.15);
+  shape.bezierCurveTo(length * 0.78, 0, length * 0.5, -width * 0.75, 0, 0);
   return shape;
 }
 
@@ -239,8 +360,8 @@ const WING_STYLES = {
     sweepNear: 0.15, sweepFar: 1.15, coverts: 3,
   },
   ray: {
-    count: 6, shape: makeRay, arm: 0.44,
-    near: 0.6, far: 1.05, width: 0.34, taper: 0.05,
+    count: 7, shape: makeRay, arm: 0.44,
+    near: 0.6, far: 1.1, width: 0.27, taper: 0.05,
     sweepNear: 0.15, sweepFar: 1.1, coverts: 3,
   },
   veil: {
@@ -255,11 +376,25 @@ const WING_STYLES = {
   },
 };
 
+// Pena fina: com 0,05 de espessura e um chanfro grosso, cada pena tinha
+// mais de 1 dm e o leque empilhado virava uma tábua — de trás, a asa era
+// um remo. Fina, ela continua com volume (o chanfro arredonda a borda),
+// mas lê como pena.
 function extrudeShape(shape) {
   return new THREE.ExtrudeGeometry(shape, {
-    depth: 0.05, bevelEnabled: true, bevelSize: 0.035, bevelThickness: 0.03, bevelSegments: 1,
+    depth: 0.02, bevelEnabled: true, bevelSize: 0.018, bevelThickness: 0.012, bevelSegments: 1,
   });
 }
+
+// O quanto a asa fica erguida em repouso. Deitada na horizontal, de trás
+// (o ângulo da câmera do jogo) ela era só uma risca; erguida, ela faz o V
+// de asa de anjinho de desenho e as penas aparecem.
+const WING_LIFT = 0.55;
+// E inclinada, com a borda de trás mais baixa, como asa planando. A asa
+// erguida em V continuava de quina para a câmera do jogo, que vem de trás:
+// correndo, cada asa era um risco. Inclinada, a superfície das penas fica
+// virada para trás e para cima, que é de onde se olha.
+const WING_PITCH = 0.35;
 
 function makeWing(side, wing) {
   const style = WING_STYLES[wing.style] || WING_STYLES.feather;
@@ -289,7 +424,11 @@ function makeWing(side, wing) {
     if (i % 2 === 1) tone.multiplyScalar(0.9);
     const feather = new THREE.Mesh(geo, mat(tone));
     feather.castShadow = true;
-    feather.position.set(0.12 + t * style.arm, 0, t * 0.07);
+    // Cada pena um degrau acima da anterior e as de fora mais inclinadas
+    // para cima: o leque se abre em escada e a ponta da asa curva para o
+    // alto, em vez de as penas se empilharem num bloco só.
+    feather.position.set(0.12 + t * style.arm, 0, t * 0.05 + i * 0.012);
+    feather.rotation.y = -t * 0.32;
     feather.rotation.z = -(style.sweepNear + t * (style.sweepFar - style.sweepNear));
     feather.userData.t = t;
     feather.userData.baseRotation = feather.rotation.z;
@@ -313,9 +452,13 @@ function makeWing(side, wing) {
 
   // Base da asa: uma almofadinha alongada que cobre a raiz das penas
   // (é ela que faz a borda da frente, sem virar um bastão saliente).
-  const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), mat(wing.colors[0]));
-  shoulder.scale.set(1.15, 0.6, 1.3);
-  shoulder.position.set(side * 0.08, 0, 0.02);
+  // Vai do ombro até a metade do braço, afinando — é a borda da frente da
+  // asa, com volume, que segura o leque visto de qualquer lado.
+  // No tom do meio da asa: no primeiro (o mais claro), ela virava um disco
+  // pálido em cima das costas de quem tem asa grande e escura (o Brasa).
+  const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 6), mat(wing.colors[Math.floor(wing.colors.length / 2)]));
+  shoulder.scale.set(1.3, 0.3, 0.65);
+  shoulder.position.set(side * 0.13, -0.02, -0.02);
   shoulder.castShadow = true;
   pivot.add(shoulder);
 
@@ -711,10 +854,10 @@ export function createUnicorn(character = CHARACTERS.uni) {
   wings.position.set(0, 1.5, 0.12);
   const wingL = makeWing(1, character.wing);
   wingL.position.x = 0.28;
-  wingL.rotation.set(0, -0.12, 0.22);
+  wingL.rotation.set(WING_PITCH, -0.12, WING_LIFT);
   const wingR = makeWing(-1, character.wing);
   wingR.position.x = -0.28;
-  wingR.rotation.set(0, 0.12, -0.22);
+  wingR.rotation.set(WING_PITCH, 0.12, -WING_LIFT);
   wings.add(wingL, wingR);
   torso.add(wings);
 
@@ -797,7 +940,10 @@ function animateLock(lock, time, { sweep, wave, sway, speed }) {
 
 // Animação de galope: pernas em diagonal, torso subindo e descendo,
 // cabeça balançando, crina e rabo esvoaçando, asas batendo.
-export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false) {
+// `asasAbertas` deixa as asas sempre abertas, com no ar — é para as
+// vitrines (lobby, retratos, /modelos), onde a asa é parte de quem o
+// personagem é. Na corrida elas fecham no chão (ver abaixo).
+export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false, { asasAbertas = false } = {}) {
   const { torso, head, ears, mane, forelock, tail, wings, legs } = unicorn.userData;
   const t = time * speed;
   const gallop = Math.sin(t);
@@ -862,14 +1008,35 @@ export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false
   // rápido — é o aviso visual de que o próximo pulo vai bem mais alto.
   const flap = (grounded ? 0.22 : 0.6) * (flapBoost ? 1.3 : 1);
   const beat = Math.sin(time * (grounded ? 7 : 11) * (flapBoost ? 1.9 : 1)) * flap;
+
+  // Correndo, a asa fica fechada, deitada ao longo do corpo; ao pular ela
+  // abre, e ao pousar fecha de novo. A troca não é de uma vez: `abertura`
+  // vai de 0 (fechada) a 1 (aberta) em uns décimos de segundo, contados
+  // pelo tempo entre um quadro e outro. Numa chamada avulsa (o retrato)
+  // não há quadro anterior, e a asa fica como nasceu: aberta.
+  const ud = unicorn.userData;
+  const alvo = asasAbertas || !grounded ? 1 : 0;
+  const dt = ud.tempoAnterior === undefined ? 0 : THREE.MathUtils.clamp(time - ud.tempoAnterior, 0, 0.1);
+  ud.tempoAnterior = time;
+  ud.abertura = ud.abertura ?? 1;
+  ud.abertura += (alvo - ud.abertura) * Math.min(1, dt * (alvo ? 12 : 6));
+  const aberta = ud.abertura;
+  // Fechada, ela quase não bate: só um tremidinho, de quem está pronta
+  // para abrir.
+  const batida = beat * (0.15 + aberta * 0.85);
+
   wings.children.forEach((wing, i) => {
     const side = i === 0 ? 1 : -1;
-    wing.rotation.z = side * 0.22 + beat * side;
-    wing.rotation.x = beat * 0.25;
+    // Aberta: erguida em V e inclinada. Fechada: virada para trás, colada
+    // no flanco, com a ponta um tico para baixo.
+    wing.rotation.z = side * THREE.MathUtils.lerp(-0.3, WING_LIFT, aberta) + batida * side;
+    wing.rotation.y = -side * THREE.MathUtils.lerp(1.3, 0.12, aberta);
+    wing.rotation.x = THREE.MathUtils.lerp(0.05, WING_PITCH, aberta) + batida * 0.25;
     // As penas abrem e fecham um pouquinho junto com a batida.
     for (const feather of wing.userData.feathers) {
-      feather.rotation.z = feather.userData.baseRotation
-        - beat * 0.18 * feather.userData.t
+      // Fechada, o leque recolhe: as penas se juntam numa só direção.
+      feather.rotation.z = feather.userData.baseRotation * (0.45 + aberta * 0.55)
+        - batida * 0.18 * feather.userData.t
         + Math.sin(time * 6 - feather.userData.t * 2) * 0.04;
     }
   });

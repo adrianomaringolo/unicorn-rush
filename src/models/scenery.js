@@ -29,6 +29,21 @@ function juntar(pecas) {
   return junto;
 }
 
+// Como `juntar`, mas cada peça leva a sua cor (`[geo, matriz, cor]`): várias
+// cores numa malha só, pintada com `tintaDaMalha`.
+function juntarColorido(pecas) {
+  const junto = juntar(pecas.map(([geo, matriz]) => [geo, matriz]));
+  const cores = [];
+  const c = new THREE.Color();
+  for (const [geo, , cor] of pecas) {
+    c.set(cor);
+    const n = geo.index ? geo.index.count : geo.attributes.position.count;
+    for (let i = 0; i < n; i++) cores.push(c.r, c.g, c.b);
+  }
+  junto.setAttribute('color', new THREE.Float32BufferAttribute(cores, 3));
+  return junto;
+}
+
 // A matriz que põe uma peça em `ponto`, com o eixo Y dela apontando para `dir`.
 const CIMA = new THREE.Vector3(0, 1, 0);
 function apontar(ponto, dir, escala = 1) {
@@ -40,6 +55,43 @@ const naPosicao = (x, y, z) => new THREE.Matrix4().makeTranslation(x, y, z);
 const PASTEL = [0xffb3d1, 0xb8f2c9, 0xbfd7ff, 0xffe6a7, 0xd9c2ff];
 const CANDY = [0xff8fc0, 0xffd166, 0x9ce0ff, 0xffb3e6, 0xc4f0a8];
 const AUTUMN = [0xd9822b, 0xc94f2f, 0xe0a83f, 0xb8672f];
+// As folhas de outono são mais vivas que o AUTUMN: o chão da pista já é
+// laranja-escuro, e folha na mesma cor some nele. Vermelho, laranja e
+// dourado bem saturados é o que aparece em cima do chão.
+const FOLHAS_OUTONO = [0xe0452f, 0xff8a2a, 0xffc23d, 0xc9302c, 0xf2a33a];
+
+// A folha de bordo, de pé no plano XY, com ~1 de altura e o cabinho para
+// baixo: cinco lobos pontudos, o do meio mais alto. Uma forma só, para o
+// monte de folhas, as folhas no pé da árvore e as que caem do céu.
+const BORDO = (() => {
+  const pontos = [
+    [-80, 0.16], [-12, 0.6], [12, 0.4], [38, 0.9], [62, 0.44], [90, 1.0],
+    [118, 0.44], [142, 0.9], [168, 0.4], [192, 0.6], [260, 0.16],
+  ].map(([graus, r]) => {
+    const a = (graus * Math.PI) / 180;
+    return new THREE.Vector2(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5);
+  });
+  const forma = new THREE.Shape();
+  forma.moveTo(0.018, -0.1);
+  for (const p of pontos) forma.lineTo(p.x, p.y);
+  forma.lineTo(-0.018, -0.1);
+  forma.lineTo(-0.018, -0.24);              // o cabinho
+  forma.lineTo(0.018, -0.24);
+  forma.lineTo(0.018, -0.1);
+  const geo = new THREE.ShapeGeometry(forma);
+  geo.translate(0, -0.13, 0);               // o meio da folha na origem
+  return geo;
+})();
+// A mesma folha deitada no chão (de cara para cima).
+const BORDO_DEITADO = BORDO.clone().rotateX(-Math.PI / 2);
+
+// A matriz de uma folha deitada em `ponto`, com a cara virada para `normal`
+// e girada `giro` em volta dela.
+function folhaNoChao(ponto, normal, giro, tamanho) {
+  const q = new THREE.Quaternion().setFromUnitVectors(CIMA, normal.clone().normalize())
+    .multiply(new THREE.Quaternion().setFromAxisAngle(CIMA, giro));
+  return new THREE.Matrix4().compose(ponto, q, new THREE.Vector3(tamanho, tamanho, tamanho));
+}
 const JUNGLE_GREENS = [0x2f8f4a, 0x3fae55, 0x246b38, 0x4fbf63];
 
 // --- Enfeites das laterais --------------------------------------------------
@@ -135,35 +187,88 @@ function pineTree() {
   return g;
 }
 
-function mushroom() {
+// Cogumelo de livro de histórias: o caule torneado, mais gordo embaixo, e
+// o chapéu em cúpula com a aba arredondada, as lamelas claras por baixo e
+// pintinhas brancas por cima. Os de antes eram um cilindro com meia
+// esfera em cima, sem aba nem nada por baixo — de perto, um abajur.
+//
+// Devolve um grupo com o pé no chão; `brilho` acende o chapéu (e as
+// pintas) para as pistas de noite.
+function cogumeloForma({ alto = 0.6, raio = 0.42, cor, pintas = 5, brilho = 0, caule = 0xfff6e8 }) {
   const g = new THREE.Group();
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.6, 6), mat(0xfff6e8));
-  stem.position.y = 0.3;
-  stem.castShadow = true;
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.42, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat(pick([0xff6b8a, 0xff9f68, 0xa78bfa]))
-  );
-  cap.position.y = 0.6;
-  cap.castShadow = true;
-  g.add(stem, cap);
+  const materialDe = (c, k = brilho) => (k ? mat(c, { emissive: c, emissiveIntensity: k }) : mat(c));
+  // Caule: um perfil girado — largo no pé, afina e abre de novo um tico
+  // embaixo do chapéu.
+  const rc = raio * 0.32;
+  const perfilCaule = [
+    [0, 0], [rc * 1.35, 0], [rc * 1.25, alto * 0.18], [rc * 0.95, alto * 0.55], [rc, alto * 0.92], [0, alto * 0.92],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const pe = new THREE.Mesh(new THREE.LatheGeometry(perfilCaule, 9), mat(caule, brilho ? { emissive: caule, emissiveIntensity: brilho * 0.35 } : {}));
+  pe.castShadow = true;
+  g.add(pe);
+
+  // Chapéu: da aba (que se curva um tico para baixo) até o topo.
+  const H = raio * 0.72;
+  const perfil = [new THREE.Vector2(raio * 0.9, -raio * 0.06)];
+  for (let k = 0; k <= 6; k++) {
+    const t = (k / 6) * Math.PI / 2;
+    perfil.push(new THREE.Vector2(Math.max(0.001, raio * Math.cos(t)), raio * 0.05 + H * Math.sin(t)));
+  }
+  const chapeu = new THREE.Mesh(new THREE.LatheGeometry(perfil, 12), materialDe(cor));
+  chapeu.position.y = alto * 0.88;
+  chapeu.castShadow = true;
+  g.add(chapeu);
+
+  // Lamelas: o disco claro por baixo da aba.
+  const lamelas = new THREE.Mesh(new THREE.CircleGeometry(raio * 0.9, 12), mat(0xffe9d6, brilho ? { emissive: 0xffe9d6, emissiveIntensity: brilho * 0.3 } : {}));
+  lamelas.rotation.x = Math.PI / 2;
+  lamelas.position.y = alto * 0.88 - raio * 0.05;
+  g.add(lamelas);
+
+  // Pintinhas na cúpula, deitadas na superfície.
+  if (pintas) {
+    const bolinhas = [];
+    for (let i = 0; i < pintas; i++) {
+      const phi = (i / pintas) * Math.PI * 2 + Math.random() * 0.4;
+      const t = 0.45 + (i % 2) * 0.35;
+      const normal = new THREE.Vector3(Math.cos(t) * Math.cos(phi), Math.sin(t) * 1.2, Math.cos(t) * Math.sin(phi)).normalize();
+      const ponto = new THREE.Vector3(raio * Math.cos(t) * Math.cos(phi), alto * 0.88 + raio * 0.05 + H * Math.sin(t), raio * Math.cos(t) * Math.sin(phi));
+      const r = raio * (0.13 + (i % 3) * 0.03);
+      bolinhas.push([new THREE.SphereGeometry(1, 6, 4), new THREE.Matrix4().compose(
+        ponto, new THREE.Quaternion().setFromUnitVectors(CIMA, normal), new THREE.Vector3(r, r * 0.3, r))]);
+    }
+    g.add(new THREE.Mesh(juntar(bolinhas), materialDe(0xfffbf2, brilho ? brilho * 0.6 : 0)));
+  }
   return g;
 }
 
-// Cogumelo da noite: o chapéu acende de leve.
+// Cogumelo do campo e do outono: um grande e, às vezes, um filhote do
+// lado, levemente torto.
+function mushroom() {
+  const g = new THREE.Group();
+  const cor = pick([0xff5d73, 0xff8a5c, 0xb18cff, 0xff6b8a]);
+  g.add(cogumeloForma({ alto: 0.62, raio: 0.42, cor }));
+  if (Math.random() < 0.6) {
+    const filhote = cogumeloForma({ alto: 0.34, raio: 0.22, cor, pintas: 3 });
+    filhote.position.set(0.38, 0, 0.15);
+    filhote.rotation.z = -0.2;
+    g.add(filhote);
+  }
+  return g;
+}
+
+// Cogumelos da noite: um trio de cogumelos finos e altos com o chapéu
+// aceso, de tamanhos diferentes.
 function glowMushroom() {
   const g = new THREE.Group();
-  const color = pick([0x8ce9ff, 0xc7a6ff, 0x9affd6]);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.17, 0.7, 6), mat(0xe8e4ff));
-  stem.position.y = 0.35;
-  stem.castShadow = true;
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.44, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat(color, { emissive: color, emissiveIntensity: 0.55 })
-  );
-  cap.position.y = 0.7;
-  cap.castShadow = true;
-  g.add(stem, cap);
+  const cor = pick([0x8ce9ff, 0xc7a6ff, 0x9affd6]);
+  const trio = [[0, 0, 0.78, 0.4, 0], [0.42, 0.12, 0.5, 0.27, -0.18], [-0.3, -0.2, 0.36, 0.2, 0.22]];
+  for (const [x, z, alto, raio, incl] of trio) {
+    const c = cogumeloForma({ alto, raio, cor, pintas: 4, brilho: 0.6, caule: 0xe8e4ff });
+    c.position.set(x, 0, z);
+    c.rotation.z = incl;
+    g.add(c);
+  }
   return g;
 }
 
@@ -396,118 +501,237 @@ function candyCane() {
   return g;
 }
 
-// Florzinha do campo: caule, folha, pétalas e miolo.
+// Uma pétala: gota achatada, da base (na origem) para a ponta (em +X),
+// deitada no plano do chão. Serve para as pétalas e para as folhas.
+const PETALA = (() => {
+  const f = new THREE.Shape();
+  f.moveTo(0, 0);
+  f.bezierCurveTo(0.25, 0.42, 0.72, 0.52, 1, 0);
+  f.bezierCurveTo(0.72, -0.52, 0.25, -0.42, 0, 0);
+  const geo = new THREE.ExtrudeGeometry(f, { depth: 0.04, bevelEnabled: false, curveSegments: 6 });
+  geo.translate(0, 0, -0.02);
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+})();
+
+// Pétala girada `a` em volta do miolo e erguida `ergue` (0 deitada, ~1,4
+// em pé), com comprimento e largura próprios.
+const petalaEm = (a, ergue, comp, larg, y = 0) => new THREE.Matrix4().compose(
+  new THREE.Vector3(0, y, 0),
+  new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, ergue, 'YZX')),
+  new THREE.Vector3(comp, 1, larg));
+
+// A tulipa: um copo em forma de ovo, aberto em cima, com a borda subindo
+// em três pontas — as pétalas.
+const TULIPA = (() => {
+  const perfil = [[0.001, 0], [0.1, 0.03], [0.17, 0.12], [0.17, 0.24], [0.12, 0.34]]
+    .map(([x, y]) => new THREE.Vector2(x, y));
+  const LADOS = 12;
+  const geo = new THREE.LatheGeometry(perfil, LADOS);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    if (i % perfil.length !== perfil.length - 1) continue;   // só a borda
+    const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    pos.setY(i, pos.getY(i) + Math.max(0, Math.cos(a * 3)) * 0.09 - 0.02);
+  }
+  geo.computeVertexNormals();
+  return geo;
+})();
+
+// As três flores do campo. Cada uma devolve as pétalas e o miolo (ou nada,
+// na tulipa, que é um copo fechado).
+const FLORES = {
+  margarida: (cor) => ({
+    petalas: Array.from({ length: 12 }, (_, i) => [PETALA, petalaEm((i / 12) * Math.PI * 2, 0.18, 0.34, 0.32)]),
+    miolo: 0.11, corMiolo: 0xffc93c, cor: pick([0xffffff, 0xfff0f6, cor]),
+  }),
+  florzinha: (cor) => ({
+    petalas: Array.from({ length: 5 }, (_, i) => [PETALA, petalaEm((i / 5) * Math.PI * 2, 0.25, 0.3, 0.5)]),
+    miolo: 0.085, corMiolo: 0xffe066, cor,
+  }),
+  tulipa: (cor) => ({ petalas: [[TULIPA, new THREE.Matrix4()]], miolo: 0, cor }),
+};
+
+// Flor do campo: caule em curva, duas folhas pontudas e a flor virada
+// para quem corre. Sai margarida, florzinha de cinco pétalas ou tulipa.
+// A de antes era um palito com seis bolinhas achatadas em roda.
 function flower() {
   const g = new THREE.Group();
-  const color = pick([0xff8fb1, 0xffd166, 0xff6b8a, 0xc9a6ff, 0xfff0f6, 0xff9f68]);
+  const cor = pick([0xff8fb1, 0xffd166, 0xff6b8a, 0xc9a6ff, 0xff9f68]);
+  const tipo = pick(['margarida', 'florzinha', 'florzinha', 'tulipa']);
+  const flor = FLORES[tipo](cor);
+  const ALTO = tipo === 'tulipa' ? 0.85 : 1.0;
 
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.0, 5), mat(0x6bbf7b));
-  stem.position.y = 0.5;
-  stem.castShadow = true;
-  g.add(stem);
-
-  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 5), mat(0x5aa86a));
-  leaf.scale.set(1.6, 0.35, 0.9);
-  leaf.position.set(0.16, 0.42, 0);
-  leaf.rotation.z = 0.5;
-  leaf.castShadow = true;
-  g.add(leaf);
-
-  // Pétalas em roda, viradas para cima.
-  const head = new THREE.Group();
-  head.position.y = 1.02;
-  head.rotation.x = 0.42;      // virada para quem corre
-  const petals = 6;
-  for (let i = 0; i < petals; i++) {
-    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.19, 6, 5), mat(color));
-    petal.scale.set(1, 0.42, 1.25);
-    const a = (i / petals) * Math.PI * 2;
-    petal.position.set(Math.cos(a) * 0.24, 0, Math.sin(a) * 0.24);
-    petal.rotation.y = -a;
-    petal.castShadow = true;
-    head.add(petal);
+  const curva = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.12, ALTO * 0.5, 0), new THREE.Vector3(0, ALTO, 0.04));
+  const verde = [[new THREE.TubeGeometry(curva, 8, 0.035, 5), new THREE.Matrix4()]];
+  for (const [y, a] of [[0.28, 0.4], [0.45, 2.9]]) {
+    verde.push([PETALA, new THREE.Matrix4().compose(
+      curva.getPoint(y), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, 0.55, 'YZX')), new THREE.Vector3(0.42, 1, 0.42))]);
   }
-  const middle = new THREE.Mesh(new THREE.SphereGeometry(0.15, 7, 6), mat(0xffe066));
-  middle.scale.y = 0.7;
-  middle.position.y = 0.05;
-  head.add(middle);
-  g.add(head);
+  const caule = new THREE.Mesh(juntar(verde), mat(0x5fb56f, { side: THREE.DoubleSide }));
+  caule.castShadow = true;
+  g.add(caule);
 
+  const cabeca = new THREE.Group();
+  cabeca.position.copy(curva.getPoint(1));
+  cabeca.rotation.x = tipo === 'tulipa' ? 0.15 : 0.6;    // virada para quem corre
+  const petalas = new THREE.Mesh(juntar(flor.petalas), mat(flor.cor, { side: THREE.DoubleSide }));
+  petalas.castShadow = true;
+  cabeca.add(petalas);
+  if (flor.miolo) {
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(flor.miolo, 8, 6), mat(flor.corMiolo));
+    miolo.scale.y = 0.6;
+    miolo.position.y = 0.03;
+    cabeca.add(miolo);
+  }
+  g.add(cabeca);
   g.scale.setScalar(0.95 + Math.random() * 0.35);
   return g;
 }
 
-// Tufo de florzinhas rentes ao chão, para salpicar o campo.
+// Tufo rente ao chão: uma moita de folhas de grama com florzinhas de cinco
+// pétalas espetadas em caules curtos. Era um punhado de bolinhas
+// achatadas largadas no chão.
 function flowerPatch() {
   const g = new THREE.Group();
-  const color = pick([0xff8fb1, 0xffd166, 0xfff0f6, 0xc9a6ff]);
+  const cor = pick([0xff8fb1, 0xffd166, 0xfff0f6, 0xc9a6ff]);
+  const grama = [];
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2, r = Math.random() * 0.45;
+    const alto = 0.22 + Math.random() * 0.18;
+    grama.push([new THREE.ConeGeometry(0.035, alto, 3), new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a) * r, alto / 2, Math.sin(a) * r),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler((Math.random() - 0.5) * 0.6, a, (Math.random() - 0.5) * 0.6)),
+      new THREE.Vector3(1, 1, 1))]);
+  }
+  const petalas = [], miolos = [];
   const n = 3 + Math.floor(Math.random() * 3);
   for (let i = 0; i < n; i++) {
-    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.17, 6, 5), mat(color));
-    bloom.scale.set(1, 0.4, 1);
-    bloom.position.set((Math.random() - 0.5) * 1.2, 0.16, (Math.random() - 0.5) * 1.2);
-    bloom.castShadow = true;
-    g.add(bloom);
-
-    const middle = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), mat(0xffe066));
-    middle.position.set(bloom.position.x, 0.22, bloom.position.z);
-    g.add(middle);
+    const a = (i / n) * Math.PI * 2 + Math.random() * 0.5, r = 0.15 + Math.random() * 0.3;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r, y = 0.28 + Math.random() * 0.14;
+    grama.push([new THREE.CylinderGeometry(0.018, 0.022, y, 4), naPosicao(x, y / 2, z)]);
+    const base = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0.4, Math.random() * 6, 0)), new THREE.Vector3(0.55, 0.55, 0.55));
+    for (let k = 0; k < 5; k++) petalas.push([PETALA, base.clone().multiply(petalaEm((k / 5) * Math.PI * 2, 0.3, 0.3, 0.85))]);
+    miolos.push([new THREE.SphereGeometry(0.085, 6, 4), base.clone().multiply(new THREE.Matrix4().makeScale(1, 0.6, 1))]);
   }
+  g.add(new THREE.Mesh(juntar(grama), mat(0x6bbf7b)));
+  const flores = new THREE.Mesh(juntar(petalas), mat(cor, { side: THREE.DoubleSide }));
+  flores.castShadow = true;
+  g.add(flores, new THREE.Mesh(juntar(miolos), mat(0xffe066)));
   return g;
 }
 
-// Morrinho de nuvem: o "arbusto" da pista do céu.
+// Nuvem fofa: um miolo achatado com calombos redondos por cima e pelos
+// lados (espalhados em espiral, para não sair em fileira), e a barriga
+// num azulzinho, que é a sombra que nuvem tem embaixo. Devolve as peças
+// coloridas, para juntarColorido; o pé fica em y = 0.
+function nuvemFofa(largura, alto, calombos = 14, { corCima = 0xffffff, corBaixo = 0xe2ecff } = {}) {
+  const pecas = [[new THREE.IcosahedronGeometry(1, 2), new THREE.Matrix4().compose(
+    new THREE.Vector3(0, alto * 0.42, 0), new THREE.Quaternion(), new THREE.Vector3(largura * 0.5, alto * 0.42, largura * 0.32)), corBaixo]];
+  const bola = new THREE.IcosahedronGeometry(1, 1);
+  for (let i = 0; i < calombos; i++) {
+    const y = 1 - (i + 0.5) / calombos;               // de cima para os lados
+    const r = Math.sqrt(1 - y * y), a = i * 2.39996;
+    const tam = alto * (0.3 + Math.random() * 0.12) * (1 - y * 0.25);
+    pecas.push([bola, new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a) * r * largura * 0.42, alto * 0.42 + y * alto * 0.38, Math.sin(a) * r * largura * 0.26),
+      new THREE.Quaternion(), new THREE.Vector3(tam, tam, tam)), y > 0.2 ? corCima : corBaixo]);
+  }
+  return pecas;
+}
+
+// Morrinho de nuvem: o "arbusto" da pista do céu. Eram três a cinco blocos
+// facetados em fila, que liam como pedras brancas.
 function cloudHill() {
   const g = new THREE.Group();
-  const material = mat(0xffffff);
-  const n = 3 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < n; i++) {
-    const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55 + Math.random() * 0.45, 0), material);
-    puff.position.set((i - n / 2) * 0.7, 0.35 + Math.random() * 0.35, (Math.random() - 0.5) * 0.6);
-    puff.castShadow = true;
-    g.add(puff);
-  }
+  const nuvem = new THREE.Mesh(juntarColorido(nuvemFofa(2 + Math.random() * 0.8, 1 + Math.random() * 0.3)), tintaDaMalha());
+  nuvem.castShadow = true;
+  g.add(nuvem);
   return g;
 }
+
+// Balão de ar quente: o envelope em forma de gota, com gomos listrados de
+// duas cores, a saia embaixo com a chama acesa, quatro cordas até o cesto
+// de vime e dois saquinhos de areia pendurados. Era uma bola com um
+// copinho embaixo.
+const ENVELOPE = (() => {
+  const perfil = [
+    [0.22, -0.95], [0.36, -0.7], [0.58, -0.35], [0.74, 0], [0.78, 0.3],
+    [0.72, 0.58], [0.55, 0.82], [0.3, 0.96], [0.001, 1.0],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  return new THREE.LatheGeometry(perfil, 16);
+})();
 
 function balloon() {
   const g = new THREE.Group();
-  const color = pick([0xff7b9d, 0xffd166, 0x74c0fc, 0xb197fc, 0x8ce99a]);
+  const [corA, corB] = pick([
+    [0xff7b9d, 0xffe066], [0x74c0fc, 0xffffff], [0xb197fc, 0xffd166], [0xff9f68, 0x8ce99a],
+  ]);
+  const ALTO = 2.6;
+  const envelope = new THREE.Mesh(
+    pintarDuasCores(ENVELOPE, (u) => Math.floor(u * 16) % 2 === 0, corA, corB), tintaDaMalha());
+  envelope.position.y = ALTO;
+  envelope.castShadow = true;
+  g.add(envelope);
 
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), mat(color));
-  body.scale.y = 1.25;
-  body.position.y = 2.6;
-  body.castShadow = true;
-  g.add(body);
+  const saia = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.16, 10, 1, true), mat(corA, { side: THREE.DoubleSide }));
+  saia.position.y = ALTO - 1.02;
+  g.add(saia);
+  const chama = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 6), mat(0xffb347, { emissive: 0xff9f1c, emissiveIntensity: 1 }));
+  chama.position.y = ALTO - 1.0;
+  g.add(chama);
 
-  const knot = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 6), mat(color));
-  knot.position.y = 1.95;
-  knot.rotation.x = Math.PI;
-  g.add(knot);
+  // As cordas, da saia até a borda do cesto.
+  const CESTO = 0.78;
+  const cordas = [];
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+    const de = new THREE.Vector3(Math.cos(a) * 0.17, ALTO - 1.1, Math.sin(a) * 0.17);
+    const ate = new THREE.Vector3(Math.cos(a) * 0.24, CESTO + 0.18, Math.sin(a) * 0.24);
+    const dir = de.clone().sub(ate);
+    cordas.push([new THREE.CylinderGeometry(0.012, 0.012, dir.length(), 3), apontar(de.clone().add(ate).multiplyScalar(0.5), dir)]);
+  }
+  g.add(new THREE.Mesh(juntar(cordas), mat(0x8a6a4a)));
 
-  const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 4), mat(0xfff0d0));
-  rope.position.y = 1.35;
-  g.add(rope);
-
-  const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.34, 6), mat(0xd8a86b));
-  basket.position.y = 0.7;
-  basket.castShadow = true;
-  g.add(basket);
+  // O cesto de vime: as tramas em faixas de dois tons, a borda de couro e
+  // os saquinhos de areia.
+  const cesto = new THREE.Mesh(pintarDuasCores(new THREE.CylinderGeometry(0.27, 0.22, 0.34, 8, 4),
+    (u, v) => (Math.floor(u * 8) + Math.floor(v * 4)) % 2 === 0, 0xd8a86b, 0xc08f55), tintaDaMalha());
+  cesto.position.y = CESTO;
+  cesto.castShadow = true;
+  g.add(cesto);
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.04, 5, 12), mat(0x8a5a3a));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = CESTO + 0.17;
+  g.add(borda);
+  const sacos = [];
+  for (const lado of [-1, 1]) {
+    sacos.push([new THREE.SphereGeometry(0.075, 6, 5), new THREE.Matrix4().compose(
+      new THREE.Vector3(lado * 0.3, CESTO - 0.02, 0.06), new THREE.Quaternion(), new THREE.Vector3(1, 1.25, 1))]);
+  }
+  g.add(new THREE.Mesh(juntar(sacos), mat(0xe8d6b0)));
   return g;
 }
 
-// Arquinho de arco-íris pequeno, para enfeitar a beira da pista do céu.
+// Arquinho de arco-íris para a beira da pista do céu: as seis cores, em
+// faixas redondas e grudadas, com os pés afundados em duas nuvenzinhas. Eram
+// quatro argolas finas com vão entre elas, plantadas direto no chão.
 function rainbowArch() {
   const g = new THREE.Group();
-  const colors = [0xff7b7b, 0xffd166, 0x8ce99a, 0x74c0fc];
-  colors.forEach((color, i) => {
-    const arc = new THREE.Mesh(
-      new THREE.TorusGeometry(1.5 - i * 0.28, 0.14, 5, 16, Math.PI),
-      mat(color)
-    );
-    arc.position.y = 0.1;
-    g.add(arc);
-  });
+  const cores = [0xff6b6b, 0xff9f43, 0xffd166, 0x6bd88a, 0x5fb4f5, 0xb38cff];
+  const faixas = cores.map((cor, i) => [
+    new THREE.TorusGeometry(1.55 - i * 0.17, 0.095, 6, 24, Math.PI),
+    naPosicao(0, 0.15, 0), cor]);
+  const arco = new THREE.Mesh(juntarColorido(faixas), tintaDaMalha());
+  arco.castShadow = true;
+  g.add(arco);
+  for (const lado of [-1, 1]) {
+    const pe = new THREE.Mesh(juntarColorido(nuvemFofa(1.1, 0.55, 9)), tintaDaMalha());
+    pe.position.x = lado * 1.12;
+    g.add(pe);
+  }
   return g;
 }
 
@@ -1530,87 +1754,103 @@ function seaUrchin() {
   return g;
 }
 
-// Uma valva de concha, cheia: um leque que sai da dobradiça (na origem) e
-// abre para +Z, com a borda ondulada e os gomos em relevo. É uma "lente"
-// fechada — a face de fora estufa mais que a de dentro, e as duas se
-// encontram na borda e na dobradiça —, então a valva tem corpo e não mostra
-// o vazio por dentro. A de antes era uma casca fina de meia esfera: de
-// frente aparecia só a borda, e a concha parecia cortada.
+// Uma valva de vieira, deitada no chão com a dobradiça em z = 0 e o leque
+// abrindo para +Z. Sai em duas malhas — o lado de fora, com as costelas, e
+// o de dentro, liso — para os dois terem cores diferentes: é o miolo claro
+// que faz a concha ler como concha, e não como leque.
+//
+// O leque nasce de uma dobradiça **reta**. A anterior afinava até um
+// ponto, e as duas valvas, abertas, formavam um "X" de ampulheta no meio
+// da concha.
 function valva(R, H) {
-  // Quatro pedaços de malha por costela: com menos, a costela vira serrote.
-  const COSTELAS = 14;
-  const NA = COSTELAS * 4, NR = 10;        // pedaços em volta e anéis da dobradiça à borda
-  const ABRE = 0.32;                        // o leque não chega a meia volta: tem "ombros"
-  const pontos = [];
-  const ponto = (i, j, fora) => {
-    const fi = ABRE + (i / NA) * (Math.PI - 2 * ABRE);
-    const t = j / NR;
-    // A costela: uma onda suave em volta, que cresce da dobradiça para a
-    // borda — e a borda ondula junto, um bico no fim de cada costela.
-    const onda = 0.5 + 0.5 * Math.cos(((fi - ABRE) / (Math.PI - 2 * ABRE)) * COSTELAS * Math.PI * 2);
-    const r = R * t * (1 + 0.035 * onda * t);
-    const bojo = Math.sin(Math.PI * Math.pow(t, 0.85));          // 0 na dobradiça e na borda
-    const gomo = 1 + 0.16 * onda * t;
-    const y = H * bojo * (fora ? gomo : 0.55);
-    return [Math.cos(fi) * r, y, Math.sin(fi) * r];
-  };
-  const indice = (lado, i, j) => lado * (NA + 1) * (NR + 1) + i * (NR + 1) + j;
-  for (const fora of [true, false]) {
-    for (let i = 0; i <= NA; i++) for (let j = 0; j <= NR; j++) pontos.push(...ponto(i, j, fora));
+  const COSTELAS = 13;
+  const NA = COSTELAS * 4, NR = 12;
+  const ABRE = 0.42;                       // o leque vai de ABRE a π − ABRE
+  const DOBRA = R * 0.2;                   // meia largura da dobradiça
+  const fora = [], dentro = [];
+  for (let i = 0; i <= NA; i++) {
+    const u = i / NA;
+    const fi = ABRE + u * (Math.PI - 2 * ABRE);
+    // Costela: onda suave, que cresce para a borda; a borda ondula junto.
+    const onda = 0.5 - 0.5 * Math.cos(u * COSTELAS * Math.PI * 2);
+    for (let j = 0; j <= NR; j++) {
+      const t = j / NR;
+      const raio = R * (1 + 0.04 * onda * t);
+      // Da dobradiça (um ponto da reta, conforme o ângulo) até a borda.
+      const x = THREE.MathUtils.lerp(-Math.cos(fi) * -DOBRA / Math.cos(ABRE), Math.cos(fi) * raio, t);
+      const z = Math.sin(fi) * raio * t;
+      // O bojo: alto no meio, zero na borda e na dobradiça; um pouco
+      // mais cheio perto da dobradiça, como a vieira de verdade.
+      const bojo = Math.sin(Math.PI * Math.pow(t, 0.75)) * (1 - 0.25 * Math.abs(u - 0.5) * 2);
+      const yFora = H * bojo * (1 + 0.14 * onda * t);
+      const yDentro = H * bojo * 0.72;
+      fora.push(x, yFora, z);
+      dentro.push(x, yDentro, z);
+    }
   }
   const faces = [];
   for (let i = 0; i < NA; i++) {
     for (let j = 0; j < NR; j++) {
-      for (const lado of [0, 1]) {
-        const a = indice(lado, i, j), b = indice(lado, i + 1, j);
-        const c = indice(lado, i + 1, j + 1), d = indice(lado, i, j + 1);
-        if (lado === 0) faces.push(a, d, b, b, d, c);
-        else faces.push(a, b, d, b, c, d);
-      }
+      const a = i * (NR + 1) + j, b = (i + 1) * (NR + 1) + j;
+      faces.push(a, a + 1, b, b, a + 1, b + 1);
     }
   }
-  // Os dois "ombros" do leque fecham a lente dos lados.
-  for (const i of [0, NA]) {
-    for (let j = 0; j < NR; j++) {
-      const a = indice(0, i, j), b = indice(0, i, j + 1), c = indice(1, i, j + 1), d = indice(1, i, j);
-      if (i === 0) faces.push(a, b, c, a, c, d);
-      else faces.push(a, c, b, a, d, c);
-    }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pontos, 3));
-  geo.setIndex(faces);
-  geo.computeVertexNormals();
-  return geo;
+  const montar = (pontos) => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pontos, 3));
+    geo.setIndex(faces);
+    return geo;
+  };
+  const foraGeo = montar(fora);
+
+  const foraNaoIndexado = foraGeo.toNonIndexed();
+  foraNaoIndexado.computeVertexNormals();
+  const dentroGeo = montar(dentro);
+  dentroGeo.computeVertexNormals();
+  return { fora: foraNaoIndexado, dentro: dentroGeo, dobra: DOBRA };
 }
 
-// Concha: duas valvas cheias em leque, a de cima aberta para quem vem e a
-// pérola sentada na de baixo.
+// Concha: vieira entreaberta, de miolo claro, com a pérola na valva de
+// baixo. A dobradiça fica atrás, e a boca aberta encara quem vem.
 function clam() {
   const g = new THREE.Group();
-  const cor = pick([0xffd6e8, 0xffe9c9, 0xe0d6ff, 0xffc9a8]);
-  const R = 0.75, H = 0.42;
-  const material = mat(cor, { side: THREE.DoubleSide });
+  const cor = pick([0xff9ec4, 0xffb98a, 0xc9a6ff, 0xffd27a]);
+  const R = 0.75, H = 0.36;
+  const casca = mat(cor, { side: THREE.DoubleSide });
+  const miolo = mat(new THREE.Color(cor).lerp(new THREE.Color(0xffffff), 0.7).getHex(), {
+    side: THREE.DoubleSide, emissive: 0x2a2228,
+  });
+  const valvaMalha = (geo) => {
+    const v = new THREE.Group();
+    const f = new THREE.Mesh(geo.fora, casca);
+    f.castShadow = true;
+    v.add(f, new THREE.Mesh(geo.dentro, miolo));
+    return v;
+  };
 
-  // As valvas giram na dobradiça, que fica atrás (z negativo) — o leque
-  // abre para a frente.
   const dobradica = new THREE.Group();
-  dobradica.position.set(0, H * 0.75, -R * 0.45);
+  dobradica.position.set(0, H * 0.95, -R * 0.5);
   g.add(dobradica);
 
-  const fundo = new THREE.Mesh(valva(R, H), material);
-  fundo.scale.y = -1;                       // a de baixo é a tigela
-  fundo.rotation.x = 0.12;
-  fundo.castShadow = true;
+  // A de baixo é a tigela: o bojo para baixo, a boca para cima.
+  const fundo = valvaMalha(valva(R, H));
+  fundo.scale.y = -1;
+  fundo.rotation.x = 0.1;
   dobradica.add(fundo);
 
-  const tampa = new THREE.Mesh(valva(R, H), material);
-  tampa.rotation.x = -0.6;                  // entreaberta, com a pérola espiando
-  tampa.castShadow = true;
+  const tampa = valvaMalha(valva(R, H * 0.85));
+  tampa.rotation.x = -0.75;                 // entreaberta
   dobradica.add(tampa);
 
-  const perola = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), mat(0xfffdf5, { emissive: 0x554d3d }));
-  perola.position.set(0, H * 0.75 - H * 0.55 + 0.13, -R * 0.45 + R * 0.5);
+  // O rolete da dobradiça: fecha a concha por trás e mostra onde as duas
+  // valvas se prendem.
+  const rolete = new THREE.Mesh(new THREE.CylinderGeometry(H * 0.2, H * 0.2, R * 0.46, 10), casca);
+  rolete.rotation.z = Math.PI / 2;
+  rolete.position.z = -H * 0.05;
+  dobradica.add(rolete);
+
+  const perola = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), mat(0xfffdf5, { emissive: 0x5a5244 }));
+  perola.position.set(0, H * 0.95 - H * 0.72 * 0.95 + 0.17, -R * 0.5 + R * 0.45);
   g.add(perola);
   return g;
 }
@@ -1624,91 +1864,239 @@ function clam() {
 const LAVA = [0xff6b1f, 0xff9500, 0xffc24d];
 
 // Pedra de basalto com veios de lava.
+// Pedra irregular: um icosaedro com cada vértice empurrado um tanto para
+// dentro ou para fora. O deslocamento é o mesmo para todas as faces que
+// dividem o vértice, senão a pedra abriria em rachas.
+function pedraIrregular(raio, tremor, detalhe = 1) {
+  const geo = new THREE.IcosahedronGeometry(raio, detalhe);
+  const pos = geo.attributes.position;
+  const deslocamento = new Map();
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const chave = `${v.x.toFixed(3)},${v.y.toFixed(3)},${v.z.toFixed(3)}`;
+    if (!deslocamento.has(chave)) deslocamento.set(chave, 1 + (Math.random() - 0.5) * 2 * tremor);
+    v.multiplyScalar(deslocamento.get(chave));
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Veios de lava: rachaduras acesas que correm pelas arestas de uma pedra.
+// Cada veio é um caminho aleatório de vértice em vértice, sem voltar, e
+// cada trecho é um bastão fino um tico para fora da superfície. Como
+// seguem as arestas, as rachas acompanham a forma da pedra — não são
+// manchas grudadas por cima.
+function veiosDeLava(geo, { caminhos = 2, passos = 5, espessura = 0.035, sobe = 0 } = {}) {
+  const pos = geo.attributes.position;
+  const pontos = [], indice = new Map(), vizinhos = [];
+  const idDe = (i) => {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const chave = `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
+    if (!indice.has(chave)) {
+      indice.set(chave, pontos.length);
+      pontos.push(new THREE.Vector3(x, y, z));
+      vizinhos.push(new Set());
+    }
+    return indice.get(chave);
+  };
+  for (let t = 0; t < pos.count; t += 3) {
+    const [a, b, c] = [idDe(t), idDe(t + 1), idDe(t + 2)];
+    vizinhos[a].add(b).add(c);
+    vizinhos[b].add(a).add(c);
+    vizinhos[c].add(a).add(b);
+  }
+  // Os veios começam na metade de cima (`sobe` puxa mais para o alto),
+  // que é a que se vê da pista.
+  const candidatos = pontos.map((p, i) => i).filter((i) => pontos[i].y > sobe);
+  const trechos = [];
+  for (let k = 0; k < caminhos; k++) {
+    let atual = pick(candidatos.length ? candidatos : pontos.map((p, i) => i));
+    const visitados = new Set([atual]);
+    for (let n = 0; n < passos; n++) {
+      const opcoes = [...vizinhos[atual]].filter((i) => !visitados.has(i));
+      if (!opcoes.length) break;
+      const prox = pick(opcoes);
+      const a = pontos[atual].clone().multiplyScalar(1.015);
+      const b = pontos[prox].clone().multiplyScalar(1.015);
+      const dir = b.clone().sub(a);
+      // Afina do começo para o fim do veio.
+      const grosso = espessura * (1 - (n / passos) * 0.5);
+      trechos.push([new THREE.CylinderGeometry(grosso, grosso, dir.length() + grosso, 4), apontar(a.clone().add(b).multiplyScalar(0.5), dir)]);
+      visitados.add(prox);
+      atual = prox;
+    }
+  }
+  return juntar(trechos);
+}
+
+const LAVA_ACESA = (cor) => mat(cor, { emissive: cor, emissiveIntensity: 1.15 });
+
+// Pedra de basalto rachada: um bloco quase preto, irregular e meio
+// achatado, com a lava acesa correndo pelas rachaduras, e uma pedrinha
+// irmã encostada. A de antes eram três bolotas lisas com uma manchinha
+// laranja por baixo.
 function lavaRock() {
   const g = new THREE.Group();
-  for (let i = 0; i < 3; i++) {
-    const pedra = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.5 - i * 0.11, 0),
-      mat(0x3b3340)
-    );
-    pedra.position.set((Math.random() - 0.5) * 0.8, 0.34 + i * 0.16, (Math.random() - 0.5) * 0.5);
-    pedra.rotation.set(Math.random(), Math.random(), Math.random());
-    pedra.castShadow = true;
-    g.add(pedra);
-  }
   const cor = pick(LAVA);
-  const veio = new THREE.Mesh(
-    new THREE.SphereGeometry(0.17, 7, 5),
-    mat(cor, { emissive: cor, emissiveIntensity: 1 })
-  );
-  veio.scale.set(1.5, 0.5, 1.1);
-  veio.position.set(0, 0.2, 0.26);
-  g.add(veio);
+  const geo = pedraIrregular(0.55, 0.16);
+  const pedra = new THREE.Mesh(geo, mat(0x342d38));
+  pedra.scale.set(1.25, 0.78, 1);
+  pedra.position.y = 0.3;
+  pedra.rotation.y = Math.random() * Math.PI;
+  pedra.castShadow = true;
+  pedra.add(new THREE.Mesh(veiosDeLava(geo, { caminhos: 3, passos: 5, sobe: -0.1 }), LAVA_ACESA(cor)));
+  g.add(pedra);
+
+  const geo2 = pedraIrregular(0.28, 0.2, 0);
+  const irma = new THREE.Mesh(geo2, mat(0x2f2833));
+  irma.position.set(0.62, 0.14, 0.2);
+  irma.scale.y = 0.7;
+  irma.castShadow = true;
+  irma.add(new THREE.Mesh(veiosDeLava(geo2, { caminhos: 1, passos: 3, espessura: 0.025 }), LAVA_ACESA(cor)));
+  g.add(irma);
   return g;
 }
 
 // Chaminé soltando brasa: um cone escuro com a boca acesa.
+// Chaminé de lava: um cone de rocha de beira irregular, com a cratera
+// acesa lá em cima, dois filetes de lava escorrendo pela encosta e
+// fagulhas subindo. A de antes era um cone liso com uma bola na ponta.
 function emberVent() {
   const g = new THREE.Group();
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.1, 6), mat(0x2f2833));
-  cone.position.y = 0.55;
+  const cor = pick(LAVA);
+  const ALTO = 1.05, BASE = 0.78, BOCA = 0.3;
+  const geo = new THREE.CylinderGeometry(BOCA, BASE, ALTO, 10, 3, true);
+  // Encosta irregular, e a beira da cratera recortada.
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const ang = Math.atan2(pos.getZ(i), pos.getX(i));
+    const k = 1 + Math.sin(ang * 3 + y * 4) * 0.08 + (y > ALTO / 2 - 0.01 ? Math.sin(ang * 5) * 0.06 : 0);
+    pos.setXYZ(i, pos.getX(i) * k, y + (y > ALTO / 2 - 0.01 ? Math.sin(ang * 4) * 0.05 : 0), pos.getZ(i) * k);
+  }
+  geo.computeVertexNormals();
+  const cone = new THREE.Mesh(geo, mat(0x2f2833, { side: THREE.DoubleSide }));
+  cone.position.y = ALTO / 2;
   cone.castShadow = true;
   g.add(cone);
-  const cor = pick(LAVA);
-  const boca = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 8, 6),
-    mat(cor, { emissive: cor, emissiveIntensity: 1.1 })
-  );
-  boca.position.y = 1.06;
-  g.add(boca);
-  // Fagulhas subindo, paradas no ar (o cenário passa, elas não precisam voar).
-  for (let i = 0; i < 3; i++) {
-    const fagulha = new THREE.Mesh(
-      new THREE.SphereGeometry(0.055 - i * 0.012, 5, 4),
-      mat(0xffc24d, { emissive: 0xffc24d, emissiveIntensity: 1.2 })
-    );
-    fagulha.position.set((Math.random() - 0.5) * 0.35, 1.3 + i * 0.36, (Math.random() - 0.5) * 0.3);
-    g.add(fagulha);
+
+  // A lava dentro da cratera, com o miolo mais claro.
+  const lava = new THREE.Mesh(new THREE.CircleGeometry(BOCA * 0.95, 10), LAVA_ACESA(cor));
+  lava.rotation.x = -Math.PI / 2;
+  lava.position.y = ALTO - 0.06;
+  g.add(lava);
+  const miolo = new THREE.Mesh(new THREE.CircleGeometry(BOCA * 0.45, 8), LAVA_ACESA(0xffe08a));
+  miolo.rotation.x = -Math.PI / 2;
+  miolo.position.y = ALTO - 0.05;
+  g.add(miolo);
+
+  // Filetes escorrendo: saem da beira, descem colados à encosta e
+  // engrossam embaixo, onde a lava empoça.
+  const raioEm = (h) => BOCA + (BASE - BOCA) * (1 - h / ALTO);
+  const filetes = [];
+  for (const a0 of [0.4 + Math.random(), 2.6 + Math.random()]) {
+    const pontos = [];
+    for (let k = 0; k <= 5; k++) {
+      const h = ALTO * (1 - k / 5) - 0.02;
+      const a = a0 + Math.sin(k * 1.3) * 0.12;
+      const r = raioEm(h) * 1.06;
+      pontos.push(new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r));
+    }
+    filetes.push([new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 12, 0.045, 5), new THREE.Matrix4()]);
+    filetes.push([new THREE.SphereGeometry(0.13, 7, 5), new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a0) * (BASE + 0.1), 0.02, Math.sin(a0) * (BASE + 0.1)),
+      new THREE.Quaternion(), new THREE.Vector3(1.3, 0.25, 1))]);
   }
+  g.add(new THREE.Mesh(juntar(filetes), LAVA_ACESA(cor)));
+
+  // Fagulhas subindo, paradas no ar (o cenário passa, elas não precisam voar).
+  const fagulhas = [];
+  for (let i = 0; i < 4; i++) {
+    const r = 0.06 - i * 0.011;
+    fagulhas.push([new THREE.IcosahedronGeometry(r, 0), naPosicao((Math.random() - 0.5) * 0.4, ALTO + 0.25 + i * 0.32, (Math.random() - 0.5) * 0.3)]);
+  }
+  g.add(new THREE.Mesh(juntar(fagulhas), LAVA_ACESA(0xffc24d)));
   return g;
 }
 
 // Árvore queimada: só o tronco preto e dois galhos secos.
+// Árvore queimada: o tronco torto e carbonizado, que afina e termina
+// quebrado numa ponta lascada, e três galhos curtos partidos. Brasas ainda
+// acesas brilham nas rachaduras da casca. A de antes era um poste com dois
+// paus retos.
 function charredTree() {
   const g = new THREE.Group();
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, 2.1, 6), mat(0x2b2530));
-  tronco.position.y = 1.05;
-  tronco.castShadow = true;
-  g.add(tronco);
-  for (const lado of [-1, 1]) {
-    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.85, 5), mat(0x352e3b));
-    galho.position.set(lado * 0.3, 1.6, 0);
-    galho.rotation.z = lado * -0.9;
-    galho.castShadow = true;
-    g.add(galho);
+  const lado = Math.random() < 0.5 ? -1 : 1;
+  const ALTO = 1.9 + Math.random() * 0.4;
+  const eixo = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(lado * 0.1, ALTO * 0.35, 0.04),
+    new THREE.Vector3(-lado * 0.06, ALTO * 0.7, 0), new THREE.Vector3(lado * 0.04, ALTO, -0.03),
+  ]);
+  const ANEIS = 10, LADOS = 6;
+  const tronco = new THREE.TubeGeometry(eixo, ANEIS, 0.2, LADOS);
+  const pos = tronco.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.floor(i / (LADOS + 1)) / ANEIS;
+    const c = eixo.getPoint(t);
+    // Afina para cima e alarga no pé, onde as raízes seguram.
+    const k = (1 - t * 0.55) * (1 + Math.max(0, 0.25 - t) * 1.6);
+    pos.setXYZ(i, c.x + (pos.getX(i) - c.x) * k, pos.getY(i), c.z + (pos.getZ(i) - c.z) * k);
   }
+  tronco.computeVertexNormals();
+  const pecas = [[tronco, new THREE.Matrix4()]];
+  // A ponta quebrada: três lascas de alturas diferentes.
+  const topo = eixo.getPoint(1);
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI * 2;
+    const alto = 0.18 + k * 0.1;
+    pecas.push([new THREE.ConeGeometry(0.05, alto, 3), naPosicao(topo.x + Math.cos(a) * 0.05, topo.y + alto / 2 - 0.02, topo.z + Math.sin(a) * 0.05)]);
+  }
+  // Galhos partidos: curtos, subindo em curva, sem ponta fina.
+  for (let k = 0; k < 3; k++) {
+    const de = eixo.getPoint(0.5 + k * 0.15);
+    const a = k * 2.3 + Math.random() * 0.5;
+    const dir = new THREE.Vector3(Math.cos(a), 0.75, Math.sin(a)).normalize();
+    const comp = 0.6 - k * 0.12;
+    const fim = de.clone().addScaledVector(dir, comp);
+    const meio = de.clone().addScaledVector(dir, comp * 0.5).add(new THREE.Vector3(0, -comp * 0.12, 0));
+    pecas.push([new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(de, meio, fim), 5, 0.06 - k * 0.01, 5), new THREE.Matrix4()]);
+  }
+  const arvore = new THREE.Mesh(juntar(pecas), mat(0x241e29));
+  arvore.castShadow = true;
+  g.add(arvore);
+
+  // Brasas nas rachaduras da casca: frestas acesas, compridas no sentido
+  // do tronco.
+  const brasas = [];
+  for (let k = 0; k < 4; k++) {
+    const t = 0.1 + k * 0.17 + Math.random() * 0.05;
+    const c = eixo.getPoint(t);
+    const a = Math.random() * Math.PI * 2;
+    const r = 0.2 * (1 - t * 0.55) * (1 + Math.max(0, 0.25 - t) * 1.6) * 0.97;
+    brasas.push([new THREE.SphereGeometry(0.05, 5, 4), new THREE.Matrix4().compose(
+      new THREE.Vector3(c.x + Math.cos(a) * r, c.y, c.z + Math.sin(a) * r),
+      new THREE.Quaternion().setFromAxisAngle(CIMA, -a), new THREE.Vector3(0.35, 2.4, 0.9))]);
+  }
+  g.add(new THREE.Mesh(juntar(brasas), LAVA_ACESA(pick(LAVA))));
   return g;
 }
 
 // Obstáculo: pedregulho de lava, com o disco de aviso no chão.
+// Obstáculo: pedregulho de lava — um bloco de basalto redondo e
+// irregular, todo rachado, com a lava acesa correndo pelas rachaduras.
+// Era um icosaedro liso com quatro manchas laranja coladas.
 function lavaBoulder() {
   const g = new THREE.Group();
   const cor = pick(LAVA);
-  const pedra = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 0), mat(0x342d3a));
+  const geo = pedraIrregular(0.62, 0.12);
+  const pedra = new THREE.Mesh(geo, mat(0x342d3a));
   pedra.position.y = 0.6;
+  pedra.rotation.y = Math.random() * Math.PI;
   pedra.castShadow = true;
+  pedra.add(new THREE.Mesh(veiosDeLava(geo, { caminhos: 4, passos: 6, espessura: 0.04, sobe: -0.3 }), LAVA_ACESA(cor)));
   g.add(pedra);
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2;
-    const fresta = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 6, 5),
-      mat(cor, { emissive: cor, emissiveIntensity: 1.05 })
-    );
-    fresta.scale.set(1.4, 0.4, 1);
-    fresta.position.set(Math.cos(a) * 0.45, 0.6 + Math.sin(a) * 0.28, Math.sin(a) * 0.45);
-    fresta.rotation.y = -a;
-    g.add(fresta);
-  }
   g.add(warningRing(cor));
   return g;
 }
@@ -1768,107 +2156,259 @@ function lavaPool() {
 
 const GELO = [0xbfe9ff, 0xdff4ff, 0x9ed8f5];
 
-// Pinheiro com neve empilhada nos galhos.
+// Pinheiro nevado: três andares de copa, cada um com uma capa de neve em
+// cima que escorre em bicos pela copa, e um montinho de neve no pé. A neve
+// de antes era um aro fino na beira de cada andar e quase não aparecia.
+// Três malhas: tronco, verde e neve.
 function snowPine() {
   const g = new THREE.Group();
   const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 0.7, 6), mat(0x6b5544));
   tronco.position.y = 0.35;
   g.add(tronco);
+
+  const verdes = [], neves = [];
   for (let i = 0; i < 3; i++) {
-    const copa = new THREE.Mesh(new THREE.ConeGeometry(0.75 - i * 0.18, 0.85, 7), mat(0x3f7d5d));
-    copa.position.y = 0.9 + i * 0.55;
-    copa.castShadow = true;
-    g.add(copa);
-    const neve = new THREE.Mesh(new THREE.ConeGeometry(0.6 - i * 0.16, 0.3, 7), mat(0xffffff));
-    neve.position.y = 1.16 + i * 0.55;
-    g.add(neve);
+    const R = 0.78 - i * 0.19, H = 0.9 - i * 0.08;
+    const y = 0.9 + i * 0.55;
+    verdes.push([new THREE.ConeGeometry(R, H, 9), naPosicao(0, y, 0)]);
+    // A capa: o mesmo cone, do topo até perto da beira, um tico maior — e a
+    // borda de baixo ondulada, para a neve escorrer em bicos. Ela desce até
+    // abaixo da saia do andar de cima, que cobre o topo deste: uma capa só
+    // no alto ficava toda escondida.
+    const alto = H * (i === 2 ? 0.6 : 0.7);
+    const capa = new THREE.ConeGeometry((R * alto / H) * 1.07, alto, 18, 1, true);
+    const pos = capa.attributes.position;
+    for (let k = 0; k < pos.count; k++) {
+      if (pos.getY(k) > 0) continue;
+      // O bico desce **pela encosta** do cone (abre junto enquanto desce):
+      // descendo reto, a face inteira afundava na copa e o verde vazava
+      // em listras pela neve.
+      const ang = Math.atan2(pos.getZ(k), pos.getX(k));
+      const desce = Math.max(0, Math.sin(ang * 6 + i)) * 0.12;
+      const abre = 1 + desce / alto;
+      pos.setXYZ(k, pos.getX(k) * abre, pos.getY(k) - desce, pos.getZ(k) * abre);
+    }
+    capa.computeVertexNormals();
+    neves.push([capa, naPosicao(0, y + H / 2 - alto / 2 + 0.01, 0)]);
   }
+  const montinho = new THREE.SphereGeometry(0.5, 10, 3, 0, Math.PI * 2, 0, Math.PI / 2);
+  montinho.scale(1, 0.18, 1);
+  neves.push([montinho, new THREE.Matrix4()]);
+
+  const copa = new THREE.Mesh(juntar(verdes), mat(0x3f7d5d));
+  copa.castShadow = true;
+  g.add(copa);
+  g.add(new THREE.Mesh(juntar(neves), mat(0xffffff, { side: THREE.DoubleSide })));
   return g;
+}
+
+// Iglu: a cúpula de blocos de gelo em fileiras desencontradas (cada bloco
+// num branco um tico diferente do vizinho), o túnel de entrada em arco,
+// também de blocos, e a porta escura em arco na ponta. O de antes era uma
+// cúpula lisa com uma caixa na frente.
+function pintarBlocos(geo, bloco, cores3 = [0xf4f9ff, 0xdde9f5, 0xe9f2fb]) {
+  const malha = geo.index ? geo.toNonIndexed() : geo;
+  const pos = malha.attributes.position;
+  const cores = new Float32Array(pos.count * 3);
+  const tons = cores3.map((c) => new THREE.Color(c));
+  const p = new THREE.Vector3();
+  for (let t = 0; t < pos.count; t += 3) {
+    p.set(0, 0, 0);
+    for (let k = 0; k < 3; k++) p.add(new THREE.Vector3().fromBufferAttribute(pos, t + k));
+    p.divideScalar(3);
+    const [fila, coluna] = bloco(p);
+    const cor = tons[((fila * 7 + coluna * 3) % 3 + 3) % 3];
+    for (let k = 0; k < 3; k++) cores.set([cor.r, cor.g, cor.b], (t + k) * 3);
+  }
+  malha.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+  malha.computeVertexNormals();
+  return malha;
 }
 
 function igloo() {
   const g = new THREE.Group();
+  const R = 0.85;
+  const FILAS = 5;
   const domo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.85, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat(0xf2f8ff)
+    pintarBlocos(new THREE.SphereGeometry(R, 32, FILAS * 2, 0, Math.PI * 2, 0, Math.PI / 2), (p) => {
+      const fila = Math.floor((p.y / R) * FILAS * 0.999);
+      const porFila = Math.max(3, Math.round(14 * Math.cos((fila / FILAS) * Math.PI / 2)));
+      const ang = (Math.atan2(p.z, p.x) / (Math.PI * 2) + 1) % 1;
+      return [fila, Math.floor(ang * porFila + (fila % 2) * 0.5)];
+    }),
+    tintaDaMalha()
   );
   domo.castShadow = true;
   g.add(domo);
-  const porta = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.3, 0.55, 8, 1, false, 0, Math.PI),
-    mat(0xd7e8f5)
+
+  // O túnel: meio cilindro deitado, apontando para a frente (+Z).
+  const RT = 0.36, COMP = 0.6;
+  const tunelGeo = new THREE.CylinderGeometry(RT, RT, COMP, 12, 2, true, Math.PI / 2, Math.PI);
+  tunelGeo.rotateX(Math.PI / 2);
+  const tunel = new THREE.Mesh(
+    pintarBlocos(tunelGeo, (p) => [Math.floor((p.z + COMP / 2) / (COMP / 2)), Math.floor((Math.atan2(p.y, p.x) / Math.PI) * 5 + Math.floor((p.z + COMP / 2) / (COMP / 2)) * 0.5)]),
+    tintaDaMalha({ side: THREE.DoubleSide })
   );
-  porta.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-  porta.position.set(0, 0.28, 0.8);
+  tunel.position.set(0, 0, R * 0.78 + COMP / 2 - 0.1);
+  tunel.castShadow = true;
+  g.add(tunel);
+
+  const arco = new THREE.Shape();
+  arco.moveTo(-RT * 0.72, 0);
+  arco.lineTo(-RT * 0.72, RT * 0.3);
+  arco.absarc(0, RT * 0.3, RT * 0.72, Math.PI, 0, true);
+  arco.lineTo(RT * 0.72, 0);
+  arco.lineTo(-RT * 0.72, 0);
+  const porta = new THREE.Mesh(new THREE.ShapeGeometry(arco, 10), mat(0x4a6680));
+  porta.position.set(0, 0.005, R * 0.78 + COMP - 0.1 + 0.005);
   g.add(porta);
-  const buraco = new THREE.Mesh(new THREE.CircleGeometry(0.24, 8), mat(0x5b7590));
-  buraco.position.set(0, 0.26, 1.06);
-  g.add(buraco);
   return g;
 }
 
-// Cristal de gelo: espinhos claros e translúcidos saindo do chão.
+// Cristal de gelo: um tufo de prismas de gelo de ponta facetada, claros e
+// translúcidos. Os de antes eram três cones lisos.
 function iceCrystal() {
   const g = new THREE.Group();
-  for (let i = 0; i < 3; i++) {
-    const cor = pick(GELO);
-    const espinho = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2 - i * 0.04, 1.2 - i * 0.3, 5),
-      new THREE.MeshLambertMaterial({
-        color: cor, flatShading: true, transparent: true, opacity: 0.75,
-        emissive: cor, emissiveIntensity: 0.25,
-      })
-    );
-    espinho.position.set((i - 1) * 0.28, (1.2 - i * 0.3) / 2, (Math.random() - 0.5) * 0.3);
-    espinho.rotation.z = (i - 1) * 0.2;
-    espinho.castShadow = true;
-    g.add(espinho);
+  const cor = pick(GELO);
+  // Cada cristal é um prisma de seis faces com a ponta facetada, saindo do
+  // chão inclinado para fora — um tufo de quatro ou cinco, numa malha só.
+  const pecas = [];
+  const N = 4 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < N; i++) {
+    const alto = i === 0 ? 1.2 : 0.45 + Math.random() * 0.5;
+    const r = i === 0 ? 0.17 : 0.08 + Math.random() * 0.06;
+    const corpo = new THREE.CylinderGeometry(r, r * 1.1, alto, 6);
+    const ponta = new THREE.ConeGeometry(r, r * 2.2, 6);
+    ponta.translate(0, alto / 2 + r * 1.1, 0);
+    const cristal = juntar([[corpo, new THREE.Matrix4()], [ponta, new THREE.Matrix4()]]);
+    cristal.translate(0, alto / 2, 0);
+    const a = (i / N) * Math.PI * 2 + Math.random() * 0.5;
+    const inclina = i === 0 ? 0.08 : 0.35 + Math.random() * 0.25;
+    const dir = new THREE.Vector3(Math.cos(a) * Math.sin(inclina), Math.cos(inclina), Math.sin(a) * Math.sin(inclina));
+    const base = i === 0 ? new THREE.Vector3() : new THREE.Vector3(Math.cos(a) * 0.14, 0, Math.sin(a) * 0.14);
+    pecas.push([cristal, apontar(base, dir)]);
   }
+  const tufo = new THREE.Mesh(juntar(pecas), new THREE.MeshLambertMaterial({
+    color: cor, flatShading: true, transparent: true, opacity: 0.8,
+    emissive: cor, emissiveIntensity: 0.3,
+  }));
+  tufo.castShadow = true;
+  g.add(tufo);
   return g;
 }
 
+// Boneco de neve: três bolas, olhos e sorriso de carvão, nariz de cenoura,
+// botões, braços de graveto, cachecol com a ponta caída e gorro com pompom.
+// O de antes tinha os olhos boiando em cima da cabeça (a conta da altura
+// passava da última bola) e nada além do nariz.
 function snowman() {
   const g = new THREE.Group();
-  const tamanhos = [0.42, 0.31, 0.22];
-  let y = 0.42;
-  for (const r of tamanhos) {
-    const bola = new THREE.Mesh(new THREE.SphereGeometry(r, 9, 7), mat(0xffffff));
-    bola.position.y = y;
-    bola.castShadow = true;
-    g.add(bola);
-    y += r + tamanhos[Math.min(tamanhos.indexOf(r) + 1, 2)] * 0.75;
-  }
-  const cenoura = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 5), mat(0xff8a3c));
+  const [corCachecol, corGorro] = pick([[0xff4d5e, 0x4dc3ff], [0x4dc3ff, 0xff7bac], [0xffd166, 0x7a4ec7], [0x8ce99a, 0xff4d5e]]);
+  const BOLAS = [[0.42, 0.38], [0.31, 0.92], [0.23, 1.33]];   // [raio, altura do centro]
+  const [, [rMeio, yMeio], [rCabeca, yCabeca]] = BOLAS;
+
+  const neve = new THREE.Mesh(juntar(BOLAS.map(([r, y]) => [new THREE.IcosahedronGeometry(r, 2), naPosicao(0, y, 0)])), mat(0xffffff));
+  neve.castShadow = true;
+  g.add(neve);
+
+  // O carvão: olhos, sorriso e botões, todos colados na frente (+Z).
+  const naFrente = (r, cy, ang, alt) => new THREE.Vector3(Math.sin(ang) * r * Math.cos(alt), cy + Math.sin(alt) * r, Math.cos(ang) * r * Math.cos(alt));
+  const carvao = new THREE.IcosahedronGeometry(1, 0);
+  const pecas = [];
+  const pedra = (p, t) => pecas.push([carvao, new THREE.Matrix4().compose(p, new THREE.Quaternion(), new THREE.Vector3(t, t, t))]);
+  for (const lado of [-1, 1]) pedra(naFrente(rCabeca, yCabeca, lado * 0.33, 0.3), 0.035);
+  for (let k = 0; k < 5; k++) pedra(naFrente(rCabeca, yCabeca, (k - 2) * 0.2, -0.32 - Math.cos((k - 2) * 0.6) * 0.1 + 0.1), 0.022);
+  for (let k = 0; k < 3; k++) pedra(naFrente(rMeio, yMeio, 0, 0.35 - k * 0.35), 0.04);
+  g.add(new THREE.Mesh(juntar(pecas), mat(0x2b2530)));
+
+  const cenoura = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.26, 6), mat(0xff8a3c));
   cenoura.rotation.x = Math.PI / 2;
-  cenoura.position.set(0, y - 0.28, 0.24);
+  cenoura.position.set(0, yCabeca, rCabeca + 0.11);
   g.add(cenoura);
+
+  // Braços de graveto, cada um com dois dedinhos na ponta.
+  const gravetos = [];
   for (const lado of [-1, 1]) {
-    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.04, 5, 4), mat(0x2b2530));
-    olho.position.set(lado * 0.08, y - 0.2, 0.2);
-    g.add(olho);
+    const ombro = new THREE.Vector3(lado * rMeio * 0.85, yMeio + 0.08, 0);
+    const dir = new THREE.Vector3(lado, 0.55, 0.1).normalize();
+    gravetos.push([new THREE.CylinderGeometry(0.018, 0.026, 0.5, 5), apontar(ombro.clone().addScaledVector(dir, 0.25), dir)]);
+    const mao = ombro.clone().addScaledVector(dir, 0.46);
+    for (const desvio of [0.6, -0.4]) {
+      const d = new THREE.Vector3(lado * 0.6, 0.8 + desvio * 0.3, desvio * 0.5).normalize();
+      gravetos.push([new THREE.CylinderGeometry(0.01, 0.014, 0.14, 4), apontar(mao.clone().addScaledVector(d, 0.06), d)]);
+    }
   }
+  g.add(new THREE.Mesh(juntar(gravetos), mat(0x6b4a35)));
+
+  // O cachecol na altura do pescoço, com a ponta caindo na frente.
+  const pescoco = yMeio + rMeio * 0.82;
+  const cachecol = juntar([
+    [new THREE.TorusGeometry(rCabeca * 0.9, 0.06, 6, 14), new THREE.Matrix4().compose(new THREE.Vector3(0, pescoco, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1))],
+    [new THREE.BoxGeometry(0.1, 0.3, 0.04), new THREE.Matrix4().compose(new THREE.Vector3(0.1, pescoco - 0.14, rCabeca * 0.95), new THREE.Quaternion().setFromEuler(new THREE.Euler(0.25, 0, 0.15)), new THREE.Vector3(1, 1, 1))],
+  ]);
+  g.add(new THREE.Mesh(cachecol, mat(corCachecol)));
+
+  // O gorro com a barra dobrada e o pompom.
+  const gorro = juntar([
+    [new THREE.SphereGeometry(rCabeca * 1.04, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), naPosicao(0, yCabeca + 0.04, 0)],
+    [new THREE.SphereGeometry(0.075, 8, 6), naPosicao(0, yCabeca + rCabeca + 0.1, 0)],
+  ]);
+  g.add(new THREE.Mesh(gorro, mat(corGorro)));
+  const barra = new THREE.Mesh(new THREE.CylinderGeometry(rCabeca * 1.08, rCabeca * 1.08, 0.08, 14), mat(0xffffff));
+  barra.position.y = yCabeca + 0.06;
+  g.add(barra);
   return g;
 }
 
-// Obstáculo: bloco de gelo, translúcido e com a quina brilhando.
+// Obstáculo: bloco de gelo de quinas chanfradas, translúcido, com uma
+// almofada de neve fofa em cima e pinguinhos de gelo escorrendo pelas
+// beiradas. O de antes era um cubo com uma tampa cinza, e lia como caixa.
 function iceBlock() {
   const g = new THREE.Group();
   const cor = pick(GELO);
-  const bloco = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 0.85, 0.9),
-    new THREE.MeshLambertMaterial({
-      color: cor, flatShading: true, transparent: true, opacity: 0.82,
-      emissive: cor, emissiveIntensity: 0.3,
-    })
-  );
-  bloco.position.y = 0.43;
-  bloco.rotation.y = Math.random() * 0.6;
+  const L = 0.8, ALTO = 0.78, CHANFRO = 0.07;
+  const quadrado = new THREE.Shape();
+  quadrado.moveTo(-L / 2, -L / 2);
+  quadrado.lineTo(L / 2, -L / 2);
+  quadrado.lineTo(L / 2, L / 2);
+  quadrado.lineTo(-L / 2, L / 2);
+  quadrado.lineTo(-L / 2, -L / 2);
+  const blocoGeo = new THREE.ExtrudeGeometry(quadrado, {
+    depth: ALTO - CHANFRO * 2, bevelEnabled: true, bevelThickness: CHANFRO, bevelSize: CHANFRO, bevelSegments: 1,
+  });
+  blocoGeo.rotateX(-Math.PI / 2);           // a extrusão vira a altura
+  blocoGeo.translate(0, CHANFRO, 0);
+  const giro = Math.random() * 0.6;
+  const bloco = new THREE.Mesh(blocoGeo, new THREE.MeshLambertMaterial({
+    color: cor, flatShading: true, transparent: true, opacity: 0.82,
+    emissive: cor, emissiveIntensity: 0.3,
+  }));
+  bloco.rotation.y = giro;
   bloco.castShadow = true;
   g.add(bloco);
-  const topo = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 0.7), mat(0xffffff));
-  topo.position.y = 0.92;
-  topo.rotation.y = bloco.rotation.y;
-  g.add(topo);
+
+  // A neve em cima: uma almofada achatada, um tico maior que o tampo.
+  const almofada = new THREE.SphereGeometry(L * 0.62, 14, 4, 0, Math.PI * 2, 0, Math.PI / 2);
+  almofada.scale(1, 0.28, 1);
+  const neve = [[almofada, naPosicao(0, ALTO - 0.01, 0)]];
+  // Os pinguinhos: cones de ponta para baixo pendurados nas beiradas.
+  const pingo = new THREE.ConeGeometry(1, 1, 5);
+  pingo.rotateX(Math.PI);
+  pingo.translate(0, -0.5, 0);
+  const pingos = [];
+  for (let i = 0; i < 7; i++) {
+    const lado = Math.floor(Math.random() * 4);
+    const ao = (Math.random() - 0.5) * L * 0.8;
+    const [x, z] = [[ao, L / 2 + CHANFRO], [L / 2 + CHANFRO, ao], [ao, -L / 2 - CHANFRO], [-L / 2 - CHANFRO, ao]][lado];
+    const comp = 0.1 + Math.random() * 0.16;
+    pingos.push([pingo, new THREE.Matrix4().compose(new THREE.Vector3(x, ALTO - 0.02, z), new THREE.Quaternion(), new THREE.Vector3(0.03, comp, 0.03))]);
+  }
+  const neveMalha = new THREE.Mesh(juntar(neve), mat(0xffffff));
+  neveMalha.rotation.y = giro;
+  g.add(neveMalha);
+  const pingosMalha = new THREE.Mesh(juntar(pingos), new THREE.MeshLambertMaterial({ color: 0xe6f6ff, flatShading: true, emissive: cor, emissiveIntensity: 0.25 }));
+  pingosMalha.rotation.y = giro;
+  g.add(pingosMalha);
   return g;
 }
 
@@ -2395,29 +2935,84 @@ function ufo() {
 
 const LISTRAS = [[0xff4d5e, 0xffffff], [0xffd166, 0xffffff], [0x4dc3ff, 0xffffff]];
 
+// Tenda de circo: parede e cobertura listradas, a sainha de bicos na beira
+// do telhado, a porta aberta com as cortinas presas dos lados e a
+// bandeirinha no mastro. A de antes tinha a parede lisa e sem porta, e de
+// longe era um cone listrado em cima de um balde.
 function circusTent() {
   const g = new THREE.Group();
   const par = pick(LISTRAS);
-  const parede = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 1, 12), mat(0xfff6ec));
+  const listra = (n) => (u) => Math.floor(u * n) % 2 === 0;
+
+  const parede = new THREE.Mesh(
+    pintarDuasCores(new THREE.CylinderGeometry(1.05, 1.15, 1, 24, 1, true), listra(12), par[0], par[1]),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
   parede.position.y = 0.5;
   parede.castShadow = true;
   g.add(parede);
-  // Cobertura em gomos alternados: é a listra que faz a tenda de circo.
-  for (let i = 0; i < 12; i++) {
-    const gomo = new THREE.Mesh(
-      new THREE.CylinderGeometry(0, 1.2, 1.1, 3, 1, true, (i / 12) * Math.PI * 2, Math.PI / 6),
-      new THREE.MeshLambertMaterial({ color: par[i % 2], flatShading: true, side: THREE.DoubleSide })
-    );
-    gomo.position.y = 1.55;
-    gomo.castShadow = true;
-    g.add(gomo);
+
+  const cobertura = new THREE.Mesh(
+    pintarDuasCores(new THREE.ConeGeometry(1.25, 1.15, 24, 1, true), listra(12), par[0], par[1]),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  cobertura.position.y = 1.55;
+  cobertura.castShadow = true;
+  g.add(cobertura);
+
+  // A sainha: um bico por gomo, pendurado na beira do telhado.
+  const bico = new THREE.Shape();
+  bico.moveTo(-0.17, 0);
+  bico.lineTo(0.17, 0);
+  bico.lineTo(0, -0.2);
+  bico.lineTo(-0.17, 0);
+  const bicoGeo = new THREE.ShapeGeometry(bico);
+  const bicos = [];
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2;
+    bicos.push([bicoGeo, new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.sin(a) * 1.25, 1.0, Math.cos(a) * 1.25),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, 0)),
+      new THREE.Vector3(1, 1, 1)
+    )]);
   }
-  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 5), mat(0xd9a86b));
-  mastro.position.y = 2.2;
+  g.add(new THREE.Mesh(juntar(bicos), mat(0xffd166, { side: THREE.DoubleSide })));
+
+  // A porta: o vão escuro em arco, na frente (+Z), e as duas cortinas
+  // presas para os lados.
+  const vao = new THREE.Shape();
+  vao.moveTo(-0.24, 0);
+  vao.lineTo(-0.24, 0.45);
+  vao.quadraticCurveTo(0, 0.78, 0.24, 0.45);
+  vao.lineTo(0.24, 0);
+  vao.lineTo(-0.24, 0);
+  const porta = new THREE.Mesh(new THREE.ShapeGeometry(vao, 8), mat(0x5a2a4a));
+  porta.position.set(0, 0, 1.155);
+  porta.rotation.x = -0.1;                  // acompanha a parede, que afina para cima
+  g.add(porta);
+  for (const lado of [-1, 1]) {
+    const cortina = new THREE.Shape();
+    cortina.moveTo(0, 0.7);
+    cortina.lineTo(lado * 0.3, 0.7);
+    cortina.lineTo(lado * 0.3, 0);
+    cortina.lineTo(lado * 0.2, 0);
+    cortina.quadraticCurveTo(lado * 0.2, 0.35, 0, 0.7);
+    const pano = new THREE.Mesh(new THREE.ShapeGeometry(cortina, 6), mat(par[0], { side: THREE.DoubleSide }));
+    pano.position.set(lado * 0.02, 0, 1.165);
+    pano.rotation.x = -0.1;
+    g.add(pano);
+  }
+
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 5), mat(0xd9a86b));
+  mastro.position.y = 2.3;
   g.add(mastro);
-  const bandeira = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 3), mat(par[0]));
-  bandeira.rotation.z = -Math.PI / 2;
-  bandeira.position.set(0.16, 2.4, 0);
+  const flamula = new THREE.Shape();
+  flamula.moveTo(0, 0);
+  flamula.lineTo(0.38, -0.08);
+  flamula.lineTo(0, -0.2);
+  flamula.lineTo(0, 0);
+  const bandeira = new THREE.Mesh(new THREE.ShapeGeometry(flamula), mat(par[0] === 0xffd166 ? 0xff4d5e : 0xffd166, { side: THREE.DoubleSide }));
+  bandeira.position.set(0.03, 2.56, 0);
   g.add(bandeira);
   return g;
 }
@@ -2430,23 +3025,58 @@ function ferrisWheel() {
   const EIXO = 3.1;
   const CABINES = 12;
 
-  // Pé em A dos dois lados, com uma travessa ligando — antes eram duas
-  // pernas soltas, e a roda parecia flutuar.
-  for (const z of [-0.45, 0.45]) {
-    for (const lado of [-1, 1]) {
-      const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.11, EIXO * 1.08, 6), mat(0xb9c2d6));
-      perna.position.set(lado * 0.62, EIXO / 2, z);
-      perna.rotation.z = -lado * 0.38;
-      perna.castShadow = true;
-      g.add(perna);
-    }
-    const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.09, 0.09), mat(0xd6dcea));
-    travessa.position.set(0, EIXO * 0.42, z);
-    g.add(travessa);
+  // A base: de cada lado da roda, um "A" de duas pernas que sobem do chão
+  // e se encontram no eixo, com uma travessa e um X de reforço; embaixo, a
+  // plataforma de embarque com os degraus na frente. As pernas de antes
+  // estavam inclinadas ao contrário — abriam em cima, num "V" que não
+  // segurava a roda — e quase encostavam nos aros.
+  const PE = 1.3;                           // meia abertura do A no chão
+  const LADO_Z = 0.66;                      // afastado dos aros (em ±0,42)
+  const estrutura = [];
+  const viga = (de, ate, raio) => {
+    const dir = ate.clone().sub(de);
+    const geo = new THREE.CylinderGeometry(raio * 0.8, raio, dir.length(), 6);
+    return [geo, apontar(de.clone().add(ate).multiplyScalar(0.5), dir)];
+  };
+  for (const z of [-LADO_Z, LADO_Z]) {
+    const topo = new THREE.Vector3(0, EIXO, z);
+    const esq = new THREE.Vector3(-PE, 0, z), dir = new THREE.Vector3(PE, 0, z);
+    estrutura.push(viga(esq, topo, 0.1), viga(dir, topo, 0.1));
+    // Travessa e o X de reforço entre as pernas.
+    const em = (t) => [esq.clone().lerp(topo, t), dir.clone().lerp(topo, t)];
+    const [e1, d1] = em(0.15), [e2, d2] = em(0.52);
+    estrutura.push(viga(e2, d2, 0.05), viga(e1, d2, 0.035), viga(d1, e2, 0.035));
+    // A chapa redonda onde as pernas se encontram, segurando o eixo.
+    const chapa = new THREE.CylinderGeometry(0.2, 0.2, 0.06, 10);
+    chapa.rotateX(Math.PI / 2);
+    estrutura.push([chapa, naPosicao(0, EIXO, z)]);
   }
+  const base = new THREE.Mesh(juntar(estrutura), mat(0xb9c2d6));
+  base.castShadow = true;
+  g.add(base);
 
-  // Eixo central, ligando os dois lados.
-  const eixo = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.1, 8), mat(0xe8ecf5));
+  // Plataforma de embarque: o piso listrado sob a roda e os degraus na
+  // frente (+Z), por onde se sobe na cabine.
+  const plataforma = new THREE.Mesh(
+    pintarDuasCores(new THREE.CylinderGeometry(1.05, 1.15, 0.26, 24, 1, true), (u) => Math.floor(u * 12) % 2 === 0, cor, clara),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  plataforma.position.y = 0.13;
+  plataforma.scale.z = 0.8;
+  g.add(plataforma);
+  const piso = new THREE.Mesh(new THREE.CircleGeometry(1.05, 24), mat(0xfff0d6));
+  piso.rotation.x = -Math.PI / 2;
+  piso.scale.y = 0.8;
+  piso.position.y = 0.26;
+  g.add(piso);
+  const degraus = juntar([
+    [new THREE.BoxGeometry(0.6, 0.17, 0.2), naPosicao(0, 0.085, 0.95)],
+    [new THREE.BoxGeometry(0.6, 0.09, 0.2), naPosicao(0, 0.045, 1.13)],
+  ]);
+  g.add(new THREE.Mesh(degraus, mat(0xfff0d6)));
+
+  // Eixo central, de um "A" ao outro.
+  const eixo = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, LADO_Z * 2 + 0.12, 8), mat(0xe8ecf5));
   eixo.rotation.x = Math.PI / 2;
   eixo.position.y = EIXO;
   g.add(eixo);
@@ -2517,6 +3147,29 @@ function ferrisWheel() {
   return g;
 }
 
+// O cavalinho de carrossel, montado uma vez só: corpo, pescoço, cabeça
+// com orelha, as pernas da frente dobradas no ar (empinado) e as de trás
+// esticadas, e o rabo. A sela é à parte, para levar a cor do toldo. O
+// focinho aponta para +X.
+const CAVALINHO = (() => {
+  const em = (geo, x, y, z, rz = 0) => [geo, new THREE.Matrix4().compose(
+    new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, rz)), new THREE.Vector3(1, 1, 1))];
+  const perna = new THREE.CylinderGeometry(0.026, 0.02, 0.22, 5);
+  const corpo = juntar([
+    em(new THREE.CapsuleGeometry(0.09, 0.2, 3, 8), 0, 0, 0, Math.PI / 2),
+    em(new THREE.CylinderGeometry(0.05, 0.075, 0.22, 6), 0.15, 0.12, 0, -0.55),
+    em(new THREE.CapsuleGeometry(0.055, 0.09, 2, 6), 0.25, 0.22, 0, -1.25),
+    em(new THREE.ConeGeometry(0.025, 0.07, 4), 0.2, 0.3, 0, -0.2),
+    em(perna, 0.17, -0.06, 0.05, 1.1), em(perna, 0.15, -0.1, -0.05, 0.8),
+    em(perna, -0.14, -0.15, 0.05, -0.35), em(perna, -0.12, -0.15, -0.05, -0.2),
+    em(new THREE.ConeGeometry(0.04, 0.2, 5), -0.24, -0.02, 0, 2.3),
+  ]);
+  const sela = new THREE.CylinderGeometry(0.1, 0.1, 0.14, 8, 1, true, -Math.PI / 2, Math.PI);
+  sela.rotateX(Math.PI / 2);
+  sela.translate(0, 0.005, 0);
+  return { corpo, sela };
+})();
+
 // Carrossel: o outro brinquedo que todo parque tem. Um toldo listrado com
 // bandeirinhas, e cavalinhos em barras douradas que sobem e descem.
 function carousel() {
@@ -2525,10 +3178,19 @@ function carousel() {
   const RAIO = 1.15;
   const ALTURA = 1.5;
 
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(RAIO + 0.12, RAIO + 0.2, 0.22, 16), mat(0xfff0d6));
-  base.position.y = 0.11;
-  base.castShadow = true;
-  g.add(base);
+  // A base: a saia listrada em volta e o piso por cima.
+  const saia = new THREE.Mesh(
+    pintarDuasCores(new THREE.CylinderGeometry(RAIO + 0.12, RAIO + 0.2, 0.22, 32, 1, true),
+      (u) => Math.floor(u * 20) % 2 === 0, corA, 0xfff6fb),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  saia.position.y = 0.11;
+  saia.castShadow = true;
+  g.add(saia);
+  const piso = new THREE.Mesh(new THREE.CircleGeometry(RAIO + 0.12, 32), mat(0xfff0d6));
+  piso.rotation.x = -Math.PI / 2;
+  piso.position.y = 0.22;
+  g.add(piso);
 
   const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, ALTURA, 8), mat(0xffd166));
   mastro.position.y = ALTURA / 2 + 0.2;
@@ -2549,27 +3211,27 @@ function carousel() {
   ponta.position.y = ALTURA + 0.9;
   g.add(ponta);
 
-  // Os cavalinhos: barra dourada e um corpo simples, em alturas diferentes.
+  // Os cavalinhos: barra dourada e um cavalinho de carrossel empinado
+  // (ver CAVALINHO), virados no sentido em que o carrossel gira, em alturas
+  // diferentes. Antes eram dois bloquinhos.
+  const barras = [];
+  const cores = [mat(0xffffff), mat(0xffd9ec)];
+  const sela = mat(corA);
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2;
-    const x = Math.cos(a) * RAIO * 0.78;
-    const z = Math.sin(a) * RAIO * 0.78;
-    const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 1.1, 5), mat(0xffd166));
-    barra.position.set(x, ALTURA * 0.62, z);
-    g.add(barra);
+    const x = Math.cos(a) * RAIO * 0.75;
+    const z = Math.sin(a) * RAIO * 0.75;
+    barras.push([new THREE.CylinderGeometry(0.025, 0.025, ALTURA, 5), naPosicao(x, ALTURA / 2 + 0.2, z)]);
 
-    const cavalo = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.16),
-      mat(i % 2 ? 0xffffff : 0xffd9ec));
-    cavalo.position.set(x, 0.62 + Math.sin(i * 1.7) * 0.16, z);
-    cavalo.rotation.y = -a;
-    cavalo.castShadow = true;
+    const cavalo = new THREE.Group();
+    cavalo.position.set(x, 0.72 + Math.sin(i * 1.7) * 0.15, z);
+    cavalo.rotation.y = -a - Math.PI / 2;   // de lado para o centro, andando em roda
+    const corpo = new THREE.Mesh(CAVALINHO.corpo, cores[i % 2]);
+    corpo.castShadow = true;
+    cavalo.add(corpo, new THREE.Mesh(CAVALINHO.sela, sela));
     g.add(cavalo);
-    const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.12),
-      mat(i % 2 ? 0xffffff : 0xffd9ec));
-    cabeca.position.set(x + Math.cos(-a) * 0.17, cavalo.position.y + 0.13, z + Math.sin(-a) * 0.17);
-    cabeca.rotation.y = -a;
-    g.add(cabeca);
   }
+  g.add(new THREE.Mesh(juntar(barras), mat(0xffd166)));
 
   // Bandeirinhas na beirada do toldo.
   for (let i = 0; i < 8; i++) {
@@ -2585,137 +3247,425 @@ function carousel() {
 }
 
 
+// Buquê de balões do Parque: cinco balões de cores diferentes, em alturas
+// diferentes, com as fitas descendo em curva até um presentinho no chão que
+// segura tudo. O `balloon` (um balão só, com cestinho) continua no Céu,
+// onde ele é balão de ar quente.
+const BALAO = (() => {
+  const perfil = [
+    [0.03, -0.4], [0.1, -0.36], [0.22, -0.26], [0.3, -0.1], [0.32, 0.04],
+    [0.3, 0.18], [0.23, 0.3], [0.12, 0.37], [0, 0.39],
+  ].map(([r, y]) => new THREE.Vector2(r, y));
+  const corpo = new THREE.LatheGeometry(perfil, 14);
+  const no = new THREE.ConeGeometry(0.05, 0.07, 6);
+  no.translate(0, -0.43, 0);
+  return juntar([[corpo, new THREE.Matrix4()], [no, new THREE.Matrix4()]]);
+})();
+
+function balloonStand() {
+  const g = new THREE.Group();
+  const cores = [0xff5d8f, 0xffd166, 0x4cc9f0, 0x8ce99a, 0xc77dff, 0xff9f1c].sort(() => Math.random() - 0.5);
+  const AMARRA = new THREE.Vector3(0, 0.42, 0);
+  const baloes = [];
+  const fitas = [];
+  const N = 5;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + Math.random() * 0.4;
+    const abre = i === 0 ? 0 : 0.42 + Math.random() * 0.12;
+    const alto = i === 0 ? 3.15 : 2.5 + Math.random() * 0.45;
+    const p = new THREE.Vector3(Math.cos(a) * abre, alto, Math.sin(a) * abre);
+    // O balão inclina para fora, como se as fitas o puxassem para o centro.
+    const inclina = new THREE.Quaternion().setFromUnitVectors(CIMA, new THREE.Vector3(p.x * 0.5, 1, p.z * 0.5).normalize());
+    baloes.push([BALAO, new THREE.Matrix4().compose(p, inclina, new THREE.Vector3(1, 1.05, 1)), cores[i]]);
+    const ponta = p.clone().add(new THREE.Vector3(0, -0.47, 0).applyQuaternion(inclina));
+    const meio = ponta.clone().lerp(AMARRA, 0.5).add(new THREE.Vector3(Math.cos(a + 1.3) * 0.12, 0, Math.sin(a + 1.3) * 0.12));
+    fitas.push([new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(ponta, meio, AMARRA), 10, 0.012, 3), new THREE.Matrix4()]);
+  }
+  const corpo = new THREE.Mesh(juntarColorido(baloes), tintaDaMalha());
+  corpo.castShadow = true;
+  g.add(corpo);
+  g.add(new THREE.Mesh(juntar(fitas), mat(0xffffff)));
+
+  // O presentinho que segura o buquê: caixa com a fita em cruz e o laço.
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.34, 0.4), mat(pick([0xff5d8f, 0x4cc9f0, 0xc77dff])));
+  caixa.position.y = 0.17;
+  caixa.castShadow = true;
+  g.add(caixa);
+  const fita = juntar([
+    [new THREE.BoxGeometry(0.42, 0.35, 0.08), naPosicao(0, 0.17, 0)],
+    [new THREE.BoxGeometry(0.08, 0.35, 0.42), naPosicao(0, 0.17, 0)],
+    [new THREE.TorusGeometry(0.07, 0.025, 4, 8), new THREE.Matrix4().compose(new THREE.Vector3(-0.06, 0.38, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0.5)), new THREE.Vector3(1, 1, 1))],
+    [new THREE.TorusGeometry(0.07, 0.025, 4, 8), new THREE.Matrix4().compose(new THREE.Vector3(0.06, 0.38, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.5)), new THREE.Vector3(1, 1, 1))],
+  ]);
+  g.add(new THREE.Mesh(fita, mat(0xffd166)));
+  return g;
+}
+
+// Algodão-doce: a nuvem fofa, de duas cores em redemoinho, saindo de um
+// cone de papel listrado no palito. A nuvem é uma bola com calombos
+// redondos colados por toda a volta — calombo é o que faz "fofo"; as
+// quatro pedras facetadas de antes liam como árvore de folhagem cinza.
 function cottonCandy() {
   const g = new THREE.Group();
-  const palito = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 5), mat(0xfff6ec));
-  palito.position.y = 0.75;
+  const [corA, corB] = pick([
+    [0xff9ecb, 0xffc9e3], [0x8fdcff, 0xc9f0ff], [0xff9ecb, 0x9fe0ff], [0xd3b0ff, 0xffc4e1],
+  ]);
+
+  const palito = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 1.25, 6), mat(0xfff6ec));
+  palito.position.y = 0.62;
   g.add(palito);
-  const cor = pick([0xff9ecb, 0x9be7ff, 0xfff0a8]);
-  for (let i = 0; i < 4; i++) {
-    const nuvem = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34 - i * 0.04, 0), mat(cor));
-    const a = (i / 4) * Math.PI * 2;
-    nuvem.position.set(Math.cos(a) * 0.2, 1.6 + (i % 2) * 0.16, Math.sin(a) * 0.2);
-    nuvem.castShadow = true;
-    g.add(nuvem);
+
+  const papel = new THREE.Mesh(
+    pintarDuasCores(new THREE.ConeGeometry(0.2, 0.5, 16, 1, true), (u) => Math.floor(u * 8) % 2 === 0, 0xffffff, corA),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  papel.rotation.x = Math.PI;               // a ponta para baixo, no palito
+  papel.position.y = 1.2;
+  g.add(papel);
+
+  const CENTRO = new THREE.Vector3(0, 2.08, 0);
+  const pecas = [];
+  const miolo = new THREE.IcosahedronGeometry(0.52, 1);
+  pecas.push([miolo, new THREE.Matrix4().compose(CENTRO, new THREE.Quaternion(), new THREE.Vector3(1, 1.12, 1)), corA]);
+  const calombo = new THREE.IcosahedronGeometry(1, 1);
+  const N = 30;
+  for (let i = 0; i < N; i++) {
+    // Espiral dourada: os calombos se espalham por igual na bola.
+    const y = 1 - (i + 0.5) / N * 2;
+    if (y < -0.65) continue;                // embaixo fica o cone
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.39996;
+    const dir = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    const ponto = CENTRO.clone().add(new THREE.Vector3(dir.x * 0.46, dir.y * 0.52, dir.z * 0.46));
+    const tam = 0.24 + Math.random() * 0.07;
+    // O redemoinho: a cor gira em volta conforme sobe.
+    const cor = Math.sin(a + y * 3.5) > 0 ? corA : corB;
+    pecas.push([calombo, new THREE.Matrix4().compose(ponto, new THREE.Quaternion(), new THREE.Vector3(tam, tam, tam)), cor]);
   }
+  const nuvem = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
+  nuvem.castShadow = true;
+  g.add(nuvem);
   return g;
 }
 
 // Obstáculo do Parque: a caixa de pipoca listrada, tombada na pista.
+// Obstáculo do Parque: o balde de pipoca listrado, que abre para cima, com
+// o monte de pipoca transbordando e umas caídas no chão. Cada pipoca é um
+// cachinho de três ou quatro bolinhas — o "estourado" do milho — e todas
+// saem numa malha só. As de antes eram cinco pedras grandes.
+const PIPOCA = (() => {
+  const bolinha = new THREE.IcosahedronGeometry(1, 0);
+  const pecas = [];
+  for (const [x, y, z, r] of [[0, 0, 0, 0.075], [0.06, 0.03, 0.02, 0.06], [-0.04, 0.05, -0.04, 0.058], [0.01, -0.04, 0.06, 0.05]]) {
+    pecas.push([bolinha, new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(r, r, r))]);
+  }
+  return juntar(pecas);
+})();
+
 function popcornBox() {
   const g = new THREE.Group();
   const par = pick(LISTRAS);
+  const ALTO = 0.82, TOPO = 0.44, FUNDO = 0.34;
+
+  // O balde: um cilindro de muitos gomos achatado num quadrado (cada ponto
+  // empurrado até a borda do quadrado) — com gomos de sobra, a listra
+  // vertical cabe em cada face.
+  const balde = new THREE.CylinderGeometry(TOPO, FUNDO, ALTO, 48, 1, true, Math.PI / 4);
+  const pos = balde.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const quadrado = 1 / Math.max(Math.abs(x), Math.abs(z)) * Math.hypot(x, z) / Math.SQRT2 * Math.SQRT2;
+    pos.setXYZ(i, x * quadrado / Math.SQRT2, pos.getY(i), z * quadrado / Math.SQRT2);
+  }
+  balde.computeVertexNormals();
+  const caixa = new THREE.Mesh(
+    pintarDuasCores(balde, (u) => Math.floor(u * 16) % 2 === 0, par[0], par[1]),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  caixa.position.y = ALTO / 2;
+  caixa.castShadow = true;
+  g.add(caixa);
+
+  const pipocas = [];
+  const amarela = 0xffe7a0, creme = 0xfff6e0;
+  const lado = TOPO / Math.SQRT2 * 0.92;
+  for (let i = 0; i < 46; i++) {
+    const x = (Math.random() * 2 - 1) * lado;
+    const z = (Math.random() * 2 - 1) * lado;
+    const d = Math.max(Math.abs(x), Math.abs(z)) / lado;
+    const y = ALTO + 0.02 + (1 - d * d) * 0.28 * (0.6 + Math.random() * 0.4);
+    const giro = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random() * 6, Math.random() * 6, Math.random() * 6));
+    pipocas.push([PIPOCA, new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), giro, new THREE.Vector3(1, 1, 1)), Math.random() < 0.2 ? amarela : creme]);
+  }
+  // Umas que caíram no chão.
   for (let i = 0; i < 6; i++) {
-    const listra = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.8, 0.62), mat(par[i % 2]));
-    listra.position.set(-0.35 + i * 0.14, 0.4, 0);
-    listra.castShadow = true;
-    g.add(listra);
+    const a = Math.random() * Math.PI * 2;
+    const r = 0.45 + Math.random() * 0.25;
+    const giro = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random() * 6, Math.random() * 6, 0));
+    pipocas.push([PIPOCA, new THREE.Matrix4().compose(new THREE.Vector3(Math.cos(a) * r, 0.06, Math.sin(a) * r), giro, new THREE.Vector3(1, 1, 1)), creme]);
   }
-  for (let i = 0; i < 5; i++) {
-    const pipoca = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 0), mat(0xfff6dd));
-    pipoca.position.set((Math.random() - 0.5) * 0.7, 0.85 + Math.random() * 0.2, (Math.random() - 0.5) * 0.5);
-    pipoca.castShadow = true;
-    g.add(pipoca);
-  }
+  const monte = new THREE.Mesh(juntarColorido(pipocas), tintaDaMalha());
+  monte.castShadow = true;
+  g.add(monte);
   return g;
 }
 
 // --- Tempestade -------------------------------------------------------------
 
+// Moinho de vento: torre de pedra caiada que afina para cima, com porta e
+// janelinha, o chapéu de madeira e as quatro pás de verdade — cada uma uma
+// grade de ripas com a lona esticada de um lado. As pás giram (o World
+// roda `userData.helice`). As de antes eram quatro varetas paradas.
+const PA_DE_MOINHO = (() => {
+  const ripas = [], lona = [];
+  const COMP = 1.45, LARG = 0.38;
+  ripas.push([new THREE.BoxGeometry(0.06, COMP, 0.05), naPosicao(0, COMP / 2 + 0.1, 0)]);
+  for (let k = 0; k <= 5; k++) {
+    ripas.push([new THREE.BoxGeometry(LARG, 0.025, 0.03), naPosicao(LARG / 2, 0.35 + k * 0.23, 0.01)]);
+  }
+  ripas.push([new THREE.BoxGeometry(0.025, COMP - 0.25, 0.03), naPosicao(LARG, COMP / 2 + 0.22, 0.01)]);
+  lona.push([new THREE.PlaneGeometry(LARG - 0.04, COMP - 0.3), naPosicao(LARG / 2, COMP / 2 + 0.22, -0.005)]);
+  return { ripas: juntar(ripas), lona: juntar(lona) };
+})();
+
 function windmill() {
   const g = new THREE.Group();
-  const torre = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.55, 2.6, 8), mat(0xe0dcd2));
-  torre.position.y = 1.3;
+  const torre = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.6, 2.5, 10), mat(0xe8e2d4));
+  torre.position.y = 1.25;
   torre.castShadow = true;
   g.add(torre);
-  const telhado = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.6, 8), mat(0x7a5c4a));
-  telhado.position.y = 2.9;
-  g.add(telhado);
-  const eixo = new THREE.Group();
-  eixo.position.set(0, 2.6, 0.5);
-  eixo.rotation.z = Math.random() * Math.PI;
+  const chapeu = new THREE.Mesh(juntar([
+    [new THREE.CylinderGeometry(0.44, 0.44, 0.08, 10), naPosicao(0, 2.54, 0)],
+    [new THREE.ConeGeometry(0.46, 0.62, 10), naPosicao(0, 2.89, 0)],
+  ]), mat(0x7a5c4a));
+  chapeu.castShadow = true;
+  g.add(chapeu);
+
+  // Porta e janelinha, na frente (+Z), coladas na parede inclinada.
+  const inclina = Math.atan2(0.6 - 0.36, 2.5);
+  const naParede = (y, raioNaAltura) => new THREE.Matrix4().compose(
+    new THREE.Vector3(0, y, raioNaAltura + 0.005),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-inclina, 0, 0)), new THREE.Vector3(1, 1, 1));
+  const raioEm = (y) => 0.6 - (0.6 - 0.36) * (y / 2.5);
+  const porta = new THREE.Shape();
+  porta.moveTo(-0.15, 0);
+  porta.lineTo(-0.15, 0.3);
+  porta.absarc(0, 0.3, 0.15, Math.PI, 0, true);
+  porta.lineTo(0.15, 0);
+  porta.lineTo(-0.15, 0);
+  g.add(new THREE.Mesh(juntar([
+    [new THREE.ShapeGeometry(porta, 6), naParede(0, raioEm(0.25))],
+    [new THREE.PlaneGeometry(0.16, 0.2), naParede(1.55, raioEm(1.55))],
+  ]), mat(0x5a4636)));
+
+  // O eixo saindo do chapéu para a frente, e as pás nele.
+  const helice = new THREE.Group();
+  helice.position.set(0, 2.55, 0.5);
+  helice.userData.fase = Math.random() * Math.PI * 2;
+  const cubo = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.2, 8), mat(0x5a4636));
+  cubo.rotation.x = Math.PI / 2;
+  helice.add(cubo);
+  const madeira = mat(0x8a6a4a);
+  const pano = mat(0xfff6ec, { side: THREE.DoubleSide });
   for (let i = 0; i < 4; i++) {
-    const pa = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.5, 0.05), mat(0xfff6ec));
-    pa.position.y = 0.75;
     const braco = new THREE.Group();
     braco.rotation.z = (i / 4) * Math.PI * 2;
-    braco.add(pa);
-    eixo.add(braco);
+    braco.add(new THREE.Mesh(PA_DE_MOINHO.ripas, madeira), new THREE.Mesh(PA_DE_MOINHO.lona, pano));
+    helice.add(braco);
   }
-  g.add(eixo);
+  g.add(helice);
+  g.userData.helice = helice;
   return g;
 }
 
+// O raio em zigue-zague, de pé, com a ponta para baixo: uma forma só,
+// recortada e com espessura, que serve para o para-raios e para a nuvem
+// carregada.
+const RAIO_ZIGUEZAGUE = (() => {
+  const f = new THREE.Shape();
+  f.moveTo(0.05, 0.5);
+  f.lineTo(0.2, 0.5);
+  f.lineTo(0.06, 0.12);
+  f.lineTo(0.16, 0.12);
+  f.lineTo(-0.1, -0.5);
+  f.lineTo(-0.01, -0.06);
+  f.lineTo(-0.11, -0.06);
+  f.lineTo(0.05, 0.5);
+  const geo = new THREE.ExtrudeGeometry(f, { depth: 0.05, bevelEnabled: false });
+  geo.translate(-0.05, 0, -0.025);
+  return geo;
+})();
+
+// Para-raios: o mastro de metal fincado num bloco de pedra e preso por
+// três cabos, a bobina de cobre enrolada embaixo da esfera de vidro, que
+// brilha, e a ponta afiada lá em cima com dois raiozinhos estalando. O de
+// antes era um poste com uma bolinha, igual a um poste de luz.
 function lightningRod() {
   const g = new THREE.Group();
-  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 3.2, 6), mat(0x8a94ad));
-  haste.position.y = 1.6;
-  haste.castShadow = true;
-  g.add(haste);
-  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.4, 5), mat(0xd6dcea));
-  ponta.position.y = 3.4;
-  g.add(ponta);
+  const ALTO = 3.2;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.5), mat(0x7a7f8c));
+  base.position.y = 0.11;
+  base.castShadow = true;
+  g.add(base);
+
+  const metal = [[new THREE.CylinderGeometry(0.045, 0.08, ALTO, 6), naPosicao(0, ALTO / 2, 0)]];
+  // Os três cabos, do alto do mastro até o chão.
+  const preso = new THREE.Vector3(0, ALTO * 0.6, 0);
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI * 2 + 0.5;
+    const chao = new THREE.Vector3(Math.cos(a) * 1.0, 0, Math.sin(a) * 1.0);
+    const dir = preso.clone().sub(chao);
+    metal.push([new THREE.CylinderGeometry(0.012, 0.012, dir.length(), 3), apontar(chao.clone().add(preso).multiplyScalar(0.5), dir)]);
+  }
+  metal.push([new THREE.ConeGeometry(0.06, 0.45, 6), naPosicao(0, ALTO + 0.42, 0)]);
+  const mastro = new THREE.Mesh(juntar(metal), mat(0x8a94ad));
+  mastro.castShadow = true;
+  g.add(mastro);
+
+  // A bobina: um fio de cobre em espiral em volta do mastro.
+  const voltas = [];
+  for (let k = 0; k <= 60; k++) {
+    const t = k / 60;
+    const a = t * Math.PI * 2 * 7;
+    voltas.push(new THREE.Vector3(Math.cos(a) * 0.12, ALTO - 0.75 + t * 0.5, Math.sin(a) * 0.12));
+  }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(voltas), 120, 0.018, 4), mat(0xd9884a)));
+
   const bola = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 8, 6),
+    new THREE.SphereGeometry(0.17, 12, 8),
     mat(0xfff08a, { emissive: 0xfff08a, emissiveIntensity: 1 })
   );
-  bola.position.y = 3.05;
+  bola.position.y = ALTO + 0.05;
   g.add(bola);
+
+  // Dois raiozinhos estalando dos lados da esfera.
+  const estalos = [];
+  for (const lado of [-1, 1]) {
+    estalos.push([RAIO_ZIGUEZAGUE, new THREE.Matrix4().compose(
+      new THREE.Vector3(lado * 0.3, ALTO + 0.1, 0),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, lado * 0.6)),
+      new THREE.Vector3(0.5, 0.5, 0.5))]);
+  }
+  g.add(new THREE.Mesh(juntar(estalos), mat(0xfff08a, { emissive: 0xffe066, emissiveIntensity: 1, side: THREE.DoubleSide })));
   return g;
 }
 
+// Poça: um contorno torto (poça de verdade não é redonda), o reflexo claro
+// e dois anéis de pingo de chuva. Tudo transparente e rente ao chão.
 function puddle() {
   const g = new THREE.Group();
   const raio = 0.8 + Math.random() * 0.7;
+  const contorno = new THREE.Shape();
+  const N = 28;
+  const fase = Math.random() * 6;
+  for (let k = 0; k <= N; k++) {
+    const a = (k / N) * Math.PI * 2;
+    const r = raio * (0.85 + 0.1 * Math.sin(a * 2 + fase) + 0.06 * Math.sin(a * 3 + fase * 2));
+    const x = Math.cos(a) * r * 1.2, y = Math.sin(a) * r * 0.85;
+    if (k === 0) contorno.moveTo(x, y); else contorno.lineTo(x, y);
+  }
   const agua = new THREE.Mesh(
-    new THREE.CircleGeometry(raio, 10),
-    new THREE.MeshBasicMaterial({ color: 0x6b83a8, transparent: true, opacity: 0.55, depthWrite: false })
+    new THREE.ShapeGeometry(contorno),
+    new THREE.MeshBasicMaterial({ color: 0x6b83a8, transparent: true, opacity: 0.6, depthWrite: false })
   );
   agua.rotation.x = -Math.PI / 2;
   agua.position.y = 0.03;
   g.add(agua);
   const brilho = new THREE.Mesh(
-    new THREE.CircleGeometry(raio * 0.45, 8),
-    new THREE.MeshBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.4, depthWrite: false })
+    new THREE.CircleGeometry(raio * 0.35, 10),
+    new THREE.MeshBasicMaterial({ color: 0xd6e4ff, transparent: true, opacity: 0.35, depthWrite: false })
   );
   brilho.rotation.x = -Math.PI / 2;
-  brilho.position.set(raio * 0.2, 0.05, -raio * 0.15);
+  brilho.scale.set(1.5, 0.6, 1);
+  brilho.position.set(raio * 0.2, 0.04, -raio * 0.15);
   g.add(brilho);
+  const aneis = juntar([0, 1].map((k) => {
+    const r = raio * (0.18 + k * 0.12);
+    return [new THREE.RingGeometry(r, r + 0.035, 20).rotateX(-Math.PI / 2), naPosicao(-raio * 0.3 + k * raio * 0.5, 0.05, raio * 0.1 - k * 0.1)];
+  }));
+  g.add(new THREE.Mesh(aneis, new THREE.MeshBasicMaterial({ color: 0xe8f0ff, transparent: true, opacity: 0.55, depthWrite: false })));
   return g;
 }
 
+// Barril: barrigudo no meio, de aduelas em dois tons de madeira, com a
+// tampa e três aros de ferro. O de antes era um cilindro torto (inclinado
+// de lado), sem tampa, e lia como um balde amassado.
+const BARRIL = (() => {
+  const ALTO = 0.9, R = 0.34, BOJO = 0.07;
+  const raio = (y) => R + BOJO * Math.sin(Math.PI * (y / ALTO));
+  const perfil = [];
+  for (let k = 0; k <= 8; k++) {
+    const y = (k / 8) * ALTO;
+    perfil.push(new THREE.Vector2(raio(y), y));
+  }
+  const ADUELAS = 14;
+  const corpo = pintarDuasCores(new THREE.LatheGeometry(perfil, ADUELAS * 2), (u) => Math.floor(u * ADUELAS) % 2 === 0, 0x9a6a44, 0x86593a);
+  const tampa = new THREE.CircleGeometry(R - 0.02, ADUELAS * 2).rotateX(-Math.PI / 2).translate(0, ALTO - 0.03, 0);
+  const aros = juntar([0.12, ALTO / 2, ALTO - 0.12].map((y) => [
+    new THREE.TorusGeometry(raio(y) + 0.008, 0.028, 4, ADUELAS * 2),
+    new THREE.Matrix4().compose(new THREE.Vector3(0, y, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1)),
+  ]));
+  return { corpo, tampa, aros };
+})();
+
 function barrel() {
   const g = new THREE.Group();
-  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.36, 0.85, 10), mat(0x8a5c3c));
-  corpo.position.y = 0.43;
-  corpo.rotation.z = 0.12;
+  const corpo = new THREE.Mesh(BARRIL.corpo, tintaDaMalha({ side: THREE.DoubleSide }));
   corpo.castShadow = true;
   g.add(corpo);
-  for (const y of [0.2, 0.66]) {
-    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.045, 5, 12), mat(0x5c6270));
-    aro.rotation.x = Math.PI / 2;
-    aro.position.y = y;
-    g.add(aro);
-  }
+  g.add(new THREE.Mesh(BARRIL.tampa, mat(0x7a5034)));
+  g.add(new THREE.Mesh(BARRIL.aros, mat(0x5c6270)));
+  g.rotation.y = Math.random() * Math.PI;
   return g;
 }
 
 // --- Bruma ------------------------------------------------------------------
 
+// Árvore seca: o tronco torto que afina para cima e os galhos em curva,
+// subindo e se abrindo em forquilhas, sem folha nenhuma — a silhueta de
+// árvore de história de assombração. Tronco e galhos são uma malha só. A
+// de antes era um poste com cinco paus retos espetados.
 function ghostTree() {
   const g = new THREE.Group();
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 2.6, 6), mat(0x9a93a8));
-  tronco.position.y = 1.3;
-  tronco.castShadow = true;
-  g.add(tronco);
-  for (let i = 0; i < 5; i++) {
-    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 1.1, 5), mat(0x877f96));
-    const a = (i / 5) * Math.PI * 2;
-    galho.position.set(Math.cos(a) * 0.3, 2.2 + (i % 2) * 0.3, Math.sin(a) * 0.3);
-    galho.rotation.set(Math.cos(a) * 0.8, 0, -Math.sin(a) * 0.8 - 0.5);
-    galho.castShadow = true;
-    g.add(galho);
+  const pecas = [];
+  // O tronco: um tubo em curva suave, mais grosso na base.
+  const lado = Math.random() < 0.5 ? -1 : 1;
+  const tronco = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(lado * 0.12, 0.8, 0.05),
+    new THREE.Vector3(-lado * 0.08, 1.6, 0), new THREE.Vector3(lado * 0.05, 2.3, -0.05),
+  ]);
+  const troncoGeo = new THREE.TubeGeometry(tronco, 12, 0.2, 6);
+  const pos = troncoGeo.attributes.position;
+  // Afina para cima: cada anel do tubo encolhe em volta da curva.
+  for (let i = 0; i < pos.count; i++) {
+    const anel = Math.floor(i / 7) / 12;
+    const centro = tronco.getPoint(anel);
+    const k = 1 - anel * 0.6;
+    pos.setXYZ(i, centro.x + (pos.getX(i) - centro.x) * k, pos.getY(i), centro.z + (pos.getZ(i) - centro.z) * k);
   }
+  troncoGeo.computeVertexNormals();
+  pecas.push([troncoGeo, new THREE.Matrix4()]);
+
+  // Um galho: sai de um ponto do tronco, sobe em arco e, no fim, abre
+  // numa forquilha de dois gravetos.
+  const galho = (de, a, comp, grosso, nivel) => {
+    const dir = new THREE.Vector3(Math.cos(a), 0.9, Math.sin(a)).normalize();
+    const fim = de.clone().addScaledVector(dir, comp).add(new THREE.Vector3(0, -comp * 0.15, 0));
+    const meio = de.clone().addScaledVector(dir, comp * 0.5).add(new THREE.Vector3(0, comp * 0.15, 0));
+    pecas.push([new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(de, meio, fim), 6, grosso, 5), new THREE.Matrix4()]);
+    if (nivel > 0) {
+      galho(fim, a + 0.6, comp * 0.55, grosso * 0.6, nivel - 1);
+      galho(fim, a - 0.6, comp * 0.5, grosso * 0.6, nivel - 1);
+    }
+  };
+  const N = 4;
+  for (let k = 0; k < N; k++) {
+    const t = 0.5 + k * 0.13;
+    galho(tronco.getPoint(t), (k / N) * Math.PI * 2 + Math.random() * 0.6, 1.05 - k * 0.12, 0.085 - k * 0.008, 1);
+  }
+  const arvore = new THREE.Mesh(juntar(pecas), mat(0x8a839a));
+  arvore.castShadow = true;
+  g.add(arvore);
   return g;
 }
 
@@ -2745,19 +3695,57 @@ function floatingLantern() {
   return g;
 }
 
+// Pedra com musgo: o musgo é uma capa que cobre a parte de cima da pedra,
+// seguindo as faces dela, com uns tufinhos por cima. O de antes eram três
+// lasquinhas verdes soltas que quase não apareciam.
 function mossRock() {
   const g = new THREE.Group();
-  const pedra = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 0), mat(0x8a8496));
-  pedra.position.y = 0.42;
-  pedra.rotation.set(Math.random(), Math.random(), Math.random());
+  // Pedra irregular: um dodecaedro mais dividido, com cada canto empurrado
+  // um tanto para dentro ou para fora (o mesmo canto, nas várias faces que
+  // o tocam, anda junto — senão a pedra rachava).
+  const pedraGeo = new THREE.DodecahedronGeometry(0.55, 1);
+  const empurrao = new Map();
+  const pp = pedraGeo.attributes.position;
+  for (let i = 0; i < pp.count; i++) {
+    const chave = [pp.getX(i), pp.getY(i), pp.getZ(i)].map((n) => n.toFixed(3)).join();
+    if (!empurrao.has(chave)) empurrao.set(chave, 0.86 + Math.random() * 0.26);
+    const k = empurrao.get(chave);
+    pp.setXYZ(i, pp.getX(i) * k, pp.getY(i) * k, pp.getZ(i) * k);
+  }
+  pedraGeo.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(Math.random(), Math.random(), Math.random())));
+  pedraGeo.scale(1.1, 0.78, 1);
+  pedraGeo.computeVertexNormals();
+  const pedra = new THREE.Mesh(pedraGeo, mat(0x8a8496));
+  pedra.position.y = 0.36;
   pedra.castShadow = true;
   g.add(pedra);
-  for (let i = 0; i < 3; i++) {
-    const musgo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), mat(0x9ab894));
-    musgo.position.set((Math.random() - 0.5) * 0.6, 0.75, (Math.random() - 0.5) * 0.6);
-    musgo.scale.y = 0.45;
-    g.add(musgo);
+
+  // A capa: as faces viradas para cima, copiadas um tico para fora.
+  const pos = pedraGeo.attributes.position;
+  const capa = [];
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const normal = new THREE.Vector3();
+  const limite = 0.62 + Math.random() * 0.15;   // só o topo
+  for (let i = 0; i < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, i + 1); c.fromBufferAttribute(pos, i + 2);
+    normal.subVectors(c, b).cross(new THREE.Vector3().subVectors(a, b)).normalize();
+    if (normal.y < limite) continue;
+    for (const v of [a, b, c]) capa.push(v.x * 1.05, v.y * 1.05 + 0.015, v.z * 1.05);
   }
+  const musgoGeo = new THREE.BufferGeometry();
+  musgoGeo.setAttribute('position', new THREE.Float32BufferAttribute(capa, 3));
+  musgoGeo.computeVertexNormals();
+  const tufos = [[musgoGeo, new THREE.Matrix4()]];
+  const tufo = new THREE.IcosahedronGeometry(1, 0);
+  // Tufinhos espalhados nas faces da capa, saindo dela.
+  for (let i = 0; i < capa.length && tufos.length < 9; i += 9 * 3) {
+    const t = 0.06 + Math.random() * 0.05;
+    const p = new THREE.Vector3(capa[i], capa[i + 1], capa[i + 2]);
+    tufos.push([tufo, new THREE.Matrix4().compose(p, new THREE.Quaternion(), new THREE.Vector3(t, t * 0.6, t))]);
+  }
+  const musgo = new THREE.Mesh(juntar(tufos), mat(0x6fa04a));
+  musgo.position.y = 0.36;
+  g.add(musgo);
   return g;
 }
 
@@ -2818,212 +3806,495 @@ function glowPool() {
 
 // --- Vilarejo ---------------------------------------------------------------
 
+// Telhado de duas águas: duas placas inclinadas que se encontram na
+// cumeeira (ao longo de X) e passam um pouco das paredes — o beiral. A
+// base do telhado fica em y = 0, a cumeeira em y = `alto`. Junto, a
+// empena: o triângulo de parede que fecha os dois lados por baixo.
+function telhadoDuasAguas(largura, fundo, alto, { beiral = 0.14, espessura = 0.08 } = {}) {
+  const meio = fundo / 2;
+  const inclina = Math.atan2(alto, meio);
+  const comp = Math.hypot(alto, meio) + beiral;
+  const placas = [];
+  for (const lado of [-1, 1]) {
+    const placa = new THREE.BoxGeometry(largura + beiral * 2, espessura, comp);
+    // A placa sai da cumeeira para baixo, deste lado.
+    placa.translate(0, espessura / 2, comp / 2);
+    placas.push([placa, new THREE.Matrix4().compose(
+      new THREE.Vector3(0, alto, 0),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(lado > 0 ? inclina : Math.PI - inclina, 0, 0)),
+      new THREE.Vector3(1, lado > 0 ? 1 : -1, 1)
+    )]);
+  }
+  const triangulo = new THREE.Shape();
+  triangulo.moveTo(-meio, 0);
+  triangulo.lineTo(meio, 0);
+  triangulo.lineTo(0, alto);
+  triangulo.lineTo(-meio, 0);
+  const empena = new THREE.ExtrudeGeometry(triangulo, { depth: largura, bevelEnabled: false });
+  empena.rotateY(Math.PI / 2);             // o triângulo vira o plano YZ
+  empena.translate(-largura / 2, 0, 0);
+  return { telhado: juntar(placas), empena };
+}
+
+// Casinha: paredes numa cor clara sorteada, telhado de duas águas com
+// beiral, chaminé de tijolo, porta de arco com moldura e degrau, janelas
+// com moldura branca, luz acesa e venezianas, e uma floreira embaixo de
+// uma delas. A de antes tinha o telhado em pirâmide em cima de uma caixa —
+// lia como barraca — e janelas soltas na parede.
 function cottage() {
   const g = new THREE.Group();
-  const parede = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.2, 1.3), mat(0xf0e2c8));
-  parede.position.y = 0.6;
-  parede.castShadow = true;
-  g.add(parede);
-  const telhado = new THREE.Mesh(new THREE.ConeGeometry(1.25, 0.9, 4), mat(pick([0xc2603f, 0xa8503a, 0xd6764f])));
-  telhado.position.y = 1.65;
-  telhado.rotation.y = Math.PI / 4;
-  telhado.castShadow = true;
-  g.add(telhado);
-  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.7, 0.06), mat(0x8a5c3c));
-  porta.position.set(0, 0.35, 0.68);
-  g.add(porta);
-  for (const x of [-0.45, 0.45]) {
-    const janela = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.06), mat(0xffe9a8, { emissive: 0xffe9a8, emissiveIntensity: 0.5 }));
-    janela.position.set(x, 0.75, 0.68);
-    g.add(janela);
-  }
-  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.6, 0.22), mat(0x9a8a78));
-  chamine.position.set(0.45, 1.9, -0.3);
+  const L = 1.5, F = 1.3, PAREDE = 1.1;
+  const corParede = pick([0xf6ead2, 0xffe0e6, 0xdff0ff, 0xfff3c4]);
+  const corTelhado = pick([0xc2603f, 0xa8503a, 0xd6764f, 0x7a5ca8]);
+  const corVeneziana = pick([0x4a9de0, 0x5fae6a, 0xe0566a, 0x8a6a4a]);
+  const frente = F / 2;
+
+  const { telhado, empena } = telhadoDuasAguas(L, F, 0.72, { beiral: 0.16 });
+  const paredes = new THREE.Mesh(juntar([
+    [new THREE.BoxGeometry(L, PAREDE, F), naPosicao(0, PAREDE / 2, 0)],
+    [empena, naPosicao(0, PAREDE, 0)],
+  ]), mat(corParede));
+  paredes.castShadow = true;
+  g.add(paredes);
+  const teto = new THREE.Mesh(telhado, mat(corTelhado));
+  teto.position.y = PAREDE;
+  teto.castShadow = true;
+  g.add(teto);
+
+  const chamine = new THREE.Mesh(juntar([
+    [new THREE.BoxGeometry(0.24, 0.7, 0.24), naPosicao(0.42, PAREDE + 0.6, -0.25)],
+    [new THREE.BoxGeometry(0.3, 0.08, 0.3), naPosicao(0.42, PAREDE + 0.97, -0.25)],
+  ]), mat(0xb0594a));
+  chamine.castShadow = true;
   g.add(chamine);
+
+  // A porta, de arco em cima, com a moldura e o degrau de pedra.
+  const arco = (larg, alt) => {
+    const f = new THREE.Shape();
+    f.moveTo(-larg / 2, 0);
+    f.lineTo(-larg / 2, alt - larg / 2);
+    f.absarc(0, alt - larg / 2, larg / 2, Math.PI, 0, true);
+    f.lineTo(larg / 2, 0);
+    f.lineTo(-larg / 2, 0);
+    return new THREE.ShapeGeometry(f, 8);
+  };
+  const branco = [];
+  branco.push([arco(0.5, 0.78), naPosicao(0, 0, frente + 0.005)]);
+  const porta = new THREE.Mesh(arco(0.38, 0.7), mat(0x8a5c3c));
+  porta.position.set(0, 0, frente + 0.012);
+  g.add(porta);
+  const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), mat(0xffd166));
+  macaneta.position.set(0.12, 0.36, frente + 0.03);
+  g.add(macaneta);
+  const degrau = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.08, 0.22), mat(0xb8b0a4));
+  degrau.position.set(0, 0.04, frente + 0.1);
+  g.add(degrau);
+
+  // As janelas: moldura branca, vidro com luz, venezianas abertas.
+  const vidros = [], venezianas = [];
+  const janela = (x, y, z, ry) => {
+    const m = (dx, dy, dz) => new THREE.Matrix4().compose(
+      new THREE.Vector3(x, y, z).add(new THREE.Vector3(dx, dy, dz).applyAxisAngle(CIMA, ry)),
+      new THREE.Quaternion().setFromAxisAngle(CIMA, ry), new THREE.Vector3(1, 1, 1));
+    branco.push([new THREE.BoxGeometry(0.38, 0.38, 0.04), m(0, 0, 0.01)]);
+    vidros.push([new THREE.PlaneGeometry(0.28, 0.28), m(0, 0, 0.035)]);
+    branco.push([new THREE.BoxGeometry(0.28, 0.03, 0.02), m(0, 0, 0.04)]);
+    branco.push([new THREE.BoxGeometry(0.03, 0.28, 0.02), m(0, 0, 0.04)]);
+    for (const lado of [-1, 1]) venezianas.push([new THREE.BoxGeometry(0.15, 0.38, 0.03), m(lado * 0.28, 0, 0.02)]);
+  };
+  janela(-0.47, 0.66, frente, 0);
+  janela(0.47, 0.66, frente, 0);
+  janela(L / 2, 0.66, 0, Math.PI / 2);
+  janela(-L / 2, 0.66, 0, -Math.PI / 2);
+  g.add(new THREE.Mesh(juntar(branco), mat(0xffffff)));
+  g.add(new THREE.Mesh(juntar(vidros), mat(0xffe9a8, { emissive: 0xffd27a, emissiveIntensity: 0.6 })));
+  g.add(new THREE.Mesh(juntar(venezianas), mat(corVeneziana)));
+
+  // A floreira embaixo da janela da esquerda.
+  const flores = [[new THREE.BoxGeometry(0.42, 0.1, 0.12), naPosicao(-0.47, 0.42, frente + 0.07), 0x8a5c3c]];
+  const flor = new THREE.IcosahedronGeometry(0.045, 0);
+  for (let k = 0; k < 5; k++) {
+    flores.push([flor, naPosicao(-0.63 + k * 0.08, 0.5 + (k % 2) * 0.02, frente + 0.08), pick([0xff7bac, 0xffd166, 0xff4d5e, 0xffffff])]);
+  }
+  g.add(new THREE.Mesh(juntarColorido(flores), tintaDaMalha()));
   return g;
 }
 
+// Poste de luz: base em degraus, coluna com anel, e a lanterna de vidro
+// aceso entre quatro colunetas, com o chapéu e a ponta em cima. O halo
+// ficou pequeno — o de antes era um disco amarelo maior que a lanterna, e
+// era tudo o que se via do poste.
 function lamppost() {
   const g = new THREE.Group();
-  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 2.2, 6), mat(0x4a4a52));
-  poste.position.y = 1.1;
+  const ferro = juntar([
+    [new THREE.CylinderGeometry(0.2, 0.24, 0.14, 8), naPosicao(0, 0.07, 0)],
+    [new THREE.CylinderGeometry(0.13, 0.17, 0.16, 8), naPosicao(0, 0.22, 0)],
+    [new THREE.CylinderGeometry(0.045, 0.07, 1.9, 8), naPosicao(0, 1.25, 0)],
+    [new THREE.TorusGeometry(0.07, 0.025, 5, 10), new THREE.Matrix4().compose(new THREE.Vector3(0, 0.75, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)), new THREE.Vector3(1, 1, 1))],
+    [new THREE.CylinderGeometry(0.16, 0.08, 0.1, 4), new THREE.Matrix4().compose(new THREE.Vector3(0, 2.23, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 4, 0)), new THREE.Vector3(1, 1, 1))],
+    ...[[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, z]) => [new THREE.BoxGeometry(0.025, 0.34, 0.025), naPosicao(x * 0.11, 2.45, z * 0.11)]),
+    [new THREE.ConeGeometry(0.22, 0.2, 4), new THREE.Matrix4().compose(new THREE.Vector3(0, 2.72, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 4, 0)), new THREE.Vector3(1, 1, 1))],
+    [new THREE.SphereGeometry(0.04, 6, 4), naPosicao(0, 2.85, 0)],
+  ]);
+  const poste = new THREE.Mesh(ferro, mat(0x3a3a46));
   poste.castShadow = true;
   g.add(poste);
-  const luz = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.36, 0.3),
-    mat(0xffe0a0, { emissive: 0xffe0a0, emissiveIntensity: 1 })
-  );
-  luz.position.y = 2.35;
-  g.add(luz);
-  const capa = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.22, 4), mat(0x3a3a42));
-  capa.position.y = 2.62;
-  capa.rotation.y = Math.PI / 4;
-  g.add(capa);
+
+  const vidro = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.32, 0.2), mat(0xffe0a0, { emissive: 0xffd27a, emissiveIntensity: 1 }));
+  vidro.position.y = 2.45;
+  g.add(vidro);
+
   const halo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.7, 8, 6),
+    new THREE.SphereGeometry(0.36, 10, 8),
     new THREE.MeshBasicMaterial({
-      color: 0xffe0a0, transparent: true, opacity: 0.12, depthWrite: false,
+      color: 0xffe0a0, transparent: true, opacity: 0.16, depthWrite: false,
       blending: THREE.AdditiveBlending,
     })
   );
-  halo.position.y = 2.35;
+  halo.position.y = 2.45;
   g.add(halo);
   return g;
 }
 
+// Poço: o muro redondo de pedras (cada pedra num cinza um tico
+// diferente), a borda de pedra em cima, a água, as duas colunas com o
+// sarilho e a manivela, a corda descendo até o balde e o telhadinho de
+// duas águas. O de antes era um cilindro liso com dois palitos.
 function well() {
   const g = new THREE.Group();
-  const muro = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.6, 10), mat(0x9a8a78));
-  muro.position.y = 0.3;
+  const R = 0.55, ALTO = 0.6;
+  const muro = new THREE.Mesh(
+    pintarBlocos(new THREE.CylinderGeometry(R, R * 1.06, ALTO, 24, 4, true), (p) => {
+      const fila = Math.floor(((p.y + ALTO / 2) / ALTO) * 4 * 0.999);
+      const ang = (Math.atan2(p.z, p.x) / (Math.PI * 2) + 1) % 1;
+      return [fila, Math.floor(ang * 8 + (fila % 2) * 0.5)];
+    }, [0xa89c8c, 0x948878, 0xbab0a2]),
+    tintaDaMalha({ side: THREE.DoubleSide })
+  );
+  muro.position.y = ALTO / 2;
   muro.castShadow = true;
   g.add(muro);
-  const agua = new THREE.Mesh(new THREE.CircleGeometry(0.44, 10), mat(0x4a6b8a));
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(R, 0.07, 5, 20), mat(0xc4baac));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = ALTO;
+  g.add(borda);
+  const agua = new THREE.Mesh(new THREE.CircleGeometry(R * 0.95, 20), mat(0x4a7ba8, { emissive: 0x1a3a5a }));
   agua.rotation.x = -Math.PI / 2;
-  agua.position.y = 0.52;
+  agua.position.y = ALTO - 0.15;
   g.add(agua);
-  for (const x of [-0.5, 0.5]) {
-    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.1, 0.1), mat(0x8a5c3c));
-    pilar.position.set(x, 0.85, 0);
-    g.add(pilar);
-  }
-  const telhado = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.45, 4), mat(0xc2603f));
-  telhado.position.y = 1.6;
-  telhado.rotation.y = Math.PI / 4;
-  telhado.castShadow = true;
-  g.add(telhado);
+
+  // Madeira: as duas colunas, o sarilho deitado entre elas e a manivela.
+  const TOPO = 1.4;
+  const madeira = new THREE.Mesh(juntar([
+    [new THREE.BoxGeometry(0.1, TOPO - ALTO + 0.1, 0.1), naPosicao(-R, (TOPO + ALTO) / 2 - 0.05, 0)],
+    [new THREE.BoxGeometry(0.1, TOPO - ALTO + 0.1, 0.1), naPosicao(R, (TOPO + ALTO) / 2 - 0.05, 0)],
+    [new THREE.CylinderGeometry(0.06, 0.06, R * 2, 8), new THREE.Matrix4().compose(new THREE.Vector3(0, 1.05, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2)), new THREE.Vector3(1, 1, 1))],
+    [new THREE.BoxGeometry(0.04, 0.2, 0.04), naPosicao(R + 0.08, 0.97, 0)],
+    [new THREE.CylinderGeometry(0.025, 0.025, 0.14, 5), new THREE.Matrix4().compose(new THREE.Vector3(R + 0.15, 0.88, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, Math.PI / 2)), new THREE.Vector3(1, 1, 1))],
+  ]), mat(0x8a5c3c));
+  madeira.castShadow = true;
+  g.add(madeira);
+
+  // A corda e o balde, pendurado acima da água.
+  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 4), mat(0xd9c49a));
+  corda.position.set(0, 0.89, 0);
+  g.add(corda);
+  const balde = new THREE.Mesh(juntar([
+    [new THREE.CylinderGeometry(0.1, 0.08, 0.16, 8, 1, true), naPosicao(0, 0.67, 0)],
+    [new THREE.CircleGeometry(0.08, 8).rotateX(Math.PI / 2), naPosicao(0, 0.59, 0)],
+    [new THREE.TorusGeometry(0.1, 0.012, 4, 10, Math.PI), naPosicao(0, 0.75, 0)],
+  ]), mat(0x9a7048, { side: THREE.DoubleSide }));
+  g.add(balde);
+
+  const { telhado, empena } = telhadoDuasAguas(R * 2 + 0.1, 0.7, 0.4, { beiral: 0.12, espessura: 0.06 });
+  const teto = new THREE.Mesh(telhado, mat(0xc2603f));
+  teto.position.y = TOPO;
+  teto.castShadow = true;
+  g.add(teto);
+  const fechamento = new THREE.Mesh(empena, mat(0x8a5c3c));
+  fechamento.position.y = TOPO;
+  fechamento.scale.set(1, 1, 0.12);           // só a viga do meio, não uma parede
+  g.add(fechamento);
   return g;
 }
 
+// Caixote de madeira: o miolo de tábuas mais claras e, por cima, a
+// moldura de ripas em todas as arestas e uma ripa em diagonal em cada
+// face — o desenho do caixote de feira. O de antes era um cubo com uma
+// faixa, e lia como caixa de papelão.
+const CAIXOTE = (() => {
+  const L = 0.8, MEIO = L / 2, R = 0.07;
+  const ripas = [];
+  // As 12 arestas.
+  for (const a of [-1, 1]) {
+    for (const b of [-1, 1]) {
+      ripas.push([new THREE.BoxGeometry(L, R, R), naPosicao(0, MEIO + a * (MEIO - R / 2), b * (MEIO - R / 2))]);
+      ripas.push([new THREE.BoxGeometry(R, L, R), naPosicao(a * (MEIO - R / 2), MEIO, b * (MEIO - R / 2))]);
+      ripas.push([new THREE.BoxGeometry(R, R, L), naPosicao(a * (MEIO - R / 2), MEIO + b * (MEIO - R / 2), 0)]);
+    }
+  }
+  // Uma diagonal em cada face de lado, um tico para fora.
+  const diag = Math.hypot(L - R * 2, L - R * 2);
+  for (let k = 0; k < 4; k++) {
+    const giro = (k / 4) * Math.PI * 2;
+    ripas.push([new THREE.BoxGeometry(diag, R, R * 0.6), new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.sin(giro) * (MEIO + R * 0.1), MEIO, Math.cos(giro) * (MEIO + R * 0.1)),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, giro, (k % 2 ? 1 : -1) * Math.PI / 4)),
+      new THREE.Vector3(1, 1, 1))]);
+  }
+  return { miolo: new THREE.BoxGeometry(L - 0.02, L - 0.02, L - 0.02).translate(0, MEIO, 0), ripas: juntar(ripas) };
+})();
+
 function crate() {
   const g = new THREE.Group();
-  const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.75, 0.8), mat(0xb08a5c));
-  caixa.position.y = 0.38;
-  caixa.rotation.y = Math.random() * 0.6;
-  caixa.castShadow = true;
-  g.add(caixa);
-  for (const [a, ey] of [[0, 0.38], [Math.PI / 2, 0.38]]) {
-    const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), mat(0x8a6a44));
-    tabua.position.y = ey;
-    tabua.rotation.y = caixa.rotation.y + a;
-    g.add(tabua);
-  }
+  const giro = Math.random() * 0.6;
+  const miolo = new THREE.Mesh(CAIXOTE.miolo, mat(0xcfa572));
+  miolo.rotation.y = giro;
+  miolo.castShadow = true;
+  g.add(miolo);
+  const ripas = new THREE.Mesh(CAIXOTE.ripas, mat(0x9a6c42));
+  ripas.rotation.y = giro;
+  ripas.castShadow = true;
+  g.add(ripas);
   return g;
 }
 
 // --- Outono -------------------------------------------------------------
 
-// Árvore de outono: o mesmo desenho de tronco e galhos da árvore do Campo,
-// mas a copa é mais rala (o outono já derrubou metade das folhas) e sai em
-// tons quentes — laranja, vermelho, dourado — em vez do pastel do Campo.
+// Árvore de outono: tronco com galhos subindo para a copa, a copa fofa
+// misturando vermelho, laranja e dourado, e folhas caídas no pé. A de
+// antes era um punhado de blocos facetados de uma cor só, quase a do chão.
 function autumnTree() {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 1.6, 7), mat(0x6b4a35));
-  trunk.position.y = 0.8;
-  trunk.castShadow = true;
-  g.add(trunk);
 
-  for (const lado of [-1, 1]) {
-    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.08, 0.45, 5), mat(0x5c3f2c));
-    galho.position.set(lado * 0.2, 1.4, lado * 0.08);
-    galho.rotation.z = lado * -0.65;
-    galho.castShadow = true;
-    g.add(galho);
+  // Tronco e três galhos subindo para dentro da copa, numa malha só.
+  const madeira = [[new THREE.CylinderGeometry(0.15, 0.27, 1.7, 7), naPosicao(0, 0.85, 0)]];
+  for (const [a, inclina] of [[0.4, 0.62], [2.5, 0.55], [4.4, 0.7]]) {
+    const dir = new THREE.Vector3(Math.cos(a) * Math.sin(inclina), Math.cos(inclina), Math.sin(a) * Math.sin(inclina));
+    const galho = new THREE.CylinderGeometry(0.045, 0.08, 0.7, 5);
+    madeira.push([galho, apontar(new THREE.Vector3(0, 1.45, 0).addScaledVector(dir, 0.3), dir)]);
   }
+  const tronco = new THREE.Mesh(juntar(madeira), mat(0x5e3b26));
+  tronco.castShadow = true;
+  g.add(tronco);
 
-  const copa = new THREE.Group();
-  copa.position.y = 1.95;
+  // A copa: calombos redondos em volta de uma bola, cada um numa das cores
+  // da árvore — a dominante quase sempre, e pitadas das outras duas. É a
+  // mistura que faz a árvore "virar": a de antes era de uma cor só, e no
+  // chão laranja ela sumia.
+  const [principal, segunda, terceira] = pick([
+    [0xff8a2a, 0xffc23d, 0xe0452f],
+    [0xe0452f, 0xff8a2a, 0xc9302c],
+    [0xffc23d, 0xffd95e, 0xff8a2a],
+  ]);
+  const corDe = () => { const r = Math.random(); return r < 0.6 ? principal : r < 0.85 ? segunda : terceira; };
+  const CENTRO = new THREE.Vector3(0, 2.3, 0);
+  const pecas = [[new THREE.IcosahedronGeometry(0.75, 1), new THREE.Matrix4().compose(CENTRO, new THREE.Quaternion(), new THREE.Vector3(1, 0.82, 1)), principal]];
+  const calombo = new THREE.IcosahedronGeometry(1, 1);
+  const N = 18;
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i + 0.5) / N * 2;
+    if (y < -0.7) continue;                 // embaixo, deixa os galhos à vista
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.39996;
+    const ponto = CENTRO.clone().add(new THREE.Vector3(Math.cos(a) * r * 0.72, y * 0.58, Math.sin(a) * r * 0.72));
+    const tam = 0.34 + Math.random() * 0.12;
+    pecas.push([calombo, new THREE.Matrix4().compose(ponto, new THREE.Quaternion(), new THREE.Vector3(tam, tam * 0.9, tam)), corDe()]);
+  }
+  const copa = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
+  copa.castShadow = true;
   g.add(copa);
 
-  const cor = new THREE.Color(pick(AUTUMN));
-  const clara = cor.clone().lerp(new THREE.Color(0xfff3d6), 0.3);
-  const escura = cor.clone().multiplyScalar(0.78);
-
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + Math.random() * 0.35;
-    const raio = 0.4 + Math.random() * 0.2;
-    const bolota = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(raio, 0),
-      mat(i % 2 === 0 ? cor.getHex() : escura.getHex())
-    );
-    bolota.position.set(Math.cos(a) * 0.5, Math.random() * 0.5, Math.sin(a) * 0.5);
-    bolota.castShadow = true;
-    copa.add(bolota);
+  // Folhas já caídas em volta do pé.
+  const caidas = [];
+  for (let i = 0; i < 9; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 0.35 + Math.random() * 0.75;
+    const ponto = new THREE.Vector3(Math.cos(a) * r, 0.015 + i * 0.002, Math.sin(a) * r);
+    const normal = new THREE.Vector3((Math.random() - 0.5) * 0.3, 1, (Math.random() - 0.5) * 0.3);
+    caidas.push([BORDO_DEITADO, folhaNoChao(ponto, normal, Math.random() * 6.3, 0.34 + Math.random() * 0.08), corDe()]);
   }
-  const topo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), mat(clara.getHex()));
-  topo.position.y = 0.4;
-  topo.castShadow = true;
-  copa.add(topo);
-
+  g.add(new THREE.Mesh(juntarColorido(caidas), tintaDaMalha({ side: THREE.DoubleSide })));
   return g;
 }
 
-// Montinho de folhas caídas: discos achatados espalhados rente ao chão,
-// quase deitados — é a versão parada do que a `leaf` faz voando.
+// Montinho de folhas caídas: folhas de bordo vermelhas, laranja e
+// douradas empilhadas num montinho, e umas espalhadas em volta — tudo
+// numa malha só. O de antes eram seis polígonos chapados no chão, que
+// liam como papel recortado.
 function leafPile() {
-  const g = new THREE.Group();
-  for (let i = 0; i < 6; i++) {
-    const folha = new THREE.Mesh(
-      new THREE.CircleGeometry(0.2 + Math.random() * 0.1, 5),
-      mat(pick(AUTUMN), { side: THREE.DoubleSide })
-    );
-    folha.rotation.x = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
-    folha.rotation.z = Math.random() * Math.PI;
-    folha.position.set((Math.random() - 0.5) * 0.7, 0.02 + i * 0.012, (Math.random() - 0.5) * 0.5);
-    g.add(folha);
+  const pecas = [];
+  // O monte: folhas deitadas sobre um domo baixo, cada uma virada para
+  // fora do domo, umas por cima das outras.
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.sqrt(Math.random());     // espalha por igual no disco
+    const x = Math.cos(a) * d * 0.55, z = Math.sin(a) * d * 0.45;
+    const alto = 0.38 * (1 - d * d);
+    const normal = new THREE.Vector3(x * 0.9, 1, z * 0.9).normalize();
+    normal.x += (Math.random() - 0.5) * 0.4;
+    normal.z += (Math.random() - 0.5) * 0.4;
+    pecas.push([BORDO_DEITADO, folhaNoChao(new THREE.Vector3(x, alto + 0.02 + i * 0.002, z), normal, Math.random() * 6.3, 0.36 + Math.random() * 0.1), pick(FOLHAS_OUTONO)]);
   }
+  // Umas que o vento já espalhou.
+  for (let i = 0; i < 4; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 0.7 + Math.random() * 0.25;
+    pecas.push([BORDO_DEITADO, folhaNoChao(new THREE.Vector3(Math.cos(a) * r, 0.015, Math.sin(a) * r), CIMA, Math.random() * 6.3, 0.34), pick(FOLHAS_OUTONO)]);
+  }
+  const g = new THREE.Group();
+  const monte = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha({ side: THREE.DoubleSide }));
+  monte.castShadow = true;
+  g.add(monte);
   return g;
 }
 
 // Abóbora: usada como enfeite pequeno espalhado e como obstáculo — a mesma
-// forma nos dois papéis, igual `stalagmite` na Caverna.
+// forma nos dois papéis, igual `stalagmite` na Caverna. Gomos de sulco
+// fundo e escuro, covinha em cima, cabinho torto com a gavinha enrolada e
+// duas folhas no chão. A de antes tinha os reforços dos gomos saltando
+// para fora no equador, e lia como panela com alças.
 function pumpkin() {
   const g = new THREE.Group();
-  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.52, 10, 8), mat(0xe8792f));
-  corpo.scale.y = 0.82;
-  corpo.position.y = 0.43;
-  corpo.castShadow = true;
-  g.add(corpo);
-  // Gomos: reforços mais escuros ao redor do "equador" da abóbora, o que
-  // dá a silhueta enrugada sem precisar de mais polígonos.
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    const gomo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 5, 4), mat(0xd0651f));
-    gomo.scale.set(0.6, 0.82, 2.1);
-    gomo.position.set(Math.cos(a) * 0.48, 0.43, Math.sin(a) * 0.48);
-    gomo.rotation.y = a;
-    g.add(gomo);
+  const R = 0.52, GOMOS = 8;
+  const laranja = new THREE.Color(pick([0xf07c22, 0xe8692a, 0xf59a2a]));
+  const sulco = laranja.clone().multiplyScalar(0.62);
+
+  // O corpo: uma esfera achatada com sulcos fundos entre os gomos e as
+  // covinhas em cima e embaixo. Os sulcos saem mais escuros (cor por
+  // vértice), que é o que desenha os gomos de longe.
+  const corpo = new THREE.SphereGeometry(R, GOMOS * 6, 14);
+  const pos = corpo.attributes.position;
+  const cores = new Float32Array(pos.count * 3);
+  const c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const ang = Math.atan2(z, x);
+    const fundo = Math.pow(1 - Math.abs(Math.sin(ang * GOMOS / 2)), 4);   // 1 no sulco
+    const lado = Math.hypot(x, z) / R;                                    // 0 no eixo, 1 no equador
+    const encolhe = 1 - 0.12 * fundo * lado;
+    x *= encolhe; z *= encolhe;
+    y *= 0.78;
+    // As covinhas: o centro de cima e o de baixo afundam.
+    y -= Math.sign(y) * 0.14 * Math.pow(1 - lado, 2);
+    pos.setXYZ(i, x, y, z);
+    c.copy(laranja).lerp(sulco, fundo * lado);
+    cores.set([c.r, c.g, c.b], i * 3);
   }
-  const talo = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.26, 6), mat(0x5c7a3f));
-  talo.position.y = 0.86;
-  talo.rotation.z = 0.15;
-  talo.castShadow = true;
-  g.add(talo);
+  corpo.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+  corpo.computeVertexNormals();
+  const ALTO = R * 0.78;
+  const bola = new THREE.Mesh(corpo, tintaDaMalha());
+  bola.position.y = ALTO;
+  bola.castShadow = true;
+  g.add(bola);
+
+  // O cabinho torto e a gavinha enrolada saindo dele.
+  const topo = ALTO * 2 - 0.13;
+  const cabinho = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(0, topo - 0.04, 0), new THREE.Vector3(0.02, topo + 0.15, 0), new THREE.Vector3(0.12, topo + 0.22, 0.02)
+  ), 8, 0.05, 6, false);
+  const espiral = [];
+  for (let k = 0; k <= 24; k++) {
+    const t = k / 24;
+    const a = t * Math.PI * 4;
+    const r = 0.1 * (1 - t * 0.6);
+    espiral.push(new THREE.Vector3(-0.05 - t * 0.3 + Math.cos(a) * r * 0.4, topo + 0.04 + Math.sin(a) * r * 0.6, Math.sin(a) * r));
+  }
+  const gavinha = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(espiral), 40, 0.012, 4, false);
+  g.add(new THREE.Mesh(juntar([[cabinho, new THREE.Matrix4()], [gavinha, new THREE.Matrix4()]]), mat(0x5f7a32)));
+
+  // Duas folhas largas no chão, encostadas na abóbora.
+  const folhas = [];
+  for (const a of [Math.random() * 6.3, Math.random() * 6.3]) {
+    const ponto = new THREE.Vector3(Math.cos(a) * (R + 0.12), 0.02, Math.sin(a) * (R + 0.12));
+    folhas.push([BORDO_DEITADO, folhaNoChao(ponto, new THREE.Vector3(Math.cos(a) * 0.3, 1, Math.sin(a) * 0.3), a + Math.PI / 2, 0.45)]);
+  }
+  g.add(new THREE.Mesh(juntar(folhas), mat(0x6f9a3c, { side: THREE.DoubleSide })));
   return g;
 }
 
 // Tronco caído: obstáculo baixo, deitado atravessando a faixa. Serve tanto
 // para o Outono quanto para a Selva — uma árvore caída não muda de cara
-// entre uma pista e outra.
+// entre uma pista e outra. Casca de sulcos compridos, as pontas cortadas
+// com os anéis da madeira, um toco de galho e dois cogumelinhos. O de
+// antes era um cilindro liso com um disco em cada ponta.
 function logObstacle() {
   const g = new THREE.Group();
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.7, 9), mat(0x8a5c3c));
+  const R = 0.34, COMPRIMENTO = 1.7;
+
+  // A casca: cilindro com sulcos compridos e irregulares, mais escuros no
+  // fundo do sulco.
+  const casca = new THREE.CylinderGeometry(R * 0.94, R, COMPRIMENTO, 18, 4, true);
+  const pos = casca.attributes.position;
+  const cores = new Float32Array(pos.count * 3);
+  const clara = new THREE.Color(0x8a5c3c), escura = new THREE.Color(0x5a3a24), c = new THREE.Color();
+  const fase = Math.random() * 10;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const ang = Math.atan2(z, x);
+    const sulco = Math.pow(Math.abs(Math.sin(ang * 4.5 + Math.sin(y * 3 + fase) * 0.4)), 3);
+    const k = 1 - 0.08 * sulco;
+    pos.setXYZ(i, x * k, y, z * k);
+    c.copy(clara).lerp(escura, sulco);
+    cores.set([c.r, c.g, c.b], i * 3);
+  }
+  casca.setAttribute('color', new THREE.BufferAttribute(cores, 3));
+  casca.computeVertexNormals();
+  const tronco = new THREE.Mesh(casca, tintaDaMalha({ side: THREE.DoubleSide }));
   tronco.rotation.z = Math.PI / 2;
-  tronco.position.y = 0.34;
+  tronco.position.y = R;
   tronco.castShadow = true;
   g.add(tronco);
-  for (const x of [-0.85, 0.85]) {
-    const anel = new THREE.Mesh(new THREE.CircleGeometry(0.33, 9), mat(0xc9a876));
-    anel.rotation.y = Math.PI / 2;
-    anel.position.set(x, 0.34, 0);
-    g.add(anel);
+
+  // As pontas cortadas: os anéis da madeira, um claro e um escuro, e a
+  // borda da casca em volta.
+  const ponta = new THREE.RingGeometry(0.001, R * 0.95, 20, 7).toNonIndexed();
+  const pp = ponta.attributes.position;
+  const anel = new Float32Array(pp.count * 3);
+  const cerne = [new THREE.Color(0xe2c08a), new THREE.Color(0xc99a62)];
+  const borda = new THREE.Color(0x5a3a24);
+  for (let t = 0; t < pp.count; t += 3) {
+    let r = 0;
+    for (let k = 0; k < 3; k++) r += Math.hypot(pp.getX(t + k), pp.getY(t + k)) / 3;
+    const banda = Math.floor((r / (R * 0.95)) * 7);
+    const cor = banda >= 6 ? borda : cerne[banda % 2];
+    for (let k = 0; k < 3; k++) anel.set([cor.r, cor.g, cor.b], (t + k) * 3);
   }
-  for (let i = 0; i < 2; i++) {
-    const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.4, 5), mat(0x6b4a35));
-    galho.position.set((Math.random() - 0.5) * 1.2, 0.6, (Math.random() < 0.5 ? -1 : 1) * 0.2);
-    galho.rotation.z = 0.3;
-    galho.castShadow = true;
-    g.add(galho);
+  ponta.setAttribute('color', new THREE.BufferAttribute(anel, 3));
+  const pontas = [];
+  for (const lado of [-1, 1]) {
+    pontas.push([ponta, new THREE.Matrix4().compose(
+      new THREE.Vector3(lado * COMPRIMENTO / 2, R, 0),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, lado * Math.PI / 2, 0)),
+      new THREE.Vector3(1, 1, 1)
+    )]);
   }
+  // `juntar` não leva as cores: as duas pontas vão como duas malhas.
+  for (const [geo, m] of pontas) {
+    const malha = new THREE.Mesh(geo, tintaDaMalha());
+    malha.applyMatrix4(m);
+    g.add(malha);
+  }
+
+  // Um toco de galho e um par de cogumelinhos crescendo na casca.
+  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.34, 6), mat(0x6b4a35));
+  galho.position.set(0.35, R * 2 + 0.08, 0.05);
+  galho.rotation.z = -0.4;
+  galho.castShadow = true;
+  g.add(galho);
+  const cogumelos = [];
+  for (const [x, t] of [[-0.45, 1], [-0.33, 0.7]]) {
+    const chapeu = new THREE.SphereGeometry(0.09 * t, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2);
+    chapeu.scale(1, 0.7, 1);
+    cogumelos.push([chapeu, naPosicao(x, R * 2 + 0.07 * t, 0.12)]);
+  }
+  g.add(new THREE.Mesh(juntar(cogumelos), mat(0xe8664a)));
+  const pes = juntar([
+    [new THREE.CylinderGeometry(0.025, 0.03, 0.08, 5), naPosicao(-0.45, R * 2 + 0.03, 0.12)],
+    [new THREE.CylinderGeometry(0.018, 0.022, 0.06, 5), naPosicao(-0.33, R * 2 + 0.02, 0.12)],
+  ]);
+  g.add(new THREE.Mesh(pes, mat(0xfff0dc)));
   return g;
 }
 
@@ -3169,6 +4440,7 @@ const DECORATIONS = {
   snowPine, igloo, iceCrystal, snowman,
   planet, asteroid, asteroidChunk, ufo,
   parasol, sandcastle, palmTree, beachChair, clam,
+  balloonStand,
   boat, surfboard, buoy,
   circusTent, ferrisWheel, cottonCandy, carousel,
   windmill, lightningRod, puddle,
@@ -3249,19 +4521,47 @@ function candyBar() {
   return g;
 }
 
+// Arbusto de espinhos: uma moita redonda de calombos em dois verdes,
+// eriçada de espinhos que saem da folhagem para todos os lados, e umas
+// frutinhas vermelhas. Os espinhos são o aviso de "não encoste" — é um
+// obstáculo. O de antes era um icosaedro facetado com cinco espinhos
+// enormes, e lia como pedra verde.
+const ESPINHO = new THREE.ConeGeometry(0.028, 1, 4);
 function bush() {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.6, 0), mat(0x6bbf7b));
-  body.position.y = 0.55;
-  body.castShadow = true;
-  g.add(body);
-  for (let i = 0; i < 5; i++) {
-    const thorn = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 4), mat(0x3f7d4d));
-    const a = (i / 5) * Math.PI * 2;
-    thorn.position.set(Math.cos(a) * 0.42, 0.85, Math.sin(a) * 0.42);
-    thorn.rotation.set(Math.cos(a) * 0.6, 0, -Math.sin(a) * 0.6);
-    g.add(thorn);
+  const [claro, escuro] = pick([[0x6bbf7b, 0x4f9d5f], [0x7cc46a, 0x5aa04e]]);
+  const CENTRO = new THREE.Vector3(0, 0.5, 0);
+  const pecas = [[new THREE.IcosahedronGeometry(0.5, 1), new THREE.Matrix4().compose(CENTRO, new THREE.Quaternion(), new THREE.Vector3(1.1, 0.85, 1.1)), escuro]];
+  const calombo = new THREE.IcosahedronGeometry(1, 1);
+  const frutas = [];
+  const espinhos = [];
+  const N = 16;
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i + 0.5) / N * 2;
+    if (y < -0.5) continue;                  // o fundo fica no chão
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.39996;
+    const dir = new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+    const ponto = CENTRO.clone().add(new THREE.Vector3(dir.x * 0.5, dir.y * 0.4, dir.z * 0.5));
+    const tam = 0.24 + Math.random() * 0.08;
+    pecas.push([calombo, new THREE.Matrix4().compose(ponto, new THREE.Quaternion(), new THREE.Vector3(tam, tam * 0.9, tam)), i % 3 ? claro : escuro]);
+    if (i % 3 === 0) frutas.push([new THREE.IcosahedronGeometry(0.05, 0), naPosicao(...ponto.clone().addScaledVector(dir, tam * 0.95).toArray())]);
+    // Dois espinhos por calombo, saindo dele para fora e um pouco tortos.
+    for (let k = 0; k < 2; k++) {
+      const torto = dir.clone().add(new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).multiplyScalar(0.7)).normalize();
+      const comp = 0.13 + Math.random() * 0.06;
+      const base = ponto.clone().addScaledVector(torto, tam * 0.8);
+      espinhos.push([ESPINHO, new THREE.Matrix4().compose(
+        base.addScaledVector(torto, comp / 2),
+        new THREE.Quaternion().setFromUnitVectors(CIMA, torto),
+        new THREE.Vector3(1, comp, 1))]);
+    }
   }
+  const moita = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
+  moita.castShadow = true;
+  g.add(moita);
+  g.add(new THREE.Mesh(juntar(frutas), mat(0xe0364a)));
+  g.add(new THREE.Mesh(juntar(espinhos), mat(0x8a5a3a)));
   return g;
 }
 
@@ -3385,107 +4685,158 @@ function moonStone() {
   return g;
 }
 
-// Cogumelão brilhante: o chapéu acende forte e ocupa a pista inteira.
+// Cogumelão brilhante: o chapéu acende forte e ocupa a pista inteira. Um
+// filhote aceso ao lado ajuda a ler o tamanho dele.
 function bigGlowMushroom() {
   const g = new THREE.Group();
   const color = pick([0x8ce9ff, 0xffa6f0, 0xa6ffcb]);
-
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.9, 7), mat(0xfff4ff, { emissive: 0x554466 }));
-  stem.position.y = 0.45;
-  stem.castShadow = true;
-  g.add(stem);
-
-  const cap = new THREE.Mesh(
-    new THREE.SphereGeometry(0.78, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat(color, { emissive: color, emissiveIntensity: 0.9 })
-  );
-  cap.position.y = 0.9;
-  cap.castShadow = true;
-  g.add(cap);
-
-  // Pintinhas claras no chapéu
-  for (let i = 0; i < 5; i++) {
-    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 5), mat(0xfffbe8, { emissive: 0x888066 }));
-    const a = (i / 5) * Math.PI * 2;
-    dot.position.set(Math.cos(a) * 0.42, 1.12, Math.sin(a) * 0.42);
-    g.add(dot);
-  }
-
+  g.add(cogumeloForma({ alto: 0.95, raio: 0.78, cor: color, pintas: 7, brilho: 0.9, caule: 0xfff4ff }));
+  const filhote = cogumeloForma({ alto: 0.4, raio: 0.24, cor: color, pintas: 3, brilho: 0.9, caule: 0xfff4ff });
+  filhote.position.set(0.62, 0, 0.35);
+  filhote.rotation.z = -0.25;
+  g.add(filhote);
   g.add(warningRing(color));
   return g;
 }
+
+// Cristais: um punhado de prismas de seis lados com ponta, saindo de uma
+// pedra baixa em leque, o do meio mais alto. Eram três cones lisos, que
+// liam como dentes. Aparece no Vulcão, na Geada, na Lua e na Caverna.
+const PRISMA_CRISTAL = (() => {
+  const corpo = new THREE.CylinderGeometry(1, 1, 1, 6);
+  corpo.translate(0, 0.5, 0);
+  const ponta = new THREE.ConeGeometry(1, 0.6, 6);
+  ponta.translate(0, 1.3, 0);
+  return juntar([[corpo, new THREE.Matrix4()], [ponta, new THREE.Matrix4()]]);
+})();
 
 function crystalSpike() {
   const g = new THREE.Group();
   const color = pick([0x8ce9ff, 0xc7a6ff]);
-  for (let i = 0; i < 3; i++) {
-    const spike = new THREE.Mesh(
-      new THREE.ConeGeometry(0.28 - i * 0.05, 1.3 - i * 0.25, 5),
-      mat(color, { emissive: color, emissiveIntensity: 0.95 })
-    );
-    spike.position.set((i - 1) * 0.34, (1.1 - i * 0.25) / 2, (Math.random() - 0.5) * 0.3);
-    spike.rotation.z = (i - 1) * 0.22;
-    spike.castShadow = true;
-    g.add(spike);
+  const cristais = [];
+  const pontas = [[0, 1.15, 0.2, 0, 0], [-0.3, 0.8, 0.15, -0.35, 0.1], [0.3, 0.9, 0.16, 0.3, -0.12], [0.05, 0.55, 0.12, 0.15, 0.45], [-0.12, 0.5, 0.11, -0.2, -0.4]];
+  for (const [x, alto, raio, inclZ, inclX] of pontas) {
+    cristais.push([PRISMA_CRISTAL, new THREE.Matrix4().compose(
+      new THREE.Vector3(x, 0.05, (Math.random() - 0.5) * 0.15),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(inclX, Math.random(), inclZ)),
+      new THREE.Vector3(raio, alto / 1.6, raio))]);
   }
+  const brilho = new THREE.Mesh(juntar(cristais), mat(color, { emissive: color, emissiveIntensity: 0.8 }));
+  brilho.castShadow = true;
+  g.add(brilho);
+  const base = new THREE.Mesh(pedraIrregular(0.42, 0.18, 0), mat(0x3a3442));
+  base.scale.set(1.2, 0.32, 0.9);
+  base.position.y = 0.04;
+  g.add(base);
   g.add(warningRing(color));
   return g;
 }
 
-// Nuvem carregada com um raio: dá para pular por cima.
+// Nuvem carregada: uma nuvem escura e fofa, achatada e baixa, com o raio
+// amarelo em zigue-zague caindo dela até quase o chão. Dá para pular por
+// cima. A de antes eram quatro blocos facetados com um cone de ponta
+// para baixo.
 function stormCloud() {
   const g = new THREE.Group();
-  const material = mat(0x9aa3c9);
-  for (let i = 0; i < 4; i++) {
-    const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42 + Math.random() * 0.2, 0), material);
-    puff.position.set((i - 1.5) * 0.45, 0.75 + Math.random() * 0.2, (Math.random() - 0.5) * 0.4);
-    puff.castShadow = true;
-    g.add(puff);
+  const CENTRO = new THREE.Vector3(0, 0.82, 0);
+  const pecas = [[new THREE.IcosahedronGeometry(0.5, 1), new THREE.Matrix4().compose(CENTRO, new THREE.Quaternion(), new THREE.Vector3(1.7, 0.6, 0.9))]];
+  const calombo = new THREE.IcosahedronGeometry(1, 1);
+  for (let i = 0; i < 9; i++) {
+    const x = (i / 8 - 0.5) * 1.5;
+    const tam = 0.3 + (1 - Math.abs(x) / 0.75) * 0.14 + Math.random() * 0.05;
+    pecas.push([calombo, new THREE.Matrix4().compose(
+      new THREE.Vector3(x, CENTRO.y + 0.08 + (i % 2) * 0.08, (Math.random() - 0.5) * 0.3),
+      new THREE.Quaternion(), new THREE.Vector3(tam, tam * 0.85, tam))]);
   }
-  const bolt = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 4), mat(0xffe066, { emissive: 0x66551a }));
-  bolt.position.set(0, 0.28, 0.1);
-  bolt.rotation.x = Math.PI;
-  g.add(bolt);
+  const nuvem = new THREE.Mesh(juntar(pecas), mat(0x7f88b0));
+  nuvem.castShadow = true;
+  g.add(nuvem);
+  const raio = new THREE.Mesh(RAIO_ZIGUEZAGUE, mat(0xffe066, { emissive: 0xc9a520, side: THREE.DoubleSide }));
+  raio.position.set(0.05, 0.42, 0.2);
+  raio.scale.setScalar(0.9);
+  g.add(raio);
   return g;
 }
 
+// Pipa: o losango em quatro gomos de duas cores, um tico abaulado no meio,
+// as varetas em cruz por trás e a rabiola descendo em onda até o chão, com
+// lacinhos. Era um octaedro achatado com três tirinhas soltas embaixo.
 function kite() {
   const g = new THREE.Group();
-  const color = pick([0xff7b9d, 0x74c0fc, 0xffd166]);
-
-  const body = new THREE.Mesh(new THREE.OctahedronGeometry(0.62, 0), mat(color));
-  body.scale.set(0.6, 1, 0.18);
-  body.position.y = 1.0;
-  body.castShadow = true;
-  g.add(body);
-
-  const cross = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.04), mat(0xfff0d0));
-  cross.position.y = 1.0;
-  g.add(cross);
-
-  for (let i = 0; i < 3; i++) {
-    const knot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.04), mat(0xfff0d0));
-    knot.position.set(0, 0.42 - i * 0.16, 0);
-    knot.rotation.z = i % 2 ? 0.5 : -0.5;
-    g.add(knot);
+  const [corA, corB] = pick([[0xff7b9d, 0xffe066], [0x74c0fc, 0xffffff], [0xffd166, 0xff6b6b], [0xb197fc, 0x8ce99a]]);
+  const CENTRO = new THREE.Vector3(0, 1.12, 0.07);
+  const cantos = [
+    new THREE.Vector3(0, 1.75, 0), new THREE.Vector3(0.45, 1.2, 0),
+    new THREE.Vector3(0, 0.6, 0), new THREE.Vector3(-0.45, 1.2, 0),
+  ];
+  const posicoes = [], cores = [];
+  for (let k = 0; k < 4; k++) {
+    const cor = new THREE.Color(k % 2 ? corB : corA);
+    for (const p of [CENTRO, cantos[k], cantos[(k + 1) % 4]]) {
+      posicoes.push(p.x, p.y, p.z);
+      cores.push(cor.r, cor.g, cor.b);
+    }
   }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(posicoes, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cores, 3));
+  geo.computeVertexNormals();
+  const pipa = new THREE.Mesh(geo, tintaDaMalha({ side: THREE.DoubleSide }));
+  pipa.castShadow = true;
+
+  // Varetas, um tico atrás do papel.
+  const varetas = juntar([
+    [new THREE.CylinderGeometry(0.018, 0.018, 1.15, 4), naPosicao(0, 1.18, -0.02)],
+    [new THREE.CylinderGeometry(0.018, 0.018, 0.9, 4), new THREE.Matrix4().compose(new THREE.Vector3(0, 1.2, -0.02), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2), new THREE.Vector3(1, 1, 1))],
+  ]);
+
+  // A rabiola: uma linha em onda do pé da pipa até o chão, com lacinhos.
+  const pontos = [];
+  for (let k = 0; k <= 6; k++) pontos.push(new THREE.Vector3(Math.sin(k * 1.1) * 0.16, 0.6 - k * 0.075, Math.cos(k * 0.9) * 0.05));
+  const rabo = new THREE.CatmullRomCurve3(pontos);
+  const linha = [[new THREE.TubeGeometry(rabo, 16, 0.012, 3), new THREE.Matrix4()]];
+  const lacos = [];
+  for (const t of [0.25, 0.55, 0.85]) {
+    const p = rabo.getPoint(t);
+    for (const lado of [-1, 1]) {
+      lacos.push([new THREE.ConeGeometry(0.06, 0.12, 4), new THREE.Matrix4().compose(
+        p.clone().add(new THREE.Vector3(lado * 0.055, 0, 0)),
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), lado * Math.PI / 2), new THREE.Vector3(1, 1, 0.4))]);
+    }
+  }
+  // A pipa toda inclinada um tico para trás, como se o vento a segurasse.
+  const corpo = new THREE.Group();
+  corpo.rotation.x = -0.12;
+  corpo.position.y = -0.12;
+  corpo.add(pipa, new THREE.Mesh(varetas, mat(0x8a6a4a)), new THREE.Mesh(juntar(linha), mat(0xfff6ec)), new THREE.Mesh(juntar(lacos), mat(corB === 0xffffff ? corA : corB)));
+  g.add(corpo);
   return g;
 }
 
+// Obstáculo: um cacho de bexigas (as mesmas do buquê do Parque) presas por
+// fitas em curva a um pesinho no chão. Eram três bolas em cima de palitos.
 function balloonBunch() {
   const g = new THREE.Group();
-  const colors = [0xff7b9d, 0xffd166, 0x74c0fc];
-  colors.forEach((color, i) => {
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.36, 8, 6), mat(color));
-    b.scale.y = 1.2;
-    b.position.set((i - 1) * 0.5, 0.95 + (i % 2) * 0.25, (i % 2) * 0.2);
-    b.castShadow = true;
-    g.add(b);
-
-    const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.9, 4), mat(0xfff0d0));
-    rope.position.set((i - 1) * 0.5, 0.45, (i % 2) * 0.2);
-    g.add(rope);
+  const cores = [0xff7b9d, 0xffd166, 0x74c0fc, 0x8ce99a, 0xb197fc].sort(() => Math.random() - 0.5);
+  const AMARRA = new THREE.Vector3(0, 0.2, 0);
+  const baloes = [], fitas = [];
+  const posicoes = [[0, 1.28, -0.05], [-0.55, 1.02, 0], [0.55, 1.06, -0.08], [-0.25, 0.9, 0.42], [0.3, 0.88, 0.4]];
+  posicoes.forEach(([x, y, z], i) => {
+    const p = new THREE.Vector3(x, y, z);
+    const inclina = new THREE.Quaternion().setFromUnitVectors(CIMA, new THREE.Vector3(x * 0.6, 1, z * 0.6).normalize());
+    baloes.push([BALAO, new THREE.Matrix4().compose(p, inclina, new THREE.Vector3(1.05, 1.05, 1.05)), cores[i]]);
+    const ponta = p.clone().add(new THREE.Vector3(0, -0.47, 0).applyQuaternion(inclina));
+    const meio = ponta.clone().lerp(AMARRA, 0.5).add(new THREE.Vector3(0.08 * (i % 2 ? 1 : -1), 0, 0));
+    fitas.push([new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(ponta, meio, AMARRA), 8, 0.012, 3), new THREE.Matrix4()]);
   });
+  const corpo = new THREE.Mesh(juntarColorido(baloes), tintaDaMalha());
+  corpo.castShadow = true;
+  g.add(corpo, new THREE.Mesh(juntar(fitas), mat(0xffffff)));
+  // O pesinho redondo que segura o cacho no chão.
+  const peso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.2, 8), mat(0xff5d8f));
+  peso.position.y = 0.1;
+  peso.castShadow = true;
+  g.add(peso);
   return g;
 }
 
@@ -3939,34 +5290,83 @@ function fly() {
   return g;
 }
 
-// Passarinho: corpo redondinho, bico e asas planando.
+// Passarinho: corpo redondinho de barriga clara, cabecinha, rabo em
+// tesoura, bico, olhinhos e asas afinando na ponta, numa cor mais escura
+// que o corpo. É de longe que ele é visto, então são só cinco malhas, todas
+// de formas montadas uma vez (ver PASSARINHO) — o de antes era uma bola
+// branca de bico laranja, e as asas de folha liam como orelhas.
+const PASSARINHO = (() => {
+  const metade = (deCima) => {
+    const geo = new THREE.SphereGeometry(0.16, 10, 4, 0, Math.PI * 2, deCima ? 0 : Math.PI / 2, Math.PI / 2);
+    geo.scale(1.35, 1, 1);
+    return geo;
+  };
+  const rabo = new THREE.Shape();
+  rabo.moveTo(0, -0.05);
+  rabo.lineTo(-0.2, -0.1);
+  rabo.lineTo(-0.15, 0);
+  rabo.lineTo(-0.2, 0.1);
+  rabo.lineTo(0, 0.05);
+  rabo.lineTo(0, -0.05);
+  const raboGeo = new THREE.ShapeGeometry(rabo);
+  raboGeo.rotateX(Math.PI / 2);              // deita: o rabo é horizontal
+  raboGeo.rotateZ(0.25);                     // e sobe um pouco
+  const corpo = (costas, barriga) => juntarColorido([
+    [metade(true), new THREE.Matrix4(), costas],
+    [metade(false), new THREE.Matrix4(), barriga],
+    [new THREE.SphereGeometry(0.115, 8, 6), naPosicao(0.17, 0.08, 0), costas],
+    [raboGeo, naPosicao(-0.18, 0.02, 0), costas],
+  ]);
+  const bico = new THREE.ConeGeometry(0.035, 0.1, 5);
+  bico.rotateZ(-Math.PI / 2);
+  bico.translate(0.32, 0.07, 0);
+  const olhos = juntar([
+    [new THREE.SphereGeometry(0.02, 5, 4), naPosicao(0.24, 0.11, 0.075)],
+    [new THREE.SphereGeometry(0.02, 5, 4), naPosicao(0.24, 0.11, -0.075)],
+  ]);
+  // A asa, do lado +Z: larga na raiz e afinando, varrida para trás.
+  const asa = new THREE.Shape();
+  asa.moveTo(0.08, 0);
+  asa.quadraticCurveTo(0.06, 0.24, -0.06, 0.4);
+  asa.lineTo(-0.1, 0.28);
+  asa.lineTo(-0.1, 0);
+  asa.lineTo(0.08, 0);
+  const asaGeo = new THREE.ShapeGeometry(asa, 6);
+  asaGeo.rotateX(Math.PI / 2);               // o vão da asa (Y da forma) vira Z
+  return { corpo, bico, olhos, asa: asaGeo };
+})();
+
+// [costas, asa, barriga]: azul, amarelo, rosa, branco e o sabiá.
+const PASSARINHO_CORES = [
+  [0x74c0fc, 0x3f8fd8, 0xfff6e8],
+  [0xffd43b, 0xf0a020, 0xfff6c8],
+  [0xff9ec4, 0xe0679a, 0xfff0f6],
+  [0xffffff, 0xb8c8dc, 0xffffff],
+  [0x9c7a5c, 0x6e5440, 0xffa25c],
+];
+
+const CORPOS_DE_PASSARINHO = new Map();
 function bird() {
   const g = new THREE.Group();
-  const color = pick([0xffffff, 0xffe9a3, 0xbfe9ff, 0xffd6e8]);
+  const [costas, corAsa, barriga] = pick(PASSARINHO_CORES);
+  const basico = (extra) => new THREE.MeshBasicMaterial({ fog: false, ...extra });
 
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(0.17, 7, 6),
-    new THREE.MeshBasicMaterial({ color, fog: false })
-  );
-  body.scale.set(1.3, 1, 1);
-  g.add(body);
+  // Um corpo por paleta, montado na primeira vez que ela sai.
+  const chave = `${costas}-${barriga}`;
+  if (!CORPOS_DE_PASSARINHO.has(chave)) CORPOS_DE_PASSARINHO.set(chave, PASSARINHO.corpo(costas, barriga));
+  g.add(new THREE.Mesh(CORPOS_DE_PASSARINHO.get(chave), basico({ vertexColors: true, side: THREE.DoubleSide })));
+  g.add(new THREE.Mesh(PASSARINHO.bico, basico({ color: 0xffab1f })));
+  g.add(new THREE.Mesh(PASSARINHO.olhos, basico({ color: 0x2a2a30 })));
 
-  const beak = new THREE.Mesh(
-    new THREE.ConeGeometry(0.05, 0.13, 5),
-    new THREE.MeshBasicMaterial({ color: 0xffab1f, fog: false })
-  );
-  beak.rotation.z = -Math.PI / 2;
-  beak.position.x = 0.26;
-  g.add(beak);
-
+  const materialAsa = basico({ color: corAsa, side: THREE.DoubleSide });
   const wings = [];
   for (const side of [-1, 1]) {
     const wing = new THREE.Group();
-    const asa = asaSimples(color, 0.24);
-    asa.scale.set(1, 0.45, 1);
-    asa.position.set(-0.02, 0, side * 0.16);
-    asa.rotation.x = Math.PI / 2;
-    wing.add(asa);
+    wing.position.set(0.02, 0.06, 0);
+    const lado = new THREE.Group();
+    lado.scale.z = side;                     // a da esquerda é a da direita espelhada
+    lado.add(new THREE.Mesh(PASSARINHO.asa, materialAsa));
+    wing.add(lado);
     wing.userData.side = side;
     g.add(wing);
     wings.push(wing);
@@ -4098,90 +5498,90 @@ function bubble() {
 
 // Formiguinha andando pela beira da pista dos doces — de cara simpática,
 // como a abelha: cabeça grande com olhos e antenas dobradas, cintura
-// fininha, abdome redondo e seis pernas com joelho. Metade delas leva um
-// granulado na boca, que é o que formiga faz numa pista feita de doce.
-// Antes eram três bolinhas escuras em fila com pauzinhos retos, e de longe
-// virava um borrão.
+// fininha, abdome redondo e seis pernas. Metade delas leva um granulado na
+// boca, que é o que formiga faz numa pista feita de doce.
+//
+// São 18 na pista e pequenas na tela, então ela é montada como a abelha:
+// as formas saem uma vez só (ver FORMIGA) e cada formiga são cinco malhas
+// — casca, olhos, os detalhes escuros e as pernas em duas turmas, as três
+// de cada tripé numa peça, que é como elas andam juntas. A de antes tinha
+// perto de 30 peças, cada uma com geometria e material próprios.
 //
 // O chão fica em y = -0,12 (ela nasce a 0,12 de altura, ver World).
 const FORMIGA_CHAO = -0.12;
+const FORMIGA = (() => {
+  const bola = (r, [sx, sy, sz], [x, y, z]) => [
+    new THREE.SphereGeometry(r, 8, 6),
+    new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz)),
+  ];
+  const casca = juntar([
+    bola(0.14, [1.3, 1, 1], [-0.22, 0.05, 0]),        // abdome
+    bola(0.035, [1, 1, 1], [-0.06, 0.01, 0]),         // cintura
+    bola(0.07, [1.45, 0.9, 0.9], [0.03, 0.02, 0]),    // tórax
+    bola(0.11, [1, 0.95, 1], [0.18, 0.07, 0]),        // cabeça
+  ]);
+  const olhos = [], escuro = [];
+  for (const lado of [-1, 1]) {
+    olhos.push(bola(0.036, [1, 1, 1], [0.255, 0.1, lado * 0.055]));
+    escuro.push(bola(0.019, [1, 1, 1], [0.283, 0.1, lado * 0.06]));
+    // Antena dobrada no cotovelo, com bolinha na ponta.
+    escuro.push([new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.2, 0.16, lado * 0.04),
+      new THREE.Vector3(0.22, 0.28, lado * 0.07),
+      new THREE.Vector3(0.33, 0.31, lado * 0.1),
+    ], false, 'catmullrom', 0.2), 6, 0.011, 3), new THREE.Matrix4()]);
+    escuro.push(bola(0.022, [1, 1, 1], [0.34, 0.305, lado * 0.105]));
+  }
+  // As pernas, em duas turmas: frente e trás de um lado andam junto com a
+  // do meio do outro (o passo de tripé). A perna sobe num joelho e desce
+  // até o chão; as da frente apontam para a frente, as de trás para trás.
+  const turmas = [[], []];
+  [[-0.02, -0.12], [0.03, 0], [0.08, 0.12]].forEach(([x, pe], i) => {
+    for (const lado of [-1, 1]) {
+      const perna = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(x, -0.01, lado * 0.04),
+        new THREE.Vector3(x + pe * 0.4, 0.06, lado * 0.17),
+        new THREE.Vector3(x + pe, FORMIGA_CHAO + 0.01, lado * 0.25),
+      ], false, 'catmullrom', 0.1), 6, 0.014, 3);
+      turmas[(i + (lado > 0 ? 1 : 0)) % 2].push([perna, new THREE.Matrix4()]);
+    }
+  });
+  const carga = new THREE.CapsuleGeometry(0.035, 0.16, 2, 6);
+  carga.rotateX(Math.PI / 2);
+  carga.translate(0.32, 0.03, 0);
+  return {
+    casca, olhos: juntar(olhos), escuro: juntar(escuro),
+    pernas: turmas.map((turma) => {
+      // Cada turma gira em volta do meio do tórax.
+      const geo = juntar(turma);
+      geo.translate(-0.03, 0, 0);
+      return geo;
+    }),
+    carga,
+  };
+})();
+const FORMIGA_MATERIAIS = (() => {
+  const basico = (color) => new THREE.MeshBasicMaterial({ color, fog: false });
+  return {
+    casca: basico(0x4a2a22), olhos: basico(0xffffff), escuro: basico(0x2e1a14),
+    cargas: [0xff5d8f, 0xffd166, 0x4cc9f0, 0x8ce99a, 0xc77dff].map(basico),
+  };
+})();
+
 function ant() {
   const g = new THREE.Group();
   const corpo = new THREE.Group();
-  const basico = (color) => new THREE.MeshBasicMaterial({ color, fog: false });
-  const casca = basico(0x4a2a22);
-  const escuro = basico(0x2e1a14);
-
-  const bola = (r, [sx, sy, sz], [x, y, z], material = casca) => {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), material);
-    m.scale.set(sx, sy, sz);
-    m.position.set(x, y, z);
-    corpo.add(m);
-    return m;
-  };
-  bola(0.14, [1.3, 1, 1], [-0.22, 0.05, 0]);                   // abdome
-  bola(0.05, [1.2, 0.5, 0.9], [-0.15, 0.13, 0.06], basico(0x8a5a4a)); // brilho do abdome
-  bola(0.035, [1, 1, 1], [-0.06, 0.01, 0]);                    // cintura
-  bola(0.07, [1.45, 0.9, 0.9], [0.03, 0.02, 0]);               // tórax
-  bola(0.11, [1, 0.95, 1], [0.18, 0.07, 0]);                   // cabeça
-
-  for (const lado of [-1, 1]) {
-    bola(0.036, [1, 1, 1], [0.255, 0.1, lado * 0.055], basico(0xffffff));
-    bola(0.019, [1, 1, 1], [0.283, 0.1, lado * 0.06], basico(0x111111));
-
-    // Antena dobrada no cotovelo, com bolinha na ponta.
-    const antena = new THREE.Mesh(
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0.2, 0.16, lado * 0.04),
-        new THREE.Vector3(0.22, 0.28, lado * 0.07),
-        new THREE.Vector3(0.33, 0.31, lado * 0.1),
-      ], false, 'catmullrom', 0.2), 8, 0.01, 4),
-      escuro
-    );
-    corpo.add(antena);
-    bola(0.022, [1, 1, 1], [0.34, 0.305, lado * 0.105], escuro);
-
-    // Mandíbulas.
-    const mandibula = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.06, 4), escuro);
-    mandibula.rotation.z = -Math.PI / 2 - 0.3;
-    mandibula.position.set(0.28, 0.02, lado * 0.03);
-    corpo.add(mandibula);
-  }
-
+  const M = FORMIGA_MATERIAIS;
+  corpo.add(new THREE.Mesh(FORMIGA.casca, M.casca), new THREE.Mesh(FORMIGA.olhos, M.olhos), new THREE.Mesh(FORMIGA.escuro, M.escuro));
   // Metade carrega um granulado atravessado na boca.
-  if (Math.random() < 0.5) {
-    const carga = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.035, 0.16, 3, 6),
-      basico(pick([0xff5d8f, 0xffd166, 0x4cc9f0, 0x8ce99a, 0xc77dff]))
-    );
-    carga.rotation.x = Math.PI / 2;
-    carga.position.set(0.32, 0.03, 0);
-    corpo.add(carga);
-  }
+  if (Math.random() < 0.5) corpo.add(new THREE.Mesh(FORMIGA.carga, pick(M.cargas)));
 
-  // As pernas: cada uma gira no quadril, que fica no tórax, e tem um joelho
-  // levantado antes de descer até o chão. As da frente apontam para a
-  // frente e as de trás para trás, como formiga de verdade.
-  const pernas = [];
-  [[-0.02, -0.12], [0.03, 0], [0.08, 0.12]].forEach(([x, pe], i) => {
-    for (const lado of [-1, 1]) {
-      const quadril = new THREE.Group();
-      quadril.position.set(x, -0.01, lado * 0.04);
-      const perna = new THREE.Mesh(
-        new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(pe * 0.4, 0.07, lado * 0.13),
-          new THREE.Vector3(pe, FORMIGA_CHAO + 0.01, lado * 0.21),
-        ], false, 'catmullrom', 0.1), 8, 0.013, 4),
-        escuro
-      );
-      quadril.add(perna);
-      // Passo em tripé: frente e trás de um lado andam junto com a do meio
-      // do outro.
-      quadril.userData.fase = (i + (lado > 0 ? 1 : 0)) % 2 ? Math.PI : 0;
-      corpo.add(quadril);
-      pernas.push(quadril);
-    }
+  const pernas = FORMIGA.pernas.map((geo, i) => {
+    const turma = new THREE.Mesh(geo, M.escuro);
+    turma.position.x = 0.03;
+    turma.userData.fase = i ? Math.PI : 0;
+    corpo.add(turma);
+    return turma;
   });
 
   g.add(corpo);
@@ -4259,23 +5659,36 @@ export function createSmoke() {
 }
 
 // Floco de neve: o único que **desce** em vez de subir. Roda enquanto cai.
-export function createSnowflake() {
-  const g = new THREE.Group();
-  const nucleo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 5, 4),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })
-  );
-  g.add(nucleo);
-  for (let i = 0; i < 3; i++) {
-    const braco = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.03, 0.03),
-      new THREE.MeshBasicMaterial({ color: 0xf2f8ff, transparent: true, opacity: 0.85, fog: false })
-    );
-    braco.rotation.z = (i / 3) * Math.PI;
-    g.add(braco);
+// Seis braços, cada um com dois pares de raminhos — o floco de desenho de
+// criança. São 60 no ar, então é uma malha só, de uma forma e um material
+// compartilhados por todos (o de antes montava quatro malhas, com material
+// próprio, para cada floco).
+const FLOCO = (() => {
+  const pecas = [];
+  const braco = new THREE.PlaneGeometry(0.03, 0.15);
+  braco.translate(0, 0.075, 0);
+  const ramo = new THREE.PlaneGeometry(0.022, 0.06);
+  ramo.translate(0, 0.03, 0);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const giro = (ang) => new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), ang);
+    pecas.push([braco, new THREE.Matrix4().compose(new THREE.Vector3(), giro(a), new THREE.Vector3(1, 1, 1))]);
+    for (const [ao, tam] of [[0.07, 1], [0.11, 0.7]]) {
+      const ponto = new THREE.Vector3(-Math.sin(a) * ao, Math.cos(a) * ao, 0);
+      for (const lado of [-1, 1]) {
+        pecas.push([ramo, new THREE.Matrix4().compose(ponto, giro(a + lado * 0.8), new THREE.Vector3(1, tam, 1))]);
+      }
+    }
   }
-  g.userData.parts = { queda: 0.9 + Math.random() * 0.8 };
-  return g;
+  return juntar(pecas);
+})();
+const FLOCO_MATERIAL = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, fog: false });
+
+export function createSnowflake() {
+  const floco = new THREE.Mesh(FLOCO, FLOCO_MATERIAL);
+  floco.scale.setScalar(0.8 + Math.random() * 0.5);
+  floco.userData.parts = { queda: 0.9 + Math.random() * 0.8 };
+  return floco;
 }
 
 // Gaivota: branca com a ponta da asa escura, asa comprida de planar. Bate
@@ -4437,40 +5850,82 @@ export function createRaindrop() {
   return pingo;
 }
 
-// Folha caindo: um disco achatado numa cor quente, que balança e gira
+// Folha caindo: uma folha de bordo numa cor quente, que balança e gira
 // devagar enquanto desce — bem mais devagar que o floco de neve, para ler
 // como folha boiando no ar e não como neve caindo reto.
+const FOLHA_NO_AR = BORDO.clone().scale(0.34, 0.34, 0.34);
 function leaf() {
-  const disco = new THREE.Mesh(
-    new THREE.CircleGeometry(0.16, 5),
-    new THREE.MeshBasicMaterial({ color: pick(AUTUMN), side: THREE.DoubleSide, fog: false })
+  const folha = new THREE.Mesh(
+    FOLHA_NO_AR,
+    new THREE.MeshBasicMaterial({ color: pick(FOLHAS_OUTONO), side: THREE.DoubleSide, fog: false })
   );
-  disco.userData.parts = { queda: 0.55 + Math.random() * 0.5 };
-  return disco;
+  folha.userData.parts = { queda: 0.55 + Math.random() * 0.5 };
+  return folha;
 }
 
-// Nota musical: a cabeça oval deitada, a haste e a bandeirinha. É o que
-// voa no Parque, onde a música nunca para.
+// Nota musical: o desenho da partitura, recortado e com espessura — a
+// cabeça oval inclinada, a haste e a bandeirinha curva (♪), ou duas notas
+// ligadas pela barra (♫). Cada uma é uma forma só, de bordas arredondadas,
+// montada uma vez e compartilhada. A de antes eram três bloquinhos finos
+// que giravam de lado e sumiam; agora ela balança de frente (ver a
+// animação em `animateAmbience`). É o que voa no Parque, onde a música
+// nunca para.
+const NOTAS = (() => {
+  const PROFUNDO = 0.05;
+  const extrudar = (forma) => new THREE.ExtrudeGeometry(forma, {
+    depth: PROFUNDO, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.015, bevelSegments: 2, curveSegments: 10,
+  });
+  const cabeca = (x, y) => {
+    const f = new THREE.Shape();
+    f.absellipse(x, y, 0.125, 0.085, 0, Math.PI * 2, false, 0.4);
+    return extrudar(f);
+  };
+  const haste = (x, y0, y1) => {
+    const f = new THREE.Shape();
+    f.moveTo(x - 0.035, y0);
+    f.lineTo(x, y0);
+    f.lineTo(x, y1);
+    f.lineTo(x - 0.035, y1);
+    f.lineTo(x - 0.035, y0);
+    return extrudar(f);
+  };
+  const centrar = (geo) => { geo.computeBoundingBox(); geo.center(); return geo; };
+  const juntarTudo = (pecas) => centrar(juntar(pecas.map((geo) => [geo, new THREE.Matrix4()])));
+
+  // ♪ — a colcheia: a bandeirinha desce da ponta da haste numa curva.
+  const bandeira = new THREE.Shape();
+  bandeira.moveTo(0.1, 0.55);
+  bandeira.lineTo(0.135, 0.55);
+  bandeira.quadraticCurveTo(0.16, 0.43, 0.27, 0.36);
+  bandeira.quadraticCurveTo(0.34, 0.27, 0.27, 0.15);
+  bandeira.quadraticCurveTo(0.29, 0.28, 0.135, 0.38);
+  bandeira.lineTo(0.1, 0.38);
+  bandeira.lineTo(0.1, 0.55);
+  const colcheia = juntarTudo([cabeca(0, 0), haste(0.135, 0.02, 0.55), extrudar(bandeira)]);
+
+  // ♫ — duas colcheias ligadas pela barra grossa, a da direita mais alta.
+  const barra = new THREE.Shape();
+  barra.moveTo(0.1, 0.5);
+  barra.lineTo(0.465, 0.56);
+  barra.lineTo(0.465, 0.64);
+  barra.lineTo(0.1, 0.58);
+  barra.lineTo(0.1, 0.5);
+  const dupla = juntarTudo([
+    cabeca(0, 0), haste(0.135, 0.02, 0.58),
+    cabeca(0.33, 0.06), haste(0.465, 0.08, 0.64),
+    extrudar(barra),
+  ]);
+  return [colcheia, colcheia, dupla];
+})();
+const NOTA_MATERIAIS = new Map();
+
 function musicNote() {
+  const cor = pick([0xff4d5e, 0x7a4ec7, 0x2f8fd6, 0xffb703, 0xff7bac]);
+  if (!NOTA_MATERIAIS.has(cor)) {
+    NOTA_MATERIAIS.set(cor, mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.25) }));
+  }
   const g = new THREE.Group();
-  const cor = pick([0xff4d5e, 0x7a4ec7, 0x2f8fd6, 0xffffff]);
-  const material = mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.2) });
-
-  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), material);
-  cabeca.scale.set(1.25, 0.85, 0.7);
-  cabeca.rotation.z = -0.35;
-  g.add(cabeca);
-
-  const haste = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.5, 0.045), material);
-  haste.position.set(0.14, 0.26, 0);
-  g.add(haste);
-
-  // A bandeirinha, que é o que faz a colcheia ser reconhecível de longe.
-  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.04), material);
-  bandeira.position.set(0.23, 0.42, 0);
-  bandeira.rotation.z = -0.5;
-  g.add(bandeira);
-
+  g.add(new THREE.Mesh(pick(NOTAS), NOTA_MATERIAIS.get(cor)));
   g.userData.parts = { cor };
   return g;
 }
@@ -4530,7 +5985,9 @@ export function animateAmbience(item, elapsed) {
 
   // A nota sobe girando devagar, como se a música estivesse subindo.
   if (kind === 'note') {
-    item.rotation.y = t * 1.4;
+    // Balança de um lado para o outro, sempre quase de frente: virada de
+    // perfil, a nota é só um risco.
+    item.rotation.y = Math.sin(t * 1.4) * 0.55;
     item.rotation.z = Math.sin(t * 1.8) * 0.35;
     return { x: Math.sin(t * 0.9) * 1.8, y: Math.sin(t * 0.7) * 1.5 };
   }

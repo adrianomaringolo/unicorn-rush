@@ -2223,6 +2223,16 @@ export class Game {
   }
 
   showFirstScreen() {
+    // Os retratos do menu (os 22 unicórnios e as 15 pistas, fotografados
+    // dos modelos 3D) saem aqui, ainda atrás da tela de carregamento — é o
+    // trabalho mais pesado da abertura, e trava a tela por alguns segundos
+    // no celular. Antes eles só eram feitos quando o menu aparecia pela
+    // primeira vez: para quem já abre no menu dava no mesmo, mas na
+    // primeira abertura (idioma → convite da voz → história → menu) o
+    // travamento caía sem cortina nenhuma, logo depois de escolher o idioma.
+    getPortraits(CHARACTER_LIST);
+    getTrackPortraits(TRACK_LIST);
+
     // Guardado antes de a história marcar `storySeen`: é o que diferencia
     // "abriu o jogo pela primeira vez" de "reabriu a história pelo 📖".
     this.primeiraVez = !this.save.storySeen;

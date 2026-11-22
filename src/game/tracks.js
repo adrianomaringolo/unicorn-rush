@@ -31,7 +31,7 @@ export const TRACKS = {
     mountains: [0xc7b9ff, 0xa8c8ff, 0xe0c3ff],
     decorations: ['tree', 'flower', 'flowerPatch', 'mushroom', 'flower', 'crystal'],
     obstacles: ['rock', 'candyBar', 'bush'],
-    ambience: [{ kind: 'butterfly', count: 16 }, { kind: 'bee', count: 10 }],
+    ambience: [{ kind: 'butterfly', count: 8 }, { kind: 'bee', count: 5 }],
   },
 
   doces: {
@@ -303,7 +303,7 @@ export const TRACKS = {
     backdrop: 'rainbow',
     cloud: 0xffffff,
     mountains: [0xff9ecb, 0xffd166, 0x9be7ff],
-    decorations: ['circusTent', 'ferrisWheel', 'cottonCandy', 'carousel', 'balloon', 'circusTent'],
+    decorations: ['circusTent', 'ferrisWheel', 'cottonCandy', 'carousel', 'balloonStand', 'circusTent'],
     obstacles: ['popcornBox', 'gumdrop', 'donut'],
     // No Parque não voam bichos: voa música. As notas sobem girando e o
     // confete cai rodopiando, como se a festa não parasse nunca.
