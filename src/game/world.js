@@ -15,6 +15,18 @@ import {
   swaySeaweed,
 } from '../models/scenery.js';
 
+// O quanto do cenário de cada pista entra de verdade: os enfeites e os
+// bichinhos que a pista pede (em tracks.js) vezes isto. A paisagem é o
+// fundo — cheia demais, ela disputa o olho com o que importa, que são os
+// obstáculos e o que se pega na pista. Um número só aqui, em vez de
+// mexer pista por pista, para a proporção entre elas continuar a mesma.
+const DENSIDADE_DO_CENARIO = 0.6;
+
+// A distância mínima entre a beira da pista e um enfeite. Colado na pista
+// (era 4,8), o enfeite passava no canto do olho a toda hora e ainda se
+// confundia com obstáculo.
+const DISTANCIA_DO_CENARIO = 6;
+
 const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
 
 // A onda da Bomba Arco-Íris.
@@ -175,7 +187,8 @@ export class World {
   buildAmbience() {
     this.ambience = [];
     for (const { kind, count } of this.track.ambience || []) {
-      for (let i = 0; i < count; i++) {
+      const quantos = Math.max(1, Math.round(count * DENSIDADE_DO_CENARIO));
+      for (let i = 0; i < quantos; i++) {
         const bug = createAmbience(kind);
         this.placeAmbience(bug, DESPAWN_DISTANCE - Math.random() * TRACK_LENGTH);
         this.root.add(bug);
@@ -213,7 +226,7 @@ export class World {
   }
 
   buildDecorations() {
-    const quantos = this.track.decorationCount || 40;
+    const quantos = Math.round((this.track.decorationCount || 40) * DENSIDADE_DO_CENARIO);
     const shore = this.track.shore;
     for (let i = 0; i < quantos; i++) {
       // Numa pista de beira-mar cada lado tem o seu conjunto: guarda-sol e
@@ -255,7 +268,7 @@ export class World {
     // O que flutua fica um pouco afundado, e mais longe: barco encostado na
     // pista pareceria obstáculo.
     const naAgua = this.track.shore && side === -this.track.shore.side;
-    const dist = naAgua ? 6.5 + Math.random() * 16 : 4.8 + Math.random() * 14;
+    const dist = naAgua ? 7 + Math.random() * 16 : DISTANCIA_DO_CENARIO + Math.random() * 14;
     deco.position.set(side * dist, naAgua ? -0.12 : 0, z);
   }
 

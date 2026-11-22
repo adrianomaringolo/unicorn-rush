@@ -170,20 +170,48 @@ function tree() {
   return g;
 }
 
+// Pinheiro da noite: quatro andares de galhos, cada um um cone com a saia
+// recortada em pontas que caem (os galhos), num azul-esverdeado de luar, e
+// umas luzinhas de vagalume pousadas nos galhos. Eram três cones lisos
+// empilhados, iguais a um copinho de sorvete de cabeça para baixo.
+const ANDAR_DE_PINHEIRO = (() => {
+  const geo = new THREE.ConeGeometry(1, 1, 12, 2, true);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getY(i) > -0.49) continue;                 // só a borda de baixo
+    const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    const ponta = Math.max(0, Math.cos(a * 6));        // 6 galhos
+    pos.setXYZ(i, pos.getX(i) * (1 + ponta * 0.12), pos.getY(i) - ponta * 0.16, pos.getZ(i) * (1 + ponta * 0.12));
+  }
+  geo.computeVertexNormals();
+  return geo;
+})();
+
 function pineTree() {
   const g = new THREE.Group();
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, 0.9, 6), mat(0x6b5a8f));
-  trunk.position.y = 0.45;
-  trunk.castShadow = true;
-  g.add(trunk);
+  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.2, 1.0, 6), mat(0x6b5a8f));
+  tronco.position.y = 0.5;
+  tronco.castShadow = true;
+  g.add(tronco);
 
-  const color = pick([0x3f6f8f, 0x4a7f7a, 0x5a6fa8]);
-  for (let i = 0; i < 3; i++) {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.85 - i * 0.22, 1.1, 6), mat(color));
-    cone.position.y = 1.1 + i * 0.62;
-    cone.castShadow = true;
-    g.add(cone);
+  const cor = pick([0x3f6f8f, 0x4a7f7a, 0x5a6fa8]);
+  const andares = [];
+  const luzes = [];
+  for (let i = 0; i < 4; i++) {
+    const raio = 0.95 - i * 0.2, alto = 1.0 - i * 0.1, y = 1.05 + i * 0.55;
+    andares.push([ANDAR_DE_PINHEIRO, new THREE.Matrix4().compose(
+      new THREE.Vector3(0, y, 0), new THREE.Quaternion().setFromAxisAngle(CIMA, i * 0.5), new THREE.Vector3(raio, alto, raio))]);
+    // Uma luzinha na ponta de um ou dois galhos de cada andar.
+    for (let k = 0; k < (i < 2 ? 3 : 2); k++) {
+      const a = i * 0.5 + (Math.floor(Math.random() * 6) / 6) * Math.PI * 2;
+      luzes.push([new THREE.IcosahedronGeometry(0.09, 1), naPosicao(Math.cos(a) * raio * 0.95, y - alto * 0.5 - 0.06, -Math.sin(a) * raio * 0.95)]);
+    }
   }
+  const copa = new THREE.Mesh(juntar(andares), mat(cor, { side: THREE.DoubleSide }));
+  copa.castShadow = true;
+  g.add(copa);
+  const acesa = pick([0xfff3a8, 0xd6ffa8]);
+  g.add(new THREE.Mesh(juntar(luzes), new THREE.MeshBasicMaterial({ color: acesa })));
   return g;
 }
 
@@ -272,16 +300,23 @@ function glowMushroom() {
   return g;
 }
 
+// Cristal de enfeite (Campo e Noite): um prisma alto de seis lados com
+// ponta, dois menores encostados e uma pedrinha na base, translúcidos e
+// acesos de leve. Era um cone de cinco lados sozinho.
 function crystal() {
   const g = new THREE.Group();
-  const c = new THREE.Mesh(
-    new THREE.ConeGeometry(0.3, 1.4, 5),
-    mat(pick([0x9be7ff, 0xf0a6ff, 0xa6ffcb]), { transparent: true, opacity: 0.85 })
-  );
-  c.position.y = 0.7;
-  c.rotation.z = (Math.random() - 0.5) * 0.3;
-  c.castShadow = true;
-  g.add(c);
+  const cor = pick([0x9be7ff, 0xf0a6ff, 0xa6ffcb]);
+  const pecas = [[0, 1.25, 0.2, 0.08, 0], [0.26, 0.7, 0.13, -0.45, 0.2], [-0.22, 0.55, 0.11, 0.5, -0.25]].map(
+    ([x, alto, raio, inclZ, inclX]) => [PRISMA_CRISTAL, new THREE.Matrix4().compose(
+      new THREE.Vector3(x, 0.02, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(inclX, Math.random(), inclZ)),
+      new THREE.Vector3(raio, alto / 1.6, raio))]);
+  const cristais = new THREE.Mesh(juntar(pecas), mat(cor, { transparent: true, opacity: 0.85, emissive: cor, emissiveIntensity: 0.35 }));
+  cristais.castShadow = true;
+  g.add(cristais);
+  const base = new THREE.Mesh(pedraIrregular(0.3, 0.2, 0), mat(0x8a86a0));
+  base.scale.set(1.3, 0.35, 1);
+  base.position.y = 0.04;
+  g.add(base);
   return g;
 }
 
@@ -2499,71 +2534,108 @@ function planet() {
   return g;
 }
 
-// Cascalho de asteroide: pedras espalhadas e baixas, de tamanhos diferentes.
-// Antes eram duas pedras empilhadas, e a silhueta saía parecida com uma
-// arvorezinha — tronco e copa.
+// Cascalho de asteroide: pedras irregulares espalhadas e baixas, de
+// tamanhos e tons diferentes, numa malha só. Espalhadas na horizontal e
+// nunca uma sobre a outra — empilhadas, a silhueta virava arvorezinha.
+// Também é obstáculo no Espaço.
 function asteroid() {
   const g = new THREE.Group();
-  const quantas = 4 + Math.floor(Math.random() * 4);
+  const pecas = [];
+  const quantas = 4 + Math.floor(Math.random() * 3);
   for (let i = 0; i < quantas; i++) {
-    const raio = 0.1 + Math.random() * 0.3;
-    const pedra = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(raio, 0),
-      mat(pick([0x6b6478, 0x565064, 0x7d7590]))
-    );
-    // Espalhadas na horizontal e rentes ao vazio, nunca uma sobre a outra.
-    pedra.position.set(
-      (Math.random() - 0.5) * 2.6,
-      raio * 0.8 + Math.random() * 0.5,
-      (Math.random() - 0.5) * 2.2
-    );
-    pedra.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-    pedra.scale.set(1, 0.7 + Math.random() * 0.5, 1);
-    pedra.castShadow = true;
-    g.add(pedra);
+    const raio = i === 0 ? 0.42 : 0.12 + Math.random() * 0.22;
+    const a = Math.random() * Math.PI * 2, d = i === 0 ? 0 : 0.5 + Math.random() * 0.7;
+    pecas.push([pedraIrregular(raio, 0.22, i === 0 ? 1 : 0), new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a) * d, raio * 0.7, Math.sin(a) * d),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random() * 3, Math.random() * 3, 0)),
+      new THREE.Vector3(1, 0.75, 1)), pick([0x6b6478, 0x5e576c, 0x7d7590])]);
   }
+  const pedras = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
+  pedras.castShadow = true;
+  g.add(pedras);
   return g;
 }
 
-// Pedaço grande de asteroide, partido: uma rocha só, com lascas em volta.
+// Cratera rasa: um anel de borda levantada com o fundo escuro, deitado na
+// superfície da rocha onde um raio de fora a acerta (o mesmo jeito da lua
+// entalhada da pedra de luar).
+function craterasEm(rocha, quantas, tamanho, corFundo) {
+  rocha.updateMatrixWorld(true);
+  const inversa = rocha.matrixWorld.clone().invert();
+  const raio = new THREE.Raycaster();
+  const centro = new THREE.Vector3().setFromMatrixPosition(rocha.matrixWorld);
+  const bordas = [], fundos = [];
+  for (let i = 0; i < quantas; i++) {
+    // De cima e dos lados — embaixo ninguém vê.
+    const dir = new THREE.Vector3(Math.random() - 0.5, 0.2 + Math.random() * 0.8, Math.random() - 0.5).normalize();
+    raio.set(centro.clone().addScaledVector(dir, 5), dir.clone().negate());
+    const acerto = raio.intersectObject(rocha)[0];
+    if (!acerto) continue;
+    const ponto = acerto.point.applyMatrix4(inversa);
+    const normal = acerto.face.normal.clone();
+    const r = tamanho * (0.6 + Math.random() * 0.6);
+    const giro = new THREE.Quaternion().setFromUnitVectors(CIMA, normal);
+    bordas.push([new THREE.TorusGeometry(r, r * 0.28, 4, 10).rotateX(Math.PI / 2), new THREE.Matrix4().compose(ponto, giro, new THREE.Vector3(1, 0.6, 1))]);
+    fundos.push([new THREE.CircleGeometry(r, 10).rotateX(-Math.PI / 2), new THREE.Matrix4().compose(ponto.clone().addScaledVector(normal, 0.005), giro, new THREE.Vector3(1, 1, 1))]);
+  }
+  if (!bordas.length) return;
+  rocha.add(new THREE.Mesh(juntar(bordas), rocha.material));
+  rocha.add(new THREE.Mesh(juntar(fundos), mat(corFundo)));
+}
+
+// Pedaço grande de asteroide: uma rocha irregular cheia de crateras, com
+// lascas soltas flutuando em volta (no espaço nada cai). Era um icosaedro
+// liso com quatro tetraedros.
 function asteroidChunk() {
   const g = new THREE.Group();
-  const raio = 0.5 + Math.random() * 0.35;
-  const rocha = new THREE.Mesh(new THREE.IcosahedronGeometry(raio, 0), mat(0x625b73));
-  rocha.position.y = raio * 0.9;
-  rocha.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+  const raio = 0.55 + Math.random() * 0.3;
+  const rocha = new THREE.Mesh(pedraIrregular(raio, 0.14), mat(0x6a6380));
+  rocha.position.y = raio * 0.95;
+  rocha.scale.set(1.15, 0.9, 1);
+  rocha.rotation.y = Math.random() * Math.PI;
   rocha.castShadow = true;
   g.add(rocha);
+  craterasEm(rocha, 4, raio * 0.22, 0x4a4458);
+
+  const lascas = [];
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2 + Math.random();
-    const lasca = new THREE.Mesh(
-      new THREE.TetrahedronGeometry(0.13 + Math.random() * 0.12, 0),
-      mat(0x8a82a0)
-    );
-    lasca.position.set(Math.cos(a) * (raio + 0.5), raio * 0.6 + Math.random() * 0.6, Math.sin(a) * (raio + 0.5));
-    lasca.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-    lasca.castShadow = true;
-    g.add(lasca);
+    lascas.push([pedraIrregular(0.1 + Math.random() * 0.1, 0.3, 0), naPosicao(
+      Math.cos(a) * (raio + 0.55), raio * 0.7 + Math.random() * 0.9, Math.sin(a) * (raio + 0.55))]);
   }
+  const soltas = new THREE.Mesh(juntar(lascas), mat(0x8a82a0));
+  soltas.castShadow = true;
+  g.add(soltas);
   return g;
 }
 
-// Obstáculo: meteoro com o rastro aceso.
+// Obstáculo: meteoro caindo — a pedra irregular em brasa, com as rachas
+// acesas, e a cauda de fogo subindo atrás dela em três camadas (branca
+// por dentro, amarela, laranja por fora). Era um icosaedro com um cone
+// deitado apontando para quem corre.
 function meteor() {
   const g = new THREE.Group();
-  const pedra = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 0), mat(0x5a5468));
+  const [corFora, corMeio] = pick([[0xff8a3d, 0xffc24d], [0x6fb6ff, 0xb5e0ff]]);
+  const geo = pedraIrregular(0.5, 0.14);
+  const pedra = new THREE.Mesh(geo, mat(0x4e4858));
   pedra.position.y = 0.6;
   pedra.castShadow = true;
+  pedra.add(new THREE.Mesh(veiosDeLava(geo, { caminhos: 3, passos: 5, espessura: 0.035, sobe: -0.2 }), LAVA_ACESA(corMeio)));
   g.add(pedra);
-  const cor = pick([0xffc24d, 0x9ad2ff]);
-  const rastro = new THREE.Mesh(
-    new THREE.ConeGeometry(0.3, 1.1, 6),
-    mat(cor, { emissive: cor, emissiveIntensity: 1 })
-  );
-  rastro.rotation.x = -Math.PI / 2;
-  rastro.position.set(0, 0.6, 0.75);
-  g.add(rastro);
-  g.add(warningRing(cor));
+
+  // A cauda: sai de trás da pedra e sobe inclinada, de onde ela veio.
+  const cauda = new THREE.Group();
+  cauda.position.set(0, 0.7, -0.15);
+  cauda.rotation.x = -0.85;
+  const camadas = [[0.5, 2.0, corFora, 0.45], [0.34, 1.5, corMeio, 0.7], [0.18, 1.0, 0xfff8e0, 0.9]];
+  for (const [raio, comp, cor, opacidade] of camadas) {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(raio, comp, 10, 1, true),
+      new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: opacidade, depthWrite: false, side: THREE.DoubleSide }));
+    cone.position.y = comp / 2;              // a base larga junto da pedra
+    cauda.add(cone);
+  }
+  g.add(cauda);
+  g.add(warningRing(corFora));
   return g;
 }
 
@@ -2897,12 +2969,32 @@ function ufo() {
   const cupula = new THREE.Mesh(
     new THREE.SphereGeometry(0.34, 10, 7, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshLambertMaterial({
-      color: 0x9ad2ff, flatShading: true, transparent: true, opacity: 0.75,
-      emissive: 0x9ad2ff, emissiveIntensity: 0.35,
+      color: 0x9ad2ff, flatShading: true, transparent: true, opacity: 0.4,
+      emissive: 0x9ad2ff, emissiveIntensity: 0.35, depthWrite: false,
     })
   );
   cupula.position.y = 1.72;
   g.add(cupula);
+
+  // Quem pilota: um alienzinho verde de olhos grandes e uma antena,
+  // espiando por cima da borda.
+  const alien = new THREE.Group();
+  alien.position.y = 1.87;
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), mat(0x8ce99a));
+  cabeca.scale.set(1, 0.9, 0.95);
+  alien.add(cabeca);
+  const olhos = [];
+  for (const lado of [-1, 1]) {
+    olhos.push([new THREE.SphereGeometry(0.05, 8, 6), new THREE.Matrix4().compose(
+      new THREE.Vector3(lado * 0.06, 0.02, 0.12), new THREE.Quaternion(), new THREE.Vector3(0.8, 1.2, 0.5))]);
+  }
+  alien.add(new THREE.Mesh(juntar(olhos), mat(0x1e1a2e)));
+  const antena = juntar([
+    [new THREE.CylinderGeometry(0.008, 0.008, 0.12, 4), naPosicao(0, 0.18, 0)],
+    [new THREE.SphereGeometry(0.03, 6, 5), naPosicao(0, 0.25, 0)],
+  ]);
+  alien.add(new THREE.Mesh(antena, mat(0x8ce99a)));
+  g.add(alien);
 
   // Luzinhas embaixo, em volta do prato.
   const cor = pick([0x8ce99a, 0xff8fd8, 0xffd166, 0x8ce9ff]);
@@ -4310,50 +4402,87 @@ function jungleLeaf(cor) {
   return folha;
 }
 
-// Árvore de selva: tronco alto com raízes que se espalham na base, copa
-// verde bem saturada (sem o tom pastel do Campo) e folhas largas na
-// beirada — a silhueta que lê "selva" de longe.
+// Tronco torto que afina para cima: um tubo em curva com cada anel
+// encolhendo em volta do eixo. `pe` alarga a base, onde a árvore segura.
+function troncoTorto(pontos, raio, { afina = 0.55, pe = 0 } = {}) {
+  const eixo = new THREE.CatmullRomCurve3(pontos);
+  const ANEIS = 10, LADOS = 7;
+  const geo = new THREE.TubeGeometry(eixo, ANEIS, raio, LADOS);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.floor(i / (LADOS + 1)) / ANEIS;
+    const c = eixo.getPoint(t);
+    const k = (1 - t * afina) * (1 + Math.max(0, 0.2 - t) * pe);
+    pos.setXYZ(i, c.x + (pos.getX(i) - c.x) * k, c.y + (pos.getY(i) - c.y) * k, c.z + (pos.getZ(i) - c.z) * k);
+  }
+  geo.computeVertexNormals();
+  return { geo, eixo };
+}
+
+// Sapopema: a raiz-tábua das árvores da mata, uma aba fina que desce do
+// tronco até o chão numa curva.
+const SAPOPEMA = (() => {
+  const f = new THREE.Shape();
+  f.moveTo(0, 0);
+  f.lineTo(0.62, 0);
+  f.quadraticCurveTo(0.12, 0.1, 0, 0.8);
+  f.lineTo(0, 0);
+  const geo = new THREE.ExtrudeGeometry(f, { depth: 0.09, bevelEnabled: false, curveSegments: 5 });
+  geo.translate(0, 0, -0.045);
+  return geo;
+})();
+
+// Copa de mata: um chapéu largo e achatado de calombos em vários verdes,
+// com folhas grandes caindo da beirada. Devolve as peças coloridas, em
+// volta de (0, y, 0).
+function copaDeSelva(y, largura) {
+  const pecas = [[new THREE.IcosahedronGeometry(1, 1), new THREE.Matrix4().compose(
+    new THREE.Vector3(0, y, 0), new THREE.Quaternion(), new THREE.Vector3(largura * 0.45, 0.4, largura * 0.45)), JUNGLE_GREENS[2]]];
+  const bola = new THREE.IcosahedronGeometry(1, 1);
+  for (let i = 0; i < 11; i++) {
+    const a = i * 2.39996, r = Math.sqrt((i + 0.5) / 11) * largura * 0.42;
+    const tam = 0.32 + Math.random() * 0.14;
+    pecas.push([bola, new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a) * r, y + 0.25 - (r / largura) * 0.35, Math.sin(a) * r),
+      new THREE.Quaternion(), new THREE.Vector3(tam, tam * 0.8, tam)), pick(JUNGLE_GREENS)]);
+  }
+  // Folhas largas saindo da beirada e pendendo para baixo.
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + Math.random() * 0.3;
+    const R = largura * 0.42;
+    pecas.push([PETALA, new THREE.Matrix4().makeTranslation(Math.cos(a) * R, y - 0.05, -Math.sin(a) * R)
+      .multiply(petalaEm(a, -0.55 - Math.random() * 0.3, 0.85 + Math.random() * 0.25, 0.5)), pick(JUNGLE_GREENS)]);
+  }
+  return pecas;
+}
+
+// Árvore de selva: o tronco torto com as sapopemas na base e a copa larga
+// e achatada de mata, com folhas grandes caindo. A de antes era um poste
+// com quatro cones de raiz e bolotas soltas por cima.
 function jungleTree() {
   const g = new THREE.Group();
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 2.5, 8), mat(0x6b4a35));
-  tronco.position.y = 1.25;
+  const lado = Math.random() < 0.5 ? -1 : 1;
+  const ALTO = 2.5 + Math.random() * 0.4;
+  const { geo, eixo } = troncoTorto([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(lado * 0.12, ALTO * 0.4, 0),
+    new THREE.Vector3(-lado * 0.08, ALTO * 0.75, 0.05), new THREE.Vector3(0, ALTO, 0),
+  ], 0.24, { afina: 0.45, pe: 1.5 });
+  const madeira = [[geo, new THREE.Matrix4()]];
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    madeira.push([SAPOPEMA, new THREE.Matrix4().compose(
+      new THREE.Vector3(Math.cos(a) * 0.15, 0, -Math.sin(a) * 0.15),
+      new THREE.Quaternion().setFromAxisAngle(CIMA, a), new THREE.Vector3(1, 0.9 + Math.random() * 0.3, 1))]);
+  }
+  const tronco = new THREE.Mesh(juntar(madeira), mat(0x6b4a35));
   tronco.castShadow = true;
   g.add(tronco);
 
-  for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2;
-    const raiz = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.5, 5), mat(0x5c3f2c));
-    raiz.position.set(Math.cos(a) * 0.26, 0.2, Math.sin(a) * 0.26);
-    raiz.rotation.z = Math.cos(a) * 0.55;
-    raiz.rotation.x = Math.sin(a) * 0.55;
-    raiz.castShadow = true;
-    g.add(raiz);
-  }
-
-  const copa = new THREE.Group();
-  copa.position.y = 2.6;
+  const topo = eixo.getPoint(1);
+  const copa = new THREE.Mesh(juntarColorido(copaDeSelva(0, 2.4)), tintaDaMalha());
+  copa.position.copy(topo);
+  copa.castShadow = true;
   g.add(copa);
-
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2 + Math.random() * 0.3;
-    const bolota = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(0.5 + Math.random() * 0.16, 1),
-      mat(pick(JUNGLE_GREENS))
-    );
-    bolota.position.set(Math.cos(a) * 0.45, Math.random() * 0.3, Math.sin(a) * 0.45);
-    bolota.castShadow = true;
-    copa.add(bolota);
-  }
-
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2 + Math.random() * 0.4;
-    const folha = jungleLeaf(pick(JUNGLE_GREENS));
-    folha.position.set(Math.cos(a) * 0.75, 0.1 + Math.random() * 0.4, Math.sin(a) * 0.75);
-    folha.rotation.z = Math.PI / 2 + Math.cos(a) * 0.4;
-    folha.rotation.y = -a;
-    copa.add(folha);
-  }
-
   return g;
 }
 
@@ -4367,65 +4496,96 @@ function bigJungleTree() {
   return g;
 }
 
-// Cipó pendurado: um tronco de apoio com um galho saindo dele, e fios de
-// elos descendo do galho, cada um com folhinhas de vez em quando — a
-// mesma ideia de corrente de elos do rabo e da crina do unicórnio, só que
-// parada. Sem o tronco, o galho e o cipó ficavam boiando no ar, sem nada
-// embaixo — era a "árvore" mais fácil de plantar, e a que mais parecia
-// errada.
+// Cipó pendurado: uma árvore fina que sobe e se dobra num galho comprido,
+// e do galho caem quatro cipós em curva, com folhinhas alternando os lados
+// e uma flor vermelha. Os de antes eram correntes retas de elos.
 function hangingVine() {
   const g = new THREE.Group();
-
-  const tronco = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.22, 2.4, 7), mat(0x5c3f2c));
-  tronco.position.y = 1.2;
+  const { geo, eixo } = troncoTorto([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.1, 1.2, 0),
+    new THREE.Vector3(0.25, 2.3, 0), new THREE.Vector3(0.9, 2.75, 0), new THREE.Vector3(1.6, 2.6, 0.05),
+  ], 0.16, { afina: 0.7, pe: 1.2 });
+  const tronco = new THREE.Mesh(geo, mat(0x5c3f2c));
   tronco.castShadow = true;
   g.add(tronco);
 
-  const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.7, 6), mat(0x5c3f2c));
-  galho.rotation.z = Math.PI / 2;
-  galho.position.set(0.35, 2.35, 0);
-  galho.castShadow = true;
-  g.add(galho);
-
-  for (const x of [0.35, 0.55, 0.7]) {
-    const elos = 6 + Math.floor(Math.random() * 3);
-    let y = 2.3;
-    for (let i = 0; i < elos; i++) {
-      const comprimento = 0.32;
-      const elo = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.026, comprimento, 5),
-        mat(0x3f7d4d)
-      );
-      elo.position.set(x + Math.sin(i * 0.6) * 0.06, y - comprimento / 2, 0);
-      g.add(elo);
-      y -= comprimento;
-      if (i % 2 === 0) {
-        const folhinha = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), mat(pick(JUNGLE_GREENS)));
-        folhinha.scale.set(1.3, 0.5, 0.7);
-        folhinha.position.set(x + 0.08, y + comprimento / 2, 0.04);
-        g.add(folhinha);
-      }
+  const fios = [], folhas = [];
+  [0.62, 0.72, 0.82, 0.93].forEach((t, k) => {
+    const de = eixo.getPoint(t);
+    const comp = 1.3 + Math.random() * 0.8;
+    const curva = new THREE.CatmullRomCurve3([
+      de, de.clone().add(new THREE.Vector3(0.12, -comp * 0.35, 0.08)),
+      de.clone().add(new THREE.Vector3(-0.05, -comp * 0.7, -0.05)),
+      de.clone().add(new THREE.Vector3(0.1, -comp, 0.06)),
+    ]);
+    fios.push([new THREE.TubeGeometry(curva, 12, 0.025, 4), new THREE.Matrix4()]);
+    for (let i = 1; i <= 5; i++) {
+      const p = curva.getPoint(i / 5.5);
+      const a = (i % 2 ? 0 : Math.PI) + k;
+      folhas.push([PETALA, new THREE.Matrix4().makeTranslation(p.x, p.y, p.z).multiply(petalaEm(a, -0.3, 0.22, 0.6)), pick(JUNGLE_GREENS)]);
     }
-  }
+  });
+  g.add(new THREE.Mesh(juntar(fios), mat(0x4a7d3a)));
+  const verde = new THREE.Mesh(juntarColorido(folhas), tintaDaMalha({ side: THREE.DoubleSide }));
+  verde.castShadow = true;
+  g.add(verde);
+
+  // A flor no galho, virada para fora.
+  const flor = eixo.getPoint(0.55);
+  const base = new THREE.Matrix4().compose(flor.add(new THREE.Vector3(0, 0.05, 0.14)),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(1.2, 0, 0)), new THREE.Vector3(0.9, 0.9, 0.9));
+  const petalas = Array.from({ length: 5 }, (_, i) => [PETALA, base.clone().multiply(petalaEm((i / 5) * Math.PI * 2, 0.25, 0.3, 0.6))]);
+  g.add(new THREE.Mesh(juntar(petalas), mat(0xff4d6d, { side: THREE.DoubleSide })));
+  const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), mat(0xffd166));
+  miolo.position.setFromMatrixPosition(base);
+  g.add(miolo);
   return g;
 }
 
-// Nó de cipós: obstáculo em forma de tangle — um miolo com laços soltos em
-// volta, como uma trepadeira que cresceu presa em si mesma.
+// Nó de cipós (obstáculo): cipós grossos dando voltas e mais voltas em
+// volta de um toco coberto de musgo, com folhas e duas florzinhas. Era uma
+// bola com seis argolas soltas.
 function vineTangle() {
   const g = new THREE.Group();
-  const nucleo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), mat(0x2f7a3f));
-  nucleo.position.y = 0.6;
-  nucleo.castShadow = true;
-  g.add(nucleo);
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const raio = 0.15 + Math.random() * 0.12;
-    const laco = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.045, 5, 8), mat(pick(JUNGLE_GREENS)));
-    laco.position.set(Math.cos(a) * 0.3, 0.5 + Math.random() * 0.5, Math.sin(a) * 0.3);
-    laco.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-    g.add(laco);
+  const toco = new THREE.Mesh(pedraIrregular(0.4, 0.2), mat(0x3f7a3a));
+  toco.scale.set(1.2, 0.8, 1.1);
+  toco.position.y = 0.32;
+  toco.castShadow = true;
+  g.add(toco);
+
+  const CENTRO = new THREE.Vector3(0, 0.5, 0);
+  const fios = [], folhas = [];
+  for (let k = 0; k < 5; k++) {
+    // Um laço fechado passando por pontos sorteados numa casca em volta do
+    // toco — é o que faz os cipós se cruzarem, como um novelo.
+    const pontos = [];
+    const giro = Math.random() * Math.PI * 2, incl = (Math.random() - 0.5) * 1.4;
+    for (let i = 0; i < 6; i++) {
+      const a = giro + (i / 6) * Math.PI * 2;
+      const r = 0.5 + Math.random() * 0.18;
+      pontos.push(new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r * Math.sin(incl) * 0.8, Math.sin(a) * r * Math.cos(incl))
+        .add(CENTRO).setY(Math.max(0.08, CENTRO.y + Math.sin(a + k) * 0.38)));
+    }
+    const curva = new THREE.CatmullRomCurve3(pontos, true);
+    fios.push([new THREE.TubeGeometry(curva, 30, 0.05, 5, true), new THREE.Matrix4()]);
+    for (let i = 0; i < 3; i++) {
+      const p = curva.getPoint((i + Math.random()) / 3);
+      folhas.push([PETALA, new THREE.Matrix4().makeTranslation(p.x, p.y, p.z).multiply(petalaEm(Math.random() * 6, 0.2, 0.3, 0.6)), pick(JUNGLE_GREENS)]);
+    }
   }
+  const cipos = new THREE.Mesh(juntar(fios), mat(0x5a7d32));
+  cipos.castShadow = true;
+  g.add(cipos);
+  g.add(new THREE.Mesh(juntarColorido(folhas), tintaDaMalha({ side: THREE.DoubleSide })));
+
+  const petalas = [], miolos = [];
+  for (const [x, y, z] of [[0.35, 0.85, 0.3], [-0.4, 0.6, 0.35]]) {
+    const base = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0.9, 0, 0)), new THREE.Vector3(0.5, 0.5, 0.5));
+    for (let i = 0; i < 5; i++) petalas.push([PETALA, base.clone().multiply(petalaEm((i / 5) * Math.PI * 2, 0.25, 0.3, 0.6))]);
+    miolos.push([new THREE.SphereGeometry(0.05, 6, 4), base.clone()]);
+  }
+  g.add(new THREE.Mesh(juntar(petalas), mat(0xff6bb0, { side: THREE.DoubleSide })), new THREE.Mesh(juntar(miolos), mat(0xffd166)));
   return g;
 }
 
@@ -4667,20 +4827,58 @@ function warningRing(color) {
   return ring;
 }
 
-// Pedra de luar: clara e acesa, para não sumir no escuro.
+// Pedra de luar: um bloco liso e claro, aceso de leve por dentro, com uma
+// lua crescente entalhada e acesa dos dois lados, e duas pedrinhas
+// encostadas. Eram três pedras facetadas empilhadas, que no escuro liam
+// como pedra qualquer.
+const LUA_ENTALHADA = (() => {
+  const f = new THREE.Shape();
+  const N = 10;
+  for (let k = 0; k <= N; k++) {
+    const a = -1.9 + (k / N) * 3.8;
+    const x = Math.cos(a) * 0.19, y = Math.sin(a) * 0.19;
+    if (k === 0) f.moveTo(x, y); else f.lineTo(x, y);
+  }
+  for (let k = 0; k <= N; k++) {
+    const a = 1.75 - (k / N) * 3.5;
+    f.lineTo(-0.08 + Math.cos(a) * 0.17, Math.sin(a) * 0.17);
+  }
+  const geo = new THREE.ExtrudeGeometry(f, { depth: 0.03, bevelEnabled: false });
+  geo.translate(0, 0, -0.015);
+  return geo;
+})();
+
 function moonStone() {
   const g = new THREE.Group();
-  const color = 0xdfe6ff;
-  for (let i = 0; i < 3; i++) {
-    const stone = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.5 - i * 0.11, 0),
-      mat(color, { emissive: 0x8fa8ff, emissiveIntensity: 0.7 })
-    );
-    stone.position.set((Math.random() - 0.5) * 0.7, 0.38 + i * 0.16, (Math.random() - 0.5) * 0.5);
-    stone.rotation.set(Math.random(), Math.random(), Math.random());
-    stone.castShadow = true;
-    g.add(stone);
+  const geo = pedraIrregular(0.55, 0.1);
+  const pedra = new THREE.Mesh(geo, mat(0xdfe6ff, { emissive: 0x8fa8ff, emissiveIntensity: 0.45 }));
+  pedra.scale.set(1.1, 0.95, 0.85);
+  pedra.position.y = 0.5;
+  pedra.castShadow = true;
+  g.add(pedra);
+
+  // A lua entalhada, colada na superfície da frente e na de trás: um raio
+  // vindo de fora acha onde a pedra está naquele ponto.
+  pedra.updateMatrixWorld(true);
+  const raio = new THREE.Raycaster();
+  const luas = [];
+  for (const lado of [1, -1]) {
+    raio.set(new THREE.Vector3(0, 0.55, lado * 3), new THREE.Vector3(0, 0, -lado));
+    const acerto = raio.intersectObject(pedra)[0];
+    if (!acerto) continue;
+    const normal = acerto.face.normal.clone().transformDirection(pedra.matrixWorld);
+    luas.push([LUA_ENTALHADA, new THREE.Matrix4().compose(
+      acerto.point.addScaledVector(normal, 0.01),
+      new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal),
+      new THREE.Vector3(lado * 1.6, 1.6, 1))]);
   }
+  g.add(new THREE.Mesh(juntar(luas), new THREE.MeshBasicMaterial({ color: 0xfff6c4 })));
+
+  const pedrinhas = juntar([
+    [pedraIrregular(0.2, 0.2, 0), naPosicao(0.62, 0.12, 0.2)],
+    [pedraIrregular(0.14, 0.2, 0), naPosicao(-0.6, 0.09, -0.15)],
+  ]);
+  g.add(new THREE.Mesh(pedrinhas, mat(0xcfd6f5, { emissive: 0x8fa8ff, emissiveIntensity: 0.35 })));
   g.add(warningRing(0x9fb8ff));
   return g;
 }
@@ -5376,50 +5574,60 @@ function bird() {
   return g;
 }
 
-// Papagaio: o mesmo desenho do passarinho do Céu, mas em cor viva (não
-// pastel) e com uma cauda comprida — é o que faz reconhecer "selva" no ar,
-// mesmo de longe.
+// Papagaio: o corpo do passarinho (ver PASSARINHO), maior e em cor viva,
+// com o bico curvo de papagaio, a asa de outra cor e o rabo comprido de
+// três penas. Era uma bola com um cone de rabo e asas redondas.
+const PAPAGAIO_CORES = [
+  [0xff3b3b, 0x2f7fff, 0xffd166],   // arara-vermelha
+  [0x2f9bff, 0xffd166, 0xffd166],   // arara-azul-e-amarela
+  [0x3fbf55, 0xff4d4d, 0x9be86a],   // papagaio verde
+];
+const RABO_DE_PAPAGAIO = (() => {
+  const penas = [-0.18, 0, 0.18].map((a, i) => [PETALA, new THREE.Matrix4().compose(
+    new THREE.Vector3(-0.2, 0.02, 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI + a, 0.15, 'YZX')),
+    new THREE.Vector3(i === 1 ? 0.62 : 0.5, 1, 0.22))]);
+  return juntar(penas);
+})();
+const BICO_DE_PAPAGAIO = (() => {
+  const curva = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(0.26, 0.11, 0), new THREE.Vector3(0.36, 0.1, 0), new THREE.Vector3(0.33, 0.0, 0));
+  const geo = new THREE.TubeGeometry(curva, 6, 0.035, 5);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.floor(i / 6) / 6;
+    const c = curva.getPoint(t), k = 1 - t * 0.85;
+    pos.setXYZ(i, c.x + (pos.getX(i) - c.x) * k, c.y + (pos.getY(i) - c.y) * k, c.z + (pos.getZ(i) - c.z) * k);
+  }
+  return geo;
+})();
+
 function parrot() {
   const g = new THREE.Group();
-  const color = pick([0xff4d4d, 0x2f9bff, 0x4fbf63, 0xffd166]);
-  const corAsa = pick([0xffd166, 0x2f9bff, 0xff4d4d, 0x4fbf63]);
+  const [corpoCor, asaCor, barriga] = pick(PAPAGAIO_CORES);
+  const basico = (extra) => new THREE.MeshBasicMaterial({ fog: false, ...extra });
+  const chave = `papagaio-${corpoCor}-${barriga}`;
+  if (!CORPOS_DE_PASSARINHO.has(chave)) CORPOS_DE_PASSARINHO.set(chave, PASSARINHO.corpo(corpoCor, barriga));
+  const corpo = new THREE.Group();
+  corpo.scale.setScalar(1.3);
+  corpo.add(new THREE.Mesh(CORPOS_DE_PASSARINHO.get(chave), basico({ vertexColors: true, side: THREE.DoubleSide })));
+  corpo.add(new THREE.Mesh(BICO_DE_PAPAGAIO, basico({ color: 0xf2e8d8 })));
+  corpo.add(new THREE.Mesh(PASSARINHO.olhos, basico({ color: 0x2a2a30 })));
+  corpo.add(new THREE.Mesh(RABO_DE_PAPAGAIO, basico({ color: asaCor, side: THREE.DoubleSide })));
+  g.add(corpo);
 
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 7, 6),
-    new THREE.MeshBasicMaterial({ color, fog: false })
-  );
-  body.scale.set(1.2, 1, 1);
-  g.add(body);
-
-  const beak = new THREE.Mesh(
-    new THREE.ConeGeometry(0.05, 0.12, 5),
-    new THREE.MeshBasicMaterial({ color: 0xffab1f, fog: false })
-  );
-  beak.rotation.z = -Math.PI / 2;
-  beak.position.x = 0.24;
-  g.add(beak);
-
-  const cauda = new THREE.Mesh(
-    new THREE.ConeGeometry(0.06, 0.5, 4),
-    new THREE.MeshBasicMaterial({ color, fog: false })
-  );
-  cauda.rotation.z = Math.PI / 2;
-  cauda.position.x = -0.32;
-  g.add(cauda);
-
+  const materialAsa = basico({ color: asaCor, side: THREE.DoubleSide });
   const wings = [];
   for (const side of [-1, 1]) {
     const wing = new THREE.Group();
-    const asa = asaSimples(corAsa, 0.22);
-    asa.scale.set(1, 0.5, 1);
-    asa.position.set(-0.02, 0, side * 0.15);
-    asa.rotation.x = Math.PI / 2;
-    wing.add(asa);
+    wing.position.set(0.03, 0.08, 0);
+    const lado = new THREE.Group();
+    lado.scale.set(1.3, 1.3, side * 1.4);
+    lado.add(new THREE.Mesh(PASSARINHO.asa, materialAsa));
+    wing.add(lado);
     wing.userData.side = side;
     g.add(wing);
     wings.push(wing);
   }
-
   g.userData.parts = { wings };
   return g;
 }
