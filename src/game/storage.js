@@ -44,6 +44,17 @@ const DEFAULTS = {
   // de continuar gastando chaves depois de já ter todo mundo (ver
   // Game.showPowerShop e POWER_LEVEL_PERCENT em models/powerups.js).
   powerLevels: { shield: 0, magnet: 0, boost: 0, feather: 0, bomb: 0 },
+  // Os enfeites (models/accessories.js). `coracoes` é a carteira deles: cada
+  // coração pego entra aqui **além** de contar para a próxima chave, e
+  // gastar daqui não tira chave nenhuma. `null` = save de antes dos
+  // enfeites; ele nasce com todos os corações que a criança já juntou (ver
+  // `migrateEnfeites`). `meus` são os comprados (valem para todos os
+  // unicórnios) e `vestindo` o que cada um está usando:
+  // { uni: { cabeca: 'coroa', rosto: null, pescoco: 'colar' } }.
+  enfeites: { coracoes: null, meus: [], vestindo: {} },
+  // O álbum (models/stickers.js): quantas vezes cada figurinha foi pega,
+  // { 'selva-parrot': 1 }. Quem não está aqui ainda falta.
+  figurinhas: {},
   stats: {
     runs: 0,             // corridas começadas
     wins: 0,             // metas do modo Livre completadas
@@ -107,10 +118,18 @@ function migrateFlatLevels(save) {
   return save;
 }
 
+// Quem já jogava antes dos enfeites chega com a carteira de corações cheia
+// de tudo o que juntou até hoje: esses corações foram pegos de verdade, e
+// começar do zero faria parecer que o jogo esqueceu.
+function migrateEnfeites(save) {
+  if (typeof save.enfeites.coracoes !== 'number') save.enfeites.coracoes = save.stats.hearts || 0;
+  return save;
+}
+
 function readFrom(key) {
   try {
     const save = merge(DEFAULTS, JSON.parse(localStorage.getItem(key)));
-    return migrateFlatLevels(migrateOldKeys(save));
+    return migrateEnfeites(migrateFlatLevels(migrateOldKeys(save)));
   } catch {
     return clone(DEFAULTS);   // aba anônima, save corrompido…
   }

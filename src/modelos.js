@@ -19,6 +19,8 @@ import {
 } from './models/scenery.js';
 import { createHeart, createStar, createKey } from './models/collectibles.js';
 import { POWERUP_LIST, createPowerup, createRainbowWave } from './models/powerups.js';
+import { ENFEITES, vestirEnfeites, montarEnfeiteSozinho } from './models/accessories.js';
+import { FIGURINHAS, createStickerCard } from './models/stickers.js';
 
 // --- nomes em português -------------------------------------------------
 // As tabelas do jogo guardam o id de código; aqui ele ganha um nome de gente.
@@ -39,7 +41,7 @@ const NOMES = {
   charredTree: 'Árvore queimada', lavaPool: 'Poça de lava', snowPine: 'Pinheiro com neve',
   igloo: 'Iglu', iceCrystal: 'Cristal de gelo', snowman: 'Boneco de neve',
   planet: 'Planeta', asteroid: 'Asteroide', asteroidChunk: 'Pedaço de asteroide',
-  ufo: 'Disco voador', parasol: 'Guarda-sol', sandcastle: 'Castelo de areia',
+  ufo: 'Disco voador', parasol: 'Guarda-sol', sandcastle: 'Castelo de areia', sandToys: 'Baldinho e brinquedos de areia',
   palmTree: 'Coqueiro', beachChair: 'Cadeira de praia', boat: 'Barquinho',
   surfboard: 'Prancha', buoy: 'Boia', circusTent: 'Tenda de circo',
   ferrisWheel: 'Roda-gigante', cottonCandy: 'Algodão-doce', carousel: 'Carrossel', balloonStand: 'Buquê de balões',
@@ -51,7 +53,7 @@ const NOMES = {
   jungleTree: 'Árvore da selva', bigJungleTree: 'Árvore gigante da selva',
   hangingVine: 'Cipó pendurado',
   // obstáculos
-  rock: 'Pedra', candyBar: 'Barra de doce', bush: 'Arbusto espinhoso',
+  rock: 'Pedra', jumpBar: 'Barra de saltar', bush: 'Arbusto espinhoso',
   gumdrop: 'Bala de goma', donut: 'Rosquinha', crystalSpike: 'Espeto de cristal',
   stormCloud: 'Nuvem carregada', kite: 'Pipa', balloonBunch: 'Cacho de balões',
   moonStone: 'Pedra da lua', bigGlowMushroom: 'Cogumelo gigante que brilha',
@@ -176,6 +178,7 @@ function pistaGrupo(track) {
 
 const CEU_NEUTRO = 'linear-gradient(#fde7f3, #fff6fb)';
 const neutro = (item) => ({ luz: LUZ_NEUTRA, ceu: CEU_NEUTRO, ...item });
+const VAGA = { cabeca: 'cabeça', rosto: 'rosto', pescoco: 'pescoço', patas: 'patas', cauda: 'cauda' };
 
 const GRUPOS = [
   {
@@ -194,6 +197,42 @@ const GRUPOS = [
     }],
   },
   {
+    id: 'enfeites',
+    titulo: '🎀 Enfeites',
+    tagline: 'O que se compra com corações para vestir os unicórnios: um por vaga (cabeça, rosto, pescoço, patas e cauda). Os de Natal vêm marcados com 🎄.',
+    subgrupos: [
+      {
+        titulo: 'Sozinhos',
+        itens: ENFEITES.map((e) => neutro({
+          nome: `${e.emoji} ${e.name}`,
+          codigo: e.id,
+          info: e.natal ? `🎄 ${VAGA[e.vaga]} · 💗 ${e.preco}` : `${VAGA[e.vaga]} · 💗 ${e.preco}`,
+          criar: () => {
+            const peca = montarEnfeiteSozinho(e.id);
+            // A guirlanda é uma roda deitada: de lado vira um risco.
+            if (e.id === 'guirlanda') peca.rotation.x = -0.9;
+            return peca;
+          },
+        })),
+      },
+      {
+        // Na Uni, para ver o encaixe: é assim que eles aparecem no jogo.
+        titulo: 'Na Uni',
+        itens: ENFEITES.map((e) => neutro({
+          nome: `${e.emoji} ${e.name}`,
+          codigo: e.id,
+          unicornio: true,
+          perto: e.vaga === 'cauda' ? 'tras' : e.vaga === 'patas' ? 'patas' : true,
+          criar: () => {
+            const uni = createUnicorn(CHARACTER_LIST[0]);
+            vestirEnfeites(uni, { [e.vaga]: e.id });
+            return uni;
+          },
+        })),
+      },
+    ],
+  },
+  {
     id: 'todas',
     titulo: '✨ Em todas as pistas',
     tagline: 'O que aparece em qualquer pista: o que se pega, os power-ups e as marcas do caminho.',
@@ -204,6 +243,9 @@ const GRUPOS = [
           neutro({ nome: 'Coração', codigo: 'createHeart', criar: createHeart }),
           neutro({ nome: 'Estrela', codigo: 'createStar', criar: createStar }),
           neutro({ nome: 'Chave mágica', codigo: 'createKey', criar: createKey }),
+          // O cartão dourado do álbum; o modelo de dentro muda por pista
+          // (todos estão na seção de cada pista, como enfeite ou obstáculo).
+          neutro({ nome: 'Cartão de figurinha', codigo: 'createStickerCard', criar: () => createStickerCard(FIGURINHAS[0]) }),
         ],
       },
       {
@@ -292,6 +334,20 @@ function fotografar(item) {
   if (item.unicornio) {
     animateUnicorn(objeto, 1.35, 2.6, true);   // a pose de galope do retrato
     enquadrarUnicornio(cameraFoto);
+    // Os enfeites na Uni: só a cabeça e o pescoço, de três quartos pela
+    // frente — o bicho inteiro deixava o laço do tamanho de um pixel.
+    // Os da cauda, de trás e de cima (a vista da corrida); os das patas,
+    // de lado e baixo, pegando as quatro pernas.
+    if (item.perto === 'tras') {
+      cameraFoto.position.set(1.4, 2.9, 4.3);
+      cameraFoto.lookAt(0, 1.3, 0.4);
+    } else if (item.perto === 'patas') {
+      cameraFoto.position.set(-5.6, 1.1, 2.2);
+      cameraFoto.lookAt(0, 0.75, 0.1);
+    } else if (item.perto) {
+      cameraFoto.position.set(-3.3, 2.55, -3.1);
+      cameraFoto.lookAt(0, 1.8, -0.7);
+    }
     cameraFoto.near = 0.1;
     cameraFoto.far = 60;
     cameraFoto.updateProjectionMatrix();

@@ -19,6 +19,8 @@ import { THEMES } from '../src/game/music.js';
 import { storyPages } from '../src/game/story.js';
 import { lessonsFor } from '../src/game/tutorial.js';
 import { TUTORIAL_MODE } from '../src/game/config.js';
+import { ENFEITES, VAGAS, vestirEnfeites } from '../src/models/accessories.js';
+import { FIGURINHAS, STICKERS_PER_PAGE, createStickerCard } from '../src/models/stickers.js';
 
 const countMeshes = (obj) => {
   let n = 0;
@@ -35,7 +37,66 @@ for (const character of CHARACTER_LIST) {
   console.log(`${character.emoji} ${character.name.padEnd(8)} ${countMeshes(unicorn)} peças`);
 }
 
+// Enfeites: cada um monta, entra na vaga dele, e trocar não deixa peça
+// velha para trás (vestir de novo tira o que estava).
+{
+  const unicorn = createUnicorn();
+  const base = countMeshes(unicorn);
+  for (const enfeite of ENFEITES) {
+    if (!VAGAS.includes(enfeite.vaga)) throw new Error(`enfeite ${enfeite.id} numa vaga que não existe`);
+    if (!(enfeite.preco > 0)) throw new Error(`enfeite ${enfeite.id} sem preço`);
+    vestirEnfeites(unicorn, { [enfeite.vaga]: enfeite.id });
+    if (countMeshes(unicorn) <= base) throw new Error(`enfeite ${enfeite.id} não apareceu no unicórnio`);
+  }
+  vestirEnfeites(unicorn, {});
+  if (countMeshes(unicorn) !== base) throw new Error('tirar os enfeites deixou peça para trás');
+  console.log(`enfeites: ${ENFEITES.map((e) => `${e.emoji} ${e.name} (💗 ${e.preco})`).join(', ')}`);
+}
+
+// Figurinhas: toda pista tem a página cheia, e todo cartão tem o modelo
+// dentro (um nome errado em PAGINAS virava cartão vazio sem erro nenhum).
+{
+  for (const pista of TRACK_LIST) {
+    const n = FIGURINHAS.filter((f) => f.pista === pista.id).length;
+    if (n !== STICKERS_PER_PAGE) throw new Error(`a pista ${pista.id} tem ${n} figurinhas, e não ${STICKERS_PER_PAGE}`);
+  }
+  if (FIGURINHAS.some((f) => !TRACK_LIST.some((p) => p.id === f.pista))) throw new Error('figurinha de pista que não existe');
+  const molduraSo = 6;   // moldura, fundo, três estrelinhas e o brilho
+  for (const f of FIGURINHAS) {
+    if (countMeshes(createStickerCard(f)) <= molduraSo) throw new Error(`a figurinha ${f.id} saiu sem modelo`);
+  }
+  console.log(`figurinhas: ${FIGURINHAS.length} em ${TRACK_LIST.length} páginas`);
+}
+
 console.log(`chave mágica: ${countMeshes(createKey())} peças`);
+
+// Emoji sem ícone: o jogo não mostra emoji do aparelho (ver o README,
+// "Ícones"). Todo emoji escrito no que vai para a tela precisa ter o seu
+// desenho em scripts/icones/ e a linha em ARQUIVOS (src/game/icons.js) —
+// senão a criança vê o emoji da fonte do celular, cada um de um jeito.
+{
+  const icones = readFileSync(new URL('../src/game/icons.js', import.meta.url), 'utf8');
+  const temIcone = new Set([...icones.matchAll(/'([^']+)': '/g)].map((m) => m[1].replace(/\uFE0F/g, '')));
+  const EMOJI = /\p{Extended_Pictographic}\uFE0F?(\u200D\p{Extended_Pictographic}\uFE0F?)*|[\u{1F1E6}-\u{1F1FF}]{2}/gu;
+  const naTela = [
+    'index.html', 'src/game/Game.js', 'src/game/ui.js', 'src/game/config.js', 'src/game/tracks.js',
+    'src/game/falas.js', 'src/game/tutorial.js', 'src/game/story.js', 'src/models/characters.js',
+    'src/models/powerups.js', 'src/models/accessories.js', 'src/models/stickers.js',
+  ];
+  const semIcone = [];
+  for (const arquivo of naTela) {
+    readFileSync(new URL(`../${arquivo}`, import.meta.url), 'utf8').split('\n').forEach((linha, i) => {
+      if (/^\s*(\/\/|\*)/.test(linha)) return;      // comentário pode ter emoji à vontade
+      for (const [emoji] of linha.matchAll(EMOJI)) {
+        if (!temIcone.has(emoji.replace(/\uFE0F/g, ''))) semIcone.push(`${emoji} em ${arquivo}:${i + 1}`);
+      }
+    });
+  }
+  if (semIcone.length) {
+    throw new Error(`emoji sem ícone próprio (desenhe em scripts/icones/ e ponha em ARQUIVOS):\n   ${semIcone.join('\n   ')}`);
+  }
+  console.log(`ícones: todo emoji da tela tem desenho próprio (${temIcone.size} no mapa)`);
+}
 console.log(`portal de partida: ${countMeshes(createStartLine())} peças`);
 
 // Modo Fases: cada fase fica mais difícil, as chaves são raras e a fase
@@ -142,6 +203,8 @@ for (const track of TRACK_LIST) {
   [...Object.values(MODES), TUTORIAL_MODE].forEach((m) => ver(m, ['name', 'tagline'], `modo/${m.id}`));
   DIFFICULTY_LIST.forEach((d) => ver(d, ['name', 'tagline'], `dificuldade/${d.id}`));
   Object.entries(THEMES).forEach(([id, tema]) => ver(tema, ['name'], `música/${id}`));
+  ENFEITES.forEach((e) => ver(e, ['name'], `enfeite/${e.id}`));
+  FIGURINHAS.forEach((f) => ver(f, ['name'], `figurinha/${f.id}`));
 
   if (semTraducao.length) {
     throw new Error(`sem tradução em inglês:\n   ${semTraducao.join('\n   ')}`);

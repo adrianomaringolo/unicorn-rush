@@ -22,6 +22,8 @@ import { POWERUP_LIST } from '../models/powerups.js';
 import { MODES, TUTORIAL_MODE } from './config.js';
 import { THEMES } from './music.js';
 import { TODAS_AS_LICOES } from './tutorial.js';
+import { ENFEITES } from '../models/accessories.js';
+import { FIGURINHAS } from '../models/stickers.js';
 
 export const IDIOMAS = {
   pt: { id: 'pt', nome: 'Português', bandeira: '🇧🇷', fala: 'pt-BR', html: 'pt-BR' },
@@ -102,6 +104,8 @@ function aplicaIdioma() {
   traduzItens([TUTORIAL_MODE]);
   traduzItens(Object.values(THEMES));   // os nomes das músicas, na ficha da pista
   traduzItens(TODAS_AS_LICOES);         // as falas do modo Aprender
+  traduzItens(ENFEITES);                // os nomes dos enfeites
+  traduzItens(FIGURINHAS);              // os nomes das figurinhas
 }
 
 // --- Os textos que já estão escritos no index.html ------------------------

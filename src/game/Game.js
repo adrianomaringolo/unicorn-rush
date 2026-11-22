@@ -11,7 +11,9 @@ import { createUnicorn, animateUnicorn, WING_SCALE } from '../models/unicorn.js'
 import {
   CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER, characterPrice, CHARACTER_SLOTS, isFastOn,
 } from '../models/characters.js';
-import { getPortraits } from '../models/portraits.js';
+import { getPortraits, getAccessoryPortraits, getStickerPortraits } from '../models/portraits.js';
+import { FIGURINHAS, FIGURINHA, figurinhasDaPista, PAGE_REWARD } from '../models/stickers.js';
+import { ENFEITES, ENFEITE, vestirEnfeites } from '../models/accessories.js';
 import { createViewer3d } from '../models/viewer3d.js';
 import { getTrackPortraits } from '../models/trackPortraits.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tracks.js';
@@ -357,6 +359,7 @@ export class Game {
     }
 
     this.unicorn = createUnicorn(this.character);
+    vestirEnfeites(this.unicorn, this.vestindoDe(this.character.id));
     this.auras = createAuras();          // bolha, argolas e anéis de turbo
     this.unicorn.add(this.auras);
 
@@ -451,7 +454,7 @@ export class Game {
       : {
         kind, guardados: 'characters', lista: CHARACTER_LIST, slots: CHARACTER_SLOTS,
         obter: (id) => CHARACTERS[id], preco: characterPrice,
-        retratos: () => getPortraits(CHARACTER_LIST),
+        retratos: () => this.retratosDosUnicornios(),
         atual: () => this.character,
         aplicar: (id) => this.setCharacter(id),
         voltar: () => this.showCharacterPicker(),
@@ -488,6 +491,26 @@ export class Game {
 
   get wallet() {
     return this.save.stats.keys || 0;
+  }
+
+  // A carteira dos enfeites: corações (ver storage.js, `enfeites`).
+  get coracoes() {
+    return this.save.enfeites?.coracoes || 0;
+  }
+
+  // O que um unicórnio está vestindo: { cabeca, rosto, pescoco }.
+  vestindoDe(id) {
+    return this.save.enfeites?.vestindo?.[id] || {};
+  }
+
+  temEnfeite(id) {
+    return isTestMode() || (this.save.enfeites?.meus || []).includes(id);
+  }
+
+  // Os retratos de perfil, cada um com os enfeites que está usando. Só o
+  // retrato de quem trocou de enfeite é tirado de novo (portraits.js).
+  retratosDosUnicornios() {
+    return getPortraits(CHARACTER_LIST, 220, (id) => this.vestindoDe(id));
   }
 
   // O progresso das fases é por pista: cada uma tem as suas doze. A entrada
@@ -943,6 +966,12 @@ export class Game {
     // `keyLuck` é a Pérola: com ela a chave nasce mais vezes. Vai por aqui
     // porque quem sorteia é o mundo, que não conhece o personagem.
     this.world.keyLuck = this.character.keyLuck ?? 1;
+    // A figurinha que nasce é sempre uma que ainda falta na página desta
+    // pista; com a página completa, não nasce mais nenhuma.
+    this.world.figurinhaQueFalta = () => {
+      const faltam = figurinhasDaPista(this.track.id).filter((f) => !this.temFigurinha(f.id));
+      return faltam.length ? faltam[Math.floor(Math.random() * faltam.length)].id : null;
+    };
     this.world.reset(this.mode);
     this.ui.setMode(this.mode);
     this.licao = null;
@@ -992,9 +1021,12 @@ export class Game {
     // também nesse caminho, não só ao terminar.
     this.restoreAfterTutorial();
     this.gridScroll = null;      // a grade recomeça do zero vinda daqui
+    // A tela dos enfeites troca o selo para corações; aqui ele volta a ser
+    // de chaves, que é a moeda de todo o resto.
+    this.ui.setWallet(this.wallet);
     this.reset();
 
-    const retratos = getPortraits(CHARACTER_LIST);
+    const retratos = this.retratosDosUnicornios();
     const cenarios = getTrackPortraits(TRACK_LIST);
     const modo = MODES[this.mode.id] || MODES[DEFAULT_MODE];
     // Só o Desafio tem velocidade para mostrar; nas outras a figura basta.
@@ -1038,6 +1070,8 @@ export class Game {
           <div class="lobby-rail esq">
             ${bolha('story', '📖', t('A história'), `historia${this.storyEndNew ? ' nova' : ''}`, this.storyEndNew ? '✨' : '')}
             ${bolha('powers', '⬆️', t('Poderes'), 'poderes')}
+            ${bolha('enfeites', '🎀', t('Enfeites'), 'mini enfeites')}
+            ${bolha('album', '📒', t('Álbum'), 'mini album')}
           </div>
           <div class="lobby-palco">
             ${brilhos}
@@ -1079,6 +1113,8 @@ export class Game {
       if (qual === 'tutorial') return this.startTutorial();
       if (qual === 'stats') return this.showStats();
       if (qual === 'powers') return this.showPowerShop();
+      if (qual === 'enfeites') return this.showEnfeites();
+      if (qual === 'album') return this.showAlbum();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
       if (qual === 'perfil') return this.showProfileSwitcher();
@@ -2230,7 +2266,7 @@ export class Game {
     // primeira vez: para quem já abre no menu dava no mesmo, mas na
     // primeira abertura (idioma → convite da voz → história → menu) o
     // travamento caía sem cortina nenhuma, logo depois de escolher o idioma.
-    getPortraits(CHARACTER_LIST);
+    this.retratosDosUnicornios();
     getTrackPortraits(TRACK_LIST);
 
     // Guardado antes de a história marcar `storySeen`: é o que diferencia
@@ -2531,6 +2567,94 @@ export class Game {
       back: () => this.showHome(),
     });
     this.ui.bindExtra((qual, el) => this.levelUpPower(qual, el));
+  }
+
+  // Enfeitar o unicórnio escolhido. É uma tela em bandeja, como a escolha
+  // de unicórnio: a grade embaixo e o próprio unicórnio 3D em cima, girando
+  // — cada toque veste ou tira na hora, e a criança vê nele, não num ícone.
+  //
+  // A grade é a mesma das figurinhas: o que já é seu mostra o nome; o que
+  // falta comprar mostra o preço em corações e o cadeado; o que ele está
+  // usando fica aceso.
+  showEnfeites({ scroll = null } = {}) {
+    this.fecharViewer();
+    this.state = STATE.READY;
+    this.screen = 'enfeites';
+    this.ui.showPause(false);
+    this.ui.setWallet(this.coracoes, true, '💗');
+
+    const miniaturas = getAccessoryPortraits();
+    const vestindo = this.vestindoDe(this.character.id);
+    const cartao = (enfeite) => {
+      const meu = this.temEnfeite(enfeite.id);
+      const usando = vestindo[enfeite.vaga] === enfeite.id;
+      const classes = ['cast-card', usando ? 'escolhido' : '', meu ? '' : 'trancado'].filter(Boolean).join(' ');
+      const rodape = meu
+        ? enfeite.name
+        : `<span class="cast-price${this.coracoes < enfeite.preco ? ' falta' : ''}">💗 ${enfeite.preco}</span>`;
+      return `<button class="${classes}" data-pick="${enfeite.id}" aria-pressed="${usando}" aria-label="${enfeite.name}">`
+        + `<img class="cast-face" src="${miniaturas[enfeite.id]}" alt="" />`
+        + `${meu ? '' : '<span class="cast-lock">🔒</span>'}`
+        + `<span class="cast-name">${rodape}</span></button>`;
+    };
+    // Os de Natal numa seção própria, depois dos de sempre.
+    const grade = (lista) => `<div class="cast-grid enfeites">${lista.map(cartao).join('')}</div>`;
+
+    this.ui.showOverlay({
+      picker: true,
+      title: t('🎀 Enfeites de {nome}', { nome: this.character.name }),
+      html: grade(ENFEITES.filter((e) => !e.natal))
+        + `<h3 class="enfeites-secao">${t('🎄 Natal')}</h3>`
+        + grade(ENFEITES.filter((e) => e.natal)),
+      scroll,
+      buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((id, el) => this.tocarEnfeite(id, el));
+  }
+
+  // Um toque num enfeite da grade:
+  //
+  //   está usando ......... tira
+  //   é seu ............... veste (e tira o que estava na mesma vaga)
+  //   dá para comprar ..... compra e já veste
+  //   faltam corações ..... chacoalha e diz quantos faltam
+  tocarEnfeite(id, el) {
+    const enfeite = ENFEITE[id];
+    if (!enfeite) return;
+    const personagem = this.character.id;
+    const usando = this.vestindoDe(personagem)[enfeite.vaga] === id;
+
+    if (!this.temEnfeite(id)) {
+      if (this.coracoes < enfeite.preco) {
+        sfx.deny();
+        this.ui.shakeElement(el);
+        this.ui.toast(t('💗 Faltam {n} corações', { n: enfeite.preco - this.coracoes }));
+        return;
+      }
+      update((save) => {
+        save.enfeites.coracoes = (save.enfeites.coracoes || 0) - enfeite.preco;
+        save.enfeites.meus = [...(save.enfeites.meus || []), id];
+      });
+      sfx.power();
+      this.ui.toast(t('{emoji} {nome} é seu!', { emoji: enfeite.emoji, nome: enfeite.name }));
+    } else {
+      sfx.tap();
+    }
+
+    update((save) => {
+      const atual = { ...(save.enfeites.vestindo?.[personagem] || {}) };
+      atual[enfeite.vaga] = usando ? null : id;
+      save.enfeites.vestindo = { ...(save.enfeites.vestindo || {}), [personagem]: atual };
+    });
+    this.save = getSave();
+    vestirEnfeites(this.unicorn, this.vestindoDe(personagem));
+    this.applyTrackGlow();
+    if (!usando) {
+      this.world.burst(this.unicorn.position.clone().setY(2.2), 0xff8fc6);
+      speak(enfeite.name);
+    }
+    this.showEnfeites({ scroll: this.ui.extraScroll() });
   }
 
   // Toca em um power-up na tela de evoluir: sobe de nível se der, ou avisa
@@ -3077,6 +3201,8 @@ export class Game {
         this.takePower(e, i);
       } else if (e.userData.kind === 'key') {
         this.collectKey(e, i);
+      } else if (e.userData.kind === 'sticker') {
+        this.collectSticker(e, i);
       } else {
         // Corações e estrelas são generosos: pegam mesmo no meio do pulo.
         this.collect(e, i);
@@ -3107,6 +3233,9 @@ export class Game {
     update((save) => {
       save.stats.items += 1;
       save.stats.hearts += ganho;
+      // O mesmo coração também vai para a carteira dos enfeites: não é
+      // tirado da conta da chave, é somado nas duas.
+      save.enfeites.coracoes = (save.enfeites.coracoes || 0) + ganho;
       // Cada 50 corações viram uma chave. O `while` cobre a estrela, que
       // vale 5 e pode passar do corte de uma vez.
       save.stats.heartsToKey = (save.stats.heartsToKey || 0) + ganho;
@@ -3161,6 +3290,97 @@ export class Game {
 
     // Só nas Fases a chave é meta; no Desafio ela é só a moeda.
     if (this.mode.id === 'levels' && this.keys >= this.mode.keys) this.levelComplete();
+  }
+
+  // Pegou o cartão dourado: a figurinha vai para o álbum. Se ela fechou a
+  // página da pista, vem junto o prêmio em chaves.
+  collectSticker(entity, index) {
+    const figurinha = FIGURINHA[entity.userData.figurinha];
+    this.world.burst(entity.position, 0xffd166);
+    this.world.group.remove(entity);
+    this.world.entities.splice(index, 1);
+    if (!figurinha) return;
+
+    const nova = !this.temFigurinha(figurinha.id);
+    update((save) => {
+      save.figurinhas = { ...(save.figurinhas || {}), [figurinha.id]: (save.figurinhas?.[figurinha.id] || 0) + 1 };
+    });
+    this.save = getSave();
+    this.ui.pop();
+
+    const pagina = figurinhasDaPista(figurinha.pista);
+    const completou = nova && pagina.every((f) => this.temFigurinha(f.id));
+    if (completou) {
+      update((save) => { save.stats.keys = (save.stats.keys || 0) + PAGE_REWARD; });
+      this.ui.setWallet(this.wallet, false);
+      sfx.key();
+      this.ui.toast(t('📒 Página completa! +{n} chaves', { n: PAGE_REWARD }));
+    } else {
+      sfx.star();
+      this.ui.toast(t('📒 Figurinha nova: {nome}!', { nome: figurinha.name }));
+    }
+    speak(figurinha.name);
+  }
+
+  temFigurinha(id) {
+    return (this.save.figurinhas?.[id] || 0) > 0;
+  }
+
+  // O álbum: uma página por pista, quatro figurinhas em cada. Abre na
+  // página da pista escolhida, que é onde a próxima figurinha vai nascer.
+  //
+  // A que falta aparece como sombra, com um ?: dá para ver o contorno do
+  // que procurar, mas não o que é.
+  showAlbum(pagina = null) {
+    this.fecharViewer();
+    this.state = STATE.READY;
+    this.screen = 'album';
+    this.ui.showPause(false);
+    this.ui.setWallet(this.wallet, true);
+
+    const pistas = TRACK_LIST;
+    const indice = pagina ?? Math.max(0, pistas.findIndex((p) => p.id === this.track.id));
+    const pista = pistas[(indice + pistas.length) % pistas.length];
+    const daPagina = figurinhasDaPista(pista.id);
+    const fotos = getStickerPortraits(daPagina);
+    const coladas = daPagina.filter((f) => this.temFigurinha(f.id)).length;
+    const total = FIGURINHAS.filter((f) => this.temFigurinha(f.id)).length;
+    const aberta = this.isOwned('track', pista.id);
+
+    const slots = daPagina.map((f) => {
+      const tem = this.temFigurinha(f.id);
+      return `<div class="album-slot${tem ? ' tem' : ''}">`
+        + `<img class="album-foto" src="${fotos[f.id]}" alt="" />`
+        + `<span class="album-nome">${tem ? f.name : '?'}</span></div>`;
+    }).join('');
+
+    const rodape = coladas === daPagina.length
+      ? t('✨ Página completa!')
+      : aberta
+        ? t('{n} de {total} · os cartões dourados aparecem correndo nesta pista', { n: coladas, total: daPagina.length })
+        : t('🔒 Abra esta pista para achar as figurinhas dela');
+
+    this.ui.showOverlay({
+      title: t('📒 Álbum · {n} de {total}', { n: total, total: FIGURINHAS.length }),
+      html: `
+        <div class="album">
+          <div class="album-topo">
+            <button class="album-seta" data-pick="ant" aria-label="${t('Página anterior')}">⬅️</button>
+            <span class="album-pista">${pista.emoji} ${pista.name}</span>
+            <button class="album-seta" data-pick="prox" aria-label="${t('Próxima página')}">➡️</button>
+          </div>
+          <div class="album-grade">${slots}</div>
+          <p class="album-conta">${rodape}</p>
+        </div>`,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    const atual = pistas.indexOf(pista);
+    this.ui.bindExtra((qual) => {
+      sfx.tap();
+      if (qual === 'ant') this.showAlbum((atual - 1 + pistas.length) % pistas.length);
+      if (qual === 'prox') this.showAlbum((atual + 1) % pistas.length);
+    });
   }
 
   // Pegou um power-up: guarda o tempo dele e avisa na tela.

@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.47.0';
+const VERSION = 'unicornrush-v0.48.0';
 
 const SHELL = [
   './',
@@ -58,6 +58,8 @@ const SHELL = [
   './src/models/scenery.js',
   './src/models/unicorn.js',
   './src/models/viewer3d.js',
+  './src/models/accessories.js',
+  './src/models/stickers.js',
   // As onze figuras do livro da história (~1 MB no total). As duas últimas
   // só aparecem para quem libertou todos os amigos, mas entram no cache
   // junto: o service worker instala tudo de uma vez.
@@ -163,6 +165,22 @@ const SHELL = [
   './assets/icones/fallen_leaf.svg',
   './assets/icones/parrot.svg',
   './assets/icones/feather.svg',
+  './assets/icones/ribbon.svg',
+  './assets/icones/ledger.svg',
+  './assets/icones/butterfly.svg',
+  './assets/icones/cherry_blossom.svg',
+  './assets/icones/dark_sunglasses.svg',
+  './assets/icones/prayer_beads.svg',
+  './assets/icones/scarf.svg',
+  './assets/icones/smiling_face_with_heart_eyes.svg',
+  './assets/icones/sports_medal.svg',
+  './assets/icones/blossom.svg',
+  './assets/icones/hibiscus.svg',
+  './assets/icones/socks.svg',
+  './assets/icones/santa_claus.svg',
+  './assets/icones/deer.svg',
+  './assets/icones/christmas_tree.svg',
+  './assets/icones/bell.svg',
   './assets/icones/flag_brazil.svg',
   './assets/icones/flag_united_states.svg',
 ];

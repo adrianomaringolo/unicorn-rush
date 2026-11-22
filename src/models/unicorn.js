@@ -877,21 +877,46 @@ export function createUnicorn(character = CHARACTERS.uni) {
     [0.26, -0.5], [-0.26, -0.5],   // dianteiras
     [0.26, 0.45], [-0.26, 0.45],   // traseiras
   ];
+  // Cada perna tem um joelho: a canela fica num pivô próprio e dobra
+  // enquanto a perna volta para a frente, senão o galope parece de pau.
+  // O tamanho da perna (`shape.legs`) vai nas peças, não no pivô: escala
+  // desigual num pai deixa a canela torta quando ela gira.
+  const L = shape.legs;
   for (const [x, z] of legPositions) {
     const pivot = new THREE.Group();
     pivot.position.set(x, 0.95 - legDrop, z);
-    pivot.scale.y = shape.legs;
     pivot.userData.baseY = 0.95 - legDrop;
+    pivot.userData.dianteira = z < 0;
 
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.8, 6), bodyMat);
-    leg.position.y = -0.4;
-    leg.castShadow = true;
-    pivot.add(leg);
+    const coxa = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.44, 7), bodyMat);
+    coxa.scale.y = L;
+    coxa.position.y = -0.22 * L;
+    coxa.castShadow = true;
+    pivot.add(coxa);
+
+    const joelho = new THREE.Group();
+    joelho.position.y = -0.42 * L;
+    pivot.add(joelho);
+    pivot.userData.joelho = joelho;
+    // O tamanho da perna fica no joelho: os enfeites das patas
+    // (accessories.js) se medem por ele para cair em cima do casco.
+    joelho.userData.L = L;
+
+    const junta = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), bodyMat);
+    junta.scale.y = L;
+    joelho.add(junta);
+
+    const canela = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.085, 0.38, 7), bodyMat);
+    canela.scale.y = L;
+    canela.position.y = -0.19 * L;
+    canela.castShadow = true;
+    joelho.add(canela);
 
     const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.16, 6), hoofMat);
-    hoof.position.y = -0.86;
+    hoof.scale.y = L;
+    hoof.position.y = -0.44 * L;
     hoof.castShadow = true;
-    pivot.add(hoof);
+    joelho.add(hoof);
 
     unicorn.add(pivot);
     legs.push(pivot);
@@ -951,13 +976,25 @@ export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false
   // Diagonais opostas, como num galope de verdade.
   const phases = [0, Math.PI, Math.PI, 0];
   legs.forEach((leg, i) => {
+    const { joelho, dianteira } = leg.userData;
     if (grounded) {
       const swing = Math.sin(t + phases[i]);
-      leg.rotation.x = swing * 0.85;
-      leg.position.y = leg.userData.baseY + Math.max(0, swing) * 0.06;
+      // Voltando para a frente (o seno subindo) a perna está no ar: o
+      // joelho dobra e o casco sobe. Apoiada no chão, ela fica esticada.
+      const volta = Math.max(0, Math.cos(t + phases[i]));
+      leg.rotation.x = swing * 0.75;
+      joelho.rotation.x = -volta * (dianteira ? 1.25 : 0.85);
+      leg.position.y = leg.userData.baseY + Math.max(0, swing) * 0.05;
     } else {
-      // No ar as pernas ficam esticadas para trás, como se estivesse voando.
-      leg.rotation.x = -0.55 + Math.sin(time * 6 + phases[i]) * 0.18;
+      // No ar: as da frente encolhem como num salto, as de trás esticam.
+      const balanco = Math.sin(time * 6 + phases[i]);
+      if (dianteira) {
+        leg.rotation.x = 0.35 + balanco * 0.12;
+        joelho.rotation.x = -1.35 + balanco * 0.15;
+      } else {
+        leg.rotation.x = -0.6 + balanco * 0.15;
+        joelho.rotation.x = -0.25 + balanco * 0.1;
+      }
       leg.position.y = leg.userData.baseY;
     }
   });

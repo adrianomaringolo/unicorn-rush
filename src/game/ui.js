@@ -161,8 +161,9 @@ export function createUI() {
     // Carteira: as chaves mágicas guardadas (a moeda do jogo). Normalmente
     // só aparece quando há alguma; na loja ela aparece mesmo zerada, senão
     // não dá para entender por que o unicórnio está trancado.
-    setWallet: (total, sempre = false) => {
-      wallet.innerHTML = withIcons(`🔑 ${total}`);
+    // O selo da carteira: chaves, ou corações na tela dos enfeites.
+    setWallet: (total, sempre = false, icone = '🔑') => {
+      wallet.innerHTML = withIcons(`${icone} ${total}`);
       wallet.hidden = !total && !sempre;
     },
     // Selo do modo teste, ao lado do nome do jogo.

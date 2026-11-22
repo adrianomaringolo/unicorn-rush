@@ -109,6 +109,23 @@ const ARQUIVOS = {
   '🪶': 'feather',
   '🇧🇷': 'flag_brazil',
   '🇺🇸': 'flag_united_states',
+  // Enfeites e álbum
+  '🎀': 'ribbon',
+  '📒': 'ledger',
+  '🦋': 'butterfly',
+  '🌸': 'cherry_blossom',
+  '🕶️': 'dark_sunglasses',
+  '📿': 'prayer_beads',
+  '🧣': 'scarf',
+  '😍': 'smiling_face_with_heart_eyes',
+  '🏅': 'sports_medal',
+  '🌼': 'blossom',
+  '🌺': 'hibiscus',
+  '🧦': 'socks',
+  '🎅': 'santa_claus',
+  '🦌': 'deer',
+  '🎄': 'christmas_tree',
+  '🔔': 'bell',
 };
 
 // O mesmo emoji aparece com e sem o seletor de variação (U+FE0F) dependendo

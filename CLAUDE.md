@@ -33,6 +33,29 @@ cache fica preso até a versão mudar.
 O script recusa a subir se os três arquivos estiverem em versões diferentes:
 é melhor falhar do que deixar um deles para trás.
 
+## Ícones: nunca emoji do aparelho
+
+O jogo **não mostra emoji do sistema** — só os ícones da nossa coleção, em
+`assets/icones/`, desenhados por código em `scripts/icones/` (contorno
+roxo, gradiente e reflexo de bala de goma). Emoji do aparelho muda de cara
+em cada celular e vira quadradinho nos antigos.
+
+No código o texto continua escrito com o emoji (`t('🎀 Enfeites')`), e o
+`withIcons()` de `src/game/icons.js` troca pela imagem na hora de
+desenhar. Então, **sempre que um emoji novo entrar em algo que aparece na
+tela** (texto, botão, toast, o `emoji` de um personagem, pista, power-up,
+enfeite…):
+
+1. confira se ele já está na tabela `ARQUIVOS` de `src/game/icons.js`;
+2. se não estiver, **desenhe o ícone** em `scripts/icones/` — pode partir do
+   emoji como referência, mas no estilo da coleção, usando o kit de
+   `base.mjs` —, rode `node scripts/icones/gerar.mjs folha.html` e confira
+   na folha de prova (grande e em 28px);
+3. acrescente a linha em `ARQUIVOS` e o arquivo novo na lista do `sw.js`.
+
+Não use emoji que não tenha ícone, nem deixe para depois: o
+`npm run check` falha quando encontra um emoji sem desenho próprio.
+
 ## Ordem de trabalho
 
 Rode `npm run check` antes de considerar qualquer mudança pronta — ele monta

@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE, BARRIER } from './config.js';
 import { TRACKS, DEFAULT_TRACK } from './tracks.js';
 import { createHeart, createStar, createKey } from '../models/collectibles.js';
+import { createStickerCard, FIGURINHA } from '../models/stickers.js';
 import { createPowerup, createRainbowWave, POWERUP_LIST, ARCO_IRIS } from '../models/powerups.js';
 import {
   createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
@@ -44,6 +45,12 @@ const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
 // é isto que dá o ritmo da lição — a -46 ela levava 92 s, tempo demais para
 // quem tem quatro anos.
 const LESSON_SPAWN_Z = -38;
+
+// O cartão de figurinha: quantas linhas, no mínimo, entre um e outro (~25 s
+// de corrida), a chance de sair depois disso e onde começa a conta — a
+// primeira vem mais cedo (~8 s), senão a corrida curta do Livre nunca via
+// figurinha nenhuma.
+const STICKER = { gap: 40, chance: 0.3, start: 28 };
 
 const WAVE_START_Z = 9;
 const WAVE_SPEED = 55;
@@ -95,6 +102,10 @@ export class World {
     this.spawnTimer = 0;
     this.rowsSincePower = 0;      // espaça os power-ups na pista
     this.rowsSinceKey = 99;       // espaça as chaves mágicas do modo Fases
+    this.rowsSinceSticker = STICKER.start;
+    // Quem diz qual figurinha nasce é o Game (ele sabe o que já foi colado):
+    // uma função que devolve o id de uma que falta, ou null.
+    this.figurinhaQueFalta = null;
     this.markers = [];            // placas de distância e faixa do recorde
     this.nextMarker = MARKER_STEP;
     this.recordAt = 0;
@@ -359,6 +370,7 @@ export class World {
     this.entities.length = 0;
     this.spawnTimer = 0;
     this.rowsSincePower = 0;
+    this.rowsSinceSticker = STICKER.start;
     this.rowsSinceBarrier = 0;
     this.barrierDone = false;
     this.bombGraceRows = 0;
@@ -480,6 +492,18 @@ export class World {
     return Math.floor(Math.random() * LANES.length);
   }
 
+  // Figurinha: rara, espaçada, e só uma que ainda falta na página da pista.
+  rollSticker() {
+    if (!this.figurinhaQueFalta) return null;
+    this.rowsSinceSticker += 1;
+    if (this.rowsSinceSticker < STICKER.gap) return null;
+    if (Math.random() > STICKER.chance) return null;
+    const id = this.figurinhaQueFalta();
+    if (!FIGURINHA[id]) return null;
+    this.rowsSinceSticker = 0;
+    return id;
+  }
+
   // Barreira: ocupa as três pistas, então não tem desvio — ou pula, ou bate.
   // Por isso ela é rara, nunca vem colada na anterior e demora mais para
   // aparecer pela primeira vez.
@@ -579,6 +603,10 @@ export class World {
     const powerId = this.rollPowerup();
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
+    // Nem a figurinha divide a linha com o power-up ou a chave: cada prêmio
+    // raro chega sozinho.
+    const stickerId = powerId === null && keyLane === -1 ? this.rollSticker() : null;
+    const card = () => createStickerCard(FIGURINHA[stickerId]);
 
     // Modo Livre (ou uma linha que a Bomba deixou limpa): nada de obstáculo,
     // só itens espalhados pelas pistas — e a chave, que antes era sorteada
@@ -586,9 +614,11 @@ export class World {
     // via chave nenhuma na pista.
     if (!this.mode.obstacles || limpando) {
       const powerLane = powerId === null ? -1 : Math.floor(Math.random() * LANES.length);
+      const stickerLane = stickerId ? Math.floor(Math.random() * LANES.length) : -1;
       for (let lane = 0; lane < LANES.length; lane++) {
         if (lane === keyLane) this.addEntity(createKey(), lane, 1.2);
         else if (lane === powerLane) this.addEntity(createPowerup(powerId), lane, 1.25);
+        else if (lane === stickerLane) this.addEntity(card(), lane, 1.35);
         else if (Math.random() < 0.32) this.addEntity(this.makeCollectible(), lane, 1.15);
       }
       return;
@@ -609,8 +639,11 @@ export class World {
       }
 
       if (lane === freeLane) {
-        // O power-up sempre nasce na pista livre, para dar para pegar.
+        // O power-up sempre nasce na pista livre, para dar para pegar. A
+        // figurinha também: perder a figurinha por causa de uma pedra na
+        // frente dela seria triste demais.
         if (powerId !== null) this.addEntity(createPowerup(powerId), lane, 1.25);
+        else if (stickerId) this.addEntity(card(), lane, 1.35);
         else if (Math.random() < 0.45) this.addEntity(this.makeCollectible(), lane, 1.15);
         continue;
       }

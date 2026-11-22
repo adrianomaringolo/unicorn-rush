@@ -7,6 +7,7 @@ import { icone } from './base.mjs';
 import { INTERFACE } from './interface.mjs';
 import { NATUREZA } from './natureza.mjs';
 import { OBJETOS } from './objetos.mjs';
+import { ENFEITES } from './enfeites.mjs';
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PASTA = join(RAIZ, 'assets/icones');
@@ -15,6 +16,7 @@ export const GRUPOS = [
   ['Interface', INTERFACE],
   ['Natureza, comida e bichos', NATUREZA],
   ['Objetos, gente e bandeiras', OBJETOS],
+  ['Enfeites e álbum', ENFEITES],
 ];
 
 mkdirSync(PASTA, { recursive: true });

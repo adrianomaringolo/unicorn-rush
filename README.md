@@ -1143,6 +1143,72 @@ Não há fanfarra de vitória aqui de propósito: aquele som é o de fase
 concluída, e ouvi-lo no meio da corrida faria a criança achar que acabou. O
 estouro visual já é o "uau".
 
+## Enfeites
+
+A bolha **🎀 Enfeites**, no lobby, abre a tela de enfeitar o unicórnio
+escolhido: a grade embaixo e o próprio unicórnio 3D em cima, girando. Cada
+toque veste ou tira na hora, e a criança vê o resultado nele, não num ícone.
+
+São dezenove, em cinco **vagas**: um por vaga, como vestir boneca. A coroa
+tira a cartola, mas fica junto dos óculos, do colar, das patas e da cauda.
+
+| Vaga | Enfeites (preço em 💗) |
+| --- | --- |
+| cabeça | 🎀 Laço 60 · 🌸 Coroa de flores 100 · 🎩 Cartola 250 · 👑 Coroa 400 · 🎅 Gorro de Papai Noel 200 · 🦌 Chifres de rena 250 |
+| rosto | 🕶️ Óculos escuros 120 · 😍 Óculos de coração 180 |
+| pescoço | 🦋 Gravatinha 80 · 📿 Colar de pérolas 150 · 🧣 Cachecol 150 · 🏅 Medalha 200 · 🎄 Guirlanda 180 |
+| patas | 🌼 Tornozeleira de flores 90 · 🧦 Polainas 120 · 🔔 Sininhos 150 |
+| cauda | 🌺 Flor na cauda 90 · ⭐ Estrela na cauda 110 · 🎁 Laço de presente 130 |
+
+- **Patas e cauda** são o que a câmera da corrida mais vê, de trás. Os das
+  patas vão nas quatro pernas, logo acima do casco (presos ao joelho, então
+  dobram junto no galope); os da cauda, na raiz do rabo, virados para trás.
+- **Natal** (os marcados com `natal: true`: gorro, chifres, guirlanda,
+  sininhos e laço de presente) aparecem numa seção própria da grade.
+
+- **A moeda são os corações.** Cada coração pego entra numa carteira própria
+  (`save.enfeites.coracoes`) **além** de contar para a próxima chave, então
+  gastar corações não tira chave nenhuma. Quem já jogava antes dos enfeites
+  chega com a carteira cheia de tudo o que já tinha juntado.
+- **Compra uma vez, usa em todos.** O enfeite comprado fica em
+  `save.enfeites.meus`, e cada unicórnio lembra o que está vestindo
+  (`save.enfeites.vestindo`).
+- Os enfeites aparecem também **na corrida** e no **retrato** da grade e do
+  lobby: o retrato de quem trocou de enfeite é tirado de novo (só o dele).
+
+Os modelos ficam em `src/models/accessories.js`, nas medidas da cabeça e do
+pescoço de `createUnicorn`. Os da cabeça entram no grupo `head`, então
+crescem junto na Lulu, que é cabeçuda. O laço e a cartola vão no lado
+esquerdo, que é o lado que o retrato de perfil mostra.
+
+## Álbum de figurinhas
+
+Cada pista tem uma **página de quatro figurinhas**. Cada figurinha é um dos
+modelos daquela pista: o papagaio da Selva, o disco voador do Espaço, o
+boneco de neve da Geada. São 68 ao todo.
+
+Na corrida, de vez em quando, nasce numa faixa um **cartão dourado**
+girando com o modelo dentro. Passar por ele cola a figurinha no álbum.
+
+- O cartão nasce no máximo a cada **40 linhas** (~25 s), com 30% de chance
+  depois disso. O primeiro vem mais cedo (~8 s), senão a corrida curta do
+  Livre nunca via cartão nenhum. Nunca divide a linha com power-up ou
+  chave, e nas Fases e no Desafio nasce sempre na faixa livre.
+- Só nasce figurinha que **ainda falta** na página da pista, então a página
+  sempre anda. Com ela completa, não nasce mais nenhuma.
+- **Fechar uma página dá 3 chaves.**
+- No álbum (bolha **📒 Álbum**), a figurinha que falta aparece como
+  **sombra** com um "?": dá para ver o contorno do que procurar, mas não o
+  que é. As fotos são tiradas na hora em que a página abre, quatro de cada
+  vez.
+
+A lista mora em `src/models/stickers.js` (`PAGINAS`). Para trocar uma
+figurinha, basta mudar o nome do modelo lá: é o mesmo nome das listas de
+`tracks.js`, montado por `createModelo` em `scenery.js`. O `npm run check`
+confere que toda pista tem as quatro e que todo cartão sai com o modelo
+dentro. Modelo que é só um brilho (o vaga-lume) não serve, porque a foto
+vira uma mancha.
+
 ## O que o jogo lembra
 
 Tudo fica num único registro no localStorage (`unicornrush-save`), montado em
@@ -1979,7 +2045,7 @@ Windows — e os mais recentes (o 🫧 é de 2021) viram um quadradinho em apare
 velho. Como o jogo é feito para instalar no celular, cada criança acabava
 vendo um jogo um pouco diferente.
 
-Em vez disso, o jogo carrega **ícones próprios, desenhados para ele**: 91
+Em vez disso, o jogo carrega **ícones próprios, desenhados para ele**: 100
 SVG em `assets/icones/` (~120 KB no total), todos no mesmo estilo do lobby —
 formas gordinhas, contorno roxo-escuro arredondado, gradiente de cima para
 baixo e um reflexo branco de bala de goma. Os botões (setas, play, pause,
@@ -1987,8 +2053,8 @@ baixo e um reflexo branco de bala de goma. Os botões (setas, play, pause,
 
 Os ícones são **desenhados por código**, em `scripts/icones/`: `base.mjs`
 tem o kit (cores, contorno, reflexo, coração, estrela, espiral, lua
-crescente…), e os desenhos ficam em `interface.mjs`, `natureza.mjs` e
-`objetos.mjs`. Para mudar um ícone ou criar um novo, mexa lá e rode:
+crescente…), e os desenhos ficam em `interface.mjs`, `natureza.mjs`,
+`objetos.mjs` e `enfeites.mjs` (os enfeites e o álbum). Para mudar um ícone ou criar um novo, mexa lá e rode:
 
 ```bash
 node scripts/icones/gerar.mjs                 # regrava assets/icones/*.svg
@@ -2014,6 +2080,10 @@ a tela passa — o título, o texto, o bloco livre e os botões do
 usar um emoji novo: desenhe o ícone em `scripts/icones/`, gere os SVG e
 acrescente uma linha na tabela `ARQUIVOS` — o `sw.js` precisa da linha do
 arquivo novo também, senão o jogo instalado abre offline sem ele.
+
+O `npm run check` cobra isso: um emoji sem ícone em qualquer texto que vai
+para a tela (o HTML, o `Game.js`, os dados de personagem, pista, power-up,
+enfeite e figurinha) faz o teste falhar, dizendo o arquivo e a linha.
 
 O `alt` de cada imagem é o próprio emoji: se um arquivo faltar, a tela volta
 a mostrar o emoji do sistema em vez de deixar um buraco.
@@ -2165,6 +2235,8 @@ src/
     auras.js          o efeito visual de cada power-up no personagem
     rainbowTrail.js   rastro de arco-íris que segue o caminho percorrido
     collectibles.js   coração, estrela e chave mágica
+    accessories.js    os enfeites (laço, coroa, óculos…) e como vestir
+    stickers.js       as figurinhas do álbum e o cartão dourado da pista
     scenery.js        enfeites (árvore, flor, cogumelo, cristal, pirulito,
                       cupcake, bengala, pinheiro…), obstáculos, nuvens,
                       arco-íris, lua, estrelas, montanhas, o chão, as placas
@@ -2287,7 +2359,25 @@ npm run sync-three   # recopia o three.js para vendor/ após atualizar a depend�
 
 ## Próximos passos possíveis
 
-- mais pistas na mesma estrutura de `TRACKS` (fundo do mar, castelo de gelo)
-- mais modos na mesma estrutura de `MODES` (ex.: "corrida contra o relógio")
-- power-ups (escudo de bolha, ímã de corações, voo curto)
-- personagens alternativos reaproveitando `createUnicorn()` com outras cores
+Ideias levantadas avaliando o jogo (nov/2026), do que traz a criança de volta
+ao que deixa a corrida mais viva:
+
+- [x] 🎀 **Acessórios** para os unicórnios (chapéu, laço, coroa, óculos),
+  comprados com **corações** — a segunda moeda, já que hoje eles só viram
+  pontuação.
+- [x] 📒 **Álbum de figurinhas**: um bicho ou objeto raro na beira da pista
+  (papagaio, disco voador, formiga) vale figurinha ao passar perto; uma
+  página por pista.
+- [ ] 🎯 **Missão do dia**: uma meta por dia, com ícones e lida em voz alta,
+  que paga um baú de chaves.
+- [ ] 🌈 **Trechos especiais**: alguns segundos em que a pista vira outra
+  coisa (ponte de arco-íris só com estrelas, túnel escuro, trecho voando).
+- [ ] 🎶 **Fileiras que tocam música**: cada coração de uma fileira toca uma
+  nota da música da pista; a fileira inteira fecha uma frase.
+- [ ] 🐦 **Cenário que reage**: o papagaio levanta voo, a formiga corre, o
+  balão sobe quando o unicórnio passa.
+- [ ] 🦄 **Amigo que corre junto**: um unicórnio já resgatado acompanha a
+  corrida e às vezes ajuda.
+- [ ] 👻 **Correr contra o próprio recorde**: um fantasma refaz a melhor
+  corrida daquela pista.
+- [ ] mais modos na mesma estrutura de `MODES` (ex.: "corrida contra o relógio")
