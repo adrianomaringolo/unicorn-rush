@@ -731,7 +731,9 @@ export class World {
     this.entities.push(obj);
   }
 
-  update(dt, speed, difficulty, elapsed) {
+  // `semItens`: o cenário corre, mas nenhuma linha nova nasce — a pista
+  // vazia do lobby (ver Game.tick).
+  update(dt, speed, difficulty, elapsed, { semItens = false } = {}) {
     const move = speed * dt;
 
     for (const stripe of this.stripes) {
@@ -867,6 +869,7 @@ export class World {
 
     if (this.backdrop) this.backdrop.rotation.z = Math.sin(elapsed * 0.2) * 0.03;
 
+    if (semItens) return;
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnRow(difficulty);

@@ -1501,6 +1501,11 @@ mais quadrada (tablet) a câmera recua para ele caber na coluna do meio, e o
 Brasa e o Vovô, que são maiores, também ganham uma câmera mais afastada.
 Todas as animações param com *reduzir movimento* ligado no aparelho.
 
+**A pista do lobby corre vazia**: o cenário passa, mas nenhum obstáculo,
+coração, estrela ou power-up nasce nela (`semItens` no `World.update`) — o
+palco é só do unicórnio. O `reset` do `showHome` já tira o que havia, então
+voltar de uma corrida ou de outra tela também cai numa pista limpa.
+
 **Tocar no unicórnio do lobby faz ele brincar.** Cada toque é um truque, um
 depois do outro: o **pulo com a cambalhota** do pulo duplo (girando em volta
 do meio do corpo, no ar), a **empinada** e o **giro**, cada um com o seu som

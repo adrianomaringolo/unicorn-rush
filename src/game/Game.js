@@ -3923,7 +3923,11 @@ export class Game {
       }
     }
 
-    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed);
+    // No lobby a pista corre vazia: sem obstáculo, coração, estrela nem
+    // power-up passando pelo unicórnio — o palco é só dele. (O `reset` do
+    // showHome já tira o que havia na pista; aqui nada novo nasce.)
+    const lobbyVazio = this.state === STATE.READY && this.screen === 'home';
+    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed, { semItens: lobbyVazio });
     if (!congelado) {
       animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
       this.updateEchoes(worldSpeed);
