@@ -15,11 +15,13 @@
 //   `mostra` — uma demonstração que a aula dispara ao começar. Hoje só
 //             'chave': a animação dos corações virando chave, que na corrida
 //             de verdade só aparece a cada 50 pontos.
-//   `acao`  — 'esquerda', 'direita', 'lado', 'pular', 'pulo-duplo' ou
-//             'rapido'. Quando existe, a aula **cobra**:
+//   `acao`  — 'esquerda', 'direita', 'lado', 'pular', 'pulo-duplo',
+//             'chao' ou 'rapido'. Quando existe, a aula **cobra**:
 //             aparece a seta piscando, e ela só passa quando a criança faz o
 //             movimento. Se o item passar sem que ela tenha feito, a aula
 //             recomeça — ninguém avança sem ter aprendido.
+//             'chao' é a única ao contrário: ela já começa feita, e o que
+//             reprova é *bater* — pular embaixo da cortina no alto.
 //             Sem `acao`, a aula é só de mostrar (os power-ups, a chave) e
 //             passa sozinha.
 //
@@ -88,6 +90,18 @@ export const LESSONS = [
     fala: 'Duas seguidas! Pule e, no ar, toque de novo ⬆️⬆️',
     acao: 'pulo-duplo',
     itens: [{ o: 'barrier' }, { o: 'barrier', recuo: -3 }, { o: 'star', faixa: 1, altura: 1.9 }],
+  },
+  {
+    // Depois de três aulas de pular, a que ensina quando *não* pular: a
+    // cortina no alto (createOverhead), nas três faixas para não ter desvio
+    // — o único jeito de passar é ficar no chão. O coração embaixo dela é o
+    // prêmio de quem passou correndo.
+    fala: 'Essa fica no alto: não pule, passe correndo por baixo 🏃',
+    acao: 'chao',
+    itens: [
+      { o: 'overhead', faixa: 0 }, { o: 'overhead', faixa: 1 }, { o: 'overhead', faixa: 2 },
+      { o: 'heart', faixa: 1 },
+    ],
   },
   {
     fala: '🔑 A chave mágica: é ela que liberta os amigos',

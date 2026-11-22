@@ -82,9 +82,8 @@ export const TRACKS = {
     decorations: ['cottage', 'lamppost', 'well', 'cottage', 'tree', 'lamppost'],
     obstacles: ['crate', 'barrel', 'bush'],
     ambience: [{ kind: 'bird', count: 10 }, { kind: 'butterfly', count: 8 }],
-    // Pista mansa: pouca coisa no caminho e nenhuma barreira.
+    // Pista mansa: pouca coisa no caminho.
     obstacleChance: 0.14,
-    barrierChance: 0,
   },
 
   ceu: {
@@ -171,10 +170,15 @@ export const TRACKS = {
       sand: 0xf0d7a8,
       sea: 0x3fb8d4,
       foam: 0xffffff,
-      sandDecor: ['parasol', 'palmTree', 'beachChair', 'sandcastle', 'starfish', 'palmTree', 'sandToys', 'clam'],
+      // Um saquinho de sorteio: o castelo de areia entra uma vez só entre
+      // dezesseis, para ser uma surpresa de vez em quando e não uma fileira.
+      sandDecor: [
+        'parasol', 'palmTree', 'beachChair', 'starfish', 'palmTree', 'sandToys', 'clam', 'parasol',
+        'palmTree', 'beachChair', 'starfish', 'parasol', 'clam', 'palmTree', 'sandToys', 'sandcastle',
+      ],
       seaDecor: ['boat', 'surfboard', 'buoy', 'surfboard'],
     },
-    decorations: ['parasol', 'palmTree', 'sandcastle', 'sandToys', 'starfish', 'clam'],
+    decorations: ['parasol', 'palmTree', 'parasol', 'palmTree', 'sandToys', 'starfish', 'clam', 'sandcastle'],
     obstacles: ['coconutPile', 'rock', 'clam'],
     ambience: [{ kind: 'seagull', count: 14 }],
   },

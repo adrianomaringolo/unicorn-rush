@@ -180,6 +180,30 @@ export const ENFEITES = {
       + `<polygon points="${estrela(64, 16, 15, 7)}" fill="${c.g('ouro', 1, 31)}" ${st(4)}/>`
       + brilho(54, 40, 3, 8, 25, 0.5),
   },
+  // A cabeça de um dragãozinho de perfil, verde, de chifrinhos e focinho
+  // comprido — para as asas de dragão.
+  dragon: {
+    emoji: '🐉',
+    desenho: (c) => `<path d="M42 36 L34 10 L56 30 Z" fill="${c.g('creme', 10, 36)}" ${st()}/>`
+      + `<path d="M70 30 L84 8 L82 36 Z" fill="${c.g('creme', 8, 36)}" ${st()}/>`
+      + `<path d="M20 70 Q16 34 56 30 Q84 28 96 48 Q118 56 116 76 Q114 96 90 96 L42 98 Q22 94 20 70 Z" fill="${c.g('verde', 30, 98)}" ${st()}/>`
+      + `<path d="M58 84 Q84 90 108 80" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round" opacity=".6"/>`
+      + `<path d="M24 72 L12 64 L22 82 Z" fill="${c.g('verde', 64, 82)}" ${st(4)}/>`
+      + `<ellipse cx="56" cy="56" rx="11" ry="13" fill="${c.g('branco', 43, 69)}" ${st(4)}/>`
+      + `<circle cx="59" cy="58" r="6" fill="${O}"/>`
+      + `<circle cx="96" cy="64" r="3.5" fill="${O}"/><circle cx="106" cy="66" r="3.5" fill="${O}"/>`
+      + brilho(40, 44, 9, 4, -30, 0.55),
+  },
+  headphone: {
+    emoji: '🎧',
+    desenho: (c) => traco('M22 76 V62 Q22 18 64 18 Q106 18 106 62 V76', c.g('roxo', 14, 76), 11)
+      + [[14, 'rosa'], [86, 'rosa']].map(([x, cor]) => `<rect x="${x}" y="62" width="28" height="48" rx="12" fill="${c.g(cor, 62, 110)}" ${st()}/>`).join('')
+      + `<rect x="34" y="68" width="10" height="36" rx="5" fill="${c.g('branco', 68, 104)}" ${st(4)}/>`
+      + `<rect x="84" y="68" width="10" height="36" rx="5" fill="${c.g('branco', 68, 104)}" ${st(4)}/>`
+      + `<path d="M60 92 V70 L74 66 V86" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`
+      + `<ellipse cx="56" cy="92" rx="6" ry="5" fill="${c.g('ouro', 87, 97)}" ${st(3)}/><ellipse cx="70" cy="86" rx="6" ry="5" fill="${c.g('ouro', 81, 91)}" ${st(3)}/>`
+      + brilho(22, 72, 3, 9, 0, 0.6) + brilho(94, 72, 3, 9, 0, 0.6) + brilho(40, 30, 7, 3, -30, 0.5),
+  },
   bell: {
     emoji: '🔔',
     desenho: (c) => `<circle cx="64" cy="104" r="11" fill="${c.g(['#d9a020', '#8a5a00'], 93, 115)}" ${st()}/>`

@@ -22,11 +22,12 @@
 // (Game.applyTrackGlow) mexe no `emissive` de cada material do unicórnio, e
 // um material dividido entre unicórnios acenderia em todos de uma vez.
 import * as THREE from 'three';
+import { trocarAsas, parDeAsas } from './unicorn.js';
 
 const mat = (color, opts = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
 
-export const VAGAS = ['cabeca', 'rosto', 'pescoco', 'patas', 'cauda'];
+export const VAGAS = ['cabeca', 'rosto', 'pescoco', 'asas', 'patas', 'cauda', 'chifre'];
 
 // O pescoço de createUnicorn: centro, inclinação e o raio perto da cabeça.
 const PESCOCO = { y: 1.46, z: -0.58, inclina: -0.5 };
@@ -37,7 +38,34 @@ function noPescoco() {
   const g = new THREE.Group();
   g.position.set(0, PESCOCO.y, PESCOCO.z);
   g.rotation.x = PESCOCO.inclina;
+  g.userData.pescoco = true;
   return g;
+}
+
+// A crina cobre a nuca e a parte de cima do pescoço, e um anel redondo
+// passava por **baixo** dela: de trás (a câmera da corrida) o colar sumia.
+// Aqui o que está em volta do pescoço vira uma elipse que fica onde estava
+// na frente e se abre para os lados e para trás, **por cima** da crina.
+//
+// No grupo do pescoço, +z aponta para a nuca (onde está a crina). Cada
+// peça direta se afasta do centro: os anéis (toro) esticam, o resto (as
+// pérolas, as folhinhas, as bolinhas) só muda de lugar, sem deformar.
+const SOBRE_A_CRINA = { x: 1.3, z: 1.55 };
+function abrirSobreACrina(g) {
+  const { x, z } = SOBRE_A_CRINA;
+  for (const peca of g.children) {
+    if (peca.geometry?.type === 'TorusGeometry') {
+      // O toro está deitado (girado em x): o y dele é o z do grupo.
+      peca.scale.x *= x;
+      peca.scale.y *= z;
+      const raio = peca.geometry.parameters.radius;
+      peca.position.z += raio * (z - 1);
+    } else {
+      const raio = Math.hypot(peca.position.x, peca.position.z);
+      peca.position.x *= x;
+      peca.position.z = peca.position.z * z + raio * (z - 1);
+    }
+  }
 }
 
 // A frente do pescoço (onde caem o laço, a medalha e as pontas do
@@ -196,6 +224,52 @@ function sininho(tamanho = 1) {
   g.add(corpo, bola);
   g.scale.setScalar(tamanho);
   return g;
+}
+
+// --- Chifres ----------------------------------------------------------------
+// Os chifres novos **trocam** o do unicórnio: `chifre({ length, radius })`
+// monta a peça nas medidas do chifre de quem veste (a Lulu tem chifre
+// curtinho, o Brasa comprido), no mesmo eixo dele — um cone em pé, centrado
+// na origem —, e vestirEnfeites põe no lugar e esconde o original.
+
+// Um cone com listras em espiral, de `cores` em sequência. A cor é por
+// triângulo (geometria não indexada), então a listra sai nítida, sem
+// degradê entre uma cor e a outra.
+function coneEspiral(altura, raio, cores, { voltas = 2.5, lados = 16, emissivo = 0 } = {}) {
+  const geo = new THREE.ConeGeometry(raio, altura, lados, 24).toNonIndexed();
+  const pos = geo.attributes.position;
+  const cor = new Float32Array(pos.count * 3);
+  const tons = cores.map((c) => new THREE.Color(c));
+  for (let i = 0; i < pos.count; i += 3) {
+    let x = 0, y = 0, z = 0;
+    for (let k = 0; k < 3; k++) { x += pos.getX(i + k); y += pos.getY(i + k); z += pos.getZ(i + k); }
+    const h = (y / 3 + altura / 2) / altura;
+    const u = Math.atan2(z, x) / (Math.PI * 2) + h * voltas;
+    const tom = tons[((Math.floor(u * tons.length) % tons.length) + tons.length) % tons.length];
+    for (let k = 0; k < 3; k++) tom.toArray(cor, (i + k) * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+  return new THREE.Mesh(geo, mat(0xffffff, { vertexColors: true, emissive: emissivo }));
+}
+
+// Um ponto na superfície do cone: `h` de 0 (base) a 1 (ponta), `a` o ângulo.
+const naSuperficie = (altura, raio, h, a) => new THREE.Vector3(
+  Math.cos(a) * raio * (1 - h), -altura / 2 + h * altura, Math.sin(a) * raio * (1 - h));
+
+// Coração extrudado, de frente para +z, do tamanho `t` (≈ altura).
+function coracaoGordo(t, cor, emissivo = 0x5a1030) {
+  const s = new THREE.Shape();
+  s.moveTo(0, -0.5);
+  s.bezierCurveTo(-0.15, -0.32, -0.55, -0.12, -0.5, 0.18);
+  s.bezierCurveTo(-0.46, 0.42, -0.14, 0.5, 0, 0.28);
+  s.bezierCurveTo(0.14, 0.5, 0.46, 0.42, 0.5, 0.18);
+  s.bezierCurveTo(0.55, -0.12, 0.15, -0.32, 0, -0.5);
+  const geo = new THREE.ExtrudeGeometry(s, {
+    depth: 0.22, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 2, curveSegments: 8,
+  });
+  geo.translate(0, 0, -0.11);
+  geo.scale(t, t, t);
+  return new THREE.Mesh(geo, mat(cor, { emissive: emissivo }));
 }
 
 // --- Os enfeites ------------------------------------------------------------
@@ -466,6 +540,307 @@ export const ENFEITES = [
     },
   },
 
+  // --- Chifre --------------------------------------------------------------
+  {
+    id: 'chifreArcoIris', vaga: 'chifre', emoji: '🌈', name: 'Chifre arco-íris', preco: 220,
+    montar: () => ({
+      chifre: ({ length, radius }) => coneEspiral(length, radius * 1.15,
+        [0xff5d8f, 0xffa64d, 0xffd23d, 0x5fd38a, 0x4fb3ff, 0xa77bff], { voltas: 1.5 }),
+    }),
+  },
+  {
+    id: 'chifreDeCristal', vaga: 'chifre', emoji: '💎', name: 'Chifre de cristal', preco: 260,
+    montar: () => ({
+      chifre({ length, radius }) {
+        // Um cristal facetado, meio transparente e acendendo por dentro,
+        // com três cristaizinhos nascendo da base.
+        const g = new THREE.Group();
+        const vidro = () => mat(0x7fd4ff, { emissive: 0x2a8fd0, emissiveIntensity: 0.5, transparent: true, opacity: 0.92 });
+        g.add(new THREE.Mesh(new THREE.ConeGeometry(radius * 1.25, length * 1.05, 5), vidro()));
+        for (let i = 0; i < 3; i++) {
+          const a = (i / 3) * Math.PI * 2 + 0.4;
+          const lasca = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.55, length * 0.38, 5), vidro());
+          lasca.position.copy(naSuperficie(length, radius * 1.25, 0.1, a));
+          lasca.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6);
+          g.add(lasca);
+        }
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'chifreDeOuro', vaga: 'chifre', emoji: '✨', name: 'Chifre de ouro', preco: 300,
+    montar: () => ({
+      chifre({ length, radius }) {
+        // Ouro em dois tons, em espiral, e três faíscas em volta da ponta.
+        const g = new THREE.Group();
+        g.add(coneEspiral(length, radius * 1.1, [0xffd23d, 0xffa21a], { voltas: 3, emissivo: 0x5a3a00 }));
+        const brilho = mat(0xfff6c4, { emissive: 0xffe07a, emissiveIntensity: 0.9 });
+        [[0.75, 0.2], [0.5, 2.3], [0.3, 4.3]].forEach(([h, a]) => {
+          const f = new THREE.Mesh(new THREE.OctahedronGeometry(radius * 0.5, 0), brilho);
+          f.position.copy(naSuperficie(length, radius * 2.6, h, a));
+          f.scale.y = 1.6;
+          g.add(f);
+        });
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'chifreDeNoite', vaga: 'chifre', emoji: '🌙', name: 'Chifre de noite estrelada', preco: 200,
+    montar: () => ({
+      chifre({ length, radius }) {
+        // Azul de céu de noite, com pontinhos de estrela e uma estrela
+        // de verdade na ponta.
+        const g = new THREE.Group();
+        g.add(new THREE.Mesh(new THREE.ConeGeometry(radius * 1.15, length, 9), mat(0x3b2f8a, { emissive: 0x1a1250 })));
+        const ponto = mat(0xfff1a8, { emissive: 0xffd166, emissiveIntensity: 0.9 });
+        for (let i = 0; i < 9; i++) {
+          const p = new THREE.Mesh(new THREE.OctahedronGeometry(radius * 0.18, 0), ponto);
+          p.position.copy(naSuperficie(length, radius * 1.15, 0.08 + (i / 9) * 0.7, i * 2.4));
+          g.add(p);
+        }
+        const estrela = estrelaGorda(radius * 1.3, 0xffd23d);
+        estrela.position.y = length / 2 + radius * 0.6;
+        estrela.rotation.y = Math.PI;
+        g.add(estrela);
+        return g;
+      },
+    }),
+  },
+
+  // --- Leva 3 --------------------------------------------------------------
+  {
+    id: 'chapeuDeFesta', vaga: 'cabeca', emoji: '🎉', name: 'Chapéu de festa', preco: 140,
+    montar() {
+      // Cone listrado, torto para a direita (o chifre fica livre), com
+      // pompom na ponta.
+      const g = new THREE.Group();
+      g.position.set(0.17, 0.34, 0.06);
+      g.rotation.set(0.12, 0, -0.55);
+      const cone = coneEspiral(0.36, 0.13, [0x4fb3ff, 0xffd23d, 0xff5d8f], { voltas: 1.5 });
+      cone.position.y = 0.18;
+      const pompom = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045, 1), mat(0xffffff));
+      pompom.position.y = 0.38;
+      const barra = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.022, 6, 16), mat(0xff5d8f));
+      barra.rotation.x = Math.PI / 2;
+      g.add(cone, pompom, barra);
+      return { cabeca: g };
+    },
+  },
+  {
+    id: 'pena', vaga: 'cabeca', emoji: '🪶', name: 'Pena no cabelo', preco: 70,
+    vista: [1, 0.3, -0.2],
+    montar() {
+      // Uma pena grande atrás da orelha direita, curvando para trás.
+      const g = new THREE.Group();
+      g.position.set(0.2, 0.3, 0.12);
+      g.rotation.set(0.5, 0, -0.5);
+      const corPena = [0x3fc9b0, 0x7a5cff];
+      corPena.forEach((cor, i) => {
+        const parte = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), mat(cor));
+        parte.scale.set(0.95, 1.7 - i * 0.55, 0.28);
+        parte.position.y = 0.13 + i * 0.17;
+        g.add(parte);
+      });
+      const olho = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), mat(0xffd23d));
+      olho.scale.z = 0.4;
+      olho.position.set(0, 0.27, 0.03);
+      const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.015, 0.5, 5), mat(0xfff4e0));
+      haste.position.y = 0.16;
+      g.add(olho, haste);
+      return { cabeca: g };
+    },
+  },
+  {
+    id: 'fones', vaga: 'cabeca', emoji: '🎧', name: 'Fones de ouvido', preco: 160,
+    vista: [-0.6, 0.3, 1],
+    montar() {
+      // O arco passa atrás das orelhas e as conchas tapam os lados da
+      // cabeça.
+      const g = new THREE.Group();
+      g.position.set(0, 0.03, 0.14);
+      const arco = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.03, 6, 22, Math.PI), mat(0x7a5cff));
+      g.add(arco);
+      for (const lado of [-1, 1]) {
+        const concha = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 14), mat(0xff7fb0));
+        concha.rotation.z = Math.PI / 2;
+        concha.position.x = lado * 0.34;
+        const almofada = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.03, 6, 14), mat(0xffffff));
+        almofada.rotation.y = Math.PI / 2;
+        almofada.position.x = lado * 0.3;
+        const nota = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), mat(0xffd23d, { emissive: 0x5a4000 }));
+        nota.position.x = lado * 0.385;
+        g.add(concha, almofada, nota);
+      }
+      return { cabeca: g };
+    },
+  },
+  {
+    id: 'brincosDeCereja', vaga: 'rosto', emoji: '🍒', name: 'Brincos de cereja', preco: 90,
+    montar() {
+      // Um par de cerejinhas pendurado de cada lado, embaixo da orelha.
+      const pecas = [];
+      for (const lado of [-1, 1]) {
+        const g = new THREE.Group();
+        g.position.set(lado * 0.3, 0.14, 0.06);
+        g.scale.setScalar(1.35);
+        const argola = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.008, 5, 10), mat(0xffc53d));
+        argola.rotation.y = Math.PI / 2;
+        g.add(argola);
+        const verde = mat(0x3f9f4a);
+        for (const z of [-0.035, 0.035]) {
+          const cabo = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.1, 4), verde);
+          cabo.position.set(0, -0.06, z / 2);
+          cabo.rotation.x = z * 6;
+          const cereja = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), mat(0xe5203a, { emissive: 0x3a0008 }));
+          cereja.position.set(0, -0.12, z);
+          g.add(cabo, cereja);
+        }
+        const folha = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), verde);
+        folha.scale.set(0.4, 0.6, 1.4);
+        folha.position.set(0, -0.025, 0.03);
+        g.add(folha);
+        pecas.push(g);
+      }
+      return { cabeca: pecas };
+    },
+  },
+  {
+    id: 'colarDeCristal', vaga: 'pescoco', emoji: '🔮', name: 'Colar de cristal', preco: 170,
+    montar() {
+      const g = noPescoco();
+      g.add(anel(0.275, 0.016, 0xffc53d, -0.02));
+      const cristal = new THREE.Mesh(new THREE.OctahedronGeometry(0.075, 0),
+        mat(0xb07cff, { emissive: 0x6a2fd0, emissiveIntensity: 0.6, transparent: true, opacity: 0.92 }));
+      cristal.scale.y = 1.5;
+      cristal.position.copy(FRENTE_DO_PESCOCO).add(new THREE.Vector3(0, -0.1, -0.02));
+      const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.04, 8), mat(0xffc53d));
+      tampa.position.copy(FRENTE_DO_PESCOCO).add(new THREE.Vector3(0, 0.03, 0));
+      return { torso: [g, cristal, tampa] };
+    },
+  },
+  {
+    id: 'pulseirasDeConcha', vaga: 'patas', emoji: '🐚', name: 'Pulseiras de concha', preco: 100,
+    montar: () => ({
+      perna(L) {
+        const g = new THREE.Group();
+        g.position.y = acimaDoCasco(L);
+        g.add(anel(0.105, 0.018, 0x4fc3d9));
+        const cores = [0xffc9d6, 0xfff1d6, 0xffd8b0, 0xffc9d6];
+        cores.forEach((cor, i) => {
+          const a = (i / cores.length) * Math.PI * 2 + 0.4;
+          const concha = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.1, 7), mat(cor));
+          concha.position.set(Math.cos(a) * 0.14, -0.01, Math.sin(a) * 0.14);
+          concha.rotation.set(Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2);
+          g.add(concha);
+        });
+        const perola = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), mat(0xffffff));
+        perola.position.set(0, -0.01, 0.13);
+        g.add(perola);
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'balao', vaga: 'cauda', emoji: '🎈', name: 'Balão na cauda', preco: 120, vista: [0.6, 0.3, 1],
+    montar() {
+      // Amarrado na raiz do rabo, flutuando para cima e para trás. O rabo
+      // pende ao longo de -y e vai inclinado: no grupo dele, "para cima" no
+      // mundo é +y com um tanto de +z.
+      const g = new THREE.Group();
+      g.add(anel(0.17, 0.025, 0xff5d8f, RAIZ_DA_CAUDA));
+      const no = new THREE.Vector3(0.05, RAIZ_DA_CAUDA, 0.18);
+      const balao = new THREE.Vector3(0.22, 0.55, 0.75);
+      const fio = new THREE.CatmullRomCurve3([no, new THREE.Vector3(0.18, 0.15, 0.5), balao.clone().add(new THREE.Vector3(0, -0.2, 0))]);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(fio, 12, 0.008, 4), mat(0xffffff)));
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), mat(0xff3b6a, { emissive: 0x4a0010 }));
+      bola.scale.y = 1.2;
+      bola.position.copy(balao);
+      const bico = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.05, 6), mat(0xd9204f));
+      bico.position.copy(balao).add(new THREE.Vector3(0, -0.21, 0));
+      bico.rotation.x = Math.PI;
+      const reflexo = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.5 }));
+      reflexo.scale.set(0.6, 1.2, 0.4);
+      reflexo.position.copy(balao).add(new THREE.Vector3(-0.07, 0.08, 0.13));
+      g.add(bola, bico, reflexo);
+      return { cauda: g };
+    },
+  },
+  {
+    id: 'coracaoNaCauda', vaga: 'cauda', emoji: '💖', name: 'Coração na cauda', preco: 100, vista: [0.35, 0.3, 1],
+    montar() {
+      const g = new THREE.Group();
+      g.add(anel(0.17, 0.03, 0xff7fb0, RAIZ_DA_CAUDA));
+      const coracao = coracaoGordo(0.32, 0xff5d8f);
+      coracao.position.set(0, RAIZ_DA_CAUDA, 0.22);
+      g.add(coracao);
+      const brilho = mat(0xfff1a8, { emissive: 0xffd166, emissiveIntensity: 0.9 });
+      [[-0.2, 0.1], [0.19, -0.08]].forEach(([x, y]) => {
+        const f = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), brilho);
+        f.scale.y = 1.6;
+        f.position.set(x, RAIZ_DA_CAUDA + y, 0.24);
+        g.add(f);
+      });
+      return { cauda: g };
+    },
+  },
+  {
+    id: 'chifreDeGelo', vaga: 'chifre', emoji: '🧊', name: 'Chifre de gelo', preco: 240,
+    montar: () => ({
+      chifre({ length, radius }) {
+        // Gelo azulado meio transparente, com pontas de geada saindo pelos
+        // lados e um montinho de neve na base.
+        const g = new THREE.Group();
+        const gelo = () => mat(0xd6f4ff, { emissive: 0x5fb8e0, emissiveIntensity: 0.35, transparent: true, opacity: 0.9 });
+        g.add(new THREE.Mesh(new THREE.ConeGeometry(radius * 1.15, length, 6), gelo()));
+        for (let i = 0; i < 5; i++) {
+          const h = 0.15 + i * 0.15;
+          const a = i * 2.3;
+          const ponta = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.35, length * 0.22, 4), gelo());
+          ponta.position.copy(naSuperficie(length, radius * 1.15, h, a));
+          ponta.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
+          g.add(ponta);
+        }
+        const neve = mat(0xffffff);
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          const bola = new THREE.Mesh(new THREE.IcosahedronGeometry(radius * 0.55, 0), neve);
+          bola.position.set(Math.cos(a) * radius * 1.05, -length / 2 + radius * 0.2, Math.sin(a) * radius * 1.05);
+          g.add(bola);
+        }
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'chifreDeFogo', vaga: 'chifre', emoji: '🔥', name: 'Chifre de fogo', preco: 280,
+    montar: () => ({
+      chifre({ length, radius }) {
+        // Um núcleo laranja acesso e línguas de fogo amarelas subindo em
+        // volta, mais compridas embaixo — o desenho de uma chama.
+        const g = new THREE.Group();
+        g.add(new THREE.Mesh(new THREE.ConeGeometry(radius * 1.1, length, 8),
+          mat(0xff7a1a, { emissive: 0xff4a00, emissiveIntensity: 0.75 })));
+        const amarelo = mat(0xffd84a, { emissive: 0xffa000, emissiveIntensity: 0.8 });
+        const vermelho = mat(0xff3b2a, { emissive: 0xc01000, emissiveIntensity: 0.7 });
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          const h = 0.08 + (i % 2) * 0.12;
+          const lingua = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.6, length * (0.5 - (i % 2) * 0.12), 5), i % 2 ? vermelho : amarelo);
+          const onde = naSuperficie(length, radius * 1.1, h, a);
+          lingua.position.copy(onde).add(new THREE.Vector3(0, length * 0.18, 0));
+          lingua.rotation.set(Math.sin(a) * 0.35, 0, -Math.cos(a) * 0.35);
+          g.add(lingua);
+        }
+        const ponta = new THREE.Mesh(new THREE.ConeGeometry(radius * 0.45, length * 0.3, 5), amarelo);
+        ponta.position.y = length * 0.55;
+        g.add(ponta);
+        return g;
+      },
+    }),
+  },
+
   // --- Natal ---------------------------------------------------------------
   // `natal` junta estes numa seção própria na tela dos enfeites.
   {
@@ -569,6 +944,12 @@ export const ENFEITES = [
     }),
   },
   {
+    id: 'chifreDeDoce', vaga: 'chifre', emoji: '🍭', name: 'Chifre de bengala doce', preco: 180, natal: true,
+    montar: () => ({
+      chifre: ({ length, radius }) => coneEspiral(length, radius * 1.15, [0xffffff, 0xe5304a], { voltas: 3 }),
+    }),
+  },
+  {
     id: 'lacoDePresente', vaga: 'cauda', emoji: '🎁', name: 'Laço de presente', preco: 130, natal: true, vista: [0.35, 0.3, 1],
     montar() {
       const g = new THREE.Group();
@@ -580,6 +961,85 @@ export const ENFEITES = [
       g.add(l);
       return { cauda: g };
     },
+  },
+
+  // --- Asas ---------------------------------------------------------------
+  // Não vão por cima: trocam as asas do unicórnio (ver trocarAsas, em
+  // unicorn.js). `asa` é no mesmo formato da asa de um personagem
+  // (`{ style, colors, scale }`), mais `material` e `brilho` quando precisa.
+  // A miniatura olha de trás e de cima, que é como a asa se vê na corrida.
+  {
+    id: 'asasDeMorcego', vaga: 'asas', emoji: '🦇', name: 'Asas de morcego', preco: 180, vista: [0, 0.8, 1],
+    montar: () => ({ asa: { style: 'bat', colors: [0x4a3f66, 0x5c4f7d, 0x3a3150] } }),
+  },
+  {
+    id: 'asasDeBorboleta', vaga: 'asas', emoji: '🦋', name: 'Asas de borboleta', preco: 220, vista: [0, 0.8, 1],
+    montar: () => ({ asa: { style: 'butterfly', colors: [0x8f6bff, 0x4cc9f0, 0xff8fd8], scale: 1.05 } }),
+  },
+  {
+    // Nuvem fofinha: o véu branco, maior que a asa de sempre.
+    id: 'asasDeNuvem', vaga: 'asas', emoji: '☁️', name: 'Asas de nuvem', preco: 240, vista: [0, 0.8, 1],
+    montar: () => ({ asa: { style: 'veil', colors: [0xffffff, 0xf2f6ff, 0xe6eeff], scale: 1.25 } }),
+  },
+  {
+    id: 'asasDeGelo', vaga: 'asas', emoji: '🧊', name: 'Asas de gelo', preco: 260, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: {
+        style: 'ray', colors: [0xeaf9ff, 0xbfe9ff, 0x9ed8f5, 0xd9f4ff],
+        material: { transparent: true, opacity: 0.8 }, brilho: 0.15,
+      },
+    }),
+  },
+  {
+    id: 'asasDeArcoIris', vaga: 'asas', emoji: '🌈', name: 'Asas de arco-íris', preco: 280, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'feather', colors: [0xff5d5d, 0xffa94d, 0xffe066, 0x8ce99a, 0x74c0fc, 0xb197fc] },
+    }),
+  },
+  {
+    // Lâminas de metal em vez de penas: o raio pontudo, em cinzas.
+    id: 'asasDeFerro', vaga: 'asas', emoji: '🛡️', name: 'Asas de ferro', preco: 300, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'ray', colors: [0xb4bac6, 0x8f95a1, 0xa3a9b5, 0x7d8390, 0x6a707c], scale: 1.05 },
+    }),
+  },
+  {
+    // Bala de goma: o véu redondo em listras de doce, uma cor por pena.
+    id: 'asasDeDoce', vaga: 'asas', emoji: '🍭', name: 'Asas de doce', preco: 230, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'veil', colors: [0xff7bac, 0xfff1f6, 0x9ce0ff, 0xfff1f6, 0xffd166], scale: 1.1 },
+    }),
+  },
+  {
+    // Penas douradas com uma estrelinha acesa na ponta de cada uma.
+    id: 'asasDeEstrela', vaga: 'asas', emoji: '⭐', name: 'Asas de estrela', preco: 290, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'ray', colors: [0xfff3c4, 0xffe38a, 0xffd84d, 0xfff8dd], brilho: 0.2, ponta: 'estrela' },
+    }),
+  },
+  {
+    // Membrana verde de quatro dedos, com uma garrinha em cada ponta.
+    id: 'asasDeDragao', vaga: 'asas', emoji: '🐉', name: 'Asas de dragão', preco: 340, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'dragon', colors: [0x3f9a52, 0x2f7a3a, 0x5cb06a, 0x4f9e5c], ponta: 'garra', scale: 1.1 },
+    }),
+  },
+  {
+    // Acesa na própria cor, como labareda.
+    id: 'asasDeFogo', vaga: 'asas', emoji: '🔥', name: 'Asas de fogo', preco: 320, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: { style: 'ray', colors: [0xff4d1f, 0xff7a1f, 0xffab1f, 0xffd166, 0xfff0a8], brilho: 0.55, scale: 1.1 },
+    }),
+  },
+  {
+    // Quase não se vê: um vidrinho com um brilho de leve, só o contorno.
+    id: 'asasInvisiveis', vaga: 'asas', emoji: '🫧', name: 'Asas invisíveis', preco: 350, vista: [0, 0.8, 1],
+    montar: () => ({
+      asa: {
+        style: 'feather', colors: [0xffffff, 0xeaf6ff, 0xf5ecff],
+        material: { transparent: true, opacity: 0.22, depthWrite: false }, brilho: 0.4,
+      },
+    }),
   },
 ];
 
@@ -597,12 +1057,16 @@ function descartar(objeto) {
 // `vestindo` é `{ cabeca: 'coroa', rosto: null, pescoco: 'colar' }`. Tira
 // antes o que ele vestia, então serve tanto para montar quanto para trocar.
 export function vestirEnfeites(unicornio, vestindo = {}) {
-  const { head, torso, tail, legs } = unicornio.userData;
+  const { head, torso, tail, legs, horn } = unicornio.userData;
+  // O chifre de verdade volta a aparecer; quem trocar de chifre esconde
+  // de novo logo abaixo.
+  if (horn) horn.visible = true;
   for (const peca of unicornio.userData.enfeites || []) {
     peca.parent?.remove(peca);
     descartar(peca);
   }
   const pecas = [];
+  let asa = null;
   for (const vaga of VAGAS) {
     const enfeite = ENFEITE[vestindo?.[vaga]];
     if (!enfeite || enfeite.vaga !== vaga) continue;
@@ -613,8 +1077,23 @@ export function vestirEnfeites(unicornio, vestindo = {}) {
       pecas.push(peca);
     };
     for (const [onde, alvo] of [['cabeca', head], ['torso', torso], ['cauda', tail]]) {
-      for (const peca of [montado[onde] || []].flat()) colocar(peca, alvo);
+      for (const peca of [montado[onde] || []].flat()) {
+        if (peca.userData.pescoco) abrirSobreACrina(peca);
+        colocar(peca, alvo);
+      }
     }
+    // Chifre: no lugar do de verdade, nas medidas dele, e o de verdade some.
+    if (montado.chifre && horn) {
+      const lugar = new THREE.Group();
+      lugar.position.copy(horn.position);
+      lugar.rotation.copy(horn.rotation);
+      const { height: length, radius } = horn.geometry.parameters;
+      lugar.add(montado.chifre({ length, radius }));
+      colocar(lugar, head);
+      horn.visible = false;
+    }
+    // Asas: não é peça por cima, é a asa inteira trocada (ver trocarAsas).
+    if (montado.asa) asa = montado.asa;
     // Patas: uma peça em cada perna, medida pelo tamanho dela.
     if (montado.perna) {
       for (const perna of legs || []) {
@@ -622,6 +1101,11 @@ export function vestirEnfeites(unicornio, vestindo = {}) {
         colocar(montado.perna(joelho.userData.L ?? 1), joelho);
       }
     }
+  }
+  // Troca as asas quando há uma de enfeite — e desfaz quando ela sai.
+  if (asa || unicornio.userData.asasTrocadas) {
+    trocarAsas(unicornio, asa);
+    unicornio.userData.asasTrocadas = !!asa;
   }
   unicornio.userData.enfeites = pecas;
   return pecas;
@@ -633,6 +1117,10 @@ export function montarEnfeiteSozinho(id) {
   const g = new THREE.Group();
   const montado = ENFEITE[id].montar();
   for (const peca of [montado.cabeca || [], montado.torso || [], montado.cauda || []].flat()) g.add(peca);
+  // As asas, o par aberto.
+  if (montado.asa) g.add(parDeAsas(montado.asa));
+  // O chifre nas medidas do chifre da Uni.
+  if (montado.chifre) g.add(montado.chifre({ length: 0.62, radius: 0.09 }));
   // Das patas, duas pernas lado a lado: uma só ficava parecendo um anel
   // solto, sem dizer onde vai.
   if (montado.perna) {

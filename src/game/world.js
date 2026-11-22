@@ -10,7 +10,7 @@ import { createHeart, createStar, createKey } from '../models/collectibles.js';
 import { createStickerCard, FIGURINHA } from '../models/stickers.js';
 import { createPowerup, createRainbowWave, POWERUP_LIST, ARCO_IRIS } from '../models/powerups.js';
 import {
-  createGround, createDecoration, createObstacle, createBarrier, createCloud, createWaveCrest,
+  createGround, createDecoration, createObstacle, createOverhead, createBarrier, createCloud, createWaveCrest,
   createRainbow, createMountains, createMoon, createStars, createSun, createLightningBolt,
   createDistanceMarker, createRecordBanner, createStartLine, createAmbience, animateAmbience,
   swaySeaweed,
@@ -50,6 +50,13 @@ const LESSON_SPAWN_Z = -38;
 // de corrida), a chance de sair depois disso e onde começa a conta — a
 // primeira vem mais cedo (~8 s), senão a corrida curta do Livre nunca via
 // figurinha nenhuma.
+// A chance de nascer um coração (ou estrela) em cada faixa de uma fileira:
+// na faixa livre, que sempre dá para pegar, e nas outras, que disputam
+// lugar com os obstáculos. Os corações compram os enfeites, então eles não
+// podem chover: com 0,45 e 0,22 a criança comprava a loja inteira em
+// poucas corridas. Mais escassos, cada enfeite vira uma conquista.
+const COLETA = { livre: 0.3, outras: 0.14 };
+
 const STICKER = { gap: 40, chance: 0.3, start: 28 };
 
 const WAVE_START_Z = 9;
@@ -559,6 +566,9 @@ export class World {
     } else if (o === 'rock') {
       obj = createObstacle(this.track);
       y = 0;
+    } else if (o === 'overhead') {
+      obj = createOverhead(this.track);
+      y = 0;
     } else if (o === 'key') {
       obj = createKey();
       y = altura ?? 1.2;
@@ -630,6 +640,7 @@ export class World {
     // velocidade já alcançada.
     const obstacleChance = this.mode.obstacleChance ?? (0.35 + difficulty * 0.25);
 
+    let temAlto = false;
     for (let lane = 0; lane < LANES.length; lane++) {
       // A chave pode cair em qualquer pista — às vezes é preciso desviar
       // para chegar até ela.
@@ -644,13 +655,18 @@ export class World {
         // frente dela seria triste demais.
         if (powerId !== null) this.addEntity(createPowerup(powerId), lane, 1.25);
         else if (stickerId) this.addEntity(card(), lane, 1.35);
-        else if (Math.random() < 0.45) this.addEntity(this.makeCollectible(), lane, 1.15);
+        else if (Math.random() < COLETA.livre) this.addEntity(this.makeCollectible(), lane, 1.15);
         continue;
       }
 
       if (Math.random() < obstacleChance) {
-        this.addEntity(createObstacle(this.track), lane, 0);
-      } else if (Math.random() < 0.22) {
+        // Às vezes o obstáculo é a cortina no alto: essa se passa por baixo,
+        // e quem pula bate. Nunca duas na mesma linha — a criança precisa
+        // ver a diferença entre "pula aqui" e "fica no chão aqui".
+        const alto = !temAlto && Math.random() < (this.mode.overheadChance ?? 0);
+        if (alto) temAlto = true;
+        this.addEntity(alto ? createOverhead(this.track) : createObstacle(this.track), lane, 0);
+      } else if (Math.random() < COLETA.outras) {
         this.addEntity(this.makeCollectible(), lane, 1.15);
       }
     }

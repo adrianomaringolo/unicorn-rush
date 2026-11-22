@@ -21,24 +21,111 @@ import { createGlow } from './collectibles.js';
 // `createModelo`; a escolha foi o que cada pista tem de mais seu — nada de
 // pedra, que existe em quase todas, e nada que seja só um brilho (o
 // vaga-lume sozinho vira uma mancha amarela na foto).
+// Cada uma: [modelo, nome, história]. A história é curtinha, uma ou duas
+// frases, e aparece quando a criança toca na figurinha no álbum.
 const PAGINAS = {
-  campo:      [['flower', 'Flor'], ['mushroom', 'Cogumelo'], ['butterfly', 'Borboleta'], ['bee', 'Abelha']],
-  doces:      [['lollipop', 'Pirulito'], ['cupcake', 'Cupcake'], ['donut', 'Rosquinha'], ['ant', 'Formiga']],
-  vilarejo:   [['cottage', 'Casinha'], ['well', 'Poço'], ['lamppost', 'Poste de luz'], ['bird', 'Passarinho']],
-  ceu:        [['balloon', 'Balão'], ['kite', 'Pipa'], ['rainbowArch', 'Arco-íris'], ['stormCloud', 'Nuvem de chuva']],
-  frutas:     [['strawberry', 'Morango'], ['pineapple', 'Abacaxi'], ['watermelon', 'Melancia'], ['cherries', 'Cerejas']],
-  praia:      [['sandcastle', 'Castelo de areia'], ['parasol', 'Guarda-sol'], ['starfish', 'Estrela-do-mar'], ['seagull', 'Gaivota']],
-  oceano:     [['coral', 'Coral'], ['fish', 'Peixinho'], ['seaUrchin', 'Ouriço-do-mar'], ['clam', 'Concha']],
-  noite:      [['glowMushroom', 'Cogumelo que brilha'], ['crystal', 'Cristal'], ['moonStone', 'Pedra da lua'], ['pineTree', 'Pinheiro']],
-  geada:      [['snowman', 'Boneco de neve'], ['igloo', 'Iglu'], ['iceCrystal', 'Cristal de gelo'], ['iceBlock', 'Bloco de gelo']],
-  vulcao:     [['lavaPool', 'Lago de lava'], ['emberVent', 'Chaminé de fogo'], ['charredTree', 'Árvore queimada'], ['lavaBoulder', 'Pedra de lava']],
-  parque:     [['ferrisWheel', 'Roda-gigante'], ['carousel', 'Carrossel'], ['cottonCandy', 'Algodão-doce'], ['popcornBox', 'Pipoca']],
-  espaco:     [['ufo', 'Disco voador'], ['planet', 'Planeta'], ['meteor', 'Meteoro'], ['asteroid', 'Asteroide']],
-  tempestade: [['windmill', 'Moinho'], ['lightningRod', 'Para-raios'], ['puddle', 'Poça'], ['barrel', 'Barril']],
-  bruma:      [['ghostTree', 'Árvore fantasma'], ['floatingLantern', 'Lanterna'], ['mossRock', 'Pedra de musgo'], ['crate', 'Caixote']],
-  caverna:    [['crystalVein', 'Veio de cristal'], ['stalagmite', 'Estalagmite'], ['glowPool', 'Poça brilhante'], ['crystalSpike', 'Espinho de cristal']],
-  outono:     [['autumnTree', 'Árvore de outono'], ['pumpkin', 'Abóbora'], ['leafPile', 'Monte de folhas'], ['logObstacle', 'Tronco']],
-  selva:      [['parrot', 'Papagaio'], ['jungleTree', 'Árvore da selva'], ['hangingVine', 'Cipó'], ['vineTangle', 'Nó de cipós']],
+  campo: [
+    ['flower', 'Flor', 'Toda manhã ela abre as pétalas para dar bom-dia aos unicórnios que passam.'],
+    ['mushroom', 'Cogumelo', 'Quando chove, as formiguinhas usam ele de guarda-chuva.'],
+    ['butterfly', 'Borboleta', 'Ela voa de flor em flor contando segredos que só o vento sabe.'],
+    ['bee', 'Abelha', 'Zum, zum! Ela faz o mel mais doce do Campo e divide com quem pede com jeitinho.'],
+  ],
+  doces: [
+    ['lollipop', 'Pirulito', 'Quanto mais você lambe, mais cores aparecem no redemoinho.'],
+    ['cupcake', 'Cupcake', 'Ele nasceu numa forminha e ganhou a cobertura mais fofa do reino.'],
+    ['donut', 'Rosquinha', 'Os unicórnios dizem que o buraquinho do meio é para fazer um pedido.'],
+    ['ant', 'Formiga', 'Ela carrega um grão de açúcar maior do que ela mesma, sem reclamar.'],
+  ],
+  vilarejo: [
+    ['cottage', 'Casinha', 'A chaminé solta fumacinha em forma de coração quando tem bolo no forno.'],
+    ['well', 'Poço', 'Jogue uma moedinha e diga um desejo bem baixinho: ele escuta.'],
+    ['lamppost', 'Poste de luz', 'Ele acende sozinho quando escurece, para ninguém se perder no caminho de casa.'],
+    ['bird', 'Passarinho', 'Ele acorda o vilarejo inteiro cantando, sempre na mesma nota.'],
+  ],
+  ceu: [
+    ['balloon', 'Balão', 'Ele leva quem tiver coragem para dar uma volta acima das nuvens.'],
+    ['kite', 'Pipa', 'Ela dança no vento e nunca enrosca a linha.'],
+    ['rainbowArch', 'Arco-íris', 'Quem passa por baixo dele ganha um pouquinho de cada cor.'],
+    ['stormCloud', 'Nuvem de chuva', 'Ela parece brava, mas só chove para regar as flores lá de baixo.'],
+  ],
+  frutas: [
+    ['strawberry', 'Morango', 'O morango mais vermelho do pomar, cheio de pintinhas que brilham ao sol.'],
+    ['pineapple', 'Abacaxi', 'Ele usa a coroa de folhas como se fosse o rei das frutas.'],
+    ['watermelon', 'Melancia', 'Por fora é verde e listrada; por dentro, uma festa vermelha.'],
+    ['cherries', 'Cerejas', 'São gêmeas e fazem tudo juntas, até balançar no galho.'],
+  ],
+  praia: [
+    ['sandcastle', 'Castelo de areia', 'Foi construído com baldinho e pazinha, e tem uma bandeira no alto da torre.'],
+    ['parasol', 'Guarda-sol', 'Debaixo dele sempre tem uma sombrinha fresca para descansar.'],
+    ['starfish', 'Estrela-do-mar', 'Ela caiu do céu numa noite e decidiu morar na areia.'],
+    ['seagull', 'Gaivota', 'Ela voa alto procurando o peixinho mais brilhante do mar.'],
+  ],
+  oceano: [
+    ['coral', 'Coral', 'É a casa colorida de muitos peixinhos e um ou outro caranguejo.'],
+    ['fish', 'Peixinho', 'Ele adora apostar corrida com as bolhas que sobem.'],
+    ['seaUrchin', 'Ouriço-do-mar', 'Parece espinhudo, mas é só um jeito de dar abraço de longe.'],
+    ['clam', 'Concha', 'Encoste a orelha nela e você ouve o mar cantar.'],
+  ],
+  noite: [
+    ['glowMushroom', 'Cogumelo que brilha', 'Ele guarda um pouquinho de luz da lua para iluminar a trilha.'],
+    ['crystal', 'Cristal', 'Dizem que quem olha bem fundo nele vê as estrelas de dentro.'],
+    ['moonStone', 'Pedra da lua', 'Ela caiu da lua e ainda brilha um pouquinho com saudade de casa.'],
+    ['pineTree', 'Pinheiro', 'O pinheiro mais alto da noite, onde as corujas contam histórias.'],
+  ],
+  geada: [
+    ['snowman', 'Boneco de neve', 'Ganhou um nariz de cenoura e um cachecol, e agora não para de sorrir.'],
+    ['igloo', 'Iglu', 'Por fora é gelo, mas lá dentro é quentinho como um abraço.'],
+    ['iceCrystal', 'Cristal de gelo', 'Não existem dois iguais: este foi desenhado só para você.'],
+    ['iceBlock', 'Bloco de gelo', 'Um pedaço de gelo tão limpinho que dá para ver o outro lado.'],
+  ],
+  vulcao: [
+    ['lavaPool', 'Lago de lava', 'Ela borbulha devagar, quentinha como sopa de vó.'],
+    ['emberVent', 'Chaminé de fogo', 'Quando ela solta faíscas, é sinal de que o vulcão está feliz.'],
+    ['charredTree', 'Árvore queimada', 'Ela já foi verde um dia; agora guarda as brasas como lembrança.'],
+    ['lavaBoulder', 'Pedra de lava', 'Ainda está morna: dá para esquentar as patas nela.'],
+  ],
+  parque: [
+    ['ferrisWheel', 'Roda-gigante', 'Lá de cima dá para ver o reino inteiro, de ponta a ponta.'],
+    ['carousel', 'Carrossel', 'Os cavalinhos sobem e descem, e cada um tem nome.'],
+    ['cottonCandy', 'Algodão-doce', 'É feito de nuvem cor-de-rosa e derrete na boca.'],
+    ['popcornBox', 'Pipoca', 'Estoura, pula e se espalha: é a pipoca mais animada do parque.'],
+  ],
+  espaco: [
+    ['ufo', 'Disco voador', 'Os visitantes de outro planeta só vieram dar um oi.'],
+    ['planet', 'Planeta', 'Ele gira tão devagar que um dia lá dura uma semana inteira.'],
+    ['meteor', 'Meteoro', 'Ele risca o céu deixando um rastro para quem quiser fazer um pedido.'],
+    ['asteroid', 'Asteroide', 'Uma pedra que flutua sem rumo, passeando pelas estrelas.'],
+  ],
+  tempestade: [
+    ['windmill', 'Moinho', 'Quanto mais forte o vento, mais feliz ele gira.'],
+    ['lightningRod', 'Para-raios', 'Ele pega os raios no ar para ninguém levar susto.'],
+    ['puddle', 'Poça', 'A melhor parte da chuva: pular dentro dela.'],
+    ['barrel', 'Barril', 'Ele guarda água da chuva para as plantas beberem depois.'],
+  ],
+  bruma: [
+    ['ghostTree', 'Árvore fantasma', 'Ela parece assustadora no nevoeiro, mas só quer companhia.'],
+    ['floatingLantern', 'Lanterna', 'Ela flutua sozinha mostrando o caminho no meio da névoa.'],
+    ['mossRock', 'Pedra de musgo', 'O musgo é o cobertor dela nas noites frias.'],
+    ['crate', 'Caixote', 'Ninguém sabe o que tem dentro, e é isso que deixa tudo divertido.'],
+  ],
+  caverna: [
+    ['crystalVein', 'Veio de cristal', 'Uma faixa de cristal que brilha como um rio de luz dentro da pedra.'],
+    ['stalagmite', 'Estalagmite', 'Ela cresce uma gotinha por vez, bem devagar, há mil anos.'],
+    ['glowPool', 'Poça brilhante', 'A água dela brilha no escuro para os morcegos acharem o caminho.'],
+    ['crystalSpike', 'Espinho de cristal', 'Pontudo e reluzente, ele aponta para onde tem mais tesouro.'],
+  ],
+  outono: [
+    ['autumnTree', 'Árvore de outono', 'No outono ela troca o vestido verde por um laranja e dourado.'],
+    ['pumpkin', 'Abóbora', 'Ela cresceu tanto que pode virar uma casinha.'],
+    ['leafPile', 'Monte de folhas', 'O lugar perfeito para pular e sair cheio de folhas no cabelo.'],
+    ['logObstacle', 'Tronco', 'Caiu na trilha e agora é ponte para os esquilos.'],
+  ],
+  selva: [
+    ['parrot', 'Papagaio', 'Ele repete tudo o que ouve, então cuidado com os segredos!'],
+    ['jungleTree', 'Árvore da selva', 'Tão alta que os galhos de cima fazem cócegas nas nuvens.'],
+    ['hangingVine', 'Cipó', 'O balanço favorito dos macaquinhos da selva.'],
+    ['vineTangle', 'Nó de cipós', 'Os cipós se abraçaram tanto que viraram um nó só.'],
+  ],
 };
 
 export const STICKERS_PER_PAGE = 4;
@@ -47,7 +134,7 @@ export const STICKERS_PER_PAGE = 4;
 export const PAGE_REWARD = 3;
 
 export const FIGURINHAS = Object.entries(PAGINAS).flatMap(([pista, lista]) =>
-  lista.map(([modelo, name], ordem) => ({ id: `${pista}-${modelo}`, pista, modelo, name, ordem })));
+  lista.map(([modelo, name, story], ordem) => ({ id: `${pista}-${modelo}`, pista, modelo, name, story, ordem })));
 
 export const FIGURINHA = Object.fromEntries(FIGURINHAS.map((f) => [f.id, f]));
 

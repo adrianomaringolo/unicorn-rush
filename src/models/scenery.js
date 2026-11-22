@@ -5423,10 +5423,204 @@ const OBSTACLES = {
   pumpkin, logObstacle, vineTangle,
 };
 
+// A barra de saltar vale em **toda** pista: além dos obstáculos que são a
+// cara de cada uma, ela entra no sorteio como mais um (no Campo e nos Doces
+// ela já está na lista). Só pista de verdade (com `id`) ganha a barra: quem
+// pede um obstáculo específico, como a página /modelos, recebe exatamente
+// aquele.
+function sorteioDeObstaculos(track) {
+  if (!track.id || track.obstacles.includes('jumpBar')) return track.obstacles;
+  return [...track.obstacles, 'jumpBar'];
+}
+
 export function createObstacle(track) {
-  const build = OBSTACLES[pick(track.obstacles)] || rock;
+  const build = OBSTACLES[pick(sorteioDeObstaculos(track))] || rock;
   const obj = build();
   obj.userData.kind = 'obstacle';
+  return obj;
+}
+
+// --- Obstáculos no alto: passa por baixo, não pula ---------------------------
+//
+// O contrário da barra de saltar: uma cortina pendurada numa trave alta, que
+// o unicórnio passa por baixo correndo — e em que bate se pular. Ensina a
+// segunda metade do "quando pular": às vezes o certo é ficar no chão.
+//
+// A medida que importa é ALTO_LIVRE: nada pendura abaixo dela, e ela fica
+// acima do chifre de todo unicórnio parado no chão (o mais alto chega a
+// ~2,7). A colisão (Game.checkCollisions, `userData.alto`) bate a partir de
+// um pulinho de ALTO_BATE — o chifre já encostaria na cortina.
+//
+// Os postes ficam na divisa entre as faixas (±1,02 — as faixas estão a 2,2
+// uma da outra), para a trave cobrir a faixa inteira e deixar claro que
+// desviar para o lado também vale. No chão, uma sombra comprida debaixo da
+// cortina: é o aviso que chega antes, como a faixa da barreira.
+export const ALTO_LIVRE = 2.85;
+export const ALTO_BATE = 0.35;
+const TRAVE = 3.75;
+const POSTE_X = 1.02;
+
+const CORTINAS = {
+  campo: 'folhas', frutas: 'folhas', selva: 'folhas', outono: 'folhas', bruma: 'folhas', oceano: 'folhas',
+  geada: 'pingentes', caverna: 'pingentes', vulcao: 'pingentes',
+  vilarejo: 'lanternas', noite: 'lanternas', parque: 'lanternas', espaco: 'lanternas',
+};
+
+// As cores de cada pista; o que não está aqui usa a primeira entrada.
+const FOLHAGEM = {
+  campo: [0x4f9e5c, 0x6bbf7b, 0x3d8f45], frutas: [0x5cb06a, 0x7cc46a, 0x43884f],
+  selva: [0x2f7a3a, 0x3d8f45, 0x5aa04e], outono: [0xe0452f, 0xff8a2a, 0xffc23d],
+  bruma: [0x7d9a86, 0x93a99a, 0x6a8574], oceano: [0x3fa36b, 0x5cc48a, 0x2f8a5a],
+};
+const PINGENTE = {
+  geada: { cor: 0xcdeeff, trave: 0xeef8ff, neve: true },
+  caverna: { cor: 0xa99bd6, trave: 0x6b6478, neve: false },
+  vulcao: { cor: 0x5a5262, trave: 0x3b3340, neve: false, brasa: 0xff6b1f },
+};
+
+// Uma corda que cede no meio, de poste a poste.
+function cordaCaida(alto, cede) {
+  return new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-POSTE_X, alto, 0), new THREE.Vector3(0, alto - cede * 2, 0), new THREE.Vector3(POSTE_X, alto, 0));
+}
+
+// Os dois postes e o que fica em cima deles.
+function postes(cor, corTopo, { grosso = 0.07, alto = TRAVE } = {}) {
+  const pecas = [];
+  for (const x of [-POSTE_X, POSTE_X]) {
+    pecas.push([new THREE.CylinderGeometry(grosso, grosso * 1.25, alto, 8), naPosicao(x, alto / 2, 0), cor]);
+    pecas.push([new THREE.SphereGeometry(grosso * 1.6, 10, 8), naPosicao(x, alto + grosso, 0), corTopo]);
+    pecas.push([new THREE.CylinderGeometry(grosso * 2.4, grosso * 2.8, 0.1, 10), naPosicao(x, 0.05, 0), corTopo]);
+  }
+  return pecas;
+}
+
+function sombraNoChao() {
+  const sombra = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.9),
+    new THREE.MeshBasicMaterial({ color: 0x2a1f3d, transparent: true, opacity: 0.16, depthWrite: false }));
+  sombra.rotation.x = -Math.PI / 2;
+  sombra.position.y = 0.025;
+  return sombra;
+}
+
+// Bandeirolas de festa: a corda caída e as bandeirinhas compridas.
+function bandeirolas() {
+  const g = new THREE.Group();
+  const cores = [...PLASTICO].sort(() => Math.random() - 0.5);
+  g.add(new THREE.Mesh(juntarColorido(postes(0xfff6ec, cores[0])), tintaDaMalha()));
+  const corda = cordaCaida(TRAVE - 0.15, 0.12);
+  const pecas = [[new THREE.TubeGeometry(corda, 20, 0.018, 4), new THREE.Matrix4(), 0xfff6ec]];
+  const N = 8;
+  for (let i = 0; i < N; i++) {
+    const p = corda.getPoint((i + 0.5) / N);
+    const largura = 0.24;
+    const comprimento = p.y - ALTO_LIVRE;
+    const tri = new THREE.BufferGeometry();
+    tri.setAttribute('position', new THREE.Float32BufferAttribute([
+      -largura / 2, 0, 0, largura / 2, 0, 0, 0, -comprimento, 0,
+    ], 3));
+    tri.computeVertexNormals();
+    pecas.push([tri, pose(p.x, p.y, 0, 0, (Math.random() - 0.5) * 0.4, 0), cores[i % 4]]);
+  }
+  const fita = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha({ side: THREE.DoubleSide }));
+  fita.castShadow = true;
+  g.add(fita, sombraNoChao());
+  return g;
+}
+
+// Pingentes: gelo (Geada), pedra lilás (Caverna) ou pedra escura com a
+// ponta em brasa (Vulcão), pendurados numa trave do mesmo material.
+function pingentes(trackId) {
+  const g = new THREE.Group();
+  const estilo = PINGENTE[trackId] || PINGENTE.geada;
+  const pecas = postes(estilo.trave, estilo.cor, { grosso: 0.09 });
+  pecas.push([new THREE.BoxGeometry(POSTE_X * 2 + 0.3, 0.24, 0.32), naPosicao(0, TRAVE - 0.05, 0), estilo.trave]);
+  if (estilo.neve) pecas.push([new THREE.BoxGeometry(POSTE_X * 2 + 0.36, 0.08, 0.36), naPosicao(0, TRAVE + 0.1, 0), 0xffffff]);
+  const pontas = [];
+  const N = 9;
+  const embaixo = TRAVE - 0.17;
+  for (let i = 0; i < N; i++) {
+    const x = -0.9 + (i / (N - 1)) * 1.8 + (Math.random() - 0.5) * 0.06;
+    // Os do meio e alguns soltos descem até a linha; os outros, menos.
+    const longo = i % 2 === 0 || Math.random() < 0.3;
+    const comprimento = (embaixo - ALTO_LIVRE) * (longo ? 1 : 0.45 + Math.random() * 0.3);
+    const raio = 0.07 + Math.random() * 0.04;
+    pecas.push([new THREE.ConeGeometry(raio, comprimento, 6), pose(x, embaixo - comprimento / 2, (Math.random() - 0.5) * 0.12, Math.PI, Math.random(), 0), estilo.cor]);
+    if (estilo.brasa && longo) pontas.push([new THREE.SphereGeometry(0.045, 6, 4), naPosicao(x, embaixo - comprimento + 0.06, 0)]);
+  }
+  const corpo = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha(estilo.neve ? { transparent: true, opacity: 0.92 } : {}));
+  corpo.castShadow = true;
+  g.add(corpo, sombraNoChao());
+  if (pontas.length) g.add(new THREE.Mesh(juntar(pontas), LAVA_ACESA(estilo.brasa)));
+  return g;
+}
+
+// Cortina de folhas: um tronco atravessado em dois postes de madeira e os
+// cipós pendurados, cheios de folhas, até a linha.
+function cortinaDeFolhas(trackId) {
+  const g = new THREE.Group();
+  const verdes = FOLHAGEM[trackId] || FOLHAGEM.campo;
+  const madeira = 0x8a5c3c;
+  const pecas = postes(madeira, 0x6b4a35, { grosso: 0.09 });
+  pecas.push([new THREE.CylinderGeometry(0.13, 0.13, POSTE_X * 2 + 0.4, 8), pose(0, TRAVE, 0, 0, 0, Math.PI / 2), madeira]);
+  const N = 7;
+  const folha = new THREE.SphereGeometry(0.11, 6, 4);
+  for (let i = 0; i < N; i++) {
+    const x = -0.85 + (i / (N - 1)) * 1.7;
+    const comprimento = TRAVE - 0.1 - ALTO_LIVRE;
+    const balanco = (Math.random() - 0.5) * 0.08;
+    const cipo = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x, TRAVE - 0.1, 0),
+      new THREE.Vector3(x + balanco * 2, TRAVE - 0.1 - comprimento / 2, 0.04), new THREE.Vector3(x + balanco, ALTO_LIVRE + 0.08, 0));
+    pecas.push([new THREE.TubeGeometry(cipo, 6, 0.018, 4), new THREE.Matrix4(), 0x4f7d3a]);
+    const folhas = 4 + Math.floor(Math.random() * 2);
+    for (let k = 0; k < folhas; k++) {
+      const p = cipo.getPoint((k + 0.6) / folhas);
+      const lado = k % 2 ? 1 : -1;
+      pecas.push([folha, pose(p.x + lado * 0.06, p.y, p.z, 0, Math.random() * 3, lado * 0.6, [1, 0.4, 1.6]), verdes[(i + k) % verdes.length]]);
+    }
+  }
+  const corpo = new THREE.Mesh(juntarColorido(pecas), tintaDaMalha());
+  corpo.castShadow = true;
+  g.add(corpo, sombraNoChao());
+  return g;
+}
+
+// Lanternas de papel acesas numa corda caída.
+function lanternas() {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(juntarColorido(postes(0x5c3f2c, 0xffd166)), tintaDaMalha()));
+  const corda = cordaCaida(TRAVE - 0.1, 0.1);
+  const fios = [[new THREE.TubeGeometry(corda, 20, 0.016, 4), new THREE.Matrix4()]];
+  const tampas = [];
+  const N = 5;
+  const cores = [0xff6b6b, 0xffd166, 0xff9ecd, 0x8ce9ff, 0xffa94d].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < N; i++) {
+    const p = corda.getPoint((i + 0.5) / N);
+    const raio = 0.2;
+    const centro = ALTO_LIVRE + raio * 1.15;
+    fios.push([new THREE.CylinderGeometry(0.008, 0.008, p.y - centro, 4), naPosicao(p.x, (p.y + centro) / 2, 0)]);
+    tampas.push([new THREE.CylinderGeometry(0.09, 0.09, 0.05, 8), naPosicao(p.x, centro + raio * 1.1, 0)]);
+    tampas.push([new THREE.CylinderGeometry(0.09, 0.09, 0.05, 8), naPosicao(p.x, centro - raio * 1.1, 0)]);
+    const cor = cores[i % cores.length];
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(raio, 12, 8), mat(cor, { emissive: cor, emissiveIntensity: 0.55, flatShading: false }));
+    bola.scale.y = 1.2;
+    bola.position.set(p.x, centro, 0);
+    g.add(bola);
+  }
+  g.add(new THREE.Mesh(juntar(fios), mat(0x3a2f2a)), new THREE.Mesh(juntar(tampas), mat(0x5c3f2c)), sombraNoChao());
+  return g;
+}
+
+const NO_ALTO = { bandeirolas, pingentes, cortinaDeFolhas, lanternas };
+const CORTINA_PADRAO = { folhas: 'cortinaDeFolhas', pingentes: 'pingentes', lanternas: 'lanternas' };
+
+// O modelo da pista: cada uma tem a sua cortina (ver CORTINAS); a que não
+// tem, ganha as bandeirolas de festa. `qual` força um modelo (página /modelos).
+export function createOverhead(track, qual) {
+  const nome = qual || CORTINA_PADRAO[CORTINAS[track.id]] || 'bandeirolas';
+  const obj = (NO_ALTO[nome] || bandeirolas)(track.id);
+  obj.userData.kind = 'obstacle';
+  obj.userData.alto = true;
   return obj;
 }
 

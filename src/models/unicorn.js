@@ -353,7 +353,23 @@ function makeBat(length, width) {
   return shape;
 }
 
+// Asa de borboleta: um lobo largo e redondo, mais gordo na ponta. Dois
+// deles — o da frente maior, o de trás mais curto e virado para trás — dão
+// o par de asas de borboleta (um enfeite, ver accessories.js).
+function makeLobe(length, width) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.bezierCurveTo(length * 0.1, width * 1.2, length * 0.9, width * 1.4, length, width * 0.2);
+  shape.bezierCurveTo(length * 1.02, -width * 0.6, length * 0.5, -width * 0.7, 0, 0);
+  return shape;
+}
+
 const WING_STYLES = {
+  butterfly: {
+    count: 2, shape: makeLobe, arm: 0.12,
+    near: 1.0, far: 0.72, width: 0.48, taper: 0.08,
+    sweepNear: 0.3, sweepFar: 1.25, coverts: 0,
+  },
   feather: {
     count: 6, shape: makeFeather, arm: 0.45,
     near: 0.6, far: 1.15, width: 0.25, taper: 0.04,
@@ -368,6 +384,12 @@ const WING_STYLES = {
     count: 5, shape: makeVeil, arm: 0.4,
     near: 0.65, far: 1.15, width: 0.28, taper: 0.03,
     sweepNear: 0.12, sweepFar: 1.05, coverts: 2,
+  },
+  // Dragão: a mesma membrana do morcego, maior e com um dedo a mais.
+  dragon: {
+    count: 4, shape: makeBat, arm: 0.55,
+    near: 0.85, far: 1.4, width: 0.46, taper: 0.08,
+    sweepNear: 0.05, sweepFar: 1.0, coverts: 2,
   },
   bat: {
     count: 3, shape: makeBat, arm: 0.5,
@@ -396,9 +418,51 @@ const WING_LIFT = 0.55;
 // virada para trás e para cima, que é de onde se olha.
 const WING_PITCH = 0.35;
 
-function makeWing(side, wing) {
+// A asa fechada: afastada para o flanco (o corpo tem ~0,42 de raio) e um
+// pouco abaixo do ombro, em pé ao lado do corpo. Ver animateUnicorn.
+const ASA_FECHADA = { x: 0.42, y: -0.04, z: -0.38, rx: -0.85, ry: 0.3, rz: -Math.PI / 2, tamanho: 0.78 };
+
+// `wing` é o do personagem (`{ style, colors, scale }`) ou o de um enfeite
+// de asa, que pode trazer também `material` (o que muda no material de cada
+// pena: transparência das asas invisíveis e de gelo) e `brilho` (a asa
+// acende na própria cor, como a de fogo — e a luz da pista não mexe nela,
+// ver `ownGlow` em Game.applyTrackGlow).
+// O que um enfeite de asa pode pôr na ponta de cada pena (`wing.ponta`):
+// uma estrelinha dourada acesa ou a garra do dedo de uma asa de dragão.
+const ESTRELINHA = (() => {
+  const s = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? 0.065 : 0.16;
+    const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+    if (i) s.lineTo(Math.cos(a) * r, Math.sin(a) * r); else s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.03, bevelEnabled: false });
+  geo.translate(0, 0, -0.015);
+  return geo;
+})();
+function pontaDaPena(tipo) {
+  if (tipo === 'estrela') {
+    const m = new THREE.Mesh(ESTRELINHA.clone(), new THREE.MeshLambertMaterial({ color: 0xffe066, emissive: 0xffc23d, emissiveIntensity: 0.7, flatShading: true }));
+    m.userData.ownGlow = true;
+    return m;
+  }
+  if (tipo === 'garra') {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 5), new THREE.MeshLambertMaterial({ color: 0xfff1d6, flatShading: true }));
+    m.rotation.z = -Math.PI / 2;            // aponta para fora, na direção da pena
+    return m;
+  }
+  return null;
+}
+
+export function makeWing(side, wing) {
   const style = WING_STYLES[wing.style] || WING_STYLES.feather;
   const pivot = new THREE.Group();
+  const extra = wing.material || {};
+  const mat = (cor) => {
+    const m = new THREE.MeshLambertMaterial({ color: cor, flatShading: true, ...extra });
+    if (wing.brilho) m.emissive.copy(m.color).multiplyScalar(wing.brilho);
+    return m;
+  };
 
   // As penas são desenhadas em pé (plano XY) e o leque inteiro é deitado
   // depois, para a asa abrir na horizontal. Nesse plano deitado, +Y local
@@ -432,6 +496,13 @@ function makeWing(side, wing) {
     feather.rotation.z = -(style.sweepNear + t * (style.sweepFar - style.sweepNear));
     feather.userData.t = t;
     feather.userData.baseRotation = feather.rotation.z;
+    const ponta = wing.ponta && pontaDaPena(wing.ponta);
+    if (ponta) {
+      const comprimento = style.near + (style.far - style.near) * t;
+      ponta.position.set(comprimento + 0.04, (style.width - t * style.taper) * 0.12, 0.01);
+      ponta.castShadow = true;
+      feather.add(ponta);
+    }
     fan.add(feather);
     feathers.push(feather);
   }
@@ -463,12 +534,62 @@ function makeWing(side, wing) {
   pivot.add(shoulder);
 
   pivot.userData.feathers = feathers;
+  pivot.traverse((obj) => {
+    if (!obj.isMesh) return;
+    if (wing.brilho) obj.userData.ownGlow = true;
+    // Asa quase transparente não faz sombra de asa inteira no chão.
+    if (extra.transparent && (extra.opacity ?? 1) < 0.5) obj.castShadow = false;
+  });
   // `wing.scale` é o tamanho **do personagem** (a Lulu e o Limão têm asa
   // bem pequena; o Brasa e o Vovô, bem grande) — por cima do tamanho padrão
   // de qualquer asa, que é o `WING_SCALE`. Sem personagem nenhum pedindo
   // diferente, `?? 1` devolve o padrão de sempre.
   pivot.scale.setScalar(WING_SCALE * (wing.scale ?? 1));
+  pivot.userData.escala = pivot.scale.x;
   return pivot;
+}
+
+// O par de asas abertas, esquerda e direita (nessa ordem: animateUnicorn
+// conta com a esquerda primeiro). É o que o unicórnio usa e também a
+// miniatura de um enfeite de asa, sozinha.
+export function parDeAsas(wing) {
+  const wings = new THREE.Group();
+  const wingL = makeWing(1, wing);
+  wingL.position.x = 0.28;
+  wingL.rotation.set(WING_PITCH, -0.12, WING_LIFT);
+  const wingR = makeWing(-1, wing);
+  wingR.position.x = -0.28;
+  wingR.rotation.set(WING_PITCH, 0.12, -WING_LIFT);
+  wings.add(wingL, wingR);
+  return wings;
+}
+
+// Troca as asas de um unicórnio já montado: pelas de um enfeite (`wing`) ou,
+// com `null`, de volta às dele. O tamanho é o do personagem vezes o do
+// enfeite — a asa de ferro da Lulu continua pequenininha. A pose fica a que
+// estava; a animação continua de onde parou.
+export function trocarAsas(unicorn, wing) {
+  const { wings, character } = unicorn.userData;
+  const asa = wing
+    ? { ...wing, scale: (wing.scale ?? 1) * (character.wing?.scale ?? 1) }
+    : character.wing;
+  const velhas = [...wings.children];
+  const novas = velhas.map((velha, i) => {
+    const nova = makeWing(i === 0 ? 1 : -1, asa);
+    nova.position.copy(velha.position);
+    nova.rotation.copy(velha.rotation);
+    nova.scale.setScalar(nova.userData.escala * (velha.scale.x / velha.userData.escala));
+    return nova;
+  });
+  for (const velha of velhas) {
+    wings.remove(velha);
+    velha.traverse((o) => {
+      if (!o.isMesh) return;
+      o.geometry.dispose();
+      o.material.dispose();
+    });
+  }
+  wings.add(...novas);
 }
 
 // ---------------------------------------------------------------------------
@@ -850,15 +971,8 @@ export function createUnicorn(character = CHARACTERS.uni) {
   torso.add(tail);
 
   // Asinhas
-  const wings = new THREE.Group();
+  const wings = parDeAsas(character.wing);
   wings.position.set(0, 1.5, 0.12);
-  const wingL = makeWing(1, character.wing);
-  wingL.position.x = 0.28;
-  wingL.rotation.set(WING_PITCH, -0.12, WING_LIFT);
-  const wingR = makeWing(-1, character.wing);
-  wingR.position.x = -0.28;
-  wingR.rotation.set(WING_PITCH, 0.12, -WING_LIFT);
-  wings.add(wingL, wingR);
   torso.add(wings);
 
   // Marca da anca, dos dois lados
@@ -922,7 +1036,7 @@ export function createUnicorn(character = CHARACTERS.uni) {
     legs.push(pivot);
   }
 
-  unicorn.userData = { character, torso, head, ears, mane, forelock, tail, wings, legs };
+  unicorn.userData = { character, torso, head, ears, mane, forelock, tail, wings, legs, horn };
   unicorn.scale.setScalar(character.scale || 1);
 
   // Corpo de vidro (a Cristal). Só o corpo: crina, rabo, asas e marca ficam
@@ -1064,11 +1178,24 @@ export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false
 
   wings.children.forEach((wing, i) => {
     const side = i === 0 ? 1 : -1;
-    // Aberta: erguida em V e inclinada. Fechada: virada para trás, colada
-    // no flanco, com a ponta um tico para baixo.
-    wing.rotation.z = side * THREE.MathUtils.lerp(-0.3, WING_LIFT, aberta) + batida * side;
-    wing.rotation.y = -side * THREE.MathUtils.lerp(1.3, 0.12, aberta);
-    wing.rotation.x = THREE.MathUtils.lerp(0.05, WING_PITCH, aberta) + batida * 0.25;
+    // Aberta: erguida em V e inclinada. Fechada: dobrada **no flanco**,
+    // como asa de cavalo alado em pé — o leque fica em pé ao lado do corpo,
+    // a borda do ombro em cima, a ponta para trás e as penas caindo para
+    // baixo. Antes ela fechava deitada em cima das costas, e de trás (a
+    // câmera da corrida) parecia uma capa em cima da garupa.
+    //
+    // Os ângulos fechados levam o eixo do leque (x da asa) para trás, e o
+    // lado de dentro dele (z da asa, de onde as penas saem) para baixo.
+    wing.position.x = side * THREE.MathUtils.lerp(ASA_FECHADA.x, 0.28, aberta);
+    wing.position.y = THREE.MathUtils.lerp(ASA_FECHADA.y, 0, aberta);
+    // Fechada ela nasce no ombro, em cima das patas da frente, e não no
+    // meio do corpo (onde fica a raiz da asa aberta).
+    wing.position.z = THREE.MathUtils.lerp(ASA_FECHADA.z, 0, aberta);
+    wing.rotation.z = side * THREE.MathUtils.lerp(ASA_FECHADA.rz, WING_LIFT, aberta) + batida * side;
+    wing.rotation.y = -side * THREE.MathUtils.lerp(ASA_FECHADA.ry, 0.12, aberta);
+    // Dobrada ela encolhe um pouco: aberta inteira, passava da garupa.
+    wing.scale.setScalar(wing.userData.escala * THREE.MathUtils.lerp(ASA_FECHADA.tamanho, 1, aberta));
+    wing.rotation.x = THREE.MathUtils.lerp(ASA_FECHADA.rx, WING_PITCH, aberta) + batida * 0.25;
     // As penas abrem e fecham um pouquinho junto com a batida.
     for (const feather of wing.userData.feathers) {
       // Fechada, o leque recolhe: as penas se juntam numa só direção.

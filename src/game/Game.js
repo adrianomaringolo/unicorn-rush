@@ -12,10 +12,11 @@ import {
   CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER, characterPrice, CHARACTER_SLOTS, isFastOn,
 } from '../models/characters.js';
 import { getPortraits, getAccessoryPortraits, getStickerPortraits } from '../models/portraits.js';
-import { FIGURINHAS, FIGURINHA, figurinhasDaPista, PAGE_REWARD } from '../models/stickers.js';
-import { ENFEITES, ENFEITE, vestirEnfeites } from '../models/accessories.js';
+import { FIGURINHAS, FIGURINHA, figurinhasDaPista, PAGE_REWARD, STICKERS_PER_PAGE } from '../models/stickers.js';
+import { ENFEITES, ENFEITE, vestirEnfeites, VAGAS } from '../models/accessories.js';
 import { createViewer3d } from '../models/viewer3d.js';
 import { getTrackPortraits } from '../models/trackPortraits.js';
+import { ALTO_LIVRE, ALTO_BATE } from '../models/scenery.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
 import { World } from './world.js';
@@ -111,6 +112,7 @@ const RETRY_HELP = {
   pular: '⬆️ Toque na seta de cima para pular',
   'pulo-duplo': '⬆️ Pule e, no ar, toque de novo',
   rapido: '⚡ Toque no botão RÁPIDO, no canto de cima',
+  chao: '⚠️ Não toque em ⬆️: fique no chão e passe por baixo',
 };
 
 // Libera a memória da GPU ao trocar de personagem.
@@ -623,15 +625,20 @@ export class Game {
     // pequena da Lulu (ou bem grande do Brasa) voltava ao tamanho padrão
     // assim que o Rápido ou a Pena Mágica ligavam uma vez, e ficava presa
     // nesse tamanho errado depois.
-    const escala = WING_SCALE * (this.character.wing?.scale ?? 1) * (1 + 0.5 * r + 0.18 * f);
+    // Cada asa guarda o próprio tamanho de repouso (`userData.escala`, ver
+    // makeWing): é o do personagem — e o do enfeite de asa, se ele estiver
+    // usando um.
+    const cresce = 1 + 0.5 * r + 0.18 * f;
     const brilho = (this.track.glow?.intensity || 0) + 0.8 * r + 0.6 * f;
     const corPena = new THREE.Color(POWERUPS.feather.color);
 
     for (const wing of wings.children) {
-      wing.scale.setScalar(escala);
+      wing.scale.setScalar((wing.userData.escala ?? WING_SCALE) * cresce);
       wing.traverse((obj) => {
         const material = obj.isMesh ? obj.material : null;
         if (!material || !material.emissive) return;
+        // A asa que acende sozinha (a de fogo) fica com o brilho dela.
+        if (obj.userData.ownGlow) return;
         // A cor original de cada pena fica guardada uma vez só: é dela que
         // se parte a cada quadro, senão a mistura ia acumulando em cima de
         // si mesma e as asas convergiam todas para a cor da Pena.
@@ -2186,7 +2193,15 @@ export class Game {
     const escolher = (id) => {
       const seguir = () => (primeira ? this.showVoiceInvite()
         : voltarPara === 'grown' ? this.showGrownUps() : this.showHome());
-      if (id === idioma()) return seguir();
+      // O mesmo idioma que já está na tela não precisa de cortina, mas
+      // precisa ser guardado: na primeira abertura o jogo só está *usando*
+      // o que o aparelho sugere (main.js não grava), e sem gravar aqui a
+      // escolha nunca ia para o save — a tela de idioma voltava em toda
+      // abertura para quem escolhia o idioma sugerido.
+      if (id === idioma()) {
+        update((save) => { save.idioma = id; });
+        return seguir();
+      }
 
       // Trocar de idioma "recarrega" o jogo.
       //
@@ -2597,15 +2612,26 @@ export class Game {
         + `${meu ? '' : '<span class="cast-lock">🔒</span>'}`
         + `<span class="cast-name">${rodape}</span></button>`;
     };
-    // Os de Natal numa seção própria, depois dos de sempre.
-    const grade = (lista) => `<div class="cast-grid enfeites">${lista.map(cartao).join('')}</div>`;
+    // Uma seção por parte do corpo (cabeça, rosto, pescoço…), na ordem das
+    // VAGAS, e dentro dela do mais barato ao mais caro. Como cada vaga
+    // aceita um enfeite só, ver as vagas separadas também explica por que
+    // a coroa tira a cartola: os dois moram na mesma prateleira. Os de Natal
+    // ficam numa seção própria no fim, que é uma coleção de época.
+    const ordem = (x, y) => x.preco - y.preco;
+    const grade = (lista) => `<div class="cast-grid enfeites">${[...lista].sort(ordem).map(cartao).join('')}</div>`;
+    const secao = (titulo, lista, extra = '') => (lista.length
+      ? `<h3 class="enfeites-secao${extra}">${titulo}</h3>${grade(lista)}` : '');
+    const PARTES = {
+      cabeca: t('🎩 Cabeça'), rosto: t('🕶️ Rosto'), pescoco: t('📿 Pescoço'), asas: t('🪶 Asas'),
+      patas: t('🧦 Patas'), cauda: t('🎀 Cauda'), chifre: t('🦄 Chifre'),
+    };
+    const deSempre = ENFEITES.filter((e) => !e.natal);
 
     this.ui.showOverlay({
       picker: true,
       title: t('🎀 Enfeites de {nome}', { nome: this.character.name }),
-      html: grade(ENFEITES.filter((e) => !e.natal))
-        + `<h3 class="enfeites-secao">${t('🎄 Natal')}</h3>`
-        + grade(ENFEITES.filter((e) => e.natal)),
+      html: VAGAS.map((vaga) => secao(PARTES[vaga] || vaga, deSempre.filter((e) => e.vaga === vaga))).join('')
+        + secao(t('🎄 Natal'), ENFEITES.filter((e) => e.natal), ' natal'),
       scroll,
       buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showHome() }],
       back: () => this.showHome(),
@@ -2877,6 +2903,9 @@ export class Game {
     if (!aula) return this.finishTutorial();
 
     this.licao.acao = aula.acao || null;
+    // A aula de ficar no chão não pede movimento nenhum: ela já nasce
+    // cumprida, e só uma batida (lessonMissed) a reprova.
+    this.licao.feito = aula.acao === 'chao';
     this.ui.setLesson(aula.fala);
     this.ui.setLessonProgress(indice, this.lessons.length);
     this.ui.setLessonHint(aula.acao || null);
@@ -3096,6 +3125,7 @@ export class Game {
       ...base,
       obstacleChance: difficulty.obstacleChance,
       barrierChance: difficulty.barrierChance,
+      overheadChance: difficulty.overheadChance,
       startSpeed: difficulty.startSpeed,
       maxSpeed: difficulty.maxSpeed,
       speedRamp: difficulty.speedRamp,
@@ -3194,8 +3224,10 @@ export class Game {
         // A onda da Bomba Arco-Íris já o pegou: ele está encolhendo e subindo,
         // não machuca mais ninguém.
         if (e.userData.dissolving !== undefined) continue;
-        // Pulou alto o bastante — ou está de escudo/turbo? Passa ileso.
-        if (p.y > 1.1 || p.invulnerable > 0 || this.powers.shield > 0 || this.powers.boost > 0) continue;
+        if (p.invulnerable > 0 || this.powers.shield > 0 || this.powers.boost > 0) continue;
+        // A cortina no alto é o contrário: no chão passa por baixo, e
+        // qualquer pulo já encosta o chifre nela.
+        if (e.userData.alto ? p.y < ALTO_BATE : p.y > 1.1) continue;
         this.hit(e);
       } else if (e.userData.kind === 'powerup') {
         this.takePower(e, i);
@@ -3349,9 +3381,9 @@ export class Game {
 
     const slots = daPagina.map((f) => {
       const tem = this.temFigurinha(f.id);
-      return `<div class="album-slot${tem ? ' tem' : ''}">`
+      return `<button class="album-slot${tem ? ' tem' : ''}" data-pick="f:${f.id}" aria-label="${tem ? f.name : '?'}">`
         + `<img class="album-foto" src="${fotos[f.id]}" alt="" />`
-        + `<span class="album-nome">${tem ? f.name : '?'}</span></div>`;
+        + `<span class="album-nome">${tem ? f.name : '?'}</span></button>`;
     }).join('');
 
     const rodape = coladas === daPagina.length
@@ -3376,11 +3408,45 @@ export class Game {
       back: () => this.showHome(),
     });
     const atual = pistas.indexOf(pista);
-    this.ui.bindExtra((qual) => {
+    this.ui.bindExtra((qual, el) => {
+      if (qual.startsWith('f:')) {
+        const id = qual.slice(2);
+        if (this.temFigurinha(id)) { sfx.tap(); this.showFigurinha(id, atual); return; }
+        // A que falta não abre: chacoalha e diz onde ela se acha.
+        el.classList.remove('nao');
+        void el.offsetWidth;
+        el.classList.add('nao');
+        this.ui.toast(aberta
+          ? t('📒 Ache correndo na pista {pista}!', { pista: pista.name })
+          : t('🔒 Abra esta pista para achar as figurinhas dela'));
+        return;
+      }
       sfx.tap();
       if (qual === 'ant') this.showAlbum((atual - 1 + pistas.length) % pistas.length);
       if (qual === 'prox') this.showAlbum((atual + 1) % pistas.length);
     });
+  }
+
+  // Uma figurinha do álbum, grande: o cartão dourado com o modelo, o nome
+  // e a pista de onde ela veio. Voltar devolve à mesma página do álbum.
+  showFigurinha(id, pagina) {
+    const f = FIGURINHA[id];
+    const pista = TRACKS[f.pista];
+    const foto = getStickerPortraits([f])[f.id];
+    this.screen = 'figurinha';
+    this.ui.showOverlay({
+      title: `${pista.emoji} ${pista.name}`,
+      html: `
+        <div class="figurinha-grande">
+          <img class="figurinha-foto" src="${foto}" alt="" />
+          <span class="figurinha-nome">${f.name}</span>
+          <p class="figurinha-historia">${f.story}</p>
+          <span class="figurinha-numero">${f.ordem + 1} / ${STICKERS_PER_PAGE}</span>
+        </div>`,
+      buttons: [{ label: t('📒 Voltar ao álbum'), huge: true, onClick: () => this.showAlbum(pagina) }],
+      back: () => this.showAlbum(pagina),
+    });
+    speak(`${f.name}. ${f.story}`);
   }
 
   // Pegou um power-up: guarda o tempo dele e avisa na tela.
@@ -3534,8 +3600,10 @@ export class Game {
     );
 
     const cor = entity.children.find((c) => c.isMesh)?.material?.color?.getHex() ?? 0xffffff;
-    this.world.burst(entity.position, cor);
-    this.world.burst(entity.position.clone().setY(1.2), 0xffffff);
+    // A cortina no alto se desfaz lá em cima, onde o chifre bateu.
+    const onde = entity.userData.alto ? entity.position.clone().setY(ALTO_LIVRE) : entity.position;
+    this.world.burst(onde, cor);
+    this.world.burst(onde.clone().setY(onde.y + 1.2), 0xffffff);
   }
 
   hit(entity) {

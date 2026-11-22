@@ -31,6 +31,13 @@ export const LEVELS = [
 
 export const LEVEL_COUNT = LEVELS.length;
 
+// A cortina no alto (a que se passa por baixo, sem pular) só entra da fase 4
+// em diante, depois de a criança já saber pular — e vai ficando mais comum
+// até a fase 9. Calculada, e não uma coluna a mais na tabela, porque é uma
+// rampa só.
+const overheadChance = (n) => (n <= 3 ? 0 : Math.min(0.2, 0.04 * (n - 3)));
+
 export function levelData(number) {
-  return LEVELS[Math.min(Math.max(1, number), LEVEL_COUNT) - 1];
+  const n = Math.min(Math.max(1, number), LEVEL_COUNT);
+  return { ...LEVELS[n - 1], overheadChance: overheadChance(n) };
 }

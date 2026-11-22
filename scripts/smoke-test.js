@@ -45,8 +45,15 @@ for (const character of CHARACTER_LIST) {
   for (const enfeite of ENFEITES) {
     if (!VAGAS.includes(enfeite.vaga)) throw new Error(`enfeite ${enfeite.id} numa vaga que não existe`);
     if (!(enfeite.preco > 0)) throw new Error(`enfeite ${enfeite.id} sem preço`);
+    const asaAntes = unicorn.userData.wings.children[0];
     vestirEnfeites(unicorn, { [enfeite.vaga]: enfeite.id });
-    if (countMeshes(unicorn) <= base) throw new Error(`enfeite ${enfeite.id} não apareceu no unicórnio`);
+    // A asa não vai por cima: ela troca a asa do unicórnio. Então o que se
+    // confere é que a asa é outra, não que há mais peças.
+    if (enfeite.vaga === 'asas') {
+      if (unicorn.userData.wings.children[0] === asaAntes || unicorn.userData.wings.children.length !== 2) {
+        throw new Error(`enfeite ${enfeite.id} não trocou as asas`);
+      }
+    } else if (countMeshes(unicorn) <= base) throw new Error(`enfeite ${enfeite.id} não apareceu no unicórnio`);
   }
   vestirEnfeites(unicorn, {});
   if (countMeshes(unicorn) !== base) throw new Error('tirar os enfeites deixou peça para trás');
@@ -204,7 +211,7 @@ for (const track of TRACK_LIST) {
   DIFFICULTY_LIST.forEach((d) => ver(d, ['name', 'tagline'], `dificuldade/${d.id}`));
   Object.entries(THEMES).forEach(([id, tema]) => ver(tema, ['name'], `música/${id}`));
   ENFEITES.forEach((e) => ver(e, ['name'], `enfeite/${e.id}`));
-  FIGURINHAS.forEach((f) => ver(f, ['name'], `figurinha/${f.id}`));
+  FIGURINHAS.forEach((f) => ver(f, ['name', 'story'], `figurinha/${f.id}`));
 
   if (semTraducao.length) {
     throw new Error(`sem tradução em inglês:\n   ${semTraducao.join('\n   ')}`);

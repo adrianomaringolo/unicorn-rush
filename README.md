@@ -704,7 +704,7 @@ imagens de anúncio (`npm run anuncio`): mexeu no unicórnio, refaz as duas.
 | --- | --- |
 | 🗺️ **Fases** | **Doze fases por pista** — cada pista tem o seu caminho, guardado separado, então comprar uma pista nova abre doze fases novas. Em cada uma é preciso juntar um número de **chaves mágicas** 🔑 antes que as três vidas acabem. As chaves são raras e ficam **bem longe uma da outra** (uma a cada 7–10 segundos de corrida), e podem cair em qualquer faixa — às vezes é preciso desviar para chegar até elas. A fase 1 é bem tranquila (3 chaves, pouca coisa no caminho) e vai apertando até a 12 (15 chaves, pista cheia). Cada fase concluída abre a próxima e ganha uma ⭐ na grade. |
 | 🎈 **Livre** | Sem nenhum obstáculo: a pista só tem corações e estrelas e o unicórnio corre devagar. A partida termina com festa quando a criança junta a meta de itens — e **a cada vitória a meta cresce**: 20 itens no nível 1, 25 no nível 2, 30 no 3… até 60. O nível fica salvo, então o desafio continua de onde parou. |
-| ⭐ **Desafio** | A corrida infinita: pedras, barreiras de doce e arbustos espinhosos para desviar ou pular, mais as **barreiras que atravessam as três pistas** (dessas não tem desvio), 3 vidas e velocidade que vai aumentando. Aqui também saem **chaves mágicas**, bem mais raras que nas Fases — sem meta, direto para a carteira. A velocidade é escolhida no próprio card: 🐢 Devagarinho (22% de obstáculo por faixa, 16% de barreira), 🌞 Normal (40% / 30%) ou ⚡ Voando (62% / 45%, e mais rápido). |
+| ⭐ **Desafio** | A corrida infinita: os obstáculos de cada pista para desviar ou pular — e, em **todas** elas, a **barra de saltar** (a trave de hipismo, numa faixa só) —, mais as **barreiras que atravessam as três pistas** (dessas não tem desvio), 3 vidas e velocidade que vai aumentando. Aqui também saem **chaves mágicas**, bem mais raras que nas Fases — sem meta, direto para a carteira. A velocidade é escolhida no próprio card: 🐢 Devagarinho (22% de obstáculo por faixa, 16% de barreira), 🌞 Normal (40% / 30%) ou ⚡ Voando (62% / 45%, e mais rápido). |
 
 A meta inicial do modo Livre, o quanto ela cresce por vitória (`targetStep`), o teto
 (`targetMax`) e as velocidades de cada modo ficam em `MODES`, no começo de
@@ -1149,23 +1149,33 @@ A bolha **🎀 Enfeites**, no lobby, abre a tela de enfeitar o unicórnio
 escolhido: a grade embaixo e o próprio unicórnio 3D em cima, girando. Cada
 toque veste ou tira na hora, e a criança vê o resultado nele, não num ícone.
 
-São dezenove, em cinco **vagas**: um por vaga, como vestir boneca. A coroa
-tira a cartola, mas fica junto dos óculos, do colar, das patas e da cauda.
+São trinta e quatro, em seis **vagas**: um por vaga, como vestir boneca. A
+coroa tira a cartola, mas fica junto dos óculos, do colar, das patas, da
+cauda e do chifre.
 
 | Vaga | Enfeites (preço em 💗) |
 | --- | --- |
-| cabeça | 🎀 Laço 60 · 🌸 Coroa de flores 100 · 🎩 Cartola 250 · 👑 Coroa 400 · 🎅 Gorro de Papai Noel 200 · 🦌 Chifres de rena 250 |
-| rosto | 🕶️ Óculos escuros 120 · 😍 Óculos de coração 180 |
-| pescoço | 🦋 Gravatinha 80 · 📿 Colar de pérolas 150 · 🧣 Cachecol 150 · 🏅 Medalha 200 · 🎄 Guirlanda 180 |
-| patas | 🌼 Tornozeleira de flores 90 · 🧦 Polainas 120 · 🔔 Sininhos 150 |
-| cauda | 🌺 Flor na cauda 90 · ⭐ Estrela na cauda 110 · 🎁 Laço de presente 130 |
+| cabeça | 🎀 Laço 60 · 🪶 Pena no cabelo 70 · 🌸 Coroa de flores 100 · 🎉 Chapéu de festa 140 · 🎧 Fones de ouvido 160 · 🎩 Cartola 250 · 👑 Coroa 400 · 🎅 Gorro de Papai Noel 200 · 🦌 Chifres de rena 250 |
+| rosto | 🍒 Brincos de cereja 90 · 🕶️ Óculos escuros 120 · 😍 Óculos de coração 180 |
+| pescoço | 🦋 Gravatinha 80 · 📿 Colar de pérolas 150 · 🧣 Cachecol 150 · 🔮 Colar de cristal 170 · 🏅 Medalha 200 · 🎄 Guirlanda 180 |
+| patas | 🌼 Tornozeleira de flores 90 · 🐚 Pulseiras de concha 100 · 🧦 Polainas 120 · 🔔 Sininhos 150 |
+| cauda | 🌺 Flor na cauda 90 · 💖 Coração na cauda 100 · ⭐ Estrela na cauda 110 · 🎈 Balão na cauda 120 · 🎁 Laço de presente 130 |
+| chifre | 🌈 Chifre arco-íris 220 · 💎 Chifre de cristal 260 · ✨ Chifre de ouro 300 · 🌙 Chifre de noite estrelada 200 · 🧊 Chifre de gelo 240 · 🔥 Chifre de fogo 280 · 🍭 Chifre de bengala doce 180 |
 
 - **Patas e cauda** são o que a câmera da corrida mais vê, de trás. Os das
   patas vão nas quatro pernas, logo acima do casco (presos ao joelho, então
   dobram junto no galope); os da cauda, na raiz do rabo, virados para trás.
-- **Natal** (os marcados com `natal: true`: gorro, chifres, guirlanda,
-  sininhos e laço de presente) aparecem numa seção própria da grade.
+- **Chifres** trocam o chifre do unicórnio: a peça é montada nas medidas
+  do chifre de quem veste (o da Lulu é curtinho, o do Brasa comprido), no
+  mesmo lugar, e o original fica escondido enquanto ela estiver vestida.
+- Na grade, eles vêm **por vaga** e, dentro dela, do mais barato ao mais
+  caro.
+- **Natal** (os marcados com `natal: true`: gorro, chifres de rena,
+  guirlanda, sininhos, laço de presente e chifre de bengala doce) aparecem numa seção própria da grade.
 
+- **Corações não chovem.** Cada fileira tem 30% de chance de um coração
+  (ou estrela) na faixa livre e 14% nas outras (`COLETA` em `world.js`;
+  eram 45% e 22%), para cada enfeite custar umas boas corridas.
 - **A moeda são os corações.** Cada coração pego entra numa carteira própria
   (`save.enfeites.coracoes`) **além** de contar para a próxima chave, então
   gastar corações não tira chave nenhuma. Quem já jogava antes dos enfeites
@@ -1196,6 +1206,9 @@ girando com o modelo dentro. Passar por ele cola a figurinha no álbum.
   chave, e nas Fases e no Desafio nasce sempre na faixa livre.
 - Só nasce figurinha que **ainda falta** na página da pista, então a página
   sempre anda. Com ela completa, não nasce mais nenhuma.
+- No álbum, **tocar numa figurinha colada** abre ela grande (o cartão
+  dourado com o nome, a pista e o número na página) e o nome é falado. A
+  que falta chacoalha e diz em que pista procurar.
 - **Fechar uma página dá 3 chaves.**
 - No álbum (bolha **📒 Álbum**), a figurinha que falta aparece como
   **sombra** com um "?": dá para ver o contorno do que procurar, mas não o

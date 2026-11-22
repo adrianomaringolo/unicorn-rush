@@ -243,6 +243,9 @@ export function createUI() {
         lado: { left: '⬅️', right: '➡️' },
         pular: { jump: '⬆️' },
         'pulo-duplo': { jump: '⬆️⬆️' },
+        // Ficar no chão: o aviso vai em cima do botão de pular, que é o que
+        // **não** se deve tocar — por isso ele não acende (ver abaixo).
+        chao: { jump: '⚠️' },
       }[acao] || {};
       for (const casa of lessonHint.children) {
         const seta = pedido[casa.dataset.seta];
@@ -251,6 +254,7 @@ export function createUI() {
       }
       lessonHint.hidden = false;
       for (const nome of Object.keys(pedido)) {
+        if (acao === 'chao') break;
         touch?.querySelector(`[data-action="${nome}"]`)?.classList.add('pedindo');
       }
     },

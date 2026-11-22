@@ -126,6 +126,8 @@ const ARQUIVOS = {
   '🦌': 'deer',
   '🎄': 'christmas_tree',
   '🔔': 'bell',
+  '🎧': 'headphone',
+  '🐉': 'dragon',
 };
 
 // O mesmo emoji aparece com e sem o seletor de variação (U+FE0F) dependendo

@@ -3336,12 +3336,19 @@ html, body {
 .cast-grid.enfeites .cast-card.trancado .cast-face { opacity: .8; filter: saturate(.75); }
 .cast-grid.enfeites .cast-price { background: #ffeef6; border-color: #ffc4dc; color: #d63e6d; }
 .cast-grid.enfeites .cast-price.falta { opacity: .7; }
+/* Uma seção por parte do corpo. A primeira não precisa de tanto respiro
+   em cima: ela abre a bandeja. A de Natal ganha a fita vermelha e verde. */
 .enfeites-secao {
   margin: 14px 0 8px; text-align: center; font-size: clamp(15px, 4vw, 19px);
-  color: #c8203a; display: flex; align-items: center; gap: 10px;
+  color: var(--purple); display: flex; align-items: center; gap: 10px;
 }
+.enfeites-secao:first-child { margin-top: 2px; }
 .enfeites-secao::before, .enfeites-secao::after {
   content: ''; flex: 1; height: 3px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #ff8fc0 0 10px, #c9b3ff 10px 20px);
+}
+.enfeites-secao.natal { color: #c8203a; }
+.enfeites-secao.natal::before, .enfeites-secao.natal::after {
   background: repeating-linear-gradient(90deg, #e5304a 0 10px, #2f9f4a 10px 20px);
 }
 
@@ -3389,10 +3396,33 @@ html, body {
   background: linear-gradient(165deg, #fffaf0, #fff0c4);
   box-shadow: 0 4px 0 #e0a92a;
 }
+.album-slot { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+.album-slot.tem:active { transform: translateY(3px); box-shadow: 0 1px 0 #e0a92a; }
+.album-slot.nao { animation: album-nao .4s; }
+@keyframes album-nao { 25% { translate: -6px 0; } 50% { translate: 6px 0; } 75% { translate: -3px 0; } }
 .album-slot:nth-child(1).tem { rotate: -1.5deg; }
 .album-slot:nth-child(4).tem { rotate: 1.5deg; }
 .album-foto { width: 100%; height: clamp(84px, 24vw, 130px); object-fit: contain; }
 .album-slot:not(.tem) .album-foto { filter: brightness(0); opacity: .16; }
 .album-nome { font-weight: 700; font-size: clamp(12px, 3.4vw, 15px); color: var(--purple); text-align: center; line-height: 1.1; }
 .album-slot:not(.tem) .album-nome { color: #b3a3cf; font-size: clamp(16px, 4.4vw, 20px); }
+.figurinha-grande {
+  position: relative; margin: 4px auto 10px; width: min(78vw, 300px);
+  border: 6px solid #ffd166; border-radius: 24px; padding: 12px 12px 14px;
+  background: linear-gradient(165deg, #fffaf0, #fff0c4);
+  box-shadow: 0 6px 0 #e0a92a, 0 0 28px #ffe08a;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  rotate: -2deg; animation: figurinha-chega .45s cubic-bezier(.3, 1.6, .5, 1);
+}
+@keyframes figurinha-chega { from { scale: .5; rotate: -14deg; opacity: 0; } }
+.figurinha-foto { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.figurinha-nome { font-weight: 800; font-size: clamp(20px, 6vw, 28px); color: var(--purple); text-align: center; line-height: 1.1; }
+.figurinha-historia {
+  margin: 2px 4px 0; text-align: center; font-size: clamp(14px, 3.9vw, 17px);
+  line-height: 1.3; color: #7a5a2a;
+}
+.figurinha-numero {
+  position: absolute; top: 8px; right: 10px; font-weight: 700; font-size: 13px;
+  color: #b07a00; background: #fff6d6; border: 2px solid #ffd166; border-radius: 999px; padding: 1px 8px;
+}
 .album-conta { margin: 0; text-align: center; font-size: clamp(12px, 3.3vw, 14px); color: #8a76b0; }

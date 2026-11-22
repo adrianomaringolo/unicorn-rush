@@ -104,6 +104,9 @@ export const DIFFICULTIES = {
   facil: {
     id: 'facil',
     barrierChance: 0.16,
+    // Das linhas com obstáculo, quantas trazem a cortina no alto (a que se
+    // passa por baixo, sem pular — ver createOverhead).
+    overheadChance: 0.08,
     name: 'Devagarinho',
     emoji: '🐢',
     tagline: 'Pouca coisa no caminho',
@@ -120,6 +123,7 @@ export const DIFFICULTIES = {
   medio: {
     id: 'medio',
     barrierChance: 0.3,
+    overheadChance: 0.15,
     name: 'Normal',
     emoji: '🌞',
     tagline: 'Do jeitinho certo',
@@ -131,6 +135,7 @@ export const DIFFICULTIES = {
   dificil: {
     id: 'dificil',
     barrierChance: 0.45,
+    overheadChance: 0.22,
     name: 'Voando',
     emoji: '⚡',
     tagline: 'Pista cheia, sem moleza',

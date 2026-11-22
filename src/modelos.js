@@ -13,14 +13,14 @@ import { CHARACTER_LIST, isFastOn } from './models/characters.js';
 import { createUnicorn, animateUnicorn } from './models/unicorn.js';
 import { TRACK_LIST } from './game/tracks.js';
 import {
-  createDecoration, createObstacle, createBarrier, createAmbience, animateAmbience, swaySeaweed,
+  createDecoration, createObstacle, createOverhead, createBarrier, createAmbience, animateAmbience, swaySeaweed,
   createCloud, createLightningBolt, createRainbow, createMoon, createSun, createStars,
   createWaveCrest, createDistanceMarker, createStartLine, createRecordBanner,
 } from './models/scenery.js';
 import { createHeart, createStar, createKey } from './models/collectibles.js';
 import { POWERUP_LIST, createPowerup, createRainbowWave } from './models/powerups.js';
 import { ENFEITES, vestirEnfeites, montarEnfeiteSozinho } from './models/accessories.js';
-import { FIGURINHAS, createStickerCard } from './models/stickers.js';
+import { FIGURINHAS, createStickerCard, figurinhasDaPista } from './models/stickers.js';
 
 // --- nomes em português -------------------------------------------------
 // As tabelas do jogo guardam o id de código; aqui ele ganha um nome de gente.
@@ -124,18 +124,34 @@ function pistaGrupo(track) {
 
   subgrupos.push({
     titulo: 'Obstáculos',
-    itens: [...contar(track.obstacles)].map(([id, vezes]) => ({
+    // A barra de saltar fica junto da barreira, em "Barreiras".
+    itens: [...contar(track.obstacles.filter((id) => id !== 'jumpBar'))].map(([id, vezes]) => ({
       ...base, nome: nome(id), codigo: id, vezes,
       criar: () => createObstacle({ obstacles: [id] }),
     })),
   });
 
-  if (track.barrierChance !== 0) {
-    subgrupos.push({
-      titulo: 'Barreira',
-      itens: [{ ...base, nome: 'Barreira', codigo: `createBarrier(${track.id})`, criar: () => createBarrier(track) }],
-    });
-  }
+  // O que se pula: a barra de saltar (uma faixa, em toda pista) e a
+  // barreira que fecha as três.
+  subgrupos.push({
+    titulo: 'Barreiras',
+    itens: [
+      { ...base, nome: nome('jumpBar'), codigo: 'jumpBar', criar: () => createObstacle({ obstacles: ['jumpBar'] }) },
+      { ...base, nome: 'Barreira', codigo: `createBarrier(${track.id})`, criar: () => createBarrier(track) },
+      // A cortina no alto: o contrário da barra — essa se passa por baixo.
+      { ...base, nome: 'Cortina no alto', codigo: `createOverhead(${track.id})`, criar: () => createOverhead(track) },
+    ],
+  });
+
+  // As figurinhas do álbum desta pista, no cartão dourado que nasce na
+  // corrida, com a história de cada uma embaixo.
+  subgrupos.push({
+    titulo: 'Figurinhas',
+    itens: figurinhasDaPista(track.id).map((f) => neutro({
+      nome: `${f.ordem + 1}. ${f.name}`, codigo: f.modelo, info: f.story, historia: f.story,
+      criar: () => createStickerCard(f),
+    })),
+  });
 
   subgrupos.push({
     titulo: 'Bichinhos no ar',
@@ -178,7 +194,7 @@ function pistaGrupo(track) {
 
 const CEU_NEUTRO = 'linear-gradient(#fde7f3, #fff6fb)';
 const neutro = (item) => ({ luz: LUZ_NEUTRA, ceu: CEU_NEUTRO, ...item });
-const VAGA = { cabeca: 'cabeça', rosto: 'rosto', pescoco: 'pescoço', patas: 'patas', cauda: 'cauda' };
+const VAGA = { cabeca: 'cabeça', rosto: 'rosto', pescoco: 'pescoço', patas: 'patas', cauda: 'cauda', chifre: 'chifre' };
 
 const GRUPOS = [
   {
@@ -199,7 +215,7 @@ const GRUPOS = [
   {
     id: 'enfeites',
     titulo: '🎀 Enfeites',
-    tagline: 'O que se compra com corações para vestir os unicórnios: um por vaga (cabeça, rosto, pescoço, patas e cauda). Os de Natal vêm marcados com 🎄.',
+    tagline: 'O que se compra com corações para vestir os unicórnios: um por vaga (cabeça, rosto, pescoço, patas, cauda e chifre). Os de Natal vêm marcados com 🎄.',
     subgrupos: [
       {
         titulo: 'Sozinhos',
@@ -400,7 +416,8 @@ for (const grupo of GRUPOS) {
         foto,
         el('div', { className: 'legenda' },
           el('strong', { textContent: item.nome }),
-          el('code', { textContent: item.codigo })));
+          el('code', { textContent: item.codigo }),
+          item.historia && el('p', { className: 'historia', textContent: item.historia })));
       cartao.addEventListener('click', () => abrir(item));
       grade.append(cartao);
       pendentes.push({ item, img });
