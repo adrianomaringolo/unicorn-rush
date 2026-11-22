@@ -4,7 +4,7 @@
 // Tudo fica dentro de `root`, então trocar de pista é jogar fora um mundo
 // inteiro e montar outro (ver Game.buildWorld).
 import * as THREE from 'three';
-import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE, BARRIER } from './config.js';
+import { LANES, SPAWN_DISTANCE, DESPAWN_DISTANCE, COLORS, MODES, DEFAULT_MODE, BARRIER, OVERHEAD } from './config.js';
 import { TRACKS, DEFAULT_TRACK } from './tracks.js';
 import { createHeart, createStar, createKey } from '../models/collectibles.js';
 import { createStickerCard, FIGURINHA } from '../models/stickers.js';
@@ -380,6 +380,7 @@ export class World {
     this.rowsSinceSticker = STICKER.start;
     this.rowsSinceBarrier = 0;
     this.barrierDone = false;
+    this.rowsSinceOverhead = 0;
     this.bombGraceRows = 0;
     if (mode.scripted) this.clearLessonItems();
     for (const s of this.sparkles) { s.userData.life = 0; s.visible = false; }
@@ -522,7 +523,47 @@ export class World {
     if (Math.random() > this.mode.barrierChance) return false;
     this.rowsSinceBarrier = 0;
     this.barrierDone = true;
+    // Nem cortina logo depois: o pulo e o "fica no chão" não vêm colados.
+    this.rowsSinceOverhead = 0;
     return true;
+  }
+
+  // Cortina no alto: devolve quantas pistas ela cobre (2 ou 3), ou 0 se esta
+  // linha não tem cortina. Como a barreira, ela toma a linha inteira e
+  // nunca vem colada na anterior (ver OVERHEAD).
+  rollOverhead() {
+    const chance = this.mode.overheadChance ?? 0;
+    if (!this.mode.obstacles || !chance) return 0;
+    this.rowsSinceOverhead += 1;
+    if (this.rowsSinceOverhead < OVERHEAD.gap) return 0;
+    if (Math.random() > chance) return 0;
+    this.rowsSinceOverhead = 0;
+    // A barreira também espera: depois de passar por baixo, não vem um pulo
+    // obrigatório na linha seguinte.
+    this.rowsSinceBarrier = Math.min(this.rowsSinceBarrier, BARRIER.gap - OVERHEAD.gap);
+    return Math.random() < OVERHEAD.tres ? 3 : 2;
+  }
+
+  // A linha da cortina: ela no meio das pistas que cobre, e corações
+  // embaixo, na altura de quem passa correndo — o prêmio de ficar no chão.
+  // Na de duas, a faixa que sobra fica livre (é o desvio), com o power-up
+  // da vez se houver um.
+  spawnOverheadRow(faixas) {
+    const primeira = faixas === 3 ? 0 : Math.floor(Math.random() * 2);
+    const cobertas = LANES.slice(primeira, primeira + faixas);
+    const cortina = createOverhead(this.track, faixas);
+    cortina.position.set(cobertas.reduce((a, b) => a + b, 0) / faixas, 0, SPAWN_DISTANCE);
+    cortina.userData.baseY = 0;
+    this.group.add(cortina);
+    this.entities.push(cortina);
+    for (let lane = 0; lane < LANES.length; lane++) {
+      const embaixo = lane >= primeira && lane < primeira + faixas;
+      if (embaixo) this.addEntity(createHeart(), lane, 1.15);
+      else {
+        const powerId = this.rollPowerup();
+        if (powerId !== null) this.addEntity(createPowerup(powerId), lane, 1.25);
+      }
+    }
   }
 
   // ---- A lição do modo Aprender ----------------------------------------
@@ -552,7 +593,7 @@ export class World {
     }
   }
 
-  addLessonItem({ o, faixa = 1, altura, recuo: proprio }, recuo) {
+  addLessonItem({ o, faixa = 1, faixas = 3, altura, recuo: proprio }, recuo) {
     // O item pode dizer o próprio recuo, quando a aula depende da distância
     // entre duas coisas (é o caso dos dois obstáculos do pulo duplo).
     const z = LESSON_SPAWN_Z + (proprio ?? recuo);
@@ -567,8 +608,11 @@ export class World {
       obj = createObstacle(this.track);
       y = 0;
     } else if (o === 'overhead') {
-      obj = createOverhead(this.track);
+      // A cortina larga fica no meio das faixas que cobre; a de três, no
+      // meio da pista, como a barreira.
+      obj = createOverhead(this.track, faixas);
       y = 0;
+      if (faixas === 3) faixa = 1;
     } else if (o === 'key') {
       obj = createKey();
       y = altura ?? 1.2;
@@ -610,6 +654,13 @@ export class World {
       return;
     }
 
+    // A cortina no alto também toma a linha inteira (ver spawnOverheadRow).
+    const faixas = limpando ? 0 : this.rollOverhead();
+    if (faixas) {
+      this.spawnOverheadRow(faixas);
+      return;
+    }
+
     const powerId = this.rollPowerup();
     // Power-up e chave nunca saem na mesma linha, para não competirem.
     const keyLane = powerId === null ? this.rollKeyLane() : -1;
@@ -640,7 +691,6 @@ export class World {
     // velocidade já alcançada.
     const obstacleChance = this.mode.obstacleChance ?? (0.35 + difficulty * 0.25);
 
-    let temAlto = false;
     for (let lane = 0; lane < LANES.length; lane++) {
       // A chave pode cair em qualquer pista — às vezes é preciso desviar
       // para chegar até ela.
@@ -660,12 +710,7 @@ export class World {
       }
 
       if (Math.random() < obstacleChance) {
-        // Às vezes o obstáculo é a cortina no alto: essa se passa por baixo,
-        // e quem pula bate. Nunca duas na mesma linha — a criança precisa
-        // ver a diferença entre "pula aqui" e "fica no chão aqui".
-        const alto = !temAlto && Math.random() < (this.mode.overheadChance ?? 0);
-        if (alto) temAlto = true;
-        this.addEntity(alto ? createOverhead(this.track) : createObstacle(this.track), lane, 0);
+        this.addEntity(createObstacle(this.track), lane, 0);
       } else if (Math.random() < COLETA.outras) {
         this.addEntity(this.makeCollectible(), lane, 1.15);
       }

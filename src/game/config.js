@@ -104,8 +104,8 @@ export const DIFFICULTIES = {
   facil: {
     id: 'facil',
     barrierChance: 0.16,
-    // Das linhas com obstáculo, quantas trazem a cortina no alto (a que se
-    // passa por baixo, sem pular — ver createOverhead).
+    // A chance de uma linha ser a cortina no alto (a que se passa por baixo,
+    // sem pular — ver createOverhead e OVERHEAD).
     overheadChance: 0.08,
     name: 'Devagarinho',
     emoji: '🐢',
@@ -168,6 +168,14 @@ export const FLIP_TIME = 0.5;             // duração da cambalhota, em segundo
 // `firstGap` segura a primeira, para ninguém levar barreira nos primeiros
 // segundos de corrida.
 export const BARRIER = { gap: 8, firstGap: 15 };
+
+// A cortina no alto (a que se passa por baixo — ver createOverhead) cobre
+// duas ou três pistas, então ela também toma a linha inteira. `gap` é o
+// mínimo de linhas entre ela e a próxima cortina ou barreira — pular uma e
+// logo em seguida ter de ficar no chão, colado, seria injusto na
+// velocidade alta. `tres` é a chance de ela fechar as três pistas (sem
+// desvio, só passando por baixo); no resto, cobre duas e deixa uma livre.
+export const OVERHEAD = { gap: 4, tres: 0.4 };
 
 export const SPAWN_DISTANCE = -90;        // onde os objetos nascem (à frente)
 export const DESPAWN_DISTANCE = 12;       // onde são reciclados (atrás da câmera)

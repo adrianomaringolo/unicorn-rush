@@ -138,8 +138,10 @@ function pistaGrupo(track) {
     itens: [
       { ...base, nome: nome('jumpBar'), codigo: 'jumpBar', criar: () => createObstacle({ obstacles: ['jumpBar'] }) },
       { ...base, nome: 'Barreira', codigo: `createBarrier(${track.id})`, criar: () => createBarrier(track) },
-      // A cortina no alto: o contrário da barra — essa se passa por baixo.
-      { ...base, nome: 'Cortina no alto', codigo: `createOverhead(${track.id})`, criar: () => createOverhead(track) },
+      // A cortina no alto: o contrário da barra — essa se passa por baixo. Ela
+      // cobre duas ou três pistas; as duas larguras aparecem aqui.
+      { ...base, nome: 'Cortina no alto (2 pistas)', codigo: `createOverhead(${track.id}, 2)`, criar: () => createOverhead(track, 2) },
+      { ...base, nome: 'Cortina no alto (3 pistas)', codigo: `createOverhead(${track.id}, 3)`, criar: () => createOverhead(track, 3) },
     ],
   });
 
