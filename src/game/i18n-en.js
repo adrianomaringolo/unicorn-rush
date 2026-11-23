@@ -807,4 +807,15 @@ export const EN = {
   '{nome} subiu para o nível {n}!': '{nome} went up to level {n}!',
   '+{n} chaves mágicas!': '+{n} magic keys!',
   '+{n} corações para os enfeites!': '+{n} hearts for accessories!',
+
+  // Sapatos e caudas novas
+  'Tênis': 'Sneakers',
+  'Galochas': 'Rain boots',
+  'Sapatilhas de balé': 'Ballet slippers',
+  'Patins': 'Roller skates',
+  'Cauda de raposa': 'Fox tail',
+  'Cauda de leão': 'Lion tail',
+  'Cauda trançada': 'Braided tail',
+  'Cauda de pavão': 'Peacock tail',
+  'Cauda de fogo': 'Fire tail',
 };

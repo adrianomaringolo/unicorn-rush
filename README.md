@@ -1219,7 +1219,7 @@ unicórnios), com o preço e quantos corações ela tem. **💗 Trocar** compra 
 já deixa vestido; **Agora não** tira e volta para a grade no mesmo lugar.
 Quando faltam corações, o toque chacoalha o enfeite e diz quantos faltam.
 
-São quarenta e cinco, em sete **vagas**: um por vaga, como vestir boneca. A
+São cinquenta e quatro, em sete **vagas**: um por vaga, como vestir boneca. A
 coroa tira a cartola, mas fica junto dos óculos, do colar, das asas, das
 patas, da cauda e do chifre.
 
@@ -1229,13 +1229,32 @@ patas, da cauda e do chifre.
 | rosto | 🍒 Brincos de cereja 90 · 🕶️ Óculos escuros 120 · 😍 Óculos de coração 180 |
 | pescoço | 🦋 Gravatinha 80 · 📿 Colar de pérolas 150 · 🧣 Cachecol 150 · 🔮 Colar de cristal 170 · 🏅 Medalha 200 · 🎄 Guirlanda 180 |
 | asas | 🦇 Asas de morcego 180 · 🦋 Asas de borboleta 220 · 🍭 Asas de doce 230 · ☁️ Asas de nuvem 240 · 🧊 Asas de gelo 260 · 🌈 Asas de arco-íris 280 · ⭐ Asas de estrela 290 · 🛡️ Asas de ferro 300 · 🔥 Asas de fogo 320 · 🐉 Asas de dragão 340 · 🫧 Asas invisíveis 350 |
-| patas | 🌼 Tornozeleira de flores 90 · 🐚 Pulseiras de concha 100 · 🧦 Polainas 120 · 🔔 Sininhos 150 |
-| cauda | 🌺 Flor na cauda 90 · 💖 Coração na cauda 100 · ⭐ Estrela na cauda 110 · 🎈 Balão na cauda 120 · 🎁 Laço de presente 130 |
+| patas | 🌼 Tornozeleira de flores 90 · 🐚 Pulseiras de concha 100 · 🧦 Polainas 120 · 🔔 Sininhos 150 · 👢 Galochas 140 · 🩰 Sapatilhas de balé 150 · 👟 Tênis 160 · 🛼 Patins 220 |
+| cauda | 🌺 Flor na cauda 90 · 💖 Coração na cauda 100 · ⭐ Estrela na cauda 110 · 🎈 Balão na cauda 120 · 🎁 Laço de presente 130 · 🦊 Cauda de raposa 240 · 🦁 Cauda de leão 250 · 🪢 Cauda trançada 260 · 🦚 Cauda de pavão 320 · 🔥 Cauda de fogo 340 |
 | chifre | 🌈 Chifre arco-íris 220 · 💎 Chifre de cristal 260 · ✨ Chifre de ouro 300 · 🌙 Chifre de noite estrelada 200 · 🧊 Chifre de gelo 240 · 🔥 Chifre de fogo 280 · 🍭 Chifre de bengala doce 180 |
 
 - **Patas e cauda** são o que a câmera da corrida mais vê, de trás. Os das
   patas vão nas quatro pernas, logo acima do casco (presos ao joelho, então
   dobram junto no galope); os da cauda, na raiz do rabo, virados para trás.
+- **Sapatos** (tênis, galochas, sapatilhas, patins) calçam o casco por fora:
+  cano, biqueira para a frente e sola (`sapato`, em `accessories.js`, que
+  sabe onde o casco fica em cada perna). As galochas têm cano alto, as
+  sapatilhas fitas cruzando a canela, e os patins quatro rodinhas e freio.
+- **Caudas de enfeite** (raposa, leão, trançada, pavão, fogo) trocam o rabo
+  inteiro, como as asas: o enfeite devolve `rabo`, as mechas de verdade
+  somem e a cauda nova entra no mesmo grupo do rabo, balançando com ele.
+  Cada uma se anima sozinha (`userData.animar`, chamado por
+  `animateUnicorn` a cada quadro):
+  - **fogo**: línguas de fogo em três camadas, uma dentro da outra — a de
+    fora vermelha e translúcida, a do meio laranja, o miolo quase branco —,
+    com a cor correndo da base à ponta em cada língua, lambidas tortas
+    saindo pelos lados e faíscas voando. Tudo sem sombra e sem a luz das
+    pistas escuras (`ownGlow`): fogo brilha, não escurece;
+  - **leão**: a corda cor de areia com o tufo escuro na ponta, chicoteando;
+  - **trançada**: três mechas cruzadas nas **cores da crina de quem veste**,
+    com elástico e lacinho no fim;
+  - **raposa**: fofa, laranja com a ponta branca, ondulando;
+  - **pavão**: o leque de penas com olhos abre em pé atrás do unicórnio.
 - **Chifres** trocam o chifre do unicórnio: a peça é montada nas medidas
   do chifre de quem veste (o da Lulu é curtinho, o do Brasa comprido), no
   mesmo lugar, e o original fica escondido enquanto ela estiver vestida.

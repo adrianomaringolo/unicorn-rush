@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.52.0';
+const VERSION = 'unicornrush-v0.53.0';
 
 const SHELL = [
   './',
@@ -186,6 +186,14 @@ const SHELL = [
   './assets/icones/headphone.svg',
   './assets/icones/dragon.svg',
   './assets/icones/direct_hit.svg',
+  './assets/icones/athletic_shoe.svg',
+  './assets/icones/womans_boot.svg',
+  './assets/icones/ballet_shoes.svg',
+  './assets/icones/roller_skate.svg',
+  './assets/icones/fox.svg',
+  './assets/icones/lion.svg',
+  './assets/icones/knot.svg',
+  './assets/icones/peacock.svg',
   './assets/icones/flag_brazil.svg',
   './assets/icones/flag_united_states.svg',
 ];

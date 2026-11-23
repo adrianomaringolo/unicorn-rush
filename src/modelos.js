@@ -521,6 +521,9 @@ function montar(item) {
   vivo.objeto = objeto;
   vivo.base = objeto.position.clone();
   vivo.tBau = 0;
+  // Peças que se animam sozinhas (as caudas de enfeite: fogo, leão…).
+  vivo.animaveis = [];
+  objeto.traverse((o) => { if (o.userData.animar) vivo.animaveis.push(o.userData.animar); });
   cena.add(pivo);
 }
 
@@ -583,6 +586,7 @@ function quadro() {
   if (vivo.item.unicornio) animateUnicorn(vivo.objeto, tempo, 2.4, true, false, { asasAbertas: true });
   else if (vivo.item.ambiente) animateAmbience(vivo.objeto, tempo);
   else if (vivo.objeto.userData.algas) swaySeaweed(vivo.objeto, tempo);
+  else if (vivo.animaveis.length && !vivo.item.unicornio) vivo.animaveis.forEach((animar) => animar(tempo, 0.3));
   else if (vivo.objeto.userData.kind === 'chest') {
     const antes = vivo.tBau;
     vivo.tBau = (vivo.tBau + dt) % BAU_CICLO;
