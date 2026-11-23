@@ -764,6 +764,13 @@ export class World {
     this.entities.push(obj);
   }
 
+  // Tira da pista tudo o que nasceu nela (obstáculos, prêmios, power-ups),
+  // sem mexer no resto — as faíscas de um enfeite recém-vestido continuam.
+  limparItens() {
+    for (const e of this.entities) this.group.remove(e);
+    this.entities.length = 0;
+  }
+
   // `semItens`: o cenário corre, mas nenhuma linha nova nasce — a pista
   // vazia do lobby (ver Game.tick).
   update(dt, speed, difficulty, elapsed, { semItens = false } = {}) {

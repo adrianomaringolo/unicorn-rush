@@ -78,6 +78,10 @@ const BANDEJA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto:
 // A altura do meio do corpo do unicórnio (sem escala): é em volta dela que a
 // cambalhota do lobby gira.
 const MEIO_DO_CORPO = 1.0;
+// As telas em que a pista corre vazia (ver o fim do tick): o lobby e os
+// enfeites — a grade e a confirmação de compra —, onde o que importa é o
+// unicórnio no palco.
+const PALCO_VAZIO = new Set(['home', 'enfeites', 'enfeite-compra']);
 const EIXO_X = new THREE.Vector3(1, 0, 0);
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 const TRUQUES = [
@@ -2923,6 +2927,8 @@ export class Game {
     this.fecharViewer();
     this.state = STATE.READY;
     this.screen = 'enfeites';
+    // A pista dos enfeites é vazia, como a do lobby (ver PALCO_VAZIO).
+    this.world.limparItens();
     this.ui.showPause(false);
     this.ui.setWallet(this.coracoes, true, '💗');
 
@@ -4123,11 +4129,11 @@ export class Game {
       }
     }
 
-    // No lobby a pista corre vazia: sem obstáculo, coração, estrela nem
-    // power-up passando pelo unicórnio — o palco é só dele. (O `reset` do
-    // showHome já tira o que havia na pista; aqui nada novo nasce.)
-    const lobbyVazio = this.state === STATE.READY && this.screen === 'home';
-    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed, { semItens: lobbyVazio });
+    // No lobby e nos enfeites a pista corre vazia: sem obstáculo, coração,
+    // estrela nem power-up passando pelo unicórnio — o palco é só dele. (Quem
+    // abre essas telas já tira o que havia na pista; aqui nada novo nasce.)
+    const palcoVazio = this.state === STATE.READY && PALCO_VAZIO.has(this.screen);
+    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed, { semItens: palcoVazio });
     if (!congelado) {
       animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
       this.updateEchoes(worldSpeed);
