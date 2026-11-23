@@ -46,10 +46,18 @@ const TRACK_LENGTH = Math.abs(SPAWN_DISTANCE) + DESPAWN_DISTANCE;
 // quem tem quatro anos.
 const LESSON_SPAWN_Z = -38;
 
-// O cartão de figurinha: quantas linhas, no mínimo, entre um e outro (~25 s
-// de corrida), a chance de sair depois disso e onde começa a conta — a
-// primeira vem mais cedo (~8 s), senão a corrida curta do Livre nunca via
-// figurinha nenhuma.
+// O cartão de figurinha é um prêmio difícil, não um item a mais:
+//
+//   - no máximo **um por corrida** (uma fase, uma rodada do Desafio ou do
+//     Livre) — se passar sem pegar, foi-se;
+//   - nem toda corrida tem: `chance` é sorteada uma vez, quando ela começa;
+//   - ele nasce numa linha sorteada entre `primeira` e `ultima` (de ~8 s a
+//     ~1 min de corrida). Uma fase curta pode acabar antes — e tudo bem;
+//   - e nasce **no alto** (`ALTURA`), em cima de um obstáculo, fora da faixa
+//     livre: para pegar é preciso pular o obstáculo na hora certa. No Livre,
+//     que não tem obstáculo, ele só flutua alto — ainda é preciso pular.
+//     A colisão só cola a figurinha com os cascos acima de `pular`, a mesma
+//     altura que livra o obstáculo (ver Game.checkCollisions).
 // A chance de nascer um coração (ou estrela) em cada faixa de uma fileira:
 // na faixa livre, que sempre dá para pegar, e nas outras, que disputam
 // lugar com os obstáculos. Os corações compram os enfeites, então eles não
@@ -57,7 +65,7 @@ const LESSON_SPAWN_Z = -38;
 // poucas corridas. Mais escassos, cada enfeite vira uma conquista.
 const COLETA = { livre: 0.3, outras: 0.14 };
 
-const STICKER = { gap: 40, chance: 0.3, start: 28 };
+const STICKER = { chance: 0.4, primeira: 12, ultima: 80, ALTURA: 2.3, pular: 1.1 };
 
 const WAVE_START_Z = 9;
 const WAVE_SPEED = 55;
@@ -109,7 +117,8 @@ export class World {
     this.spawnTimer = 0;
     this.rowsSincePower = 0;      // espaça os power-ups na pista
     this.rowsSinceKey = 99;       // espaça as chaves mágicas do modo Fases
-    this.rowsSinceSticker = STICKER.start;
+    this.rowsSinceSticker = 0;
+    this.stickerRow = Infinity;
     // Quem diz qual figurinha nasce é o Game (ele sabe o que já foi colado):
     // uma função que devolve o id de uma que falta, ou null.
     this.figurinhaQueFalta = null;
@@ -377,7 +386,7 @@ export class World {
     this.entities.length = 0;
     this.spawnTimer = 0;
     this.rowsSincePower = 0;
-    this.rowsSinceSticker = STICKER.start;
+    this.sortearFigurinha();
     this.rowsSinceBarrier = 0;
     this.barrierDone = false;
     this.rowsSinceOverhead = 0;
@@ -500,16 +509,32 @@ export class World {
     return Math.floor(Math.random() * LANES.length);
   }
 
-  // Figurinha: rara, espaçada, e só uma que ainda falta na página da pista.
+  // Se esta corrida vai ter figurinha, e em que linha (ver STICKER).
+  sortearFigurinha() {
+    this.rowsSinceSticker = 0;
+    this.stickerRow = Math.random() < STICKER.chance
+      ? STICKER.primeira + Math.floor(Math.random() * (STICKER.ultima - STICKER.primeira))
+      : Infinity;
+  }
+
+  // Figurinha: uma só por corrida, e só uma que ainda falta na página da
+  // pista. Se a linha sorteada for de barreira, cortina ou power-up, ela
+  // espera a próxima linha que puder.
   rollSticker() {
     if (!this.figurinhaQueFalta) return null;
     this.rowsSinceSticker += 1;
-    if (this.rowsSinceSticker < STICKER.gap) return null;
-    if (Math.random() > STICKER.chance) return null;
+    if (this.rowsSinceSticker < this.stickerRow) return null;
     const id = this.figurinhaQueFalta();
     if (!FIGURINHA[id]) return null;
-    this.rowsSinceSticker = 0;
+    this.stickerRow = Infinity;               // a desta corrida já saiu
     return id;
+  }
+
+  // O cartão no alto: só cola com um pulo (ver STICKER).
+  addSticker(id, lane) {
+    const cartao = createStickerCard(FIGURINHA[id]);
+    cartao.userData.pular = STICKER.pular;
+    this.addEntity(cartao, lane, STICKER.ALTURA);
   }
 
   // Barreira: ocupa as três pistas, então não tem desvio — ou pula, ou bate.
@@ -667,7 +692,6 @@ export class World {
     // Nem a figurinha divide a linha com o power-up ou a chave: cada prêmio
     // raro chega sozinho.
     const stickerId = powerId === null && keyLane === -1 ? this.rollSticker() : null;
-    const card = () => createStickerCard(FIGURINHA[stickerId]);
 
     // Modo Livre (ou uma linha que a Bomba deixou limpa): nada de obstáculo,
     // só itens espalhados pelas pistas — e a chave, que antes era sorteada
@@ -679,7 +703,7 @@ export class World {
       for (let lane = 0; lane < LANES.length; lane++) {
         if (lane === keyLane) this.addEntity(createKey(), lane, 1.2);
         else if (lane === powerLane) this.addEntity(createPowerup(powerId), lane, 1.25);
-        else if (lane === stickerLane) this.addEntity(card(), lane, 1.35);
+        else if (lane === stickerLane) this.addSticker(stickerId, lane);
         else if (Math.random() < 0.32) this.addEntity(this.makeCollectible(), lane, 1.15);
       }
       return;
@@ -687,6 +711,10 @@ export class World {
 
     // Sorteia uma pista livre para o jogador sempre ter saída.
     const freeLane = Math.floor(Math.random() * LANES.length);
+    // A figurinha vai numa das outras, em cima de um obstáculo.
+    const stickerLane = stickerId
+      ? [0, 1, 2].filter((l) => l !== freeLane)[Math.floor(Math.random() * 2)]
+      : -1;
     // No modo Fases quem manda na dificuldade é a fase; nos outros, a
     // velocidade já alcançada.
     const obstacleChance = this.mode.obstacleChance ?? (0.35 + difficulty * 0.25);
@@ -700,12 +728,17 @@ export class World {
       }
 
       if (lane === freeLane) {
-        // O power-up sempre nasce na pista livre, para dar para pegar. A
-        // figurinha também: perder a figurinha por causa de uma pedra na
-        // frente dela seria triste demais.
+        // O power-up sempre nasce na pista livre, para dar para pegar.
         if (powerId !== null) this.addEntity(createPowerup(powerId), lane, 1.25);
-        else if (stickerId) this.addEntity(card(), lane, 1.35);
         else if (Math.random() < COLETA.livre) this.addEntity(this.makeCollectible(), lane, 1.15);
+        continue;
+      }
+
+      // A figurinha: o obstáculo embaixo e o cartão lá em cima. Quem pula
+      // o obstáculo na hora certa passa pelo cartão; quem desvia, perde.
+      if (lane === stickerLane) {
+        this.addEntity(createObstacle(this.track), lane, 0);
+        this.addSticker(stickerId, lane);
         continue;
       }
 

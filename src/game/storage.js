@@ -19,6 +19,11 @@ const DEFAULTS = {
   // `null` = ainda não escolheu. É o que faz a tela de idioma aparecer uma
   // vez só, na primeira abertura (ver Game.showFirstScreen).
   idioma: null,
+  // A missão do dia e o baú arco-íris (ver src/game/missao.js): o progresso
+  // de hoje, a sequência de dias cumpridos e os baús guardados para abrir.
+  missao: null,
+  sequencia: { dias: 0, ultimo: null },
+  baus: 0,
   // A versão que a pessoa mandou ignorar no convite de atualização. Guardar
   // *qual* (e não só "ignorou") é o que faz o convite voltar quando sair
   // uma versão mais nova ainda.

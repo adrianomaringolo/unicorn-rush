@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { createUnicorn, animateUnicorn } from './unicorn.js';
 import { ENFEITES, vestirEnfeites, montarEnfeiteSozinho } from './accessories.js';
 import { modeloDaFigurinha } from './stickers.js';
+import { createRainbowChest } from './chest.js';
 
 // Um retrato por unicórnio, com a assinatura do que ele vestia na foto:
 // trocou o enfeite, só aquele retrato é tirado de novo.
@@ -147,4 +148,30 @@ export function getStickerPortraits(figurinhas, tamanho = 200) {
     renderer.dispose();
   }
   return fotosDeFigurinha;
+}
+
+// A foto do baú arco-íris, para a fileira dos 7 dias da missão. Tirada uma
+// vez só, de frente e um pouco de cima, para o arco-íris da frente aparecer.
+let fotoDoBau = null;
+export function getChestPortrait(tamanho = 160) {
+  if (fotoDoBau) return fotoDoBau;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  renderer.setSize(tamanho, tamanho);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xc9b8ff, 1.5));
+  const sol = new THREE.DirectionalLight(0xfff3d6, 1.4);
+  sol.position.set(2, 6, 6);
+  scene.add(sol);
+  const bau = createRainbowChest();
+  bau.rotation.y = -0.3;
+  scene.add(bau);
+  const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 30);
+  camera.position.set(0.9, 2.2, 4.2);
+  camera.lookAt(0, 0.62, 0);
+  renderer.render(scene, camera);
+  fotoDoBau = renderer.domElement.toDataURL('image/png');
+  bau.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+  renderer.dispose();
+  return fotoDoBau;
 }

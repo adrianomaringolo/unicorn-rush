@@ -5465,6 +5465,11 @@ export function createObstacle(track) {
 export const ALTO_LIVRE = 2.85;
 export const ALTO_BATE = 0.35;
 const TRAVE = 3.75;
+// Com a Pena Mágica o pulo sobe ~5,4 — dá para passar **por cima** da
+// cortina: os cascos acima da trave (e do que fica em cima dela: o tronco,
+// a neve, as bolinhas dos postes). Só com a Pena: sem ela, nem o pulo duplo
+// do Limão deveria virar atalho para a lição de ficar no chão.
+export const ALTO_POR_CIMA = TRAVE + 0.25;
 const POSTE_X = 1.02;            // do meio de uma faixa até a divisa dela
 const ENTRE_FAIXAS = 2.2;        // a distância entre as faixas (LANES, no config)
 

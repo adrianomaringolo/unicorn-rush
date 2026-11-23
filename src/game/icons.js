@@ -68,6 +68,7 @@ const ARQUIVOS = {
   '☀️': 'sun',
   '🌞': 'sun_with_face',
   '🏆': 'trophy',
+  '🎯': 'direct_hit',
   '🐠': 'tropical_fish',
   '🐢': 'turtle',
   '🦄': 'unicorn',

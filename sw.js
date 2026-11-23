@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.51.1';
+const VERSION = 'unicornrush-v0.52.0';
 
 const SHELL = [
   './',
@@ -39,6 +39,7 @@ const SHELL = [
   './src/game/version.js',
   './src/game/update.js',
   './src/game/storage.js',
+  './src/game/missao.js',
   './src/game/i18n.js',
   './src/game/i18n-en.js',
   './src/game/story.js',
@@ -60,6 +61,7 @@ const SHELL = [
   './src/models/viewer3d.js',
   './src/models/accessories.js',
   './src/models/stickers.js',
+  './src/models/chest.js',
   // As onze figuras do livro da história (~1 MB no total). As duas últimas
   // só aparecem para quem libertou todos os amigos, mas entram no cache
   // junto: o service worker instala tudo de uma vez.
@@ -183,6 +185,7 @@ const SHELL = [
   './assets/icones/bell.svg',
   './assets/icones/headphone.svg',
   './assets/icones/dragon.svg',
+  './assets/icones/direct_hit.svg',
   './assets/icones/flag_brazil.svg',
   './assets/icones/flag_united_states.svg',
 ];

@@ -2774,6 +2774,7 @@ html, body {
    as grandes — o `.mini` sozinho as deixaria brancas. */
 .bolha.mini.enfeites .bolha-icone { --sombra: #d63e6d; background: linear-gradient(180deg, #ffc4dc, #ff6f9f); }
 .bolha.mini.album .bolha-icone { --sombra: #2a7fbf; background: linear-gradient(180deg, #b5ecff, #45b0ee); }
+.bolha.mini.missao .bolha-icone { --sombra: #c94a2a; background: linear-gradient(180deg, #ffd9b0, #ff8a5b); }
 /* A história ganha novidade quando o fim dela abre: o mesmo pulso dourado
    que ela tinha no botão comprido. */
 .bolha.historia.nova .bolha-icone { animation: bolha-chama .9s ease-in-out infinite; }
@@ -3431,3 +3432,48 @@ html, body {
   color: #b07a00; background: #fff6d6; border: 2px solid #ffd166; border-radius: 999px; padding: 1px 8px;
 }
 .album-conta { margin: 0; text-align: center; font-size: clamp(12px, 3.3vw, 14px); color: #8a76b0; }
+
+/* --- Missão do dia e baú arco-íris ------------------------------------ */
+.missao { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.missao-cartao {
+  width: 100%; box-sizing: border-box;
+  display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 12px; row-gap: 6px;
+  padding: 12px 14px; border-radius: 22px;
+  background: #fff; border: 3px solid #f0d9ff; box-shadow: 0 4px 0 #d9c2f5;
+}
+.missao-cartao.cumprida { background: #effbea; border-color: #b8f2a8; box-shadow: 0 4px 0 #8fd27e; }
+.missao-emoji { grid-row: span 3; font-size: clamp(40px, 11vw, 56px); line-height: 1; }
+.missao-emoji img { width: 1em; height: 1em; }
+.missao-texto { margin: 0; font-weight: 800; font-size: clamp(17px, 4.8vw, 22px); color: var(--purple); line-height: 1.15; }
+.missao-barra { height: 14px; border-radius: 99px; background: #efe6fb; overflow: hidden; border: 2px solid #e1d2f6; }
+.missao-barra i {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #ff5d6c, #ffa94d, #ffe066, #7bd88f, #5cc1ff, #b197fc);
+  transition: width .6s ease;
+}
+.missao-conta { margin: 0; font-weight: 700; font-size: clamp(13px, 3.6vw, 16px); color: #8a76b0; }
+.missao-sequencia { margin: 0; text-align: center; font-size: clamp(13px, 3.6vw, 16px); color: #8a76b0; line-height: 1.2; }
+.missao-dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(4px, 1.5vw, 8px); width: 100%; }
+.missao-dia {
+  aspect-ratio: 1; display: grid; place-items: center; border-radius: 14px;
+  background: #f6f0ff; border: 2px dashed #d6c3f2;
+  font-weight: 800; font-size: clamp(13px, 3.6vw, 17px); color: #b3a3cf;
+}
+.missao-dia img { width: 70%; height: 70%; }
+.missao-dia.feita { background: #fff1c4; border: 2px solid #ffd166; }
+.missao-dia.bau { background: none; border: none; }
+.missao-dia.bau { overflow: visible; }
+.missao-dia.bau img.bau { width: 135%; height: 135%; max-width: none; margin: 0 -17.5%; object-fit: contain; }
+.missao-baus { margin: 0; font-weight: 800; color: var(--pink); text-align: center; animation: bolha-chama 1.2s ease-in-out infinite; }
+
+.bau-premio-nome {
+  width: fit-content; max-width: 100%; margin: 4px auto; box-sizing: border-box; align-self: center; justify-self: center;
+  opacity: 0; animation: bau-nome .4s 1.3s ease-out forwards;
+  padding: 8px 16px; border-radius: 99px; text-align: center;
+  background: #fff; box-shadow: 0 3px 0 #d9c2f5;
+  font-weight: 800; font-size: clamp(15px, 4.2vw, 19px); color: var(--purple);
+}
+@keyframes bau-nome { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .bau-premio-nome, .missao-baus { animation-duration: .01s; animation-delay: 0s; animation-iteration-count: 1; }
+}

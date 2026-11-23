@@ -11,18 +11,22 @@ import { createUnicorn, animateUnicorn, WING_SCALE } from '../models/unicorn.js'
 import {
   CHARACTERS, CHARACTER_LIST, DEFAULT_CHARACTER, characterPrice, CHARACTER_SLOTS, isFastOn,
 } from '../models/characters.js';
-import { getPortraits, getAccessoryPortraits, getStickerPortraits } from '../models/portraits.js';
+import { getPortraits, getAccessoryPortraits, getStickerPortraits, getChestPortrait } from '../models/portraits.js';
 import { FIGURINHAS, FIGURINHA, figurinhasDaPista, PAGE_REWARD, STICKERS_PER_PAGE } from '../models/stickers.js';
-import { ENFEITES, ENFEITE, vestirEnfeites, VAGAS } from '../models/accessories.js';
+import { ENFEITES, ENFEITE, vestirEnfeites, VAGAS, montarEnfeiteSozinho } from '../models/accessories.js';
 import { createViewer3d } from '../models/viewer3d.js';
 import { getTrackPortraits } from '../models/trackPortraits.js';
-import { ALTO_LIVRE, ALTO_BATE } from '../models/scenery.js';
+import { ALTO_LIVRE, ALTO_BATE, ALTO_POR_CIMA } from '../models/scenery.js';
 import { TRACKS, TRACK_LIST, DEFAULT_TRACK, trackPrice, TRACK_SLOTS } from './tracks.js';
 import { LEVEL_COUNT, levelData } from './levels.js';
+import {
+  missaoDeHoje, diasSeguidos, contarNaMissao, sortearPremio, aplicarPremio, DIAS_PARA_O_BAU,
+} from './missao.js';
 import { World } from './world.js';
 import { createRainbowTrail, updateRainbowTrail, resetRainbowTrail } from '../models/rainbowTrail.js';
-import { POWERUPS, POWERUP_LIST, powerLevelMultiplier, powerLevelCost } from '../models/powerups.js';
-import { createGlow } from '../models/collectibles.js';
+import { POWERUPS, POWERUP_LIST, powerLevelMultiplier, powerLevelCost, createPowerup } from '../models/powerups.js';
+import { createGlow, createKey, createHeart } from '../models/collectibles.js';
+import { createRainbowChest, colocarPremio, animarAbertura } from '../models/chest.js';
 import { createHeartsToKey, updateHeartsToKey, disposeHeartsToKey } from '../models/keyReward.js';
 import { createAuras, updateAuras, FLASH_TIME } from '../models/auras.js';
 import { createCharacterAura, updateCharacterAura } from '../models/characterAura.js';
@@ -126,6 +130,10 @@ const RETRY_HELP = {
 };
 
 // Libera a memória da GPU ao trocar de personagem.
+// O tamanho do baú arco-íris no palco (ver animarBau). Os tempos e a
+// subida do prêmio ficam em ABERTURA, em models/chest.js.
+const BAU = { escala: 1.15 };
+
 function disposeObject(root) {
   root.traverse((obj) => {
     if (!obj.isMesh) return;
@@ -873,6 +881,7 @@ export class Game {
       fases.unlocked = Math.max(fases.unlocked, Math.min(number + 1, LEVEL_COUNT));
       save.stats.wins += 1;
     });
+    this.contarMissao('vitoria');
 
     const hasNext = number < LEVEL_COUNT;
     this.state = STATE.OVER;
@@ -908,7 +917,11 @@ export class Game {
   trackComplete(number, jaTinhaVencido = false) {
     const BONUS_KEYS = 10;
     if (!jaTinhaVencido) {
-      update((save) => { save.stats.keys = (save.stats.keys || 0) + BONUS_KEYS; });
+      // Junto das chaves, um baú arco-íris — o mesmo dos 7 dias de missão.
+      update((save) => {
+        save.stats.keys = (save.stats.keys || 0) + BONUS_KEYS;
+        save.baus = (save.baus || 0) + 1;
+      });
       this.ui.setWallet(this.wallet, true);
     }
     music.play('vitoria');
@@ -919,12 +932,13 @@ export class Game {
       text: jaTinhaVencido
         ? t('{nome} terminou as {total} fases do {pista} de novo! 🎉',
           { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name })
-        : t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁',
+        : t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas e um baú arco-íris. 🎁',
           { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
       html: jaTinhaVencido ? '' : this.chuvaDeChaves(BONUS_KEYS),
       vitoria: true,
       buttons: [
-        { label: t('🌈 Escolher outra pista'), huge: true, onClick: () => this.showTrackPicker() },
+        ...(jaTinhaVencido ? [] : [{ label: t('🌈 Abrir o baú'), huge: true, onClick: () => this.abrirBau() }]),
+        { label: t('🌈 Escolher outra pista'), huge: jaTinhaVencido, secondary: !jaTinhaVencido, onClick: () => this.showTrackPicker() },
         { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: true },
         { label: t('🗺️ Escolher fase'), onClick: () => this.showLevels(), secondary: true },
       ],
@@ -943,6 +957,178 @@ export class Game {
       return `<span class="chave-caindo" style="left:${esquerda}%; animation-delay:${atraso}s">🔑</span>`;
     }).join('');
     return `<div class="chaves-presente">${chaves}</div>`;
+  }
+
+  // ---- Missão do dia e baú arco-íris (ver missao.js) ---------------------
+
+  // Conta um acontecimento para a missão de hoje. A lição do Aprender não
+  // conta: ela é o caminho até as brincadeiras, não uma delas.
+  contarMissao(evento, quanto = 1) {
+    if (this.mode?.scripted || this.mode?.id === 'tutorial') return;
+    let resultado = null;
+    update((save) => { resultado = contarNaMissao(save, evento, quanto); });
+    if (!resultado?.cumpriu) return;
+    sfx.correct();
+    this.ui.toast(resultado.bau
+      ? t('🌈 {n} dias seguidos! Você ganhou um baú arco-íris', { n: resultado.dias })
+      : t('🎯 Missão do dia cumprida!'));
+  }
+
+  // A bolha do lobby: o selo diz se há baú para abrir (🌈) ou se a missão
+  // de hoje já foi (✅). Com baú guardado ela pulsa, como a da história nova.
+  bolhaDaMissao(bolha) {
+    const baus = this.save.baus || 0;
+    const cumprida = missaoDeHoje(this.save).cumprida;
+    const selo = baus ? '🌈' : cumprida ? '✅' : '';
+    return bolha('missao', '🎯', t('Missão'), `mini missao${baus ? ' nova' : ''}`, selo);
+  }
+
+  // A tela da missão: a de hoje com o quanto falta, e a fileira dos 7 dias
+  // até o baú. Quem tem baú guardado abre daqui.
+  showMissao() {
+    this.fecharViewer();
+    this.state = STATE.READY;
+    this.screen = 'missao';
+    this.ui.showPause(false);
+
+    const hoje = missaoDeHoje(this.save);
+    const { missao } = hoje;
+    const texto = t(missao.texto, { n: missao.n });
+    const dias = diasSeguidos(this.save);
+    const baus = this.save.baus || 0;
+    const porcento = Math.round((100 * hoje.feito) / missao.n);
+    // Uma casa por dia; a sétima é o baú. As cumpridas ganham estrela.
+    const casas = Array.from({ length: DIAS_PARA_O_BAU }, (_, i) => {
+      const bau = i === DIAS_PARA_O_BAU - 1;
+      const feita = i < dias;
+      const miolo = bau ? `<img class="bau" src="${getChestPortrait()}" alt="" />` : feita ? '⭐' : String(i + 1);
+      return `<span class="missao-dia${feita ? ' feita' : ''}${bau ? ' bau' : ''}">${miolo}</span>`;
+    }).join('');
+    const avisoBaus = baus === 1 ? t('Você tem um baú arco-íris para abrir!')
+      : baus > 1 ? t('Você tem {n} baús arco-íris para abrir!', { n: baus }) : '';
+
+    this.ui.showOverlay({
+      title: t('🎯 Missão do dia'),
+      html: `
+        <div class="missao">
+          <div class="missao-cartao${hoje.cumprida ? ' cumprida' : ''}">
+            <span class="missao-emoji">${missao.emoji}</span>
+            <p class="missao-texto">${texto}</p>
+            <div class="missao-barra"><i style="width:${porcento}%"></i></div>
+            <p class="missao-conta">${hoje.cumprida
+              ? t('✅ Cumprida! Amanhã tem outra.')
+              : `${hoje.feito} / ${missao.n}`}</p>
+          </div>
+          <p class="missao-sequencia">${t('Cumpra a missão {n} dias seguidos e ganhe um baú arco-íris!', { n: DIAS_PARA_O_BAU })}</p>
+          <div class="missao-dias">${casas}</div>
+          ${avisoBaus ? `<p class="missao-baus">${avisoBaus}</p>` : ''}
+        </div>`,
+      buttons: baus
+        ? [{ label: t('🌈 Abrir o baú'), huge: true, arcoiris: true, onClick: () => this.abrirBau() }]
+        : [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
+      back: () => this.showHome(),
+    });
+    speak(hoje.cumprida ? t('Missão cumprida!') : texto);
+  }
+
+  // Abre um baú guardado: sorteia o prêmio e entrega na hora. Quem mostra
+  // é o palco: o baú 3D toma o lugar do unicórnio, chacoalha, abre a tampa
+  // e o prêmio sobe de dentro dele, girando (ver animarBau). A bandeja de
+  // baixo só traz o nome do prêmio e os botões.
+  abrirBau() {
+    if (!(this.save.baus > 0)) return this.showMissao();
+    this.fecharViewer();
+    this.state = STATE.READY;
+    this.screen = 'bau';
+    this.ui.showPause(false);
+
+    const premio = sortearPremio(this.save, { enfeites: ENFEITES, poderes: POWERUP_LIST });
+    update((save) => {
+      save.baus -= 1;
+      aplicarPremio(save, premio);
+    });
+    this.save = getSave();
+    this.ui.setWallet(this.wallet, premio.tipo === 'chaves');
+    const { modelo, nome } = this.descreverPremio(premio);
+    this.montarBau(modelo, nome);
+    sfx.power();
+
+    const restam = this.save.baus || 0;
+    this.ui.showOverlay({
+      title: t('🌈 Baú arco-íris!'),
+      html: `<p class="bau-premio-nome">${nome}</p>`,
+      buttons: [
+        ...(restam ? [{ label: t('🌈 Outro baú ({n})', { n: restam }), huge: true, arcoiris: true, onClick: () => this.abrirBau() }] : []),
+        ...(premio.tipo === 'enfeite' ? [{ label: t('🎀 Ver os enfeites'), huge: !restam, onClick: () => this.showEnfeites() }] : []),
+        ...(premio.tipo === 'poder' ? [{ label: t('⬆️ Ver os poderes'), huge: !restam, onClick: () => this.showPowerShop() }] : []),
+        { label: t('🏠 Início'), secondary: true, onClick: () => this.showHome() },
+      ],
+      back: () => this.showMissao(),
+    });
+  }
+
+  // O modelo 3D e a frase de cada prêmio.
+  descreverPremio(premio) {
+    if (premio.tipo === 'enfeite') {
+      const enfeite = ENFEITE[premio.id];
+      return {
+        modelo: montarEnfeiteSozinho(premio.id),
+        nome: t('{emoji} Ganhou: {nome}!', { emoji: enfeite.emoji, nome: enfeite.name }),
+      };
+    }
+    if (premio.tipo === 'poder') {
+      const poder = POWERUPS[premio.id];
+      return {
+        // Só o objeto do power-up, sem o halo e o brilho que ele tem na pista.
+        modelo: createPowerup(premio.id).children[0],
+        nome: t('{nome} subiu para o nível {n}!', { nome: poder.name, n: this.save.powerLevels?.[premio.id] ?? 1 }),
+      };
+    }
+    if (premio.tipo === 'chaves') {
+      return { modelo: createKey(), nome: t('+{n} chaves mágicas!', { n: premio.quantos }) };
+    }
+    return { modelo: createHeart(), nome: t('+{n} corações para os enfeites!', { n: premio.quantos }) };
+  }
+
+  // Põe o baú no palco, com o prêmio escondido dentro dele.
+  montarBau(modelo, nome) {
+    this.tirarBau();
+    const bau = createRainbowChest();
+    bau.scale.setScalar(BAU.escala);
+    colocarPremio(bau, modelo);
+    this.scene.add(bau);
+    this.bau = { modelo: bau, t: 0, nome };
+  }
+
+  tirarBau() {
+    if (!this.bau) return;
+    // Só a geometria do baú é dele; os materiais são do módulo, e o prêmio
+    // (coração, chave, power-up) divide geometria com os itens da pista.
+    const { modelo } = this.bau;
+    this.scene.remove(modelo);
+    modelo.userData.balanco.traverse((o) => { if (o.isMesh && o !== modelo.userData.luz) o.geometry.dispose(); });
+    this.bau = null;
+  }
+
+  // A cena do baú, quadro a quadro (a abertura em si é animarAbertura, em
+  // models/chest.js, a mesma da página de modelos). Saiu da tela do baú,
+  // ele sai do palco.
+  animarBau(dt) {
+    if (!this.bau) return;
+    if (this.screen !== 'bau') { this.tirarBau(); return; }
+    const b = this.bau;
+    const antes = b.t;
+    b.t += dt;
+    const x = this.player.x;
+    b.modelo.position.set(x, 0, 0);
+    b.modelo.rotation.y = Math.sin(this.elapsed * 0.8) * 0.25 - 0.15;
+    if (animarAbertura(b.modelo, b.t, this.elapsed, antes)) {
+      const topo = new THREE.Vector3(x, b.modelo.userData.altura * BAU.escala + 0.3, 0);
+      this.world.burst(topo, 0xffd166);
+      this.world.burst(topo, COLORS.heart);
+      sfx.win();
+      speak(b.nome);
+    }
   }
 
   reset() {
@@ -1104,6 +1290,7 @@ export class Game {
             <h1 class="lobby-fala">${t('Vamos correr?')}</h1>
           </div>
           <div class="lobby-rail dir">
+            ${this.bolhaDaMissao(bolha)}
             ${bolha('stats', '📊', t('Estatísticas'), 'mini')}
             ${bolha('about', 'ℹ️', t('Sobre'), 'mini')}
             ${bolha('tutorial', '👆', t('Aprender'), 'mini aprender')}
@@ -1145,6 +1332,7 @@ export class Game {
       if (qual === 'powers') return this.showPowerShop();
       if (qual === 'enfeites') return this.showEnfeites();
       if (qual === 'album') return this.showAlbum();
+      if (qual === 'missao') return this.showMissao();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
       if (qual === 'perfil') return this.showProfileSwitcher();
@@ -1802,7 +1990,7 @@ export class Game {
       animateUnicorn(this.provador, this.elapsed, this.mode.startSpeed * 0.35 * 0.14, true);
     }
 
-    const sai = preview && (this.screen === 'viewer'
+    const sai = preview && (this.screen === 'viewer' || this.screen === 'bau'
       || (this.screen === 'sheet' && (!!this.provador || !!ficha?.oculto)));
     this.unicorn.visible = !sai;
   }
@@ -2984,6 +3172,7 @@ export class Game {
         save.stats.plays[this.track.id] = (save.stats.plays[this.track.id] || 0) + 1;
         save.stats.chars[this.character.id] = (save.stats.chars[this.character.id] || 0) + 1;
       });
+      this.contarMissao('corrida');
     }
     this.reset();
     this.world.placeStart();     // o portal de partida, em toda corrida
@@ -3262,6 +3451,7 @@ export class Game {
       save.stats.wins += 1;
       save.babyLevel += 1;      // da próxima vez a meta é maior
     });
+    this.contarMissao('vitoria');
     const next = this.goal;
 
     this.endRun({
@@ -3308,6 +3498,7 @@ export class Game {
     // O segundo salto é um comando diferente do primeiro, e a lição precisa
     // saber qual dos dois aconteceu.
     this.lessonAction(p.jumps >= 2 ? 'pulo-duplo' : 'pular');
+    this.contarMissao('pulo');
 
     if (primeiro) {
       sfx.jump();
@@ -3433,14 +3624,20 @@ export class Game {
         if (e.userData.dissolving !== undefined) continue;
         if (p.invulnerable > 0 || this.powers.shield > 0 || this.powers.boost > 0) continue;
         // A cortina no alto é o contrário: no chão passa por baixo, e
-        // qualquer pulo já encosta o chifre nela.
-        if (e.userData.alto ? p.y < ALTO_BATE : p.y > 1.1) continue;
+        // qualquer pulo já encosta o chifre nela — menos o super pulo da
+        // Pena Mágica, que leva os cascos acima da trave e passa por cima.
+        if (e.userData.alto) {
+          if (p.y < ALTO_BATE) continue;
+          if (this.powers.feather > 0 && p.y > ALTO_POR_CIMA) continue;
+        } else if (p.y > 1.1) continue;
         this.hit(e);
       } else if (e.userData.kind === 'powerup') {
         this.takePower(e, i);
       } else if (e.userData.kind === 'key') {
         this.collectKey(e, i);
       } else if (e.userData.kind === 'sticker') {
+        // O cartão fica no alto: só cola com um pulo (ver STICKER, world.js).
+        if (p.y < (e.userData.pular ?? 0)) continue;
         this.collectSticker(e, i);
       } else {
         // Corações e estrelas são generosos: pegam mesmo no meio do pulo.
@@ -3485,6 +3682,7 @@ export class Game {
       }
     });
     if (ganhou) this.rewardKey(ganhou);
+    this.contarMissao(isStar ? 'estrela' : 'coracao');
 
     if (this.goal && this.collected >= this.goal) this.victory();
   }
@@ -3526,6 +3724,7 @@ export class Game {
     // As chaves são guardadas para sempre: no futuro elas destravam conteúdo.
     update((save) => { save.stats.keys = (save.stats.keys || 0) + 1; });
     this.ui.setWallet(this.save.stats.keys);
+    this.contarMissao('chave');
 
     // Só nas Fases a chave é meta; no Desafio ela é só a moeda.
     if (this.mode.id === 'levels' && this.keys >= this.mode.keys) this.levelComplete();
@@ -3668,6 +3867,7 @@ export class Game {
     update((save) => {
       save.stats.powers[power.id] = (save.stats.powers[power.id] || 0) + 1;
     });
+    this.contarMissao('poder');
 
     if (power.id === 'life') {
       this.powers.flash = FLASH_TIME;
@@ -3979,6 +4179,7 @@ export class Game {
       lobby = this.enquadrarBandeja();
     }
     this.atualizarProvador(preview);
+    this.animarBau(dt);
     const lado = lobby?.lado || 0;
     const alturaAlvo = lobby ? lobby.height : this.camView.height * (preview ? 0.95 : 1);
     const distanciaAlvo = lobby ? lobby.distance : this.camView.distance * previewZoom;

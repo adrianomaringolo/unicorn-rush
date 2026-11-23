@@ -741,12 +741,12 @@ conhece o jogo e vai direto para o menu: o que distingue os dois casos é um
 
 É uma corrida de verdade — o mesmo mundo, o mesmo
 unicórnio, a mesma pista —, só que a pista **não é sorteada**: é uma lição de
-18 aulas, uma coisa de cada vez, cada uma com a sua frase numa faixa no alto
+19 aulas, uma coisa de cada vez, cada uma com a sua frase numa faixa no alto
 da tela.
 
 A ordem ensina na ordem em que se precisa: primeiro andar de lado, depois o
-que dá para pegar, depois desviar, depois pular a barreira, a chave mágica, e
-só então os power-ups — do mais simples de entender (🛡️ Escudo) ao mais
+que dá para pegar, depois desviar, depois pular a barreira, depois **quando
+não pular** (a cortina no alto), a chave mágica, e só então os power-ups — do mais simples de entender (🛡️ Escudo) ao mais
 espetacular (🌈 Bomba, que fecha). O ⚡ RÁPIDO só entra na lição se o botão
 existir naquela combinação de unicórnio e pista: ensinar um botão que não está
 na tela seria pior do que não ensinar.
@@ -776,9 +776,24 @@ a seta da tela para o botão embaixo do polegar. No teclado a seta é a mesma.
   deixa de ser incentivo e passa a ser instrução: em vez de *"Vamos tentar de
   novo"*, *"⬆️ Toque na seta de cima para pular"*.
 
-São sete aulas que cobram: ir para a esquerda, ir para a direita, sair da
+São oito aulas que cobram: ir para a esquerda, ir para a direita, sair da
 frente de um obstáculo (serve qualquer lado), pular por cima de um obstáculo,
-pular a barreira que atravessa a pista, o **pulo duplo** e o **⚡ RÁPIDO**.
+pular a barreira que atravessa a pista, o **pulo duplo**, **ficar no chão** e
+o **⚡ RÁPIDO**.
+
+### A aula de ficar no chão
+
+Vem logo depois das três aulas de pular, para ensinar o contrário: a
+**cortina no alto** (ver *A cortina no alto*, em *Pular*) cobrindo as três
+faixas, com um coração embaixo. Não há desvio — o único jeito de passar é
+continuar correndo no chão.
+
+Ela é a única aula **ao contrário** (`acao: 'chao'`, em `tutorial.js`): não
+pede movimento nenhum, então já **nasce cumprida** e passa sozinha quando a
+cortina passa. O que reprova é **bater** — pular embaixo dela. Em vez de a
+seta pedir um botão, aparece um ⚠️ em cima do botão de pular, e o botão
+**não** acende: é justamente o que não se deve tocar. Na terceira tentativa o
+aviso vira *"⚠️ Não toque em ⬆️: fique no chão e passe por baixo"*.
 
 Mudar de faixa só conta se o unicórnio **saiu do lugar** — bater na parede da
 pista não é ter aprendido a trocar de faixa. E uma aula de pulo simples se dá
@@ -925,6 +940,9 @@ lugar do cartão de sempre):
   chuva de chaves nem o crédito na carteira, e o texto vira "terminou de
   novo!" em vez de prometer um presente que não vem. Sem essa guarda dava
   para juntar 10 chaves de graça só repetindo uma fase;
+- um **baú arco-íris** (ver [Missão do dia e baú arco-íris](#missão-do-dia-e-baú-arco-íris)),
+  junto com as chaves e com a mesma guarda de "só na primeira vez". O botão
+  grande do cartão passa a ser "🌈 Abrir o baú";
 - um **"parabéns" falado** (`speak`, respeitando a voz ligada ou não, como
   todo o resto), para quem ainda não lê saber que venceu a pista sem precisar
   decifrar o texto;
@@ -992,6 +1010,12 @@ pendura dela crescem com a largura. Nada desce abaixo de `ALTO_LIVRE`
 inteira (`userData.halfWidth`, como a barreira), a partir de um pulinho de
 `ALTO_BATE`. Embaixo dela nascem **corações** na altura de quem passa
 correndo — o prêmio de ficar no chão.
+
+A exceção é a **🪶 Pena Mágica**: o super pulo dela sobe ~5,4, e com os
+cascos acima da trave (`ALTO_POR_CIMA`, 4,0) o unicórnio passa **por cima**
+da cortina. Pular e ficar no meio dela ainda bate. Só a Pena faz isso — o
+pulo duplo de quem já pula alto (o Limão) não, senão viraria atalho para a
+lição de ficar no chão.
 
 Como a barreira, ela toma a linha inteira: nada de obstáculo de chão junto,
 e nunca vem colada nela — no mínimo 4 linhas entre uma cortina e a próxima
@@ -1195,15 +1219,16 @@ unicórnios), com o preço e quantos corações ela tem. **💗 Trocar** compra 
 já deixa vestido; **Agora não** tira e volta para a grade no mesmo lugar.
 Quando faltam corações, o toque chacoalha o enfeite e diz quantos faltam.
 
-São trinta e quatro, em seis **vagas**: um por vaga, como vestir boneca. A
-coroa tira a cartola, mas fica junto dos óculos, do colar, das patas, da
-cauda e do chifre.
+São quarenta e cinco, em sete **vagas**: um por vaga, como vestir boneca. A
+coroa tira a cartola, mas fica junto dos óculos, do colar, das asas, das
+patas, da cauda e do chifre.
 
 | Vaga | Enfeites (preço em 💗) |
 | --- | --- |
 | cabeça | 🎀 Laço 60 · 🪶 Pena no cabelo 70 · 🌸 Coroa de flores 100 · 🎉 Chapéu de festa 140 · 🎧 Fones de ouvido 160 · 🎩 Cartola 250 · 👑 Coroa 400 · 🎅 Gorro de Papai Noel 200 · 🦌 Chifres de rena 250 |
 | rosto | 🍒 Brincos de cereja 90 · 🕶️ Óculos escuros 120 · 😍 Óculos de coração 180 |
 | pescoço | 🦋 Gravatinha 80 · 📿 Colar de pérolas 150 · 🧣 Cachecol 150 · 🔮 Colar de cristal 170 · 🏅 Medalha 200 · 🎄 Guirlanda 180 |
+| asas | 🦇 Asas de morcego 180 · 🦋 Asas de borboleta 220 · 🍭 Asas de doce 230 · ☁️ Asas de nuvem 240 · 🧊 Asas de gelo 260 · 🌈 Asas de arco-íris 280 · ⭐ Asas de estrela 290 · 🛡️ Asas de ferro 300 · 🔥 Asas de fogo 320 · 🐉 Asas de dragão 340 · 🫧 Asas invisíveis 350 |
 | patas | 🌼 Tornozeleira de flores 90 · 🐚 Pulseiras de concha 100 · 🧦 Polainas 120 · 🔔 Sininhos 150 |
 | cauda | 🌺 Flor na cauda 90 · 💖 Coração na cauda 100 · ⭐ Estrela na cauda 110 · 🎈 Balão na cauda 120 · 🎁 Laço de presente 130 |
 | chifre | 🌈 Chifre arco-íris 220 · 💎 Chifre de cristal 260 · ✨ Chifre de ouro 300 · 🌙 Chifre de noite estrelada 200 · 🧊 Chifre de gelo 240 · 🔥 Chifre de fogo 280 · 🍭 Chifre de bengala doce 180 |
@@ -1214,10 +1239,32 @@ cauda e do chifre.
 - **Chifres** trocam o chifre do unicórnio: a peça é montada nas medidas
   do chifre de quem veste (o da Lulu é curtinho, o do Brasa comprido), no
   mesmo lugar, e o original fica escondido enquanto ela estiver vestida.
-- Na grade, eles vêm **por vaga** e, dentro dela, do mais barato ao mais
-  caro.
+- **Asas** também trocam, e por inteiro: em vez de uma peça por cima, as
+  duas asas do unicórnio são montadas de novo com as do enfeite
+  (`trocarAsas`, em `unicorn.js`) e, ao tirar, voltam as dele. O enfeite
+  diz a asa no mesmo formato da de um personagem (`{ style, colors, scale }`)
+  e pode trazer mais três coisas:
+  - `material` — o que muda em cada pena: a transparência das **invisíveis**
+    (quase sumidas, sem sombra no chão) e das **de gelo**;
+  - `brilho` — a asa acende na própria cor (**fogo**, **estrela**, um pouco
+    as invisíveis e as de gelo), e a luz das pistas escuras não mexe nela
+    (`ownGlow`, em `Game.applyTrackGlow`);
+  - `ponta` — algo na ponta de cada pena: a **estrelinha** acesa das asas de
+    estrela ou a **garra** do dedo das asas de dragão.
+
+  Dois formatos de asa existem só para enfeite: `butterfly` (dois lobos
+  redondos de cada lado) e `dragon` (a membrana do morcego, maior e com um
+  dedo a mais). O tamanho é o do personagem vezes o do enfeite — a asa de
+  ferro da Lulu continua pequenininha —, e o ⚡ e a Pena Mágica crescem a
+  asa a partir desse tamanho. Ela fecha na corrida e abre no pulo como
+  qualquer asa.
+- Na grade, cada vaga tem a **sua seção** (🎩 Cabeça, 🕶️ Rosto, 📿 Pescoço,
+  🪶 Asas, 🧦 Patas, 🎀 Cauda, 🦄 Chifre) e, dentro dela, os enfeites vão do
+  mais barato ao mais caro. Ver as vagas separadas também explica por que a
+  coroa tira a cartola: as duas moram na mesma prateleira.
 - **Natal** (os marcados com `natal: true`: gorro, chifres de rena,
-  guirlanda, sininhos, laço de presente e chifre de bengala doce) aparecem numa seção própria da grade.
+  guirlanda, sininhos, laço de presente e chifre de bengala doce) aparecem
+  numa seção própria, no fim da grade, com a fita vermelha e verde.
 
 - **Corações não chovem.** Cada fileira tem 30% de chance de um coração
   (ou estrela) na faixa livre e 14% nas outras (`COLETA` em `world.js`;
@@ -1246,10 +1293,20 @@ boneco de neve da Geada. São 68 ao todo.
 Na corrida, de vez em quando, nasce numa faixa um **cartão dourado**
 girando com o modelo dentro. Passar por ele cola a figurinha no álbum.
 
-- O cartão nasce no máximo a cada **40 linhas** (~25 s), com 30% de chance
-  depois disso. O primeiro vem mais cedo (~8 s), senão a corrida curta do
-  Livre nunca via cartão nenhum. Nunca divide a linha com power-up ou
-  chave, e nas Fases e no Desafio nasce sempre na faixa livre.
+- Figurinha é **prêmio difícil**, não item a mais (`STICKER`, em
+  `world.js`):
+  - **no máximo uma por corrida** (uma fase, uma rodada do Desafio ou do
+    Livre). Passou sem pegar, foi-se;
+  - **nem toda corrida tem**: 40% de chance, sorteada quando ela começa;
+  - ela nasce numa linha sorteada entre a 12ª e a 80ª (de ~8 s a quase um
+    minuto). Fase curta pode acabar antes — por isso nas primeiras fases
+    ela é rara (~10–20% das corridas) e nas mais longas aparece em ~35–55%;
+  - e nasce **no alto, em cima de um obstáculo**, numa faixa que não é a
+    livre: para pegar é preciso **pular o obstáculo na hora certa**. Quem
+    desvia, perde. O cartão só cola com os cascos acima de 1,1 — a mesma
+    altura que livra o obstáculo. No Livre, que não tem obstáculo, ele só
+    flutua alto, e ainda assim é preciso pular.
+- Nunca divide a linha com power-up ou chave, nem com barreira ou cortina.
 - Só nasce figurinha que **ainda falta** na página da pista, então a página
   sempre anda. Com ela completa, não nasce mais nenhuma.
 - No álbum, **tocar numa figurinha colada** abre ela grande (o cartão
@@ -1267,6 +1324,82 @@ figurinha, basta mudar o nome do modelo lá: é o mesmo nome das listas de
 confere que toda pista tem as quatro e que todo cartão sai com o modelo
 dentro. Modelo que é só um brilho (o vaga-lume) não serve, porque a foto
 vira uma mancha.
+
+## Missão do dia e baú arco-íris
+
+A bolha 🎯 **Missão** do lobby (na lateral direita) abre a missão de hoje:
+uma meta pequena, que cabe em uma a três corridas, com o ícone, a barra de
+progresso e o texto lido em voz alta.
+
+| Missão | Meta |
+| --- | --- |
+| 💗 Pegue corações | 30 |
+| ⭐ Pegue estrelas | 5 |
+| ⬆️ Pule | 25 vezes |
+| ✨ Pegue power-ups | 3 |
+| 🔑 Junte chaves mágicas | 2 |
+| 🏃 Corra | 3 vezes |
+| 🏆 Vença uma fase ou a meta do Livre | 1 |
+
+- A missão é **sorteada pela data** (no relógio do aparelho): a mesma o dia
+  inteiro, outra no dia seguinte, e **nunca a mesma de ontem**.
+- O progresso conta em **todas as brincadeiras** (Livre, Fases, Desafio),
+  menos na lição do Aprender (`Game.contarMissao`).
+- Cumprida, vem um aviso; a bolha ganha o selo ✅ até o dia virar.
+- **Sequência**: cada missão cumprida num dia seguido ao da anterior acende
+  uma estrela na fileira de 7 casas. **Pulou um dia, a conta recomeça.** Na
+  sétima casa está o baú: **7 dias seguidos valem um baú arco-íris**, e a
+  fileira volta a zero.
+
+### O baú arco-íris
+
+O prêmio grande do jogo. Ganha-se de dois jeitos:
+- 7 dias seguidos de missão cumprida;
+- terminar as **doze fases de uma pista** (só na primeira vez, junto das 10
+  chaves).
+
+O baú fica guardado (`save.baus`) até a criança abrir. Com baú guardado, a
+bolha 🎯 pisca com o selo 🌈 e a tela da missão troca o JOGAR por
+"🌈 Abrir o baú". Ao abrir, ele sorteia **um** prêmio:
+
+| Prêmio | Peso | Quanto |
+| --- | --- | --- |
+| 🎀 um enfeite que ela **ainda não tem** | 30 | — |
+| ⬆️ **+1 nível** num power-up (o mesmo da loja de poderes) | 25 | — |
+| 💗 corações para os enfeites | 25 | 60 a 150 |
+| 🔑 chaves mágicas | 20 | 3 a 8 |
+
+Quando ela já tem todos os enfeites, o enfeite sai do sorteio.
+
+**A cena**: o baú é um modelo 3D (`createRainbowChest`, em
+`src/models/chest.js`):
+- arca lilás de tábuas, com cintas e cantoneiras douradas e uma tampa
+  abaulada rosa;
+- na frente, o fecho com o buraco da chave e o símbolo de um **pequeno
+  arco-íris entre duas nuvens**.
+
+Ele toma o lugar do unicórnio no palco e a cena segue nesta ordem
+(`Game.animarBau`):
+1. chacoalha cada vez mais forte por um segundo;
+2. a tampa abre para trás com um tranco e uma explosão de brilhos;
+3. a luz de dentro acende;
+4. o prêmio sobe de dentro do baú girando, já em 3D (o enfeite, o power-up,
+   a chave ou o coração), e fica flutuando em cima dele.
+
+A bandeja de baixo só traz o nome do prêmio, que também é lido em voz
+alta, e os botões.
+
+A abertura é uma função do próprio modelo, `animarAbertura`, com os tempos
+e a subida do prêmio em `ABERTURA` (`chest.js`). O jogo e a página de
+modelos usam a mesma: em `/modelos`, o cartão **Baú arco-íris** abre de perto
+em loop, com um prêmio sorteado dentro, e o 🎲 Outro troca o prêmio. O
+tamanho do baú no palco do jogo fica em `BAU`, no topo do `Game.js`. A fileira dos 7 dias usa uma foto do mesmo modelo
+(`getChestPortrait`).
+
+Tudo que é regra (o sorteio da missão, a sequência, o sorteio do prêmio)
+está em `src/game/missao.js`, sem tela. O `npm run check` passa 30 dias
+por ele: missão nunca repetida, 7 dias dando baú, dia pulado zerando a
+conta, e o baú dando os quatro tipos de prêmio sem repetir enfeite.
 
 ## O que o jogo lembra
 
@@ -2452,8 +2585,8 @@ ao que deixa a corrida mais viva:
 - [x] 📒 **Álbum de figurinhas**: um bicho ou objeto raro na beira da pista
   (papagaio, disco voador, formiga) vale figurinha ao passar perto; uma
   página por pista.
-- [ ] 🎯 **Missão do dia**: uma meta por dia, com ícones e lida em voz alta,
-  que paga um baú de chaves.
+- [x] 🎯 **Missão do dia**: uma meta por dia, com ícones e lida em voz alta;
+  7 dias seguidos valem um baú arco-íris.
 - [ ] 🌈 **Trechos especiais**: alguns segundos em que a pista vira outra
   coisa (ponte de arco-íris só com estrelas, túnel escuro, trecho voando).
 - [ ] 🎶 **Fileiras que tocam música**: cada coração de uma fileira toca uma

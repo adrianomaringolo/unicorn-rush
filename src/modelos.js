@@ -18,6 +18,7 @@ import {
   createWaveCrest, createDistanceMarker, createStartLine, createRecordBanner,
 } from './models/scenery.js';
 import { createHeart, createStar, createKey } from './models/collectibles.js';
+import { createRainbowChest, colocarPremio, animarAbertura, ABERTURA } from './models/chest.js';
 import { POWERUP_LIST, createPowerup, createRainbowWave } from './models/powerups.js';
 import { ENFEITES, vestirEnfeites, montarEnfeiteSozinho } from './models/accessories.js';
 import { FIGURINHAS, createStickerCard, figurinhasDaPista } from './models/stickers.js';
@@ -261,6 +262,12 @@ const GRUPOS = [
           neutro({ nome: 'Coração', codigo: 'createHeart', criar: createHeart }),
           neutro({ nome: 'Estrela', codigo: 'createStar', criar: createStar }),
           neutro({ nome: 'Chave mágica', codigo: 'createKey', criar: createKey }),
+          neutro({
+            nome: 'Baú arco-íris',
+            codigo: 'createRainbowChest',
+            criar: bauComPremio,
+            info: 'Abra de perto para ver a abertura; 🎲 Outro sorteia outro prêmio',
+          }),
           // O cartão dourado do álbum; o modelo de dentro muda por pista
           // (todos estão na seção de cada pista, como enfeite ou obstáculo).
           neutro({ nome: 'Cartão de figurinha', codigo: 'createStickerCard', criar: () => createStickerCard(FIGURINHAS[0]) }),
@@ -312,6 +319,24 @@ function descartar(objeto) {
 // O unicórnio usa um enquadramento fixo, o mesmo do visualizador da ficha:
 // é ele que deixa o Brasa grande e a Lulu pequenininha, como no jogo. (O do
 // retrato da grade, 6,33, corta a ponta do rabo num cartão quadrado.)
+// O baú arco-íris com um prêmio guardado dentro, como no jogo: um enfeite
+// sorteado, uma chave, um coração ou um power-up. A foto do catálogo sai com
+// ele fechado; de perto, ele abre em loop (ver BAU_CICLO).
+const PREMIOS_DO_BAU = [
+  () => montarEnfeiteSozinho(ENFEITES[Math.floor(Math.random() * ENFEITES.length)].id),
+  () => createKey(),
+  () => createHeart(),
+  () => createPowerup(POWERUP_LIST[Math.floor(Math.random() * POWERUP_LIST.length)].id).children[0],
+];
+function bauComPremio() {
+  const bau = createRainbowChest();
+  colocarPremio(bau, PREMIOS_DO_BAU[Math.floor(Math.random() * PREMIOS_DO_BAU.length)]());
+  return bau;
+}
+// Um ciclo da abertura na página: chacoalha, abre, fica aberto um tempo
+// para ver o prêmio, e recomeça fechado.
+const BAU_CICLO = ABERTURA.abre + 4.5;
+
 function enquadrarUnicornio(camera) {
   camera.position.set(-6.9, 2.05, 0.2);
   camera.lookAt(0, 1.68, 0.2);
@@ -485,6 +510,9 @@ function montar(item) {
     vivo.camera.far = 60;
     vivo.camera.updateProjectionMatrix();
   } else {
+    // O baú é enquadrado aberto, com o prêmio no alto: senão o prêmio sai
+    // da foto quando sobe.
+    if (objeto.userData.kind === 'chest') animarAbertura(objeto, BAU_CICLO, 0);
     const centro = enquadrar(vivo.camera, objeto);
     objeto.position.sub(centro);
     pivo.position.copy(centro);
@@ -492,6 +520,7 @@ function montar(item) {
   pivo.add(objeto);
   vivo.objeto = objeto;
   vivo.base = objeto.position.clone();
+  vivo.tBau = 0;
   cena.add(pivo);
 }
 
@@ -554,6 +583,11 @@ function quadro() {
   if (vivo.item.unicornio) animateUnicorn(vivo.objeto, tempo, 2.4, true, false, { asasAbertas: true });
   else if (vivo.item.ambiente) animateAmbience(vivo.objeto, tempo);
   else if (vivo.objeto.userData.algas) swaySeaweed(vivo.objeto, tempo);
+  else if (vivo.objeto.userData.kind === 'chest') {
+    const antes = vivo.tBau;
+    vivo.tBau = (vivo.tBau + dt) % BAU_CICLO;
+    animarAbertura(vivo.objeto, vivo.tBau, tempo, vivo.tBau < antes ? -1 : antes);
+  }
   vivo.renderer.render(vivo.cena, vivo.camera);
   requestAnimationFrame(quadro);
 }
