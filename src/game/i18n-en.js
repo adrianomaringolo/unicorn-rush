@@ -382,8 +382,8 @@ export const EN = {
     '{nome} collected all {chaves} keys. Level {proxima} is open!',
   '▶️ Próxima fase': '▶️ Next level',
   '🏆 Pista vencida!': '🏆 Track cleared!',
-  '{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas. 🎁':
-    '{nome} finished all {total} levels of {pista}! Here\'s a gift of {chaves} magic keys. 🎁',
+  '{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas e um baú arco-íris. 🎁':
+    '{nome} finished all {total} levels of {pista}! As a gift, {chaves} magic keys and a rainbow chest. 🎁',
   '{nome} terminou as {total} fases do {pista} de novo! 🎉':
     '{nome} finished all {total} levels of {pista} again! 🎉',
   '🌈 Escolher outra pista': '🌈 Choose another track',
@@ -780,4 +780,42 @@ export const EN = {
   'Árvore da selva': 'Jungle tree',
   'Cipó': 'Vine',
   'Nó de cipós': 'Vine knot',
+
+  // Missão do dia e baú arco-íris
+  'Missão': 'Quest',
+  '🎯 Missão do dia': '🎯 Daily quest',
+  'Pegue {n} corações': 'Grab {n} hearts',
+  'Pegue {n} estrelas': 'Grab {n} stars',
+  'Pule {n} vezes': 'Jump {n} times',
+  'Pegue {n} power-ups': 'Grab {n} power-ups',
+  'Junte {n} chaves mágicas': 'Collect {n} magic keys',
+  'Corra {n} vezes': 'Run {n} times',
+  'Vença uma fase ou a meta do Livre': 'Win a level or reach the Free Play goal',
+  '✅ Cumprida! Amanhã tem outra.': '✅ Done! A new one comes tomorrow.',
+  'Missão cumprida!': 'Quest complete!',
+  '🎯 Missão do dia cumprida!': '🎯 Daily quest complete!',
+  'Cumpra a missão {n} dias seguidos e ganhe um baú arco-íris!': 'Complete the quest {n} days in a row to win a rainbow chest!',
+  'Você tem um baú arco-íris para abrir!': 'You have a rainbow chest to open!',
+  'Você tem {n} baús arco-íris para abrir!': 'You have {n} rainbow chests to open!',
+  '🌈 {n} dias seguidos! Você ganhou um baú arco-íris': '🌈 {n} days in a row! You won a rainbow chest',
+  '🌈 Abrir o baú': '🌈 Open the chest',
+  '🌈 Baú arco-íris!': '🌈 Rainbow chest!',
+  '🌈 Outro baú ({n})': '🌈 Another chest ({n})',
+  '🎀 Ver os enfeites': '🎀 See the accessories',
+  '⬆️ Ver os poderes': '⬆️ See the powers',
+  '{emoji} Ganhou: {nome}!': '{emoji} You got: {nome}!',
+  '{nome} subiu para o nível {n}!': '{nome} went up to level {n}!',
+  '+{n} chaves mágicas!': '+{n} magic keys!',
+  '+{n} corações para os enfeites!': '+{n} hearts for accessories!',
+
+  // Sapatos e caudas novas
+  'Tênis': 'Sneakers',
+  'Galochas': 'Rain boots',
+  'Sapatilhas de balé': 'Ballet slippers',
+  'Patins': 'Roller skates',
+  'Cauda de raposa': 'Fox tail',
+  'Cauda de leão': 'Lion tail',
+  'Cauda trançada': 'Braided tail',
+  'Cauda de pavão': 'Peacock tail',
+  'Cauda de fogo': 'Fire tail',
 };

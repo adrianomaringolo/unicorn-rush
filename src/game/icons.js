@@ -68,6 +68,7 @@ const ARQUIVOS = {
   '☀️': 'sun',
   '🌞': 'sun_with_face',
   '🏆': 'trophy',
+  '🎯': 'direct_hit',
   '🐠': 'tropical_fish',
   '🐢': 'turtle',
   '🦄': 'unicorn',
@@ -128,6 +129,14 @@ const ARQUIVOS = {
   '🔔': 'bell',
   '🎧': 'headphone',
   '🐉': 'dragon',
+  '👟': 'athletic_shoe',
+  '👢': 'womans_boot',
+  '🩰': 'ballet_shoes',
+  '🛼': 'roller_skate',
+  '🦊': 'fox',
+  '🦁': 'lion',
+  '🪢': 'knot',
+  '🦚': 'peacock',
 };
 
 // O mesmo emoji aparece com e sem o seletor de variação (U+FE0F) dependendo

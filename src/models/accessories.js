@@ -277,6 +277,350 @@ function coracaoGordo(t, cor, emissivo = 0x5a1030) {
 // `preco` em corações. Uma corrida tranquila no Livre rende uns 40–80, então
 // o laço sai na primeira corrida e a coroa pede umas cinco ou seis: logo o
 // primeiro, e sempre um próximo para querer.
+// --- Sapatos ----------------------------------------------------------------
+//
+// O casco é um cilindro de raio 0,12 e altura 0,16·L, centrado a -0,44·L do
+// joelho (ver createUnicorn): vai de -0,52·L (o chão) a -0,36·L. O sapato
+// abraça o casco por fora, com a sola embaixo e o bico para a frente (-z,
+// para onde o unicórnio olha).
+const CASCO = { raio: 0.12, base: (L) => -0.52 * L, topo: (L) => -0.36 * L };
+
+// O corpo de um sapato: cano (cilindro um pouco mais largo que o casco),
+// biqueira (meia esfera na frente) e sola. Devolve o grupo e as medidas
+// para quem quiser enfeitar.
+function sapato(L, { cor, sola, cano = 1, solaAlta = 0.035, biqueira = cor }) {
+  const g = new THREE.Group();
+  const base = CASCO.base(L);
+  const altura = (CASCO.topo(L) - base) * cano + 0.02;
+  const raio = CASCO.raio + 0.022;
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 1.04, altura, 10), mat(cor));
+  corpo.position.y = base + solaAlta + altura / 2;
+  g.add(corpo);
+  // A biqueira arredondada, puxada para a frente.
+  const bico = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.95, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(biqueira));
+  bico.scale.set(1, 0.9, 1.45);
+  bico.position.set(0, base + solaAlta, -0.06);
+  g.add(bico);
+  // A sola, mais comprida que o sapato na frente.
+  const solado = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.08, raio * 1.08, solaAlta, 12), mat(sola));
+  solado.scale.z = 1.4;
+  solado.position.set(0, base + solaAlta / 2, -0.06);
+  g.add(solado);
+  return { g, base, altura, raio, solaAlta };
+}
+
+// --- Caudas que trocam o rabo inteiro --------------------------------------
+//
+// O rabo de verdade sai da garupa descendo por -y (o grupo dele é que fica
+// inclinado para trás, ver animateUnicorn). As caudas de enfeite seguem a
+// mesma direção e trazem `userData.animar(tempo, vento)`, chamado a cada
+// quadro.
+
+// Uma língua de fogo: perfil de gota (redondo na base, pontudo e um pouco
+// torto na ponta) girado em volta do eixo, nascendo com a ponta para +y.
+// A cor corre ao longo dela, por vértice: `cores` vai da base à ponta —
+// amarelo-claro embaixo, laranja, vermelho na ponta —, que é o que faz ler
+// como chama e não como uma gota de uma cor só.
+const _cor = new THREE.Color();
+function linguaDeFogo(comprimento, largura, cores, opacidade = 1) {
+  const pontos = [];
+  const N = 10;
+  for (let i = 0; i <= N; i++) {
+    const h = i / N;
+    // Engorda rápido logo no começo e afina devagar até a ponta.
+    const r = largura * Math.sin(Math.min(Math.PI / 2, h * 4.5)) * (1 - h) ** 1.3;
+    pontos.push(new THREE.Vector2(i === 0 ? 0.001 : Math.max(0.001, r), h * comprimento));
+  }
+  const geo = new THREE.LatheGeometry(pontos, 8);
+  const pos = geo.attributes.position;
+  const cor = new Float32Array(pos.count * 3);
+  const paleta = cores.map((c) => new THREE.Color(c));
+  for (let v = 0; v < pos.count; v++) {
+    const h = pos.getY(v) / comprimento;
+    const x = h * (paleta.length - 1);
+    const k = Math.min(paleta.length - 2, Math.floor(x));
+    _cor.copy(paleta[k]).lerp(paleta[k + 1], x - k);
+    cor.set([_cor.r, _cor.g, _cor.b], v * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+  const material = new THREE.MeshBasicMaterial({
+    vertexColors: true, transparent: opacidade < 1, opacity: opacidade, depthWrite: opacidade >= 1,
+  });
+  const m = new THREE.Mesh(geo, material);
+  m.userData.ownGlow = true;
+  return m;
+}
+
+// A cauda de fogo: uma labareda comprida feita de línguas umas dentro das
+// outras — vermelha por fora, laranja, e o miolo quase branco —, que
+// tremem e esticam o tempo todo, com lambidas saindo pelos lados e
+// faíscas voando da ponta. Tudo em material sem sombra (`MeshBasic`): fogo
+// não escurece do lado de lá, ele brilha.
+function caudaDeFogo() {
+  const g = new THREE.Group();
+  const linguas = [];
+  const NOS = 6;
+  // Três camadas, uma dentro da outra: a de fora vermelha e translúcida (o
+  // miolo aparece através dela), a do meio laranja e o miolo claro.
+  const camadas = [
+    { cores: [0xffa02e, 0xff4a1a, 0xc8141e], larg: 1, comp: 1, op: 0.66 },
+    { cores: [0xffe066, 0xffa21f, 0xff5a1f], larg: 0.66, comp: 0.85, op: 0.8 },
+    { cores: [0xfffbe0, 0xfff09a, 0xffc23a], larg: 0.36, comp: 0.66, op: 1 },
+  ];
+  for (let i = 0; i < NOS; i++) {
+    const t = i / (NOS - 1);
+    const no = new THREE.Group();
+    no.position.set(0, -0.04 - t * 1.0, t * t * 0.16);
+    for (const [k, c] of camadas.entries()) {
+      const l = linguaDeFogo(0.66 * c.comp * (1 - t * 0.4), 0.23 * c.larg * (1 - t * 0.55), c.cores, c.op);
+      l.rotation.x = Math.PI;               // ponta para -y, como o rabo
+      l.renderOrder = 2 + k;
+      l.userData.fase = i * 1.3 + k * 0.7;
+      l.userData.base = l.scale.clone();
+      no.add(l);
+      linguas.push(l);
+    }
+    g.add(no);
+  }
+  // As lambidas: línguas finas e tortas saindo para os lados e para cima,
+  // como as pontas que escapam de uma fogueira.
+  for (let i = 0; i < 10; i++) {
+    const t = 0.08 + (i / 9) * 0.85;
+    const a = i * 2.4;
+    const l = linguaDeFogo(0.34 * (1 - t * 0.35), 0.075 * (1 - t * 0.3),
+      i % 3 ? [0xffd04a, 0xff6a1f, 0xd81e1e] : [0xfff4b0, 0xffb02e, 0xff5a1f], 0.85);
+    l.rotation.set(Math.PI + 0.5 + Math.sin(a) * 0.2, 0, Math.cos(a) * 0.9);
+    l.position.set(Math.cos(a) * 0.08, -0.06 - t * 0.95, t * t * 0.16 + Math.sin(a) * 0.05);
+    l.userData.fase = i * 2.1;
+    l.userData.base = l.scale.clone();
+    l.userData.lambida = true;
+    l.renderOrder = 5;
+    g.add(l);
+    linguas.push(l);
+  }
+  // A raiz: a brasa clara de onde o fogo nasce.
+  const raiz = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc94a }));
+  raiz.scale.set(1, 0.8, 1);
+  raiz.position.y = -0.03;
+  raiz.userData.ownGlow = true;
+  g.add(raiz);
+  // As faíscas: sobem da cauda e somem, em ciclo.
+  const faiscas = [];
+  const faiscaGeo = new THREE.OctahedronGeometry(0.035, 0);
+  for (let i = 0; i < 10; i++) {
+    const f = new THREE.Mesh(faiscaGeo, new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffe58a : 0xffa23a }));
+    f.userData = { ownGlow: true, ciclo: i / 10, lado: ((i * 37) % 10) / 10 - 0.5 };
+    g.add(f);
+    faiscas.push(f);
+  }
+  g.userData.animar = (tempo, vento = 0) => {
+    for (const l of linguas) {
+      const f = l.userData.fase;
+      const estica = 1 + Math.sin(tempo * 13 + f) * 0.18 + Math.sin(tempo * 23 + f * 2) * 0.09 + vento * 0.15;
+      const engorda = 1 + Math.sin(tempo * 17 + f * 1.7) * 0.12;
+      l.scale.set(l.userData.base.x * engorda, l.userData.base.y * estica, l.userData.base.z * engorda);
+      if (!l.userData.lambida) l.rotation.z = Math.sin(tempo * 9 + f) * 0.1;
+    }
+    for (const f of faiscas) {
+      const u = (tempo * 0.9 + f.userData.ciclo) % 1;
+      f.position.set(
+        f.userData.lado * 0.4 + Math.sin(tempo * 6 + f.userData.ciclo * 20) * 0.06,
+        -0.2 - u * 1.2,
+        0.12 + u * 0.4,
+      );
+      f.scale.setScalar(Math.max(0.001, (1 - u) * 1.3));
+      f.rotation.set(tempo * 5, tempo * 4, 0);
+    }
+  };
+  return g;
+}
+
+// Cauda de leão: uma corda fina cor de areia que cai e vira na ponta, com o
+// tufo escuro e cheio lá no fim. Balança como chicote, de um lado a outro.
+function caudaDeLeao() {
+  const g = new THREE.Group();
+  const curva = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, -0.45, 0.04),
+    new THREE.Vector3(0, -0.9, 0.16),
+    new THREE.Vector3(0, -1.2, 0.4),
+  ]);
+  const corda = new THREE.Mesh(new THREE.TubeGeometry(curva, 16, 0.05, 7), mat(0xd9a45a));
+  g.add(corda);
+  const raiz = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), mat(0xd9a45a));
+  g.add(raiz);
+  // O tufo: tufinhos (cones) apontando para fora de um miolo, em volta da
+  // ponta — fofo, e não uma bola lisa.
+  const tufo = new THREE.Group();
+  tufo.position.copy(curva.getPoint(1));
+  const escuro = mat(0x6b3a1a);
+  const miolo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 0), escuro);
+  tufo.add(miolo);
+  const direcoes = [];
+  for (let i = 0; i < 14; i++) {
+    const y = 1 - (i / 13) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const a = i * 2.4;
+    direcoes.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
+  }
+  for (const d of direcoes) {
+    const fio = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 5), mat(d.y < 0 ? 0x5a2f14 : 0x7d4520));
+    fio.position.copy(d).multiplyScalar(0.12);
+    fio.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+    tufo.add(fio);
+  }
+  g.add(tufo);
+  g.userData.animar = (tempo, vento = 0) => {
+    g.rotation.z = Math.sin(tempo * 3.2) * (0.35 - vento * 0.15);
+    tufo.rotation.z = Math.sin(tempo * 3.2 - 1.2) * 0.5;
+    tufo.rotation.x = Math.sin(tempo * 2.1) * 0.25;
+  };
+  return g;
+}
+
+// Cauda trançada: três mechas que se cruzam (o desenho de um oito de lado,
+// cada uma defasada um terço da volta), afinando até o elástico, de onde sai
+// o pincelzinho da ponta. As cores vêm da crina de quem veste.
+function caudaTrancada(cores = [0xff8fc6, 0xc39bff, 0x7fd4ff]) {
+  const g = new THREE.Group();
+  const COMP = 1.05;
+  const tres = [0, 1, 2].map((k) => cores[k % cores.length]);
+  tres.forEach((cor, k) => {
+    const pontos = [];
+    for (let i = 0; i <= 40; i++) {
+      const u = i / 40;
+      const fase = u * Math.PI * 2 * 3.2 + (k * Math.PI * 2) / 3;
+      const amplo = 0.075 * (1 - u * 0.45);
+      pontos.push(new THREE.Vector3(Math.sin(fase) * amplo, -u * COMP, Math.sin(fase * 2) * amplo * 0.45 + u * u * 0.15));
+    }
+    const mecha = new THREE.Mesh(
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 80, 0.058, 7),
+      mat(cor),
+    );
+    g.add(mecha);
+  });
+  // O elástico na raiz e outro no fim da trança.
+  g.add(anel(0.1, 0.028, 0xffd166, -0.02));
+  const fim = new THREE.Vector3(0, -COMP, 0.15);
+  const elastico = anel(0.07, 0.026, 0xffd166);
+  elastico.position.copy(fim);
+  g.add(elastico);
+  // O pincel: as três cores abrindo um pouco depois do elástico.
+  const pincel = new THREE.Group();
+  pincel.position.copy(fim);
+  tres.forEach((cor, k) => {
+    const a = (k / 3) * Math.PI * 2;
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.3, 6), mat(cor));
+    ponta.rotation.set(Math.PI + Math.sin(a) * 0.25, 0, Math.cos(a) * 0.25);
+    ponta.position.set(Math.cos(a) * 0.03, -0.15, Math.sin(a) * 0.03);
+    pincel.add(ponta);
+  });
+  g.add(pincel);
+  // Um laço no elástico de baixo.
+  const lacinho = laco(0xff5d8f, 0.8, { pontas: false });
+  lacinho.position.copy(fim).add(new THREE.Vector3(0, 0.02, 0.08));
+  lacinho.rotation.x = 0.5;
+  g.add(lacinho);
+  g.userData.animar = (tempo, vento = 0) => {
+    g.rotation.z = Math.sin(tempo * 2.6) * 0.12;
+    pincel.rotation.x = Math.sin(tempo * 4) * 0.25 - vento * 0.2;
+  };
+  return g;
+}
+
+// Cauda de raposa: grossa e fofa no meio, laranja, com a ponta branca
+// fechando **fina**, em bico. São "bolotas" facetadas, cada vez mais gordas
+// até o meio e afinando de novo, um pouco sobrepostas para virar uma
+// silhueta só; o bico é um cone branco que sai da última.
+function caudaDeRaposa() {
+  const g = new THREE.Group();
+  const bolotas = [];
+  const N = 9;
+  const COMP = 1.05;
+  // O raio ao longo da cauda: engorda logo, e no fim cai quase a zero.
+  const raioEm = (t) => (0.08 + 0.18 * Math.sin(Math.PI * t ** 0.75)) * (1 - 0.8 * t ** 3);
+  const ondeEm = (t) => new THREE.Vector3(0, -t * COMP, t * t * 0.3);
+  for (let i = 0; i < N; i++) {
+    const t = (i / (N - 1)) * 0.86;
+    const cor = t > 0.68 ? 0xfffaf0 : t > 0.58 ? 0xffd9b0 : 0xff8a3d;
+    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(raioEm(t), 1), mat(cor));
+    b.scale.set(1, 1.15, 0.92);
+    b.position.copy(ondeEm(t));
+    b.userData.t = t;
+    g.add(b);
+    bolotas.push(b);
+  }
+  // O bico: do centro da última bolota, na direção em que a cauda segue.
+  const tFim = 0.86;
+  const direcao = new THREE.Vector3(0, -COMP, 0.6 * tFim).normalize();
+  const comprimentoBico = 0.34;
+  const bico = new THREE.Mesh(new THREE.ConeGeometry(raioEm(tFim) * 1.15, comprimentoBico, 8), mat(0xfffaf0));
+  // O cone nasce com a ponta em +y: é ela que vai na direção da cauda.
+  bico.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direcao);
+  const baseDoBico = ondeEm(tFim).addScaledVector(direcao, comprimentoBico / 2 - 0.04);
+  bico.position.copy(baseDoBico);
+  bico.userData.t = 1;
+  g.add(bico);
+  g.userData.animar = (tempo, vento = 0) => {
+    for (const b of bolotas) {
+      const t = b.userData.t;
+      b.position.x = Math.sin(tempo * 2.4 - t * 2.2) * 0.12 * t;
+      b.position.z = t * t * 0.3 + vento * 0.15 * t;
+    }
+    bico.position.x = Math.sin(tempo * 2.4 - 2.2) * 0.13;
+    bico.position.z = baseDoBico.z + vento * 0.15;
+  };
+  return g;
+}
+
+// Cauda de pavão: um leque de penas compridas abrindo para cima e para trás,
+// cada uma com o "olho" na ponta (dourado, verde e azul). O grupo do rabo
+// fica inclinado para trás; o leque desfaz a inclinação para abrir em pé.
+function caudaDePavao() {
+  const g = new THREE.Group();
+  const leque = new THREE.Group();
+  leque.rotation.x = 0.72 + 0.45;     // desfaz o -0,72 do rabo e deita um pouco para trás
+  const penas = [];
+  const N = 11;
+  for (let i = 0; i < N; i++) {
+    const a = -1.25 + (i / (N - 1)) * 2.5;
+    const comp = 0.95 + (1 - Math.abs(a) / 1.25) * 0.3;
+    const pena = new THREE.Group();
+    pena.rotation.z = a;
+    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, comp, 5), mat(0x2f8f6a));
+    haste.position.y = comp / 2;
+    pena.add(haste);
+    // As barbas: uma folha verde comprida ao longo da haste.
+    const barba = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), mat(0x3fbf7f));
+    barba.scale.set(0.75, comp * 3.4, 0.12);
+    barba.position.y = comp * 0.55;
+    pena.add(barba);
+    // O olho: três discos, um dentro do outro.
+    [[0.15, 0xffd23d], [0.105, 0x2fbf9a], [0.06, 0x2a5fd6]].forEach(([r, cor], k) => {
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.02, 14), mat(cor));
+      d.rotation.x = Math.PI / 2;
+      d.scale.y = 1;
+      d.position.set(0, comp + 0.02 - k * 0.012, 0.015 * (k + 1));
+      pena.add(d);
+    });
+    pena.userData.a = a;
+    leque.add(pena);
+    penas.push(pena);
+  }
+  // A base do leque: um tufinho azul-petróleo.
+  const base = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mat(0x1f6f8f));
+  base.scale.set(1.2, 0.8, 0.8);
+  leque.add(base);
+  leque.scale.setScalar(0.78);
+  g.add(leque);
+  g.userData.animar = (tempo) => {
+    const abre = 1 + Math.sin(tempo * 1.6) * 0.06;
+    for (const p of penas) p.rotation.z = p.userData.a * abre;
+    leque.rotation.y = Math.sin(tempo * 1.1) * 0.08;
+  };
+  return g;
+}
+
 export const ENFEITES = [
   {
     id: 'laco', vaga: 'cabeca', emoji: '🎀', name: 'Laço', preco: 60,
@@ -499,6 +843,100 @@ export const ENFEITES = [
     }),
   },
 
+  {
+    id: 'tenis', vaga: 'patas', emoji: '👟', name: 'Tênis', preco: 160,
+    montar: () => ({
+      perna(L) {
+        // Branco com a biqueira rosa, sola grossa lilás, cadarço cruzado na
+        // frente e uma listra de lado.
+        const { g, base, solaAlta, raio } = sapato(L, { cor: 0xffffff, sola: 0xb69cff, biqueira: 0xff8fc6, solaAlta: 0.05 });
+        for (let i = 0; i < 3; i++) {
+          const y = base + solaAlta + 0.035 + i * 0.035 * L;
+          for (const lado of [-1, 1]) {
+            const cadarco = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.016, 0.016), mat(0xff5d8f));
+            cadarco.position.set(0, y, -raio - 0.004);
+            cadarco.rotation.z = lado * 0.5;
+            g.add(cadarco);
+          }
+        }
+        for (const lado of [-1, 1]) {
+          const listra = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.03, 0.12), mat(0x7fd4ff));
+          listra.position.set(lado * (raio + 0.004), base + solaAlta + 0.05, 0);
+          listra.rotation.x = -0.35;
+          g.add(listra);
+        }
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'botas', vaga: 'patas', emoji: '👢', name: 'Galochas', preco: 140,
+    montar: () => ({
+      perna(L) {
+        // Galochas amarelas de chuva, de cano alto, com a borda virada e uma
+        // bolinha de flor na frente.
+        const { g, base, altura, raio } = sapato(L, { cor: 0xffd23d, sola: 0xe08a1f, cano: 2.6 });
+        const borda = anel(raio + 0.01, 0.024, 0xffe58a, base + altura + 0.03);
+        g.add(borda);
+        const flor = florzinha(0xffffff, 0xff8fc6, 1.1);
+        flor.position.set(0, base + altura * 0.75, -raio - 0.01);
+        flor.rotation.y = Math.PI;
+        g.add(flor);
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'sapatilhas', vaga: 'patas', emoji: '🩰', name: 'Sapatilhas de balé', preco: 150,
+    montar: () => ({
+      perna(L) {
+        // Cetim rosa-claro, baixinhas, com as fitas cruzando a canela até um
+        // lacinho.
+        const { g, base, raio } = sapato(L, { cor: 0xffc4dc, sola: 0xf29bbf, cano: 0.8, solaAlta: 0.02 });
+        const fita = mat(0xff9fc6);
+        for (let i = 0; i < 4; i++) {
+          const tira = new THREE.Mesh(new THREE.TorusGeometry(raio - 0.012, 0.012, 5, 18), fita);
+          tira.rotation.set(Math.PI / 2 + (i % 2 ? 0.35 : -0.35), 0, 0);
+          tira.position.y = base + 0.16 * L + i * 0.05 * L;
+          g.add(tira);
+        }
+        const lacinho = laco(0xff9fc6, 0.55, { pontas: true });
+        lacinho.position.set(0, base + 0.36 * L, -raio + 0.01);
+        lacinho.rotation.y = Math.PI;
+        g.add(lacinho);
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'patins', vaga: 'patas', emoji: '🛼', name: 'Patins', preco: 220,
+    montar: () => ({
+      perna(L) {
+        // Patins de quatro rodinhas: bota lilás, sola, o chassi e as rodas
+        // coloridas, com o freio rosa na frente.
+        const { g, base, raio } = sapato(L, { cor: 0xc39bff, sola: 0xffffff, cano: 1.6, biqueira: 0xb07cff });
+        const roda = (cor) => {
+          const m = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 10), mat(cor));
+          m.rotation.z = Math.PI / 2;
+          return m;
+        };
+        const cores = [0xff5d8f, 0xffd23d, 0x5fd38a, 0x4fb3ff];
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z], i) => {
+          const r = roda(cores[i]);
+          r.position.set(x * (raio * 0.7), base - 0.03, z * 0.085 - 0.03);
+          g.add(r);
+        });
+        const freio = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.05, 8), mat(0xff5d8f));
+        freio.position.set(0, base - 0.01, -raio - 0.06);
+        g.add(freio);
+        // O patins inteiro sobe um tiquinho: as rodas encostam no chão em
+        // vez de afundar nele (o unicórnio não muda de altura).
+        g.position.y = 0.06;
+        return g;
+      },
+    }),
+  },
+
   // --- Cauda ---------------------------------------------------------------
   {
     id: 'florNaCauda', vaga: 'cauda', emoji: '🌺', name: 'Flor na cauda', preco: 90, vista: [0.35, 0.3, 1],
@@ -538,6 +976,30 @@ export const ENFEITES = [
       g.add(estrela);
       return { cauda: g };
     },
+  },
+
+  // Estas trocam o rabo inteiro (`rabo`), como as asas de enfeite trocam a
+  // asa. Ficam no fim da lista de cauda porque são as mais caras.
+  {
+    id: 'caudaDeRaposa', vaga: 'cauda', emoji: '🦊', name: 'Cauda de raposa', preco: 240, vista: [0.9, 0.2, 0.6],
+    montar: () => ({ rabo: caudaDeRaposa() }),
+  },
+  {
+    id: 'caudaDeLeao', vaga: 'cauda', emoji: '🦁', name: 'Cauda de leão', preco: 250, vista: [0.9, 0.2, 0.6],
+    montar: () => ({ rabo: caudaDeLeao() }),
+  },
+  {
+    id: 'caudaTrancada', vaga: 'cauda', emoji: '🪢', name: 'Cauda trançada', preco: 260, vista: [0.9, 0.2, 0.6],
+    // Trança da cor da crina de quem veste.
+    montar: (personagem) => ({ rabo: caudaTrancada(personagem?.hair) }),
+  },
+  {
+    id: 'caudaDePavao', vaga: 'cauda', emoji: '🦚', name: 'Cauda de pavão', preco: 320, vista: [0.35, 0.3, 1],
+    montar: () => ({ rabo: caudaDePavao() }),
+  },
+  {
+    id: 'caudaDeFogo', vaga: 'cauda', emoji: '🔥', name: 'Cauda de fogo', preco: 340, vista: [0.9, 0.2, 0.6],
+    montar: () => ({ rabo: caudaDeFogo() }),
   },
 
   // --- Chifre --------------------------------------------------------------
@@ -1057,10 +1519,14 @@ function descartar(objeto) {
 // `vestindo` é `{ cabeca: 'coroa', rosto: null, pescoco: 'colar' }`. Tira
 // antes o que ele vestia, então serve tanto para montar quanto para trocar.
 export function vestirEnfeites(unicornio, vestindo = {}) {
-  const { head, torso, tail, legs, horn } = unicornio.userData;
+  const { head, torso, tail, legs, horn, character } = unicornio.userData;
   // O chifre de verdade volta a aparecer; quem trocar de chifre esconde
-  // de novo logo abaixo.
+  // de novo logo abaixo. O mesmo com as mechas do rabo.
   if (horn) horn.visible = true;
+  if (tail) {
+    for (const mecha of tail.userData.locks || []) mecha.visible = true;
+    tail.userData.animarRabo = null;
+  }
   for (const peca of unicornio.userData.enfeites || []) {
     peca.parent?.remove(peca);
     descartar(peca);
@@ -1070,7 +1536,8 @@ export function vestirEnfeites(unicornio, vestindo = {}) {
   for (const vaga of VAGAS) {
     const enfeite = ENFEITE[vestindo?.[vaga]];
     if (!enfeite || enfeite.vaga !== vaga) continue;
-    const montado = enfeite.montar();
+    // As caudas trançadas usam as cores da crina de quem veste.
+    const montado = enfeite.montar(character);
     const colocar = (peca, alvo) => {
       peca.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       alvo.add(peca);
@@ -1091,6 +1558,13 @@ export function vestirEnfeites(unicornio, vestindo = {}) {
       lugar.add(montado.chifre({ length, radius }));
       colocar(lugar, head);
       horn.visible = false;
+    }
+    // Rabo: a cauda inteira trocada — as mechas de verdade somem e a nova
+    // entra no mesmo grupo, herdando o balanço dele.
+    if (montado.rabo && tail) {
+      for (const mecha of tail.userData.locks || []) mecha.visible = false;
+      colocar(montado.rabo, tail);
+      tail.userData.animarRabo = montado.rabo.userData.animar || null;
     }
     // Asas: não é peça por cima, é a asa inteira trocada (ver trocarAsas).
     if (montado.asa) asa = montado.asa;
@@ -1119,6 +1593,16 @@ export function montarEnfeiteSozinho(id) {
   for (const peca of [montado.cabeca || [], montado.torso || [], montado.cauda || []].flat()) g.add(peca);
   // As asas, o par aberto.
   if (montado.asa) g.add(parDeAsas(montado.asa));
+  // A cauda nova, inclinada como fica no unicórnio (o grupo do rabo vive
+  // em -0,72 rad), e já animada num instante qualquer, para a foto não sair
+  // com tudo em posição de repouso.
+  if (montado.rabo) {
+    const rabo = new THREE.Group();
+    rabo.rotation.x = -0.72;
+    rabo.add(montado.rabo);
+    montado.rabo.userData.animar?.(0.6, 0.3);
+    g.add(rabo);
+  }
   // O chifre nas medidas do chifre da Uni.
   if (montado.chifre) g.add(montado.chifre({ length: 0.62, radius: 0.09 }));
   // Das patas, duas pernas lado a lado: uma só ficava parecendo um anel

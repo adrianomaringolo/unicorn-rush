@@ -182,6 +182,98 @@ export const ENFEITES = {
   },
   // A cabeça de um dragãozinho de perfil, verde, de chifrinhos e focinho
   // comprido — para as asas de dragão.
+  athletic_shoe: {
+    emoji: '👟',
+    desenho: (c) => `<path d="M14 92 L14 74 Q14 62 26 60 L50 54 Q60 40 72 44 L80 60 Q104 64 112 78 Q116 92 106 96 L18 98 Z" fill="${c.g('branco', 44, 98)}" ${st()}/>`
+      + `<path d="M14 90 H112 Q114 104 104 106 H20 Q12 104 14 90 Z" fill="${c.g('roxo', 90, 106)}" ${st()}/>`
+      + `<path d="M84 64 Q104 68 110 80 Q100 84 84 80 Z" fill="${c.g('rosa', 64, 84)}" ${st(4)}/>`
+      + `<path d="M54 58 L66 70 M60 52 L72 64 M66 48 L76 58" fill="none" stroke="#ff4f88" stroke-width="5" stroke-linecap="round"/>`
+      + `<path d="M28 80 Q46 70 66 80" fill="none" stroke="#33c6dc" stroke-width="6" stroke-linecap="round"/>`
+      + brilho(30, 68, 8, 3, -15, 0.6),
+  },
+  womans_boot: {
+    emoji: '👢',
+    desenho: (c) => `<path d="M38 14 H76 V72 Q100 74 110 88 Q114 100 102 102 H30 Q24 102 26 92 L38 70 Z" fill="${c.g('ouro', 14, 102)}" ${st()}/>`
+      + `<path d="M26 96 H112 Q112 112 100 112 H32 Q24 112 26 96 Z" fill="${c.g('laranja', 96, 112)}" ${st()}/>`
+      + `<rect x="32" y="10" width="50" height="16" rx="8" fill="${c.g(['#fff6c4', '#ffe066'], 10, 26)}" ${st(5)}/>`
+      + `<circle cx="58" cy="54" r="9" fill="#fff" ${st(4)}/><circle cx="58" cy="54" r="4" fill="#ff8fc6"/>`
+      + brilho(48, 40, 4, 12, 0, 0.55),
+  },
+  ballet_shoes: {
+    emoji: '🩰',
+    desenho: (c) => traco('M56 18 Q40 40 50 58', '#ff9fc6', 6) + traco('M74 18 Q90 40 80 58', '#ff9fc6', 6)
+      + `<path d="M24 64 Q24 54 36 54 H58 Q70 58 70 72 Q70 108 46 110 Q22 108 24 64 Z" fill="${c.g('rosa', 54, 110)}" ${st()}/>`
+      + `<path d="M60 64 Q60 54 72 54 H94 Q106 58 106 72 Q106 108 82 110 Q58 108 60 64 Z" fill="${c.g(['#ffd6e6', '#ff8fc0'], 54, 110)}" ${st()}/>`
+      + `<ellipse cx="46" cy="70" rx="12" ry="8" fill="#e8457e" opacity=".55"/><ellipse cx="82" cy="70" rx="12" ry="8" fill="#e8457e" opacity=".55"/>`
+      + brilho(34, 84, 4, 10, 0, 0.55) + brilho(70, 84, 4, 10, 0, 0.55),
+  },
+  roller_skate: {
+    emoji: '🛼',
+    desenho: (c) => `<path d="M34 16 H70 V60 Q98 62 106 76 Q110 88 100 90 H28 Q22 88 24 78 L34 58 Z" fill="${c.g('roxo', 16, 90)}" ${st()}/>`
+      + `<rect x="20" y="86" width="90" height="12" rx="6" fill="${c.g('branco', 86, 98)}" ${st()}/>`
+      + [[34, 'rosa'], [58, 'ouro'], [82, 'verde']].map(([x, cor]) => `<circle cx="${x}" cy="106" r="11" fill="${c.g(cor, 95, 117)}" ${st()}/><circle cx="${x}" cy="106" r="3.5" fill="#fff"/>`).join('')
+      + `<path d="M104 84 Q116 86 114 98 L104 96 Z" fill="${c.g('rosa', 84, 98)}" ${st(4)}/>`
+      + `<path d="M44 30 L60 40 M44 42 L60 52" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>`
+      + brilho(42, 26, 8, 3, -10, 0.6),
+  },
+  fox: {
+    emoji: '🦊',
+    desenho: (c) => `<path d="M20 18 L50 40 L78 40 L108 18 L104 62 Q100 98 64 112 Q28 98 24 62 Z" fill="${c.g('laranja', 18, 112)}" ${st()}/>`
+      + `<path d="M30 30 L46 44 L32 52 Z M98 30 L82 44 L96 52 Z" fill="#4a2a1a" opacity=".7"/>`
+      + `<path d="M30 64 Q46 72 64 70 Q82 72 98 64 Q92 96 64 108 Q36 96 30 64 Z" fill="${c.g('branco', 64, 108)}" ${st(4)}/>`
+      + `<circle cx="46" cy="58" r="6" fill="${O}"/><circle cx="82" cy="58" r="6" fill="${O}"/>`
+      + `<ellipse cx="64" cy="90" rx="8" ry="6" fill="${O}"/>`
+      + brilho(40, 40, 8, 4, -30, 0.5),
+  },
+  lion: {
+    emoji: '🦁',
+    desenho: (c) => `<circle cx="64" cy="64" r="50" fill="${c.g(['#e39a3b', '#a3521c'], 14, 114)}" ${st()}/>`
+      + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => {
+        const a = (i / 12) * Math.PI * 2;
+        return `<circle cx="${(64 + Math.cos(a) * 44).toFixed(1)}" cy="${(64 + Math.sin(a) * 44).toFixed(1)}" r="10" fill="#c46a26"/>`;
+      }).join('')
+      + `<circle cx="64" cy="66" r="32" fill="${c.g('ouro', 34, 98)}" ${st()}/>`
+      + `<circle cx="38" cy="40" r="8" fill="${c.g('ouro', 32, 48)}" ${st(4)}/><circle cx="90" cy="40" r="8" fill="${c.g('ouro', 32, 48)}" ${st(4)}/>`
+      + `<circle cx="52" cy="60" r="5" fill="${O}"/><circle cx="76" cy="60" r="5" fill="${O}"/>`
+      + `<path d="M56 74 H72 L64 82 Z" fill="${O}" ${st(3)}/>`
+      + `<path d="M64 82 Q58 90 50 86 M64 82 Q70 90 78 86" fill="none" stroke="${O}" stroke-width="3.5" stroke-linecap="round"/>`
+      + brilho(48, 48, 7, 3, -30, 0.55),
+  },
+  knot: {
+    emoji: '🪢',
+    desenho: (c) => {
+      // Uma trança de três mechas, de cima para baixo, com o laço no fim.
+      const cores = ['rosa', 'roxo', 'azul'];
+      let tranca = '';
+      for (let i = 0; i < 6; i++) {
+        const y = 18 + i * 14;
+        const lado = i % 2 ? 1 : -1;
+        tranca += `<ellipse cx="${64 + lado * 9}" cy="${y + 7}" rx="15" ry="10" fill="${c.g(cores[i % 3], y - 3, y + 17)}" transform="rotate(${lado * -30} ${64 + lado * 9} ${y + 7})" ${st(4)}/>`;
+      }
+      return tranca
+        + `<path d="M56 100 L44 120 M64 102 V122 M72 100 L84 120" fill="none" stroke="${O}" stroke-width="12" stroke-linecap="round"/>`
+        + `<path d="M56 100 L44 120" stroke="#ff8fc6" stroke-width="6" stroke-linecap="round"/><path d="M64 102 V122" stroke="#b197fc" stroke-width="6" stroke-linecap="round"/><path d="M72 100 L84 120" stroke="#5cc1ff" stroke-width="6" stroke-linecap="round"/>`
+        + `<path d="M64 98 L42 86 L44 108 Z M64 98 L86 86 L84 108 Z" fill="${c.g('rosa', 86, 108)}" ${st(4)}/><circle cx="64" cy="98" r="6" fill="#ff4f88" ${st(3)}/>`;
+    },
+  },
+  peacock: {
+    emoji: '🦚',
+    desenho: (c) => {
+      let leque = '';
+      for (let i = 0; i < 7; i++) {
+        const a = (-70 + i * (140 / 6)) * Math.PI / 180;
+        const x = 64 + Math.sin(a) * 48;
+        const y = 92 - Math.cos(a) * 48;
+        leque += traco(`M64 96 L${x.toFixed(1)} ${y.toFixed(1)}`, '#3fbf7f', 5)
+          + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${c.g('ouro', y - 11, y + 11)}" ${st(4)}/>`
+          + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6" fill="#2fbf9a"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#2a5fd6"/>`;
+      }
+      return leque
+        + `<path d="M50 112 Q46 86 60 76 Q60 60 70 58 Q80 60 76 70 L84 72 L76 76 Q80 96 74 112 Z" fill="${c.g('azul', 58, 112)}" ${st()}/>`
+        + `<circle cx="70" cy="64" r="2.5" fill="${O}"/>`
+        + brilho(60, 92, 3, 9, 0, 0.5);
+    },
+  },
   dragon: {
     emoji: '🐉',
     desenho: (c) => `<path d="M42 36 L34 10 L56 30 Z" fill="${c.g('creme', 10, 36)}" ${st()}/>`

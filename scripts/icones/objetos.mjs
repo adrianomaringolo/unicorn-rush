@@ -28,6 +28,19 @@ export const OBJETOS = {
       + `<circle cx="40" cy="99" r="5" fill="#46c97a" ${st(3)}/><circle cx="64" cy="99" r="6" fill="#b07cf5" ${st(3)}/><circle cx="88" cy="99" r="5" fill="#46c97a" ${st(3)}/>`
       + brilho(40, 72, 8, 4, -40, 0.6),
   },
+  // O alvo da missão do dia: anéis vermelho e branco e a flecha cravada
+  // no meio, de pena rosa.
+  direct_hit: {
+    emoji: '🎯',
+    desenho: (c) => `<circle cx="60" cy="68" r="46" fill="${c.g('vermelho', 22, 114)}" ${st()}/>`
+      + `<circle cx="60" cy="68" r="32" fill="#fff" stroke="${O}" stroke-width="4"/>`
+      + `<circle cx="60" cy="68" r="19" fill="${c.g('vermelho', 49, 87)}" stroke="${O}" stroke-width="4"/>`
+      + `<circle cx="60" cy="68" r="7" fill="#fff" stroke="${O}" stroke-width="3.5"/>`
+      + traco('M60 68 L104 24', O, 13)
+      + traco('M60 68 L104 24', '#ffd166', 6)
+      + `<path d="M98 30 L100 10 L112 16 Z M98 30 L118 28 L112 16 Z" fill="${c.g('rosa', 10, 30)}" ${st(4)}/>`
+      + brilho(40, 44, 5, 12, -40, 0.6),
+  },
   trophy: {
     emoji: '🏆',
     desenho: (c) => traco('M36 34 H22 Q16 34 18 46 Q22 62 40 64', c.g('ouro', 30, 66), 7)

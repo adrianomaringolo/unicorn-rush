@@ -21,6 +21,10 @@ import { lessonsFor } from '../src/game/tutorial.js';
 import { TUTORIAL_MODE } from '../src/game/config.js';
 import { ENFEITES, VAGAS, vestirEnfeites } from '../src/models/accessories.js';
 import { FIGURINHAS, STICKERS_PER_PAGE, createStickerCard } from '../src/models/stickers.js';
+import {
+  MISSOES, missaoDoDia, missaoDeHoje, contarNaMissao, diasSeguidos, diaAnterior,
+  sortearPremio, aplicarPremio, DIAS_PARA_O_BAU,
+} from '../src/game/missao.js';
 
 const countMeshes = (obj) => {
   let n = 0;
@@ -76,6 +80,52 @@ for (const character of CHARACTER_LIST) {
 }
 
 console.log(`chave mágica: ${countMeshes(createKey())} peças`);
+{
+  const { createRainbowChest } = await import('../src/models/chest.js');
+  const bau = createRainbowChest();
+  if (!bau.userData.tampa || !bau.userData.luz) throw new Error('o baú arco-íris saiu sem tampa ou sem luz');
+  console.log(`baú arco-íris: ${countMeshes(bau)} peças`);
+}
+
+// Missão do dia: a sequência de 7 dias dá um baú, pular um dia zera a
+// conta, e o baú entrega o que sorteou.
+{
+  const cumprir = (save, dia) => {
+    const { missao } = missaoDeHoje(save, dia);
+    return contarNaMissao(save, missao.evento, missao.n, dia);
+  };
+  const save = { stats: { keys: 0 }, enfeites: { coracoes: 0, meus: [], vestindo: {} }, sequencia: { dias: 0, ultimo: null }, baus: 0 };
+  const dias = ['2026-11-22'];
+  for (let i = 1; i < 30; i++) dias.unshift(diaAnterior(dias[0]));
+  for (let i = 1; i < dias.length; i++) {
+    if (missaoDoDia(dias[i]).id === missaoDoDia(dias[i - 1]).id) throw new Error(`missão repetida em ${dias[i]}`);
+  }
+  for (let i = 0; i < DIAS_PARA_O_BAU - 1; i++) {
+    const r = cumprir(save, dias[i]);
+    if (!r?.cumpriu || r.bau) throw new Error(`dia ${i + 1} da missão não contou certo`);
+    if (cumprir(save, dias[i])) throw new Error('a missão contou duas vezes no mesmo dia');
+  }
+  if (diasSeguidos(save, dias[DIAS_PARA_O_BAU - 1]) !== DIAS_PARA_O_BAU - 1) throw new Error('sequência da missão errada');
+  if (!cumprir(save, dias[DIAS_PARA_O_BAU - 1]).bau || save.baus !== 1) throw new Error('7 dias seguidos não deram o baú');
+  // Pula um dia: a conta recomeça.
+  cumprir(save, dias[DIAS_PARA_O_BAU]);
+  if (cumprir(save, dias[DIAS_PARA_O_BAU + 2]).dias !== 1) throw new Error('pular um dia não zerou a sequência');
+  if (diasSeguidos(save, dias[DIAS_PARA_O_BAU + 5]) !== 0) throw new Error('sequência perdida ainda aparece');
+  // Missão de outro evento não conta.
+  const outro = MISSOES.find((m) => m.evento !== missaoDoDia(dias[20]).evento);
+  if (contarNaMissao(save, outro.evento, 99, dias[20])) throw new Error('evento errado contou na missão');
+
+  const vistos = new Set();
+  for (let i = 0; i < 400; i++) {
+    const premio = sortearPremio(save, { enfeites: ENFEITES, poderes: POWERUP_LIST });
+    vistos.add(premio.tipo);
+    aplicarPremio(save, premio);
+  }
+  if (vistos.size !== 4) throw new Error(`o baú não sorteou os 4 tipos de prêmio: ${[...vistos]}`);
+  if (save.enfeites.meus.length !== ENFEITES.length) throw new Error('o baú não chegou a dar todos os enfeites');
+  if (sortearPremio(save, { enfeites: ENFEITES, poderes: POWERUP_LIST }).tipo === 'enfeite') throw new Error('o baú deu enfeite repetido');
+  console.log(`missão do dia: ${MISSOES.length} missões, baú a cada ${DIAS_PARA_O_BAU} dias`);
+}
 
 // Emoji sem ícone: o jogo não mostra emoji do aparelho (ver o README,
 // "Ícones"). Todo emoji escrito no que vai para a tela precisa ter o seu

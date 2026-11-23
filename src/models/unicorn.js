@@ -1153,6 +1153,9 @@ export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false
   // para baixo: é a vírgula da escultura. Quase na vertical (-0,18, como
   // era) ele lia como uma vareta pendurada.
   tail.rotation.x = -0.72 - wind * 0.3 + Math.sin(t + 1) * 0.1;
+  // Cauda de enfeite (fogo, leão, trança…): ela se anima sozinha, por cima
+  // do balanço do grupo do rabo (ver vestirEnfeites, em accessories.js).
+  tail.userData.animarRabo?.(time, wind);
   forelock.rotation.x = 0.55 - wind * 0.45;
 
   // `flapBoost` é a Pena Mágica: enquanto dura, a asa bate quase o dobro
