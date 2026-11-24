@@ -3624,6 +3624,9 @@ html, body {
   z-index: 25;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  /* minmax(0, …): sem isso a fileira de cores (que rola) alargava a coluna
+     até caber inteira. */
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(6px, 1.6vh, 12px);
   padding: max(8px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
   background: linear-gradient(#fff6fb, #f3e9ff);
@@ -3666,14 +3669,79 @@ html, body {
 .pintura-canvas.ampliado { border-radius: 0; box-shadow: none; }
 .pintura-canvas[hidden], .pintura-espera[hidden] { display: none; }
 .pintura-espera { color: #8a6f9c; font-weight: 600; }
-.pintura-ferramentas { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 12px); }
+.pintura-ferramentas { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 12px); min-width: 0; }
+/* A paleta é uma fileira só, que rola de lado, entre duas setas que só
+   aparecem do lado em que há mais cor escondida. A borda some num degradê
+   para mostrar que a fileira continua. */
+.pintura-faixa {
+  --bolinha: clamp(40px, 12vw, 54px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: min(100%, 600px);
+  min-height: 0;
+}
 .pintura-paleta {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
   gap: clamp(6px, 2vw, 10px);
-  width: min(100%, 460px);
+  /* Folga para a escolhida crescer (scale 1.18) sem ser cortada. */
+  padding: 12px 10px 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  /* No celular a fileira rola com o dedo (swipe), mesmo começando em cima
+     de uma bolinha; um toque sem arrastar continua escolhendo a cor. */
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  justify-content: safe center;
+}
+.pintura-paleta::-webkit-scrollbar { display: none; }
+.pintura-faixa.rola .pintura-paleta {
+  justify-content: flex-start;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+}
+.pintura-seta {
+  flex: none;
+  width: 34px;
+  height: 44px;
+  padding: 0;
+  border: 3px solid #f3dcef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(122, 78, 199, .18);
+  cursor: pointer;
+  touch-action: manipulation;
+  display: grid;
+  place-items: center;
+}
+/* Sem a seta, o lugar dela continua guardado: a fileira não pula. */
+.pintura-seta[hidden] { display: grid; visibility: hidden; }
+.pintura-seta::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  border: solid var(--purple);
+  border-width: 0 4px 4px 0;
+  border-radius: 2px;
+  transform: translateX(-2px) rotate(-45deg);
+}
+.pintura-seta.antes::before { transform: translateX(2px) rotate(135deg); }
+.pintura-seta.depois { animation: pintura-seta-chama 1.4s ease-in-out infinite; }
+.pintura-seta:active { transform: translateY(2px); box-shadow: none; animation: none; }
+@keyframes pintura-seta-chama {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 3px 0; }
 }
 .pintura-cor {
+  flex: none;
+  width: var(--bolinha);
+  scroll-snap-align: center;
   aspect-ratio: 1;
   border-radius: 50%;
   border: 4px solid #fff;
@@ -3697,12 +3765,34 @@ html, body {
     column-gap: clamp(10px, 2vw, 24px);
   }
   .pintura-ferramentas { grid-column: 2; grid-row: 1 / 3; justify-content: center; }
-  /* As bolinhas saem da altura da tela: num celular deitado sobram uns
-     350 px para treze cores e dois botões. */
-  .pintura-paleta {
-    grid-template-columns: repeat(4, clamp(30px, 10vh, 52px));
+  /* Deitado, a fileira vira coluna e rola para baixo; as bolinhas saem da
+     altura da tela. */
+  .pintura-ferramentas { min-height: 0; }
+  .pintura-faixa {
+    --bolinha: clamp(32px, 10vh, 50px);
+    flex-direction: column;
+    flex: 0 1 auto;
     width: auto;
+  }
+  .pintura-paleta {
+    touch-action: pan-y;
+    flex-direction: column;
     gap: clamp(5px, 1.6vh, 10px);
+    padding: 12px 14px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y proximity;
+  }
+  .pintura-faixa.rola .pintura-paleta {
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+    mask-image: linear-gradient(180deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  }
+  .pintura-seta { width: 44px; height: 30px; }
+  .pintura-seta::before { transform: translateY(-2px) rotate(45deg); }
+  .pintura-seta.antes::before { transform: translateY(2px) rotate(-135deg); }
+  @keyframes pintura-seta-chama {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 3px; }
   }
   .pintura-cor { border-width: 3px; }
   .pintura-botoes { flex-direction: column; width: 100%; gap: clamp(6px, 1.6vh, 10px); }
@@ -3710,6 +3800,7 @@ html, body {
 }
 @media (prefers-reduced-motion: reduce) {
   .pintura-cor { transition: none; }
+  .pintura-seta.depois { animation: none; }
 }
 
 /* Os dois modos de pintar, em cima da grade: livre e por números. */
@@ -3741,7 +3832,6 @@ html, body {
 
 /* Por números: cada bolinha leva o número da cor; a que já terminou todas
    as suas áreas fica com um visto e mais apagada. */
-.pintura-paleta.com-numeros { grid-template-columns: repeat(var(--colunas, 7), minmax(0, clamp(34px, 12vw, 56px))); justify-content: center; }
 .pintura-cor span {
   display: grid;
   place-items: center;
@@ -3753,6 +3843,8 @@ html, body {
   text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff;
 }
 .pintura-cor { position: relative; padding: 0; }
+/* A cor quase branca: um contorno lilás para não sumir no fundo. */
+.pintura-cor.clarinha { border-color: #e4dcf4; }
 .pintura-cor.completa { opacity: .45; }
 .pintura-cor.completa::after {
   content: '✓';
@@ -3789,10 +3881,48 @@ html, body {
 }
 .pintura-pronta[hidden] { display: none; }
 .pintura-pronta img { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
-@keyframes pintura-pronta { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
-@media (orientation: landscape) {
-  .pintura-paleta.com-numeros { grid-template-columns: repeat(3, clamp(30px, 10vh, 52px)); }
+/* A mãozinha da dica (por números): a ponta do dedo no centro da área que
+   falta, batendo de leve, com um anel que se abre em volta do ponto. */
+.pintura-dica {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 2;
 }
+.pintura-dica[hidden] { display: none; }
+.pintura-dica img {
+  position: absolute;
+  left: -20px;
+  top: 0;
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 3px 3px rgba(74, 42, 94, .35));
+  animation: pintura-dica-toque 1s ease-in-out infinite;
+}
+.pintura-dica span {
+  position: absolute;
+  left: -18px;
+  top: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 4px solid #7a4ec7;
+  box-shadow: 0 0 0 3px #fff;
+  animation: pintura-dica-anel 1s ease-out infinite;
+}
+@keyframes pintura-dica-toque {
+  0%, 100% { transform: translateY(12px); }
+  50% { transform: translateY(2px); }
+}
+@keyframes pintura-dica-anel {
+  0% { transform: scale(.4); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pintura-dica img, .pintura-dica span { animation: none; }
+}
+@keyframes pintura-pronta { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .pintura-pronta { animation: none; }
 }

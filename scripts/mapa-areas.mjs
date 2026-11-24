@@ -1,8 +1,7 @@
 // O mapa das áreas de uma página de pintar, para montar o gabarito da
 // pintura por números (src/game/pinturaNumeros.js): o desenho com o número
 // de cada área escrito no meio dela. Se o desenho já tem gabarito, cada área
-// sai pintada com a cor dele, e as que ficam brancas, sem cor — dá para
-// conferir o gabarito de olho.
+// sai pintada com a cor dele — dá para conferir o gabarito de olho.
 //
 //   node scripts/mapa-areas.mjs uni-campo > _mapa.svg
 //
@@ -36,7 +35,7 @@ if (g && !erros.length) {
       const a = pagina.regiao[y * L + x];
       let fim = x + 1;
       while (fim < L && pagina.regiao[y * L + fim] === a) fim++;
-      if (a >= 0 && g.alvo[a] >= 0) corridas += `<rect x="${x}" y="${y}" width="${fim - x}" height="1" fill="${g.cores[g.alvo[a]]}"/>`;
+      if (a >= 0) corridas += `<rect x="${x}" y="${y}" width="${fim - x}" height="1" fill="${g.cores[g.alvo[a]]}"/>`;
       x = fim;
     }
   }
@@ -44,7 +43,7 @@ if (g && !erros.length) {
 const numeros = [...centro].map((c, a) => {
   const x = c % L; const y = Math.floor(c / L);
   const cor = raio[a] < 16 ? '#c00' : '#003';
-  const rotulo = g && !erros.length && g.alvo[a] >= 0 ? `${a}·${g.nomes[g.alvo[a]]}` : String(a);
+  const rotulo = g && !erros.length ? `${a}·${g.nomes[g.alvo[a]]}` : String(a);
   return `<text x="${x}" y="${y}" fill="${cor}">${rotulo}</text>`;
 }).join('');
 

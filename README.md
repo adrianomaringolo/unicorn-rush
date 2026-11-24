@@ -2328,15 +2328,32 @@ todo o espaço para o dedo acertar as áreas).
 **Dois modos**, escolhidos em cima da grade, e cada um é uma folha separada
 do mesmo desenho:
 
-- **🖍️ Livre**: as doze cores e a borracha, qualquer cor em qualquer área.
+- **🖍️ Livre**: 33 cores e a borracha, qualquer cor em qualquer área. As
+  cores novas entraram no fim de `CORES` (o save guarda o índice); a ordem
+  na tela, em arco-íris, é a de `ORDEM_PALETA`.
+
+**A paleta é uma fileira só**, nos dois modos: rola com o dedo (swipe) e
+tem setas nas pontas, que só aparecem do lado em que há mais cor escondida,
+e a borda some num degradê. Deitado, vira uma coluna que rola para baixo. A
+cor escolhida (inclusive a que o modo por números escolhe sozinho) rola
+para a vista.
 - **🔢 Por números**: a paleta é a do gabarito da página (de 6 a 13 cores),
   cada bolinha com o seu número, e cada área tem o número da cor certa
   escrito no meio. Só a cor certa pinta; a errada faz o som de "não". As
-  áreas da cor escolhida ganham um tom clarinho dela, para achar as
-  pequenas, e a cor que termina ganha um ✓ e passa sozinha para a próxima.
-  O número fica do tamanho da área, nunca menor que ~11 px na tela; a área
-  pequena demais fica sem número (o tom clarinho mostra onde está) e ganha
-  número quando o desenho é ampliado. Página completa: "⭐ Pronto!".
+  áreas da cor escolhida ganham um tom clarinho dela e o número delas vem
+  **numa bolinha da cor, maior, com contorno roxo**; os números das outras
+  cores ficam menores e apagados. A cor que termina ganha um ✓ e passa
+  sozinha para a próxima. O número fica do tamanho da área, nunca menor que
+  ~11 px na tela; a área pequena demais fica sem número (o tom clarinho
+  mostra onde está) e ganha número quando o desenho é ampliado.
+  **Toda área tem cor**, até as brancas: o `branco` do gabarito é um branco
+  quase puro, com número. **As áreas miúdas** (o maior círculo de dentro
+  menor que 0,65% da largura do desenho, que só se pintaria com uns 3× de
+  zoom) **já abrem pintadas** com a cor certa — `automaticas()`. **15
+  segundos sem acertar nenhuma área**, aparece uma mãozinha 👆 batendo em
+  cima da maior área que ainda falta na cor escolhida (se ela estiver fora
+  da vista ampliada, o zoom volta ao desenho inteiro); some no próximo
+  acerto ou na troca de cor. Página completa: "⭐ Pronto!".
 
 **Zoom só no desenho**, nos dois modos: pinça de dois dedos, um dedo
 arrastando quando já está ampliado, rodinha ou duplo clique no computador
@@ -2415,8 +2432,10 @@ das flores. Nos olhos da Uni, quem fechou foi o próprio desenho, refeito.
    todo mundo.
 4. Monte o **gabarito** em `GABARITOS` (`pinturaNumeros.js`): gere o mapa
    com `node scripts/mapa-areas.mjs <id> > _mapa.svg`, abra no navegador
-   e ponha cada número de área na cor dela (`branco` = fica sem número: o
-   brilho do olho, o corpo branco). Rode de novo: com o gabarito, o mapa sai
+   e ponha cada número de área na cor dela. Toda área leva cor: o que é
+   branco (o brilho e a parte branca do olho, as nuvens) vai em `branco`,
+   que é a última cor da paleta; a pupila vai na cor do olho do personagem.
+   Rode de novo: com o gabarito, o mapa sai
    pintado, para conferir de olho.
 5. Acrescente o PNG na lista do `sw.js` e rode `npm run check`, que divide a
    página e confere se o gabarito tem toda área uma vez só.

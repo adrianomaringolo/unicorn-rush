@@ -30,18 +30,52 @@ export const DESENHOS = [
   { id: 'lua-sonhos', personagem: 'lua', nome: 'Lua e os sonhos', arquivo: './assets/pintar/lua-sonhos.png' },
   { id: 'brasa-vulcao', personagem: 'brasa', nome: 'Brasa e o vulcão', arquivo: './assets/pintar/brasa-vulcao.png' },
   { id: 'brasa-fogueira', personagem: 'brasa', nome: 'Brasa na fogueira', arquivo: './assets/pintar/brasa-fogueira.png' },
+  { id: 'lulu-soneca', personagem: 'lulu', nome: 'Lulu tirando uma soneca', arquivo: './assets/pintar/lulu-soneca.png' },
+  { id: 'lulu-voo', personagem: 'lulu', nome: 'Lulu aprendendo a voar', arquivo: './assets/pintar/lulu-voo.png' },
+  { id: 'estrela-cadente', personagem: 'estrela', nome: 'Estrela cadente', arquivo: './assets/pintar/estrela-cadente.png' },
+  { id: 'estrela-espaco', personagem: 'estrela', nome: 'Estrela no espaço', arquivo: './assets/pintar/estrela-espaco.png' },
+  { id: 'chiclete-doces', personagem: 'chiclete', nome: 'Chiclete na terra dos doces', arquivo: './assets/pintar/chiclete-doces.png' },
+  { id: 'chiclete-baloes', personagem: 'chiclete', nome: 'Chiclete e os balões', arquivo: './assets/pintar/chiclete-baloes.png' },
+  { id: 'musgo-cochilo', personagem: 'musgo', nome: 'Musgo cochilando', arquivo: './assets/pintar/musgo-cochilo.png' },
+  { id: 'musgo-selva', personagem: 'musgo', nome: 'Musgo na selva', arquivo: './assets/pintar/musgo-selva.png' },
+  { id: 'onda-mar', personagem: 'onda', nome: 'Onda no mar', arquivo: './assets/pintar/onda-mar.png' },
+  { id: 'onda-corais', personagem: 'onda', nome: 'Onda e os corais', arquivo: './assets/pintar/onda-corais.png' },
+  { id: 'floco-neve', personagem: 'floco', nome: 'Floco e o boneco de neve', arquivo: './assets/pintar/floco-neve.png' },
+  { id: 'floco-gelo', personagem: 'floco', nome: 'Floco patinando no gelo', arquivo: './assets/pintar/floco-gelo.png' },
+  { id: 'coco-coqueiro', personagem: 'coco', nome: 'Coco no coqueiro', arquivo: './assets/pintar/coco-coqueiro.png' },
+  { id: 'coco-praia', personagem: 'coco', nome: 'Coco na praia', arquivo: './assets/pintar/coco-praia.png' },
 ];
 export const DESENHO = Object.fromEntries(DESENHOS.map((d) => [d.id, d]));
 
-// A paleta: doze cores vivas e o branco, que faz de borracha. O save guarda
-// o índice, então **só acrescente no fim** — mudar a ordem repinta os
-// desenhos já guardados com outras cores.
+// A paleta do modo livre: 33 cores e o branco, que faz de borracha. O save
+// guarda o índice, então **só acrescente no fim** — mudar a ordem repinta
+// os desenhos já guardados com outras cores. A ordem em que as bolinhas
+// aparecem na tela é outra, a de `ORDEM_PALETA`.
 export const CORES = [
   '#ff5d8f', '#ff9fc6', '#ff8a3c', '#ffd43b', '#7bd88f', '#2fb36a',
   '#5cc1ff', '#2e6fd8', '#b197fc', '#8c5fe6', '#a0522d', '#4a4a5a',
   '#ffffff',
+  // v0.55: mais tons, para a criança achar a cor que imaginou.
+  '#e63946', '#9d2449', '#ff3fa4', '#ffc2d6', '#ffb4a2', '#f6c7a1',
+  '#fff1c9', '#fff59d', '#c6e85a', '#b6ec9a', '#1e7a46', '#9ff0d0',
+  '#2ec4b6', '#c9ecff', '#283a8c', '#e4d4ff', '#5b2a9e', '#d9a066',
+  '#f3d6a0', '#c3c6d4', '#16161d',
 ];
 export const BORRACHA = CORES.indexOf('#ffffff');
+
+// As bolinhas na tela, pelo índice em CORES: a borracha primeiro e depois as
+// cores em arco-íris — vermelhos, rosas, laranjas e marrons, amarelos,
+// verdes, azuis, roxos —, e os cinzas e o preto no fim.
+export const ORDEM_PALETA = [
+  12,
+  13, 14, 15, 0, 1, 16, 17, 18,
+  2, 30, 10, 31, 19,
+  20, 3, 21,
+  22, 4, 5, 23, 24, 25,
+  26, 6, 7, 27,
+  28, 8, 9, 29,
+  32, 11, 33,
+];
 
 const ESCURO = 170;       // luminância abaixo disso é linha
 const MIN_AREA = 80;      // área menor que isso vira linha (o brilho do olho, sujeira)
@@ -95,10 +129,13 @@ export function dividirEmAreas(px, L, A) {
   const novo = new Int32Array(tamanhos.length).fill(-1);
   let areas = 0;
   tamanhos.forEach((t, n) => { if (t >= MIN_AREA) novo[n] = areas++; });
+  const miudo = [];        // o papel dos pedacinhos que viraram linha
+  const pedaco = [];       // e de qual pedacinho cada um era
   for (let i = 0; i < N; i++) {
     if (regiao[i] < 0) continue;
-    regiao[i] = novo[regiao[i]];
-    if (regiao[i] < 0) linha[i] = 1;
+    const antes = regiao[i];
+    regiao[i] = novo[antes];
+    if (regiao[i] < 0) { linha[i] = 1; miudo.push(i); pedaco.push(antes); }
   }
 
   // 3. A cor entra por baixo da linha: cada pixel de linha fica com a área
@@ -119,6 +156,40 @@ export function dividirEmAreas(px, L, A) {
       }
     }
     borda = proxima;
+  }
+
+  // 4. Papel órfão: um pedacinho entre linhas grossas (o triângulo entre a
+  // folha e o caule) fica longe demais para a invasão chegar, e sairia
+  // branco puro no meio do desenho pintado. Ele fica inteiro com uma área
+  // só: a que está mais perto da maior parte dele, atravessando a linha.
+  // A linha continua de quem já era.
+  if (miudo.some((i) => dono[i] === -1)) {
+    const perto = Int32Array.from(dono);
+    let fila = [];
+    for (let i = 0; i < N; i++) if (perto[i] >= 0) fila.push(i);
+    for (let passo = 0; passo < 40 && fila.length; passo++) {
+      const proxima = [];
+      for (const j of fila) {
+        const x = j % L;
+        const vizinhos = [j - L, j + L, x > 0 ? j - 1 : -1, x < L - 1 ? j + 1 : -1];
+        for (const v of vizinhos) {
+          if (v < 0 || v >= N || perto[v] !== -1) continue;
+          perto[v] = perto[j];
+          proxima.push(v);
+        }
+      }
+      fila = proxima;
+    }
+    const votos = new Map();   // pedacinho → Map(área → pixels)
+    miudo.forEach((i, k) => {
+      if (dono[i] !== -1 || perto[i] < 0) return;
+      if (!votos.has(pedaco[k])) votos.set(pedaco[k], new Map());
+      const v = votos.get(pedaco[k]);
+      v.set(perto[i], (v.get(perto[i]) || 0) + 1);
+    });
+    const vencedora = new Map();
+    for (const [n, v] of votos) vencedora.set(n, [...v].sort((a, b) => b[1] - a[1])[0][0]);
+    miudo.forEach((i, k) => { if (dono[i] === -1 && vencedora.has(pedaco[k])) dono[i] = vencedora.get(pedaco[k]); });
   }
 
   // Os pixels de cada área, num bloco só por área: contar, separar, encher.

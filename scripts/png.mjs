@@ -2,8 +2,8 @@
 // devolve { largura, altura, pixels } com os pixels em RGBA, como um
 // ImageData. Cobre o que as páginas de pintar usam — tons de cinza, RGB,
 // paleta (o pngquant grava assim) e alfa, de 1 a 8 bits —, sem entrelaçado.
-import { readFileSync } from 'node:fs';
-import { inflateSync } from 'node:zlib';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { inflateSync, deflateSync } from 'node:zlib';
 
 export function lerPng(caminho) {
   const b = readFileSync(caminho);
@@ -75,4 +75,37 @@ export function lerPng(caminho) {
     }
   }
   return { largura: L, altura: A, pixels };
+}
+
+// O contrário: grava `pixels` (RGB, 3 bytes por pixel) num PNG de 8 bits,
+// sem paleta. Só para as imagens de conferência dos scripts.
+const CRC = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (const b of buf) c = CRC[(c ^ b) & 255] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function bloco(nome, corpo) {
+  const tam = Buffer.alloc(4); tam.writeUInt32BE(corpo.length);
+  const tipoECorpo = Buffer.concat([Buffer.from(nome, 'ascii'), corpo]);
+  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(tipoECorpo));
+  return Buffer.concat([tam, tipoECorpo, crc]);
+}
+export function escreverPng(caminho, largura, altura, rgb) {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(largura, 0); ihdr.writeUInt32BE(altura, 4);
+  ihdr[8] = 8; ihdr[9] = 2;                               // 8 bits, RGB
+  const cru = Buffer.alloc((largura * 3 + 1) * altura);
+  for (let y = 0; y < altura; y++) {
+    cru[y * (largura * 3 + 1)] = 0;
+    Buffer.from(rgb.buffer, rgb.byteOffset + y * largura * 3, largura * 3).copy(cru, y * (largura * 3 + 1) + 1);
+  }
+  writeFileSync(caminho, Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    bloco('IHDR', ihdr), bloco('IDAT', deflateSync(cru)), bloco('IEND', Buffer.alloc(0)),
+  ]));
 }

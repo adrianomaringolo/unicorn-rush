@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.54.0';
+const VERSION = 'unicornrush-v0.55.0';
 
 const SHELL = [
   './',
@@ -145,6 +145,20 @@ const SHELL = [
   './assets/pintar/lua-sonhos.png',
   './assets/pintar/brasa-vulcao.png',
   './assets/pintar/brasa-fogueira.png',
+  './assets/pintar/lulu-soneca.png',
+  './assets/pintar/lulu-voo.png',
+  './assets/pintar/estrela-cadente.png',
+  './assets/pintar/estrela-espaco.png',
+  './assets/pintar/chiclete-doces.png',
+  './assets/pintar/chiclete-baloes.png',
+  './assets/pintar/musgo-cochilo.png',
+  './assets/pintar/musgo-selva.png',
+  './assets/pintar/onda-mar.png',
+  './assets/pintar/onda-corais.png',
+  './assets/pintar/floco-neve.png',
+  './assets/pintar/floco-gelo.png',
+  './assets/pintar/coco-coqueiro.png',
+  './assets/pintar/coco-praia.png',
   './assets/icones/tropical_fish.svg',
   './assets/icones/turtle.svg',
   './assets/icones/unicorn.svg',

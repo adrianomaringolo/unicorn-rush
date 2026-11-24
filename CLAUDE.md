@@ -64,3 +64,30 @@ todos os modelos e simula as fases fora do navegador. Para ver na tela,
 
 O resto (arquitetura, como inventar personagem e pista, atalhos de teste no
 console) está no `README.md`.
+
+## Desenho novo de pintar: sempre conferir
+
+**Toda vez que entrar um desenho novo de pintar, ou um PNG for trocado**
+(em `assets/pintar/`, vindo de `~/Downloads/desenhos` ou de onde for), monte
+o gabarito e **confira a página pintada por números antes de dar por
+pronto**. A receita de instalar e montar o gabarito está no README, em
+"Pintar". A conferência é esta:
+
+1. `npm run check` — o gabarito fecha (toda área uma vez, nenhuma tinta
+   inventada).
+2. `node scripts/conferir-pintura.mjs <id> …` — pinta cada página inteira
+   com o gabarito (já com as áreas miúdas automáticas) em `_conferencia/`
+   e avisa sozinho de papel sem cor, vazamento e paleta grande demais.
+   Resolva todo ⚠️ (brecha no contorno se fecha no PNG; nunca deixe ponto
+   branco puro). Os "(confira)" são para olhar, não necessariamente erro.
+3. **Olhe cada `_conferencia/<id>.png` de verdade**, inteira e com recortes
+   ampliados (olhos, crina, flores, detalhes pequenos). Procure:
+   - área sem cor ou branca demais onde devia ter cor;
+   - cor no lugar errado (céu verde, folha azul, a mecha que ficou da cor
+     do corpo, uma pétala de outra flor);
+   - fundo aparecendo entre a cauda e a perna pintado como mecha (é fundo);
+   - olhos: parte de fora `branco`, pupila na cor do olho do personagem,
+     brilho `branco`;
+   - vizinhas que deviam ser diferentes e ficaram da mesma cor.
+4. Corrija o gabarito, rode de novo os passos 1 a 3 e só então conte ao
+   usuário, dizendo o que a conferência achou e o que foi corrigido.

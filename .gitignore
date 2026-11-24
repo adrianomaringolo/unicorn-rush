@@ -24,3 +24,6 @@ assets/video/fotos/
 
 # Retratos de referência para gerar as páginas de colorir (ver docs/prompts-pintar.md)
 /pintar/
+
+# imagens do `node scripts/conferir-pintura.mjs` (conferência dos gabaritos)
+/_conferencia/
