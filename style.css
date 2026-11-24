@@ -1759,13 +1759,10 @@ html, body {
 }
 #loading.pronto { opacity: 0; pointer-events: none; visibility: hidden; }
 
-.load-brand {
-  margin: 0;
-  font-size: clamp(26px, 8vw, 40px);
-  font-weight: 700;
-  color: var(--pink);
-  text-shadow: 2px 3px 0 #fff, 4px 6px 0 rgba(122, 78, 199, .2);
-}
+/* O logo é o mesmo do lobby (.lobby-logo): só ganha um respiro embaixo,
+   antes da barra. As letras pulam aqui também — é animação de
+   transform, roda no compositor mesmo com o JavaScript travado. */
+.load-logo { margin-bottom: clamp(4px, 2vh, 14px); }
 .load-text {
   margin: 0;
   font-size: clamp(13px, 3.8vw, 16px);
@@ -2695,6 +2692,12 @@ html, body {
 }
 .lobby-rail.esq { grid-area: esq; }
 .lobby-rail.dir { grid-area: dir; }
+/* Em pé, a coluna da direita tem cinco bolhas (seis com o 🔄): ela sobe
+   para o lado do logo, que só ocupa o meio, e fica alinhada por baixo, logo
+   acima das figurinhas — sem isso a última encostava no cartão de baixo. */
+@media (orientation: portrait) {
+  .lobby-rail.dir { grid-row: 2 / 4; align-self: end; }
+}
 
 .bolha {
   border: 0;
@@ -3476,4 +3479,320 @@ html, body {
 @keyframes bau-nome { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .bau-premio-nome, .missao-baus { animation-duration: .01s; animation-delay: 0s; animation-iteration-count: 1; }
+}
+
+/* O fim de uma fase (ver Game.festejar): o resumo da corrida — corações,
+   chaves e tempo — entra um item de cada vez, e os botões só chegam
+   depois (`esperaBotoes`), para a criança olhar os números primeiro. */
+.resumo-corrida {
+  display: flex;
+  justify-content: center;
+  gap: clamp(10px, 3vw, 22px);
+  margin: 6px 0 4px;
+}
+.resumo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 76px;
+  padding: 8px 12px 6px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(122, 78, 199, .18);
+  animation: resumo-chega .5s cubic-bezier(.2, 1.6, .4, 1) both;
+}
+.resumo-icone img, .resumo-icone { width: 34px; height: 34px; }
+.resumo-valor {
+  font-size: 30px;
+  line-height: 1.1;
+  color: var(--ink, #4a2a5e);
+}
+.resumo-rotulo { font-size: 12px; color: #8a6f9c; }
+@keyframes resumo-chega {
+  from { opacity: 0; transform: scale(.4) translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+#overlay-buttons.espera {
+  animation: botoes-chegam .45s ease-out var(--espera, 2s) both;
+}
+@keyframes botoes-chegam {
+  from { opacity: 0; transform: translateY(14px); visibility: hidden; }
+  to   { opacity: 1; transform: none; visibility: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resumo-item { animation-name: resumo-aparece; animation-duration: .2s; }
+  #overlay-buttons.espera { animation-duration: .2s; }
+  @keyframes resumo-aparece { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* A chuva de confete da comemoração do fim de fase (ver ui.chuvaDeConfete):
+   papelzinho caindo do alto da tela inteira, balançando de lado e girando.
+   Uma parte é "fita" (mais comprida e fina), para não ficar tudo igual. */
+#chuva-confete {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Sem z-index: vem antes do #overlay no HTML, então o cartão do resumo
+     fica por cima e o papel cai atrás dele, sem tampar os números. */
+}
+#chuva-confete i {
+  position: absolute;
+  top: -24px;
+  width: clamp(8px, 2.2vw, 12px);
+  height: clamp(11px, 3vw, 16px);
+  border-radius: 2px;
+  animation: confete-cai linear forwards;
+}
+#chuva-confete i.fita { width: 5px; height: clamp(18px, 4.5vw, 26px); border-radius: 3px; }
+@keyframes confete-cai {
+  0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
+  50%  { transform: translate(var(--balanco), 55vh) rotate(calc(var(--giro) / 2)); }
+  90%  { opacity: 1; }
+  100% { transform: translate(calc(var(--balanco) * -0.4), 108vh) rotate(var(--giro)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #chuva-confete { display: none; }
+}
+
+/* --- Pintar ---------------------------------------------------------------
+   A grade das páginas de colorir (um cartão em bandeja, como o álbum) e a
+   tela de pintar, que cobre o jogo inteiro (ver telaPintura.js): o desenho
+   precisa de todo o espaço para o dedo acertar as áreas. */
+/* A bolha de pintar é do tamanho das grandes e a mais colorida do lobby:
+   fundo de arco-íris, um anel de arco-íris girando em volta e a paleta
+   dando uma balançadinha de tempos em tempos. */
+.bolha.pintar .bolha-icone {
+  --sombra: #b4479b;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .85) 0 34%, transparent 62%),
+    conic-gradient(from 200deg, #ff8fb8, #ffb26b, #ffe36b, #8ce99a, #74c0fc, #c09cff, #ff8fb8);
+}
+.bolha.pintar .bolha-icone::after {
+  content: '';
+  position: absolute;
+  /* Em cima da borda branca, do mesmo tamanho: a borda vira o arco-íris
+     girando, sem passar da bolha (ela fica encostada na beira da tela). */
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(#ff5d8f, #ff9a3c, #ffd43b, #3fc06a, #36a5f2, #8f6bf0, #ff5d8f);
+  -webkit-mask: radial-gradient(circle, transparent calc(50% - 5px), #000 calc(50% - 4px));
+  mask: radial-gradient(circle, transparent calc(50% - 5px), #000 calc(50% - 4px));
+  animation: pintar-anel 6s linear infinite;
+}
+.bolha.pintar .bolha-icone img { animation: pintar-balanca 4s ease-in-out infinite; }
+.bolha.pintar .bolha-nome { font-size: clamp(13px, 3.6vw, 16px); }
+@keyframes pintar-anel { to { rotate: 1turn; } }
+@keyframes pintar-balanca {
+  0%, 78%, 100% { rotate: 0deg; scale: 1; }
+  84% { rotate: -14deg; scale: 1.12; }
+  90% { rotate: 12deg; scale: 1.12; }
+  95% { rotate: -6deg; scale: 1.05; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bolha.pintar .bolha-icone::after, .bolha.pintar .bolha-icone img { animation: none; }
+}
+
+.pinturas-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(120px, 34vw, 170px), 1fr));
+  gap: clamp(10px, 3vw, 16px);
+}
+.pintura-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 6px;
+  border: 3px solid #f3dcef;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(122, 78, 199, .18);
+  cursor: pointer;
+  font: inherit;
+  color: var(--purple);
+  touch-action: manipulation;
+}
+.pintura-tile:active { transform: translateY(2px); box-shadow: none; }
+.pintura-tile-foto { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: #fff; }
+.pintura-tile-nome { font-weight: 700; font-size: clamp(12px, 3.4vw, 15px); text-align: center; }
+.pintura-tile.fechada .pintura-tile-foto { opacity: .35; filter: grayscale(1); }
+
+#pintura {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(6px, 1.6vh, 12px);
+  padding: max(8px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+  background: linear-gradient(#fff6fb, #f3e9ff);
+  user-select: none;
+  -webkit-user-select: none;
+}
+#pintura[hidden] { display: none; }
+.pintura-topo { position: relative; display: flex; align-items: center; justify-content: center; min-height: 48px; }
+.pintura-voltar {
+  position: absolute;
+  left: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid #f3dcef;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(122, 78, 199, .18);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pintura-voltar img { width: 26px; height: 26px; }
+.pintura-voltar:active { transform: translateY(2px); box-shadow: none; }
+.pintura-nome { margin: 0; padding: 0 56px; font-size: clamp(18px, 5vw, 26px); color: var(--purple); text-align: center; }
+.pintura-folha { display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; border-radius: 22px; }
+.pintura-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 4px 0 #f3dcec, 0 8px 24px rgba(74, 42, 94, .14);
+  /* O zoom é do próprio jogo (ver telaPintura.js): o navegador não pode
+     ampliar a página nem rolar quando os dedos estão no desenho. */
+  touch-action: none;
+  transform-origin: 0 0;
+  cursor: pointer;
+}
+.pintura-canvas.ampliado { border-radius: 0; box-shadow: none; }
+.pintura-canvas[hidden], .pintura-espera[hidden] { display: none; }
+.pintura-espera { color: #8a6f9c; font-weight: 600; }
+.pintura-ferramentas { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 12px); }
+.pintura-paleta {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(6px, 2vw, 10px);
+  width: min(100%, 460px);
+}
+.pintura-cor {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: var(--cor);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .12), 0 0 0 2px rgba(74, 42, 94, .18);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .12s;
+}
+/* O branco é a borracha: leva um risquinho para não parecer um buraco. */
+.pintura-cor.borracha { background: linear-gradient(135deg, #fff 44%, #ff9fc6 44% 56%, #fff 56%); }
+.pintura-cor.escolhida { transform: scale(1.18); box-shadow: 0 3px 0 rgba(0, 0, 0, .12), 0 0 0 4px var(--purple); }
+.pintura-botoes { display: flex; gap: 10px; }
+.pintura-botoes .big-button { width: auto; padding-inline: clamp(14px, 4vw, 24px); }
+
+/* Deitado: o desenho à esquerda, a paleta e os botões numa coluna à direita. */
+@media (orientation: landscape) {
+  #pintura {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: clamp(10px, 2vw, 24px);
+  }
+  .pintura-ferramentas { grid-column: 2; grid-row: 1 / 3; justify-content: center; }
+  /* As bolinhas saem da altura da tela: num celular deitado sobram uns
+     350 px para treze cores e dois botões. */
+  .pintura-paleta {
+    grid-template-columns: repeat(4, clamp(30px, 10vh, 52px));
+    width: auto;
+    gap: clamp(5px, 1.6vh, 10px);
+  }
+  .pintura-cor { border-width: 3px; }
+  .pintura-botoes { flex-direction: column; width: 100%; gap: clamp(6px, 1.6vh, 10px); }
+  .pintura-botoes .big-button { font-size: clamp(14px, 4.2vh, 20px); padding-block: clamp(6px, 1.8vh, 12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pintura-cor { transition: none; }
+}
+
+/* Os dois modos de pintar, em cima da grade: livre e por números. */
+.pintura-modos {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: clamp(10px, 3vw, 16px);
+}
+.pintura-modo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px clamp(12px, 4vw, 20px);
+  border: 3px solid #f3dcef;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--purple);
+  font: inherit;
+  font-weight: 700;
+  font-size: clamp(14px, 4vw, 17px);
+  box-shadow: 0 3px 0 rgba(122, 78, 199, .18);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pintura-modo img { width: 24px; height: 24px; }
+.pintura-modo.escolhido { border-color: var(--purple); background: #f3e9ff; }
+.pintura-modo:active { transform: translateY(2px); box-shadow: none; }
+
+/* Por números: cada bolinha leva o número da cor; a que já terminou todas
+   as suas áreas fica com um visto e mais apagada. */
+.pintura-paleta.com-numeros { grid-template-columns: repeat(var(--colunas, 7), minmax(0, clamp(34px, 12vw, 56px))); justify-content: center; }
+.pintura-cor span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 800;
+  font-size: clamp(14px, 4.4vw, 20px);
+  color: #4a2a5e;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff;
+}
+.pintura-cor { position: relative; padding: 0; }
+.pintura-cor.completa { opacity: .45; }
+.pintura-cor.completa::after {
+  content: '✓';
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #34b25a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+.pintura-folha { position: relative; }
+.pintura-pronta {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--purple);
+  font-weight: 800;
+  font-size: clamp(20px, 6vw, 30px);
+  white-space: nowrap;
+  box-shadow: 0 4px 0 #f3dcec, 0 8px 24px rgba(74, 42, 94, .2);
+  transform: translate(-50%, -50%);
+  animation: pintura-pronta .5s cubic-bezier(.2, 1.6, .4, 1);
+  pointer-events: none;
+}
+.pintura-pronta[hidden] { display: none; }
+.pintura-pronta img { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
+@keyframes pintura-pronta { from { transform: translate(-50%, -50%) scale(.3); opacity: 0; } }
+@media (orientation: landscape) {
+  .pintura-paleta.com-numeros { grid-template-columns: repeat(3, clamp(30px, 10vh, 52px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pintura-pronta { animation: none; }
 }

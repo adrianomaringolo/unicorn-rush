@@ -13,6 +13,7 @@ import { POWERUP_LIST, createPowerup } from '../src/models/powerups.js';
 import { LEVELS, levelData } from '../src/game/levels.js';
 import { createKey } from '../src/models/collectibles.js';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { EN } from '../src/game/i18n-en.js';
 import { setIdioma } from '../src/game/i18n.js';
 import { THEMES } from '../src/game/music.js';
@@ -25,6 +26,9 @@ import {
   MISSOES, missaoDoDia, missaoDeHoje, contarNaMissao, diasSeguidos, diaAnterior,
   sortearPremio, aplicarPremio, DIAS_PARA_O_BAU,
 } from '../src/game/missao.js';
+import { DESENHOS, dividirEmAreas, areaNoPonto, coresGuardadas, centrosDasAreas } from '../src/game/pintura.js';
+import { conferirGabarito, gabarito } from '../src/game/pinturaNumeros.js';
+import { lerPng } from './png.mjs';
 
 const countMeshes = (obj) => {
   let n = 0;
@@ -125,6 +129,49 @@ console.log(`chave mágica: ${countMeshes(createKey())} peças`);
   if (save.enfeites.meus.length !== ENFEITES.length) throw new Error('o baú não chegou a dar todos os enfeites');
   if (sortearPremio(save, { enfeites: ENFEITES, poderes: POWERUP_LIST }).tipo === 'enfeite') throw new Error('o baú deu enfeite repetido');
   console.log(`missão do dia: ${MISSOES.length} missões, baú a cada ${DIAS_PARA_O_BAU} dias`);
+}
+
+// A pintura: uma folha de 60×60 com um quadrado de linha no meio (e um
+// pontinho de 2×2 solto) tem de virar duas áreas — o fundo e o miolo do
+// quadrado —, o pontinho tem de sumir (vira linha), e um toque em cima da
+// linha tem de valer a área mais perto.
+{
+  const L = 60; const A = 60;
+  const px = new Uint8ClampedArray(L * A * 4).fill(255);
+  const preto = (x, y) => { const k = (y * L + x) * 4; px[k] = px[k + 1] = px[k + 2] = 0; };
+  for (let i = 15; i <= 45; i++) for (let w = 0; w < 3; w++) {
+    preto(i, 15 + w); preto(i, 45 - w); preto(15 + w, i); preto(45 - w, i);
+  }
+  for (const [x, y] of [[5, 5], [6, 5], [5, 6], [6, 6]]) preto(x, y);
+  // O miolo do pontinho: um furo branco de 1 pixel cercado de preto, pequeno
+  // demais para ser área.
+  const pagina = dividirEmAreas(px, L, A);
+  if (pagina.areas !== 2) throw new Error(`pintura: esperava 2 áreas, deu ${pagina.areas}`);
+  const fora = areaNoPonto(pagina, 2, 2);
+  const dentro = areaNoPonto(pagina, 30, 30);
+  if (fora < 0 || dentro < 0 || fora === dentro) throw new Error('pintura: fundo e miolo não se separaram');
+  if (areaNoPonto(pagina, 16, 30) !== areaNoPonto(pagina, 14, 30) && areaNoPonto(pagina, 16, 30) !== dentro) {
+    throw new Error('pintura: o toque na linha não achou área perto');
+  }
+  // A cor invade a linha: algum pixel do traço é pintado pelo miolo.
+  if (!pagina.pixels[dentro].includes(17 * L + 30)) throw new Error('pintura: a cor não entrou por baixo da linha');
+  // Save de outro desenho (outro número de áreas) não pinta nada.
+  if (Object.keys(coresGuardadas({ areas: 3, cores: { 0: 1 } }, 2)).length) throw new Error('pintura: aceitou cores de outro desenho');
+  // O número de uma área vai no meio dela: o do miolo cai no centro do quadrado.
+  const { centro } = centrosDasAreas(pagina);
+  const cx = centro[dentro] % L; const cy = Math.floor(centro[dentro] / L);
+  if (Math.abs(cx - 30) > 2 || Math.abs(cy - 30) > 2) throw new Error(`pintura: o número do miolo foi para ${cx},${cy}`);
+  // Cada desenho de verdade: o PNG abre, e o gabarito da pintura por números
+  // dá cor a todas as áreas, uma vez cada. Se o PNG mudar, isto avisa.
+  const erros = [];
+  for (const d of DESENHOS) {
+    const png = lerPng(fileURLToPath(new URL(`../${d.arquivo}`, import.meta.url)));
+    const areas = dividirEmAreas(png.pixels, png.largura, png.altura).areas;
+    erros.push(...conferirGabarito(d.id, areas));
+    if (!erros.length && gabarito(d.id, areas).cores.length > 13) erros.push(`${d.id}: mais de 13 cores no gabarito`);
+  }
+  if (erros.length) throw new Error(`pintura por números:\n  ${erros.join('\n  ')}`);
+  console.log(`pintura: ${DESENHOS.length} desenho(s), divisão em áreas e gabaritos ok`);
 }
 
 // Emoji sem ícone: o jogo não mostra emoji do aparelho (ver o README,

@@ -36,6 +36,41 @@ export const INTERFACE = {
       branco('M32 44 H46 C64 44 64 84 82 84 H94') + branco('M32 84 H46 C64 84 64 44 82 44 H94')
       + branco('M86 34 L96 44 L86 54') + branco('M86 74 L96 84 L86 94')),
   },
+  // Desfazer: a seta que dá meia-volta para a esquerda.
+  right_arrow_curving_left: {
+    emoji: '↩️',
+    desenho: (c) => botao(c, 'roxo', branco('M90 40 V58 Q90 76 72 76 H38') + branco('M52 60 L36 76 L52 92')),
+  },
+  // A paleta de pintor: a tábua de madeira clara com o furo do dedão e
+  // cinco montinhos de tinta do arco-íris.
+  artist_palette: {
+    emoji: '🎨',
+    desenho: (c) => `<path d="M64 14 C98 14 118 36 116 62 C114 84 96 84 88 80 C80 76 74 82 78 92 C82 104 72 114 58 114 C30 114 12 92 12 64 C12 36 34 14 64 14 Z" fill="${c.g('creme', 14, 114)}" ${st()}/>`
+      + `<ellipse cx="66" cy="90" rx="9" ry="8" fill="#fff" stroke="${O}" stroke-width="4"/>`
+      + [[38, 44, 'vermelho'], [62, 32, 'ouro'], [88, 42, 'verde'], [32, 72, 'azul'], [96, 64, 'roxo']]
+        .map(([x, y, cor]) => `<circle cx="${x}" cy="${y}" r="10" fill="${c.g(cor, y - 10, y + 10)}" stroke="${O}" stroke-width="4"/>`).join('')
+      + brilho(40, 26, 9, 4, -25, 0.55),
+  },
+  // A pintura livre: um giz de cera deitado na diagonal, ponta para baixo.
+  crayon: {
+    emoji: '🖍️',
+    desenho: (c) => `<g transform="rotate(45 64 64)">`
+      + `<path d="M50 30 H78 V96 H50 Z" fill="${c.g('rosa', 30, 96)}" ${st()}/>`
+      + `<path d="M50 96 H78 L66 120 Q64 124 62 120 Z" fill="${c.g('rosa', 96, 122)}" ${st()}/>`
+      + `<path d="M50 30 Q50 14 64 14 Q78 14 78 30 Z" fill="${c.g('rosa', 14, 30)}" ${st()}/>`
+      + `<rect x="50" y="44" width="28" height="36" fill="${c.g('creme', 44, 80)}" ${st()}/>`
+      + `<path d="M56 54 H72 M56 70 H72" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`
+      + `</g>`
+      + brilho(46, 40, 9, 4, -45, 0.6),
+  },
+  // A pintura por números: um botão com "1 2 3".
+  input_numbers: {
+    emoji: '🔢',
+    desenho: (c) => botao(c, 'azul',
+      branco('M28 50 L37 43 V86', 11)
+      + branco('M52 52 Q52 43 61 43 Q70 43 70 52 Q70 61 52 86 H72', 11)
+      + branco('M84 46 Q92 40 99 46 Q104 54 92 62 Q105 66 100 78 Q94 88 83 82', 11)),
+  },
   check_mark_button: { emoji: '✅', desenho: (c) => botao(c, 'verde', branco('M36 66 L56 86 L94 42', 14)) },
   plus: { emoji: '➕', desenho: (c) => botao(c, 'rosa', branco('M64 36 V92 M36 64 H92', 15)) },
   information: {

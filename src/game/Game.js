@@ -52,6 +52,8 @@ import { withIcons, iconUrl } from './icons.js';
 import { storyPages, STORY_END } from './story.js';
 import { IDIOMAS, idioma, idiomaInfo, idiomaSugerido, setIdioma, t } from './i18n.js';
 import { lessonsFor } from './tutorial.js';
+import { DESENHOS, DESENHO } from './pintura.js';
+import { criarTelaPintura, miniatura } from './telaPintura.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate, updateVersion } from './update.js';
 
@@ -72,16 +74,20 @@ const LOBBY_CAMERA = {
 // são só os parâmetros — a altura dela, os pixels do topo que são dos
 // botões, quanto da faixa livre o unicórnio ocupa e os limites da distância.
 const BANDEJA_CAMERA = { height: 2.4, topo: 70, fita: 28, preenche: 0.72, perto: 4.5, longe: 22 };
+// O fim de uma fase vem em três tempos (ver Game.festejar):
+//   1. a comemoração: só o unicórnio pulando e girando no meio da pista,
+//      sem cartão, por `segundos`;
+//   2. o resumo da corrida: corações, chaves e o tempo, um de cada vez;
+//   3. os botões, que chegam `botoes` segundos depois do resumo, quando a
+//      criança já teve tempo de ver os números.
+// `camera` é o enquadramento da comemoração, perto e de frente.
+const FESTA = { segundos: 3, botoes: 2, camera: { height: 2.3, distance: 6.2, look: 1.2 } };
 // Os truques do unicórnio do lobby, um por toque, nesta ordem: o pulo com a
 // cambalhota do pulo duplo, a empinada e o giro. `tempo` é quanto cada um
 // dura, em segundos.
 // A altura do meio do corpo do unicórnio (sem escala): é em volta dela que a
 // cambalhota do lobby gira.
 const MEIO_DO_CORPO = 1.0;
-// As telas em que a pista corre vazia (ver o fim do tick): o lobby e os
-// enfeites — a grade e a confirmação de compra —, onde o que importa é o
-// unicórnio no palco.
-const PALCO_VAZIO = new Set(['home', 'enfeites', 'enfeite-compra']);
 const EIXO_X = new THREE.Vector3(1, 0, 0);
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 const TRUQUES = [
@@ -171,6 +177,10 @@ export class Game {
   constructor(canvas, ui) {
     this.canvas = canvas;
     this.ui = ui;
+    // A área de pintar (ver showPinturas): a tela de pintar e as miniaturas
+    // das páginas já pintadas, guardadas só enquanto o jogo está aberto.
+    this.telaPintura = criarTelaPintura(document.getElementById('pintura'));
+    this.miniaturas = {};
     this.state = STATE.READY;
     this.handheld = isHandheld();
     this.save = getSave();
@@ -215,6 +225,11 @@ export class Game {
         // Durante o portal o cartão da loja continua no DOM, escondido: sem
         // esta guarda o Enter apertaria o botão de trocar chaves de novo.
         if (this.screen === 'reveal') return;
+        // Na comemoração não há cartão: o que estiver escondido no DOM é
+        // da tela de antes da corrida.
+        if (this.festa) return;
+        // Pintando, o cartão de trás está escondido: o Enter não aperta nada.
+        if (this.screen === 'pintura') return;
         this.ui.pressPrimaryButton();
       },
       onPause: () => this.togglePause(),
@@ -892,12 +907,52 @@ export class Game {
     this.saveBest();
     this.ui.setBest(this.best);
 
-    if (!hasNext) return this.trackComplete(number, jaTinhaVencido);
+    // O resumo é tirado agora: a comemoração não mexe nele, mas o que vem
+    // depois dela (outra corrida) zeraria tudo.
+    const resumo = { coracoes: this.hearts, chaves: this.keys, tempo: this.tempoCorrida };
+    this.festejar(() => (hasNext
+      ? this.cartaoDaFase(number, resumo)
+      : this.trackComplete(number, jaTinhaVencido, resumo)));
+  }
 
+  // A comemoração antes do cartão: o unicórnio pula e gira sozinho no meio
+  // da pista parada (ver noPalcoDoResultado), com confete. Só depois de
+  // FESTA.segundos o cartão aparece. Começar outra corrida ou sair no meio
+  // (tudo passa por `reset`) cancela o cartão.
+  festejar(depois) {
+    this.festa = true;
+    this.ui.confetti();
+    // A chuva dura a comemoração inteira e mais um tiquinho, para ainda
+    // estar caindo quando o cartão entra.
+    this.ui.chuvaDeConfete(FESTA.segundos + 1);
+    clearTimeout(this.festaTimer);
+    this.festaTimer = setTimeout(() => {
+      if (!this.festa) return;
+      this.festa = false;
+      depois();
+    }, FESTA.segundos * 1000);
+  }
+
+  // O resumo da corrida, para o cartão do fim da fase: corações, chaves e o
+  // tempo, cada um entrando um pouco depois do outro (ver .resumo-corrida
+  // no CSS). O tempo é só o de corrida de verdade: sem a contagem da
+  // largada e sem o tempo pausado.
+  resumoDaCorrida({ coracoes, chaves, tempo }) {
+    const segundos = Math.max(0, Math.round(tempo));
+    const relogio = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`;
+    const item = (emoji, valor, rotulo, i) => `<div class="resumo-item" style="animation-delay:${(0.2 + i * 0.45).toFixed(2)}s">`
+      + `<span class="resumo-icone">${emoji}</span><b class="resumo-valor">${valor}</b>`
+      + `<span class="resumo-rotulo">${rotulo}</span></div>`;
+    return `<div class="resumo-corrida">${item('💗', coracoes, t('corações'), 0)}`
+      + `${item('🔑', chaves, t('chaves'), 1)}${item('⏱️', relogio, t('tempo'), 2)}</div>`;
+  }
+
+  cartaoDaFase(number, resumo) {
     this.ui.showOverlay({
       title: t('Fase {n} completa! 🎉', { n: number }),
-      text: t('{nome} juntou as {chaves} chaves. A fase {proxima} abriu!',
-        { nome: this.character.name, chaves: this.mode.keys, proxima: number + 1 }),
+      text: t('A fase {proxima} abriu!', { proxima: number + 1 }),
+      html: this.resumoDaCorrida(resumo),
+      esperaBotoes: FESTA.botoes,
       buttons: [
         { label: t('▶️ Próxima fase'), onClick: () => this.startLevel(number + 1) },
         { label: t('🔁 Jogar de novo'), onClick: () => this.startLevel(number), secondary: true },
@@ -918,7 +973,7 @@ export class Game {
   // novo" desta mesma tela, é natural ela aparecer de novo), só sem as
   // chaves — sem isso dava para juntar 10 chaves de graça repetindo uma
   // fase só.
-  trackComplete(number, jaTinhaVencido = false) {
+  trackComplete(number, jaTinhaVencido = false, resumo = null) {
     const BONUS_KEYS = 10;
     if (!jaTinhaVencido) {
       // Junto das chaves, um baú arco-íris — o mesmo dos 7 dias de missão.
@@ -938,7 +993,8 @@ export class Game {
           { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name })
         : t('{nome} terminou as {total} fases do {pista}! De presente, {chaves} chaves mágicas e um baú arco-íris. 🎁',
           { nome: this.character.name, total: LEVEL_COUNT, pista: this.track.name, chaves: BONUS_KEYS }),
-      html: jaTinhaVencido ? '' : this.chuvaDeChaves(BONUS_KEYS),
+      html: (resumo ? this.resumoDaCorrida(resumo) : '') + (jaTinhaVencido ? '' : this.chuvaDeChaves(BONUS_KEYS)),
+      esperaBotoes: resumo ? FESTA.botoes : 0,
       vitoria: true,
       buttons: [
         ...(jaTinhaVencido ? [] : [{ label: t('🌈 Abrir o baú'), huge: true, onClick: () => this.abrirBau() }]),
@@ -1149,6 +1205,10 @@ export class Game {
     // `firstHitFree` é o Coco: a casca dura aguenta a primeira trombada.
     this.hitShield = !!this.character.firstHitFree;
     this.elapsed = 0;
+    this.tempoCorrida = 0;      // só o tempo correndo de verdade (o resumo da fase)
+    this.festa = false;
+    clearTimeout(this.festaTimer);
+    this.ui.pararConfete();
     this.player = { lane: 1, x: 0, y: 0, vy: 0, grounded: true, invulnerable: 0, jumps: 0, flip: 0 };
     // De frente para a pista, e não para onde o menu tiver parado.
     //
@@ -1294,6 +1354,7 @@ export class Game {
             <h1 class="lobby-fala">${t('Vamos correr?')}</h1>
           </div>
           <div class="lobby-rail dir">
+            ${bolha('pintar', '🎨', t('Pintar'), 'pintar')}
             ${this.bolhaDaMissao(bolha)}
             ${bolha('stats', '📊', t('Estatísticas'), 'mini')}
             ${bolha('about', 'ℹ️', t('Sobre'), 'mini')}
@@ -1336,6 +1397,7 @@ export class Game {
       if (qual === 'powers') return this.showPowerShop();
       if (qual === 'enfeites') return this.showEnfeites();
       if (qual === 'album') return this.showAlbum();
+      if (qual === 'pintar') return this.showPinturas();
       if (qual === 'missao') return this.showMissao();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
@@ -2927,8 +2989,6 @@ export class Game {
     this.fecharViewer();
     this.state = STATE.READY;
     this.screen = 'enfeites';
-    // A pista dos enfeites é vazia, como a do lobby (ver PALCO_VAZIO).
-    this.world.limparItens();
     this.ui.showPause(false);
     this.ui.setWallet(this.coracoes, true, '💗');
 
@@ -3775,6 +3835,99 @@ export class Game {
   //
   // A que falta aparece como sombra, com um ?: dá para ver o contorno do
   // que procurar, mas não o que é.
+  // ---- Pintar (ver pintura.js e telaPintura.js) -------------------------
+
+  // A grade das páginas de colorir. Em cima, os dois modos: pintura livre
+  // e por números (cada um é uma folha separada do mesmo desenho). As já
+  // pintadas aparecem com as cores (a miniatura sai do desenho pintado, uma
+  // de cada vez, depois que a grade já está na tela); as ligadas a um
+  // unicórnio que a criança ainda não tem ficam com cadeado.
+  showPinturas() {
+    this.fecharViewer();
+    this.telaPintura.fechar();
+    this.state = STATE.READY;
+    this.screen = 'pinturas';
+    this.ui.showPause(false);
+
+    const modo = this.save.pinturaModo === 'numeros' ? 'numeros' : 'livre';
+    const aberto = (d) => !d.personagem || this.isOwned('character', d.personagem);
+    const tiles = DESENHOS.map((d) => {
+      const foto = this.miniaturas[`${modo}:${d.id}`] || d.arquivo;
+      return `<button class="pintura-tile${aberto(d) ? '' : ' fechada'}" data-pick="${d.id}" aria-label="${t(d.nome)}">`
+        + `<img class="pintura-tile-foto" src="${foto}" alt="" />`
+        + `<span class="pintura-tile-nome">${aberto(d) ? t(d.nome) : '🔒'}</span></button>`;
+    }).join('');
+    const botaoModo = (qual, rotulo) => `<button class="pintura-modo${qual === modo ? ' escolhido' : ''}" data-pick="modo:${qual}" aria-pressed="${qual === modo}">${t(rotulo)}</button>`;
+
+    this.ui.showOverlay({
+      title: t('🎨 Pintar'),
+      html: `<div class="pintura-modos">${botaoModo('livre', '🖍️ Livre')}${botaoModo('numeros', '🔢 Por números')}</div>`
+        + `<div class="pinturas-grade">${tiles}</div>`,
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((id, el) => {
+      if (id.startsWith('modo:')) {
+        const qual = id.slice(5);
+        if (qual === modo) return;
+        sfx.tap();
+        update((save) => { save.pinturaModo = qual; });
+        this.save = getSave();
+        this.showPinturas();
+        return;
+      }
+      const d = DESENHO[id];
+      if (!d) return;
+      if (!aberto(d)) {
+        sfx.deny();
+        this.ui.shakeElement(el);
+        this.ui.toast(t('🔒 Liberte {nome} para pintar este desenho', { nome: CHARACTERS[d.personagem]?.name || '' }));
+        return;
+      }
+      sfx.tap();
+      this.abrirPintura(id, modo);
+    });
+    this.gerarMiniaturas(modo);
+  }
+
+  // As miniaturas das páginas pintadas que ainda não estão prontas, uma de
+  // cada vez (cada uma divide o desenho de novo). Se a criança sair da
+  // grade no meio, para.
+  async gerarMiniaturas(modo) {
+    const chave = modo === 'numeros' ? 'pinturasNumeros' : 'pinturas';
+    for (const d of DESENHOS) {
+      const guardado = this.save[chave]?.[d.id];
+      const nome = `${modo}:${d.id}`;
+      if (!guardado || this.miniaturas[nome]) continue;
+      // Parou se a criança saiu da grade ou trocou de modo no meio.
+      if (this.screen !== 'pinturas' || (this.save.pinturaModo === 'numeros' ? 'numeros' : 'livre') !== modo) return;
+      try {
+        this.miniaturas[nome] = await miniatura(d.id, guardado, modo);
+      } catch { continue; }
+      if (this.screen !== 'pinturas') return;
+      const img = document.querySelector(`#overlay-extra [data-pick="${d.id}"] .pintura-tile-foto`);
+      if (img && this.miniaturas[nome]) img.src = this.miniaturas[nome];
+    }
+  }
+
+  // Uma página aberta para pintar. Cada toque já fica guardado no save: sair
+  // no meio (ou o jogo fechar) não perde nada. Livre e por números guardam
+  // em lugares diferentes.
+  abrirPintura(id, modo = 'livre') {
+    const chave = modo === 'numeros' ? 'pinturasNumeros' : 'pinturas';
+    this.screen = 'pintura';
+    this.ui.hideOverlay();
+    this.ui.showPause(false);
+    this.telaPintura.abrir(id, this.save[chave]?.[id], {
+      aoMudar: (guardado) => {
+        update((save) => { save[chave] = { ...(save[chave] || {}), [id]: guardado }; });
+        this.save = getSave();
+        delete this.miniaturas[`${modo}:${id}`];
+      },
+      aoVoltar: () => this.showPinturas(),
+    }, modo);
+  }
+
   showAlbum(pagina = null) {
     this.fecharViewer();
     this.state = STATE.READY;
@@ -4084,6 +4237,7 @@ export class Game {
       const ritmo = this.mode.speedRamp * (this.character.speedRamp ?? 1);
       this.speed = Math.min(teto, this.speed + ritmo * dt);
       this.score += this.speed * dt * 0.6;
+      this.tempoCorrida += dt;
       this.ui.setScore(this.score);
       this.updatePowers(dt);
       this.attractNearby(dt);
@@ -4101,10 +4255,13 @@ export class Game {
     const congelado = paused || (this.contando && this.retomando);
     // Fim de corrida com a bandeja do resultado aberta: a pista para e o
     // unicórnio vem para o palco (ver noPalcoDoResultado).
-    const resultado = this.state === STATE.OVER && !!this.ui.palco();
+    const resultado = this.state === STATE.OVER && (!!this.ui.palco() || this.festa);
+    // Abrindo o baú a pista também para: o baú é o centro da tela, e a
+    // pista rolando atrás dele tirava a atenção da tampa abrindo.
+    const parada = congelado || resultado || this.screen === 'bau';
     const worldSpeed = playing
       ? this.speed * (boosting ? POWERUPS.boost.speed : rushing ? RUSH_SPEED : 1)
-      : congelado || resultado ? 0 : this.mode.startSpeed * 0.35;
+      : parada ? 0 : this.mode.startSpeed * 0.35;
 
     // No turbo a câmera abre um pouco: dá sensação de velocidade. No ⚡ ela
     // abre menos, porque ali o unicórnio continua no chão.
@@ -4129,11 +4286,21 @@ export class Game {
       }
     }
 
-    // No lobby e nos enfeites a pista corre vazia: sem obstáculo, coração,
-    // estrela nem power-up passando pelo unicórnio — o palco é só dele. (Quem
-    // abre essas telas já tira o que havia na pista; aqui nada novo nasce.)
-    const palcoVazio = this.state === STATE.READY && PALCO_VAZIO.has(this.screen);
-    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed, { semItens: palcoVazio });
+    // Em **todo** menu a pista corre vazia: sem obstáculo, coração, estrela,
+    // power-up, chave, figurinha nem placa passando pelo unicórnio — o palco
+    // é só dele. Vale para o lobby e para qualquer tela aberta dele (pistas,
+    // unicórnios, enfeites, álbum, loja…) e para a bandeja do resultado.
+    // Antes só a tela inicial ficava vazia, e nas outras a pista voltava a
+    // encher de itens atrás do cartão.
+    //
+    // O que sobrou de uma corrida some na hora (quem chega a um menu vindo
+    // do fim da corrida, sem passar pelo `reset`, trazia a pista junto). Na
+    // batida, antes do resultado abrir, nada novo nasce, mas o obstáculo em
+    // que ele bateu continua ali.
+    const pistaDeMenu = this.state === STATE.READY || resultado;
+    if (pistaDeMenu) this.world.esvaziarPista();
+    const semItens = pistaDeMenu || this.state === STATE.OVER;
+    this.world.update(dt, worldSpeed, playing ? this.progress : 0, this.elapsed, { semItens });
     if (!congelado) {
       animateUnicorn(this.unicorn, this.elapsed, worldSpeed * 0.14, this.player.grounded, this.powers.feather > 0);
       this.updateEchoes(worldSpeed);
@@ -4181,6 +4348,9 @@ export class Game {
       // O Brasa e o Vovô são maiores que os outros: a câmera recua na mesma
       // medida, senão as asas deles invadiam as bolhas das laterais.
       lobby = { ...base, distance: base.distance * recuo * (this.character.scale || 1) };
+    } else if (this.festa) {
+      const escala = this.character.scale || 1;
+      lobby = { ...FESTA.camera, distance: FESTA.camera.distance * escala };
     } else if (preview || resultado) {
       lobby = this.enquadrarBandeja();
     }

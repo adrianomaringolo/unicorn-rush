@@ -41,6 +41,26 @@ export const OBJETOS = {
       + `<path d="M98 30 L100 10 L112 16 Z M98 30 L118 28 L112 16 Z" fill="${c.g('rosa', 10, 30)}" ${st(4)}/>`
       + brilho(40, 44, 5, 12, -40, 0.6),
   },
+  stopwatch: {
+    emoji: '⏱️',
+    // O cronômetro: o botão em cima, o mostrador branco e um ponteiro só,
+    // apontando para o "dois" (fica claro que é um relógio em 28px).
+    desenho: (c) => `<rect x="54" y="8" width="20" height="14" rx="4" fill="${c.g('rosa', 8, 22)}" ${st(5)}/>`
+      + `<rect x="60" y="20" width="8" height="12" fill="${c.g('rosa', 20, 32)}" ${st(4)}/>`
+      + `<line x1="94" y1="38" x2="103" y2="29" stroke="${O}" stroke-width="12" stroke-linecap="round"/>`
+      + `<line x1="94" y1="38" x2="103" y2="29" stroke="#ffb8d2" stroke-width="4" stroke-linecap="round"/>`
+      + `<circle cx="64" cy="74" r="44" fill="${c.g('rosa', 30, 118)}" ${st()}/>`
+      + `<circle cx="64" cy="74" r="33" fill="#fff" stroke="${O}" stroke-width="4"/>`
+      + [0, 90, 180, 270].map((a) => {
+        const r = (a * Math.PI) / 180;
+        const x1 = 64 + Math.sin(r) * 26, y1 = 74 - Math.cos(r) * 26;
+        const x2 = 64 + Math.sin(r) * 31, y2 = 74 - Math.cos(r) * 31;
+        return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`;
+      }).join('')
+      + `<line x1="64" y1="74" x2="79" y2="55" stroke="${O}" stroke-width="6" stroke-linecap="round"/>`
+      + `<circle cx="64" cy="74" r="6" fill="${O}"/>`
+      + brilho(40, 50, 6, 11, -35, 0.6),
+  },
   trophy: {
     emoji: '🏆',
     desenho: (c) => traco('M36 34 H22 Q16 34 18 46 Q22 62 40 64', c.g('ouro', 30, 66), 7)

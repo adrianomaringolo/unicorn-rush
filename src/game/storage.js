@@ -60,6 +60,15 @@ const DEFAULTS = {
   // O álbum (models/stickers.js): quantas vezes cada figurinha foi pega,
   // { 'selva-parrot': 1 }. Quem não está aqui ainda falta.
   figurinhas: {},
+  // As páginas de colorir (src/game/pintura.js): a cor de cada área,
+  // { 'uni-campo': { areas: 107, cores: { 12: 3 } } }.
+  pinturas: {},
+  // A pintura por números (src/game/pinturaNumeros.js), no mesmo formato,
+  // mas com o índice na paleta do gabarito da página. É outra folha: pintar
+  // por números não mexe na pintura livre do mesmo desenho.
+  pinturasNumeros: {},
+  // O último modo escolhido na grade de pintar: 'livre' ou 'numeros'.
+  pinturaModo: 'livre',
   stats: {
     runs: 0,             // corridas começadas
     wins: 0,             // metas do modo Livre completadas

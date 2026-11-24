@@ -21,3 +21,6 @@ assets/video/fotos/
 
 # chaves de API (o `npm run vozes` lê ELEVENLABS_API_KEY daqui, se existir)
 .env
+
+# Retratos de referência para gerar as páginas de colorir (ver docs/prompts-pintar.md)
+/pintar/

@@ -380,6 +380,18 @@ export class World {
     this.markers.push(marker);
   }
 
+  // Tira da pista tudo o que não é cenário: os itens (obstáculos, prêmios,
+  // power-ups, cartões) e as marcas (placas de distância, faixa do recorde,
+  // portal). É a pista dos menus — ver Game.tick.
+  esvaziarPista() {
+    if (!this.entities.length && !this.markers.length) return;
+    for (const e of this.entities) this.group.remove(e);
+    this.entities.length = 0;
+    for (const m of this.markers) this.group.remove(m);
+    this.markers.length = 0;
+    this.clearWave();
+  }
+
   reset(mode = this.mode) {
     this.mode = mode;
     for (const e of this.entities) this.group.remove(e);
@@ -772,7 +784,7 @@ export class World {
   }
 
   // `semItens`: o cenário corre, mas nenhuma linha nova nasce — a pista
-  // vazia do lobby (ver Game.tick).
+  // vazia dos menus (ver Game.tick).
   update(dt, speed, difficulty, elapsed, { semItens = false } = {}) {
     const move = speed * dt;
 

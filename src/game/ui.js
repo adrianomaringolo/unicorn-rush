@@ -26,6 +26,9 @@ export function createUI() {
   const title = $('#overlay-title');
   const text = $('#overlay-text');
   const buttons = $('#overlay-buttons');
+  const chuva = $('#chuva-confete');
+  let chuvaTimer = 0;
+  let botoesProntosEm = 0;   // ver `esperaBotoes`, em showOverlay
   const extra = $('#overlay-extra');
   const backButton = $('#overlay-back');
   const grownButton = $('#overlay-grown');
@@ -278,6 +281,39 @@ export function createUI() {
       }
     },
 
+    // A chuva de confete da comemoração (ver Game.festejar): papelzinho
+    // caindo do alto da tela, de ponta a ponta, por `segundos`. Novos
+    // pedaços nascem a cada 90 ms; cada um some sozinho quando chega lá
+    // embaixo. `pararConfete` corta a chuva (uma corrida nova começou).
+    chuvaDeConfete: (segundos) => {
+      clearInterval(chuvaTimer);
+      const cores = ['#ff7b9d', '#ffb26b', '#ffe36b', '#8ce99a', '#74c0fc', '#c09cff', '#ffffff'];
+      const fim = performance.now() + segundos * 1000;
+      const solta = (quantos) => {
+        for (let i = 0; i < quantos; i++) {
+          const p = document.createElement('i');
+          const queda = 2.2 + Math.random() * 1.6;
+          p.style.left = `${(Math.random() * 100).toFixed(1)}%`;
+          p.style.background = cores[Math.floor(Math.random() * cores.length)];
+          p.style.setProperty('--balanco', `${Math.round((Math.random() - 0.5) * 120)}px`);
+          p.style.setProperty('--giro', `${Math.round((Math.random() - 0.5) * 1080)}deg`);
+          p.style.animationDuration = `${queda.toFixed(2)}s`;
+          if (Math.random() < 0.35) p.classList.add('fita');
+          chuva.appendChild(p);
+          setTimeout(() => p.remove(), queda * 1000 + 100);
+        }
+      };
+      solta(24);                               // a primeira leva já enche a tela
+      chuvaTimer = setInterval(() => {
+        if (performance.now() > fim) return clearInterval(chuvaTimer);
+        solta(4);
+      }, 90);
+    },
+    pararConfete: () => {
+      clearInterval(chuvaTimer);
+      chuva.textContent = '';
+    },
+
     // O ✅ de "isso mesmo!", no meio da tela.
     lessonCheck: () => {
       lessonOk.hidden = false;
@@ -346,6 +382,7 @@ export function createUI() {
       title: t, text: x = '', html = '', buttons: list = [],
       back = null, grown = null, picker = false, wide = false, home = false,
       book = false, hint = false, arrows = true, scroll = null, vitoria = false,
+      esperaBotoes = 0,
     }) => {
       title.innerHTML = withIcons(t || '');
       title.hidden = !t;
@@ -419,6 +456,16 @@ export function createUI() {
         buttons.appendChild(button);
       }
       buttons.hidden = list.length === 0;
+      // `esperaBotoes` (s): os botões chegam depois, quando o cartão tem
+      // algo para ser olhado antes (o resumo da fase). Até lá ficam
+      // invisíveis, e o Enter também não os aperta.
+      buttons.classList.remove('espera');
+      if (esperaBotoes > 0) {
+        void buttons.offsetWidth;            // reinicia a animação
+        buttons.style.setProperty('--espera', `${esperaBotoes}s`);
+        buttons.classList.add('espera');
+      }
+      botoesProntosEm = performance.now() + esperaBotoes * 1000;
       overlay.classList.remove('hidden');
       hud.classList.add('dim');
 
@@ -469,6 +516,7 @@ export function createUI() {
 
     // Enter/Espaço aciona o botão principal da tela (o grande, colorido).
     pressPrimaryButton: () => {
+      if (performance.now() < botoesProntosEm) return;
       const main = buttons.querySelector('button:not(.secondary)') || buttons.querySelector('button');
       main?.click();
     },

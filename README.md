@@ -911,6 +911,29 @@ Mexer numa fase é mexer numa linha; o `npm run check` simula cada fase até
 completar a meta e confere que ela fica mais difícil que a anterior, que as
 chaves não ficam grudadas e que a fase inteira cabe num tempo razoável.
 
+### Terminar uma fase: comemoração, resumo, botões
+
+O fim de toda fase vem em três tempos (`Game.festejar`, com os números em
+`FESTA`, no começo de `Game.js`):
+
+1. **A comemoração, 3 s sem cartão nenhum.** A pista para, a câmera chega
+   perto e o unicórnio pula e gira no meio dela, debaixo de uma **chuva de
+   confete** que cai do alto da tela inteira (`ui.chuvaDeConfete`, com
+   papelzinho e fitas balançando; o papel cai atrás do cartão, para não
+   tampar os números, e some para quem prefere menos movimento). O Enter não
+   aperta nada nesse meio-tempo, e começar outra corrida ou sair (tudo
+   passa por `reset`) cancela o cartão que viria.
+2. **O resumo da corrida** (`Game.resumoDaCorrida`): os corações, as chaves
+   e o **tempo** daquela corrida, em três quadrinhos que entram um de cada
+   vez. O tempo é `tempoCorrida`, que só anda com a corrida rodando: a
+   contagem da largada e a pausa não contam.
+3. **Os botões, 2 s depois do resumo.** Até lá ficam invisíveis e o Enter
+   também não os aperta (`esperaBotoes`, em `ui.showOverlay`), para a
+   criança olhar os números antes de sair tocando em "Próxima fase".
+
+O cartão da última fase da pista (ver abaixo) segue os mesmos três tempos,
+com o resumo antes da chuva de chaves.
+
 ### Vencer uma pista
 
 Terminar a décima segunda fase de uma pista é o único troféu do jogo que não
@@ -1397,8 +1420,9 @@ Quando ela já tem todos os enfeites, o enfeite sai do sorteio.
 - na frente, o fecho com o buraco da chave e o símbolo de um **pequeno
   arco-íris entre duas nuvens**.
 
-Ele toma o lugar do unicórnio no palco e a cena segue nesta ordem
-(`Game.animarBau`):
+Ele toma o lugar do unicórnio no palco, **com a pista parada** (nos outros
+menus ela rola devagar; aqui o baú é o centro da tela), e a cena segue
+nesta ordem (`Game.animarBau`):
 1. chacoalha cada vez mais forte por um segundo;
 2. a tampa abre para trás com um tranco e uma explosão de brilhos;
 3. a luz de dentro acende;
@@ -1930,6 +1954,11 @@ imagem do navegador. Pelo mesmo motivo o resto (céu, nome, barra e o
 preenchimento) é HTML e CSS puros, no `index.html`: são animações de
 `transform` e `width`, que rodam no compositor.
 
+O nome é o **mesmo logo do lobby**: "Unicorn" em letras coloridas pulando em
+onda e o "Rush" na fita torta, com as mesmas classes (`.lobby-logo`). No
+lobby quem monta as letras é o JavaScript; aqui elas estão escritas à mão no
+`index.html`, para aparecerem antes de qualquer script.
+
 A tela sai quando as duas coisas já aconteceram: o navegador pintou a
 primeira tela de verdade **e** passaram **3 segundos**. Com o jogo em cache
 ele abre em poucas centenas de milissegundos, e sem esse mínimo a animação só
@@ -2277,6 +2306,202 @@ conteúdo dinâmico, então embutir tudo deixa o app independente. Publicar na
 Play Store depois é opcional (conta de desenvolvedor, US$ 25 uma vez) — um APK
 assinado, instalado direto no aparelho, já basta para uso na família.
 
+## Pintar
+
+Uma área de colorir com os personagens, como em muitos apps infantis. Entra
+pela bolha **🎨 Pintar** do lobby, que abre a grade das páginas; tocar numa
+página abre a tela de pintar, que cobre o jogo inteiro (o desenho precisa de
+todo o espaço para o dedo acertar as áreas).
+
+| Arquivo | O quê |
+| --- | --- |
+| `src/game/pintura.js` | a lista `DESENHOS`, a paleta `CORES` e a divisão em áreas — sem tela, testada no `npm run check` |
+| `src/game/telaPintura.js` | a tela: desenho com zoom, paleta, ↩️ Desfazer e 🗑️ Limpar, e as miniaturas da grade |
+| `src/game/pinturaNumeros.js` | os gabaritos da pintura por números: a cor de cada área de cada página |
+| `scripts/png.mjs` | leitor de PNG para os scripts (o `npm run check` divide as páginas de verdade) |
+| `scripts/mapa-areas.mjs` | o mapa numerado das áreas de uma página, para montar o gabarito |
+| `assets/pintar/*.png` | as páginas |
+| `save.pinturas` | pintura livre: `{ [id]: { areas, cores: { [área]: índice } } }` |
+| `save.pinturasNumeros` | pintura por números, no mesmo formato, com o índice na paleta do gabarito |
+| `save.pinturaModo` | o último modo escolhido na grade: `'livre'` ou `'numeros'` |
+
+**Dois modos**, escolhidos em cima da grade, e cada um é uma folha separada
+do mesmo desenho:
+
+- **🖍️ Livre**: as doze cores e a borracha, qualquer cor em qualquer área.
+- **🔢 Por números**: a paleta é a do gabarito da página (de 6 a 13 cores),
+  cada bolinha com o seu número, e cada área tem o número da cor certa
+  escrito no meio. Só a cor certa pinta; a errada faz o som de "não". As
+  áreas da cor escolhida ganham um tom clarinho dela, para achar as
+  pequenas, e a cor que termina ganha um ✓ e passa sozinha para a próxima.
+  O número fica do tamanho da área, nunca menor que ~11 px na tela; a área
+  pequena demais fica sem número (o tom clarinho mostra onde está) e ganha
+  número quando o desenho é ampliado. Página completa: "⭐ Pronto!".
+
+**Zoom só no desenho**, nos dois modos: pinça de dois dedos, um dedo
+arrastando quando já está ampliado, rodinha ou duplo clique no computador
+(até 6×). O resto da tela não mexe. Por isso a cor entra quando o dedo
+**sobe** sem ter arrastado, e não quando encosta: senão o primeiro dedo de
+uma pinça já pintava.
+
+**Pintar por toque, não com pincel.** Para criança de 3 anos, o pincel
+livre sai do contorno e borra tudo. Aqui ela escolhe a cor e toca numa área,
+que se enche inteira. Um toque que cai em cima da linha vale a área mais
+perto, porque dedo de criança é grosso.
+
+**As páginas são desenhos contornados em PNG**, em `assets/pintar/`. A primeira tentativa
+gerava o contorno a partir do modelo 3D, mas o resultado ficou fraco: linhas
+facetadas, asa do lado de lá em "escadinha" e o corpo inteiro numa área só.
+
+Como a página funciona:
+
+1. O PNG é lido pixel a pixel: o que é escuro (luminância abaixo de 170) é
+   **linha**, o resto é papel.
+2. O papel é dividido em **áreas**, os pedaços cercados de linha, uma vez só,
+   na abertura. O fundo em volta do desenho é uma área também. Pedacinhos
+   com menos de 80 pixels (o brilho do olho) contam como linha.
+3. Cada área **invade a linha em 4 pixels**, para a cor chegar até o meio do
+   traço e não sobrar franja branca na borda suavizada.
+4. A cor é desenhada embaixo e o PNG por cima, em **multiplicar**: o branco
+   deixa a cor aparecer e a linha preta continua preta.
+
+**Medido com o primeiro desenho (1312 × 1199, hoje `uni.png`):** 40 áreas para pintar,
+preparadas em ~360 ms no computador. No celular deve passar de 1 s; se
+incomodar, a divisão em áreas pode ser calculada antes e guardada junto do
+desenho.
+
+**Como os desenhos precisam ser:**
+
+- **linhas fechadas**: uma brecha faz a cor vazar para a área vizinha;
+- só contorno escuro sobre branco ou transparente, sem sombra, degradê ou
+  textura;
+- linhas firmes, de 6 a 10 px num desenho de ~2000 px;
+- de 1500 a 2000 px no lado maior;
+- direito de uso: para publicar na Play, os desenhos precisam ser nossos ou
+  ter licença comercial.
+
+**O que fica guardado.** A cor de cada área vai para o save a cada toque
+(o índice na paleta, quase nada de espaço), e a pintura continua de onde
+parou. O save guarda também quantas áreas o desenho tinha: se o PNG for
+trocado e a divisão mudar, a página volta em branco em vez de sair com as
+cores nos lugares errados. Por isso **a paleta só cresce no fim** — mudar a
+ordem de `CORES` repinta o que já está guardado. Limpar também se desfaz,
+para um toque sem querer não apagar a pintura inteira.
+
+**Brechas se corrigem no PNG, não no jogo.** O jogo lê o desenho exatamente
+como ele é. Tentamos fechar brechas sozinho, na hora de dividir as áreas, mas
+adivinhar fechava também o que era aberto de propósito, como a espiral da
+antena de uma borboleta. Então quem corrige é quem põe o desenho:
+
+- procure as brechas que são erro, olhando onde duas áreas que deviam ser
+  separadas pintam juntas; as mais comuns são o branco do olho aberto
+  embaixo e a linha entre as pétalas que não chega no miolo da flor;
+- feche cada uma desenhando um traço no PNG, da grossura da linha naquele
+  ponto: fino na ponta de um arco, afinando como uma cunha entre pétalas;
+- deixe abertas as linhas que só passam perto uma da outra.
+
+Foi o que se fez nas páginas da Uni e do Sol: os olhos do Sol e as pétalas
+das flores. Nos olhos da Uni, quem fechou foi o próprio desenho, refeito.
+
+**Pôr um desenho novo:**
+
+1. Gere o desenho seguindo `docs/desenhos-personagens.md`: as regras de
+   contorno, a ficha de cada unicórnio e duas cenas por personagem, com os
+   prompts prontos (os retratos de referência ficam em
+   `pintar/referencias/`, fora do git).
+2. Salve em `assets/pintar/<id>-<cena>.png`, em tons de cinza (cabe em ~400 KB).
+3. Acrescente a linha em `DESENHOS` (`pintura.js`). Com `personagem: '<id>'`
+   a página só abre para quem já libertou aquele unicórnio; sem ele, é de
+   todo mundo.
+4. Monte o **gabarito** em `GABARITOS` (`pinturaNumeros.js`): gere o mapa
+   com `node scripts/mapa-areas.mjs <id> > _mapa.svg`, abra no navegador
+   e ponha cada número de área na cor dela (`branco` = fica sem número: o
+   brilho do olho, o corpo branco). Rode de novo: com o gabarito, o mapa sai
+   pintado, para conferir de olho.
+5. Acrescente o PNG na lista do `sw.js` e rode `npm run check`, que divide a
+   página e confere se o gabarito tem toda área uma vez só.
+
+**Mexeu no PNG, refaça o gabarito.** Os números das áreas seguem a ordem do
+desenho: fechar uma brecha cria uma área nova e muda a numeração das que vêm
+depois. O `npm run check` avisa (área sem cor, área que não existe). Foi o
+que aconteceu no pomar do Sol: a copa da árvore vazava para o céu por duas
+frestas (uma na beirada da imagem, outra encostada no chifre).
+
+**Mais tarde:** salvar como imagem e imprimir no cantinho dos adultos; no
+plano grátis e pago, as páginas seguem os personagens.
+
+## Grátis e pago (proposta, ainda não implementada)
+
+Plano combinado em nov/2026 para publicar na Play Store: **grátis com uma
+compra única** que libera o resto, sem anúncios e sem compras avulsas.
+
+**A compra abre o reino, não pula a progressão.** Pistas e unicórnios
+continuam custando chaves, e os enfeites continuam custando corações, como
+hoje. O pacote só deixa a criança *alcançar* o que estava fora. Assim o
+jogo continua sendo jogo depois da compra.
+
+### Grátis: um jogo completo, menor
+
+| O quê | Grátis |
+| --- | --- |
+| Pistas | 5: Campo, Doces, Vilarejo, Céu e Frutas (as mais baratas, até 10 🔑) |
+| Fases | as 12 de cada uma: **60 fases** |
+| Unicórnios | 8: Uni, Sol, Lua, Estrela, Lulu, Brasa, Chiclete e Musgo (até 23 🔑) |
+| Modos | todos: Fases, Livre, Desafio e Aprender |
+| Missão do dia e baú arco-íris | completos |
+| Enfeites | uns 20 clássicos (laço, coroa, óculos, colares, flores, polainas, chifres simples) |
+| Álbum | as 5 páginas das pistas grátis |
+| História | os capítulos das pistas grátis |
+
+Quem joga só a parte grátis termina pistas inteiras, ganha troféu e baú.
+É um jogo inteiro, não uma demonstração.
+
+### Pago: o pacote "🌈 Reino inteiro"
+
+| O quê | No pacote |
+| --- | --- |
+| Pistas | as outras 12: Praia, Oceano, Noite, Geada, Vulcão, Parque, Espaço, Tempestade, Bruma, Caverna, Outono e Selva (**144 fases**) |
+| Unicórnios | os outros 14 (Onda a Pérola) e o Eco |
+| Enfeites | os outros ~34: todas as asas, as caudas que trocam o rabo, os sapatos e os de Natal |
+| Álbum | as outras 12 páginas |
+| História | o final |
+
+- **Preço:** compra única, de R$ 19,90 a R$ 24,90.
+- **Vale para o aparelho:** todos os perfis do aparelho ficam liberados.
+- **Restaurável:** a compra volta ao reinstalar, pela conta Google.
+
+### Como o bloqueio aparece
+
+- O que é do pacote **aparece nas grades**, com um 👑 pequeno no lugar do
+  cadeado de chaves. A criança sabe que existe, mas **nunca vê preço nem
+  botão de comprar**.
+- Tocar num item com 👑 mostra uma frase amiga ("Essa pista é do Reino
+  inteiro, peça para um adulto 👑"), sem insistir.
+- A compra mora só no **cantinho dos adultos** (segurar o dedo no 👑). Lá
+  ficam o preço, o botão de comprar e o "Restaurar compra".
+
+### Regras que acompanham
+
+- **Baú arco-íris:** sem o pacote, o baú só sorteia enfeites grátis.
+- **Missões:** todas continuam possíveis só com o conteúdo grátis.
+- **Quem já joga:** o que já foi comprado com chaves antes da divisão
+  continua liberado. Ninguém perde nada na atualização.
+- **Sem anúncios, sem compras avulsas, sem vender o baú.** Baú pago com
+  prêmio sorteado é *loot box*, proibida para crianças no Brasil pelo ECA
+  Digital (Lei 15.211/2025). Confirme a lei antes de publicar.
+
+### O que falta para existir
+
+1. Uma lista do que é do pacote, num lugar só.
+2. O 👑 nas grades (pistas, unicórnios, enfeites e álbum) e a frase ao
+   tocar.
+3. A tela do pacote no cantinho dos adultos.
+4. O filtro do baú.
+5. A compra de verdade, pela Google Play Billing, depois de empacotar com o
+   Capacitor (ver *Virar app Android*).
+6. Decidir se a versão web fica toda grátis, como vitrine, ou segue a mesma
+   divisão.
+
 ## Ícones
 
 Os ícones do jogo **não são emoji do sistema**. Emoji é desenhado pela fonte
@@ -2621,3 +2846,7 @@ ao que deixa a corrida mais viva:
 - [ ] 👻 **Correr contra o próprio recorde**: um fantasma refaz a melhor
   corrida daquela pista.
 - [ ] mais modos na mesma estrutura de `MODES` (ex.: "corrida contra o relógio")
+- [x] 🎨 **Área de pintar**: páginas de colorir em PNG, pintadas por toque
+  (ver *Pintar*). Falta desenhar as páginas dos outros personagens.
+- [ ] 🌈 **Grátis e pago**: 5 pistas grátis e o pacote "Reino inteiro" numa
+  compra única (ver *Grátis e pago*).
