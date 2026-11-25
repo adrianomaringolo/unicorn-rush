@@ -48,6 +48,8 @@ export const DESENHOS = [
   { id: 'cereja-parque', personagem: 'cereja', nome: 'Cereja no parque', arquivo: './assets/pintar/cereja-parque.png' },
   { id: 'cometa-espaco', personagem: 'cometa', nome: 'Cometa no espaço', arquivo: './assets/pintar/cometa-espaco.png' },
   { id: 'cometa-pedido', personagem: 'cometa', nome: 'Cometa e o pedido', arquivo: './assets/pintar/cometa-pedido.png' },
+  { id: 'limao-frutas', personagem: 'limao', nome: 'Limão no meio das frutas', arquivo: './assets/pintar/limao-frutas.png' },
+  { id: 'limao-pulo', personagem: 'limao', nome: 'Limão dando um pulo', arquivo: './assets/pintar/limao-pulo.png' },
 ];
 export const DESENHO = Object.fromEntries(DESENHOS.map((d) => [d.id, d]));
 

@@ -410,6 +410,8 @@ export const EN = {
   'Cereja no parque': 'Cereja at the park',
   'Cometa no espaço': 'Cometa in space',
   'Cometa e o pedido': 'Cometa and the wish',
+  'Limão no meio das frutas': 'Limão among the fruit',
+  'Limão dando um pulo': 'Limão takes a jump',
   '🔒 Liberte {nome} para pintar este desenho': '🔒 Free {nome} to paint this picture',
   'Toque numa parte do desenho para pintar': 'Tap a part of the picture to paint it',
   'Preparando o desenho…': 'Getting the picture ready…',
