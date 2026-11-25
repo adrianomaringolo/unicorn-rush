@@ -19,7 +19,7 @@ assets/story/originais/
 .quadros-video-chrome/
 assets/video/fotos/
 
-# chaves de API (o `npm run vozes` lê ELEVENLABS_API_KEY daqui, se existir)
+# chaves de API
 .env
 
 # Retratos de referência para gerar as páginas de colorir (ver docs/prompts-pintar.md)

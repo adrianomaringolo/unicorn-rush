@@ -1,6 +1,6 @@
 {
   "name": "unicornrush",
-  "version": "0.55.1",
+  "version": "0.56.0",
   "description": "Jogo infantil de corrida com um unicórnio, feito com three.js",
   "type": "module",
   "scripts": {
@@ -10,8 +10,7 @@
     "bump": "node scripts/bump-version.js",
     "gravar-uni": "node scripts/gravar-uni.js",
     "anuncio": "node scripts/anuncio.js",
-    "video": "node scripts/video.js",
-    "vozes": "node scripts/vozes.mjs"
+    "video": "node scripts/video.js"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

@@ -1,96 +1,16 @@
 // Ler os nomes em voz alta, para quem ainda não lê.
 //
-// A voz é a da **Aria**, a narradora do jogo: as falas foram gravadas antes,
-// no ElevenLabs (`npm run vozes`), e moram em assets/voz/<idioma>/, um mp3
-// por fala, com o nome tirado do próprio texto (ver falas.js). O jogo só
-// toca arquivo — nada sai do aparelho, e depois da primeira vez cada fala
-// fica no cache do service worker e toca offline.
-//
-// Uma fala que não tenha arquivo (uma frase nova, ainda não gravada) cai na
-// voz do próprio aparelho (`speechSynthesis`), como era antes de haver
-// gravação. Vem desligado: quem liga é o adulto, no cantinho dos grandes.
-import { idioma, idiomaInfo } from './i18n.js';
-import { semEmoji, chaveDaFala } from './falas.js';
-import { getContext, abaixarMusica } from './audio.js';
+// Quem fala é a voz do próprio aparelho (`speechSynthesis`): nada sai do
+// aparelho, não custa nada e funciona offline. Já houve uma narração gravada
+// no ElevenLabs; saiu na v0.56 porque a voz não agradou — está no histórico
+// do git, se um dia voltar. Vem desligado: quem liga é o adulto, no
+// cantinho dos grandes.
+import { idiomaInfo } from './i18n.js';
+import { semEmoji } from './falas.js';
 
 let ligado = false;
 
 const suporta = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
-const temWebAudio = () => typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
-
-// --- A voz gravada -----------------------------------------------------------
-
-const PASTA = './assets/voz';
-const VOLUME = 0.8;
-const indices = {};                // idioma → Promise<Set de chaves>
-const prontos = {};                // idioma → Set, quando a promessa resolveu
-const decodificadas = new Map();   // chave → AudioBuffer (as últimas tocadas)
-let fonte = null;                  // a fala gravada tocando agora
-let pedido = 0;                    // cada fala nova invalida as anteriores
-
-function indiceDe(lang) {
-  if (!indices[lang]) {
-    indices[lang] = fetch(`${PASTA}/${lang}/index.json`)
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((d) => new Set(Object.keys(d.falas || {})))
-      .catch(() => new Set())
-      .then((set) => { prontos[lang] = set; return set; });
-  }
-  return indices[lang];
-}
-
-// Se o idioma atual tem gravação. Síncrono: responde pelo que já chegou, e
-// pede o índice se ainda não pediu (a resposta certa vem na próxima vez).
-export function temVozGravada() {
-  const lang = idioma();
-  if (typeof fetch !== 'undefined' && !indices[lang]) indiceDe(lang);
-  return Boolean(prontos[lang]?.size);
-}
-
-function pararGravada() {
-  try { fonte?.stop(); } catch { /* já tinha acabado */ }
-  fonte = null;
-}
-
-// Toca a fala gravada, se houver. Resolve `true` quando a fala é da
-// gravação (tocou, ou foi trocada por outra no meio do caminho) e `false`
-// quando não há arquivo — aí quem chamou usa a voz do aparelho.
-//
-// Toca pelo contexto de áudio do jogo, e não por um <audio>: o contexto já
-// foi liberado pelo primeiro toque da criança, e o iPhone recusa tocar um
-// <audio> que comece depois de um `await`. E o arquivo vem por `fetch`
-// inteiro: o <audio> pede em pedaços, e o service worker não guarda
-// resposta parcial — a fala nunca ficaria offline.
-async function tocarGravada(texto, meu) {
-  const lang = idioma();
-  const chaves = await indiceDe(lang);
-  const chave = chaveDaFala(texto);
-  if (!chaves.has(chave)) return false;
-  const ctx = getContext();
-  if (!ctx) return false;
-
-  let buffer = decodificadas.get(chave);
-  if (!buffer) {
-    const r = await fetch(`${PASTA}/${lang}/${chave}.mp3`);
-    if (!r.ok) return false;
-    buffer = await ctx.decodeAudioData(await r.arrayBuffer());
-    decodificadas.set(chave, buffer);
-    if (decodificadas.size > 24) decodificadas.delete(decodificadas.keys().next().value);
-  }
-  if (meu !== pedido || !ligado) return true;   // outra fala pediu a vez
-
-  pararGravada();
-  const src = ctx.createBufferSource();
-  src.buffer = buffer;
-  const volume = ctx.createGain();
-  volume.gain.value = VOLUME;
-  src.connect(volume).connect(ctx.destination);
-  src.onended = () => { if (fonte === src) fonte = null; };
-  src.start();
-  fonte = src;
-  abaixarMusica(buffer.duration);
-  return true;
-}
 
 // Qual voz usar, entre as que o aparelho tem.
 //
@@ -188,16 +108,13 @@ export function restaurarVozes(guardadas) {
   escolhidas = {};
 }
 
-// Dá para falar com a gravação (precisa só de áudio) ou com a voz do aparelho.
 export function canSpeak() {
-  return suporta() || temWebAudio();
+  return suporta();
 }
 
 // Corta a fala em andamento sem desligar a voz — para fechar uma tela que
 // estava sendo narrada (o livro da história) sem esperar a frase acabar.
 export function stop() {
-  pedido += 1;
-  pararGravada();
   if (suporta()) speechSynthesis.cancel();
 }
 
@@ -207,8 +124,7 @@ export function isOn() {
 
 export function setOn(value) {
   ligado = !!value && canSpeak();
-  if (ligado) indiceDe(idioma());
-  else stop();
+  if (!ligado) stop();
   return ligado;
 }
 
@@ -219,11 +135,7 @@ export function speak(text) {
   if (!isOn() || !text) return;
   const limpo = semEmoji(text);
   if (!limpo) return;
-  stop();
-  const meu = pedido;
-  tocarGravada(limpo, meu)
-    .catch(() => false)
-    .then((gravada) => { if (!gravada && meu === pedido && ligado) falarComAparelho(limpo); });
+  falarComAparelho(limpo);
 }
 
 function falarComAparelho(text) {

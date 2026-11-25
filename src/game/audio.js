@@ -114,9 +114,6 @@ let aoSomForte = () => {};
 export function onLoudSfx(fn) { aoSomForte = fn; }
 const forte = (segundos) => { try { aoSomForte(segundos); } catch { /* sem música */ } };
 
-// A narração gravada (speech.js) também abaixa a música enquanto fala.
-export const abaixarMusica = forte;
-
 const hz = (midi) => 440 * 2 ** ((midi - 69) / 12);
 
 // As notas de um arpejo na tonalidade. `base` é a nota MIDI do som

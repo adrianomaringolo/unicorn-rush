@@ -1,41 +1,20 @@
 // Tudo o que a narração diz, montado num lugar só.
 //
-// As falas são gravadas antes (ElevenLabs, ver scripts/vozes.mjs) e o jogo
-// acha o arquivo pela **chave do texto**. Então o texto que o jogo pede tem
-// de ser, letra por letra, o que o script gravou — e o jeito de garantir
-// isso é os dois montarem as frases com as mesmas funções, daqui.
-//
-// `todasAsFalas()` é a lista completa no idioma atual: o script percorre ela
-// para gravar. Uma frase nova que o jogo fale e não esteja aqui não quebra
-// nada — cai na voz do aparelho —, mas fica sem a voz da narradora até
-// entrar na lista.
+// A ficha lida em voz alta, a vitória, "… é sua!": as frases saem das
+// funções daqui, para a tela e a voz dizerem a mesma coisa.
 import { t } from './i18n.js';
 import { CHARACTER_LIST } from '../models/characters.js';
-import { TRACK_LIST, TRACKS } from './tracks.js';
-import { MODES, DIFFICULTY_LIST, TUTORIAL_MODE } from './config.js';
-import { storyPages } from './story.js';
+import { TRACKS } from './tracks.js';
 
 // A voz lê texto, não figurinha nem HTML: sem tirar os emoji, o "⭐" no meio
 // de "as estrelas ⭐ valem o dobro" vira "estrela branca média" em alguns
-// aparelhos. É também a forma "canônica" da frase, a que vira chave.
+// aparelhos.
 export function semEmoji(texto) {
   return String(texto ?? '')
     .replace(/<[^>]*>/g, '')
     .replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{2BFF}\u{FE0F}\u{2600}-\u{27BF}]/gu, '')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-// A chave de uma fala: FNV-1a de 32 bits do texto limpo, em hexadecimal.
-// Síncrona e igual no navegador e no Node — é o nome do arquivo gravado.
-export function chaveDaFala(texto) {
-  const limpo = semEmoji(texto);
-  let h = 0x811c9dc5;
-  for (let i = 0; i < limpo.length; i++) {
-    h ^= limpo.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h.toString(16).padStart(8, '0');
 }
 
 const emLista = (nomes) => (nomes.length > 1
@@ -89,26 +68,3 @@ export const falaEhSua = (item) => t('{nome} é sua!', { nome: item.name });
 export const falaApresentacao = (c) => `${c.name}. ${c.title || ''}`;
 export const falaLigou = () => t('Pronto, agora eu falo');
 export const falaPagina = (folha) => `${folha.title}. ${folha.text}`;
-
-// Todas as falas no idioma atual, já limpas e sem repetição.
-export function todasAsFalas() {
-  const falas = [falaLigou()];
-  const ganhos = CHARACTER_LIST.filter((c) => c.earned);
-
-  for (const c of CHARACTER_LIST) {
-    falas.push(c.name, falaApresentacao(c), falaEhSua(c));
-    falas.push(falaHistoria('character', c), falaPoder('character', c));
-    if (c.earned) falas.push(falaHistoria('character', c, true), falaPoder('character', c, true));
-  }
-  for (const p of TRACK_LIST) {
-    falas.push(p.name, falaVitoria(p), falaEhSua(p), falaHistoria('track', p));
-    // As duas fichas possíveis: antes e depois de encontrar quem se conquista.
-    falas.push(falaPoder('track', p, false, () => false));
-    if (ganhos.length) falas.push(falaPoder('track', p, false, () => true));
-  }
-  for (const m of [...Object.values(MODES), TUTORIAL_MODE]) falas.push(m.name);
-  for (const d of DIFFICULTY_LIST) falas.push(t(d.name));
-  for (const folha of storyPages(true)) falas.push(falaPagina(folha));
-
-  return [...new Set(falas.map(semEmoji).filter(Boolean))];
-}

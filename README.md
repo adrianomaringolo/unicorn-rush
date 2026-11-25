@@ -291,45 +291,21 @@ mesma informação que a criança que lê recebe.
 Só aparece com a voz ligada: sem ela o botão não faria nada, e um botão que
 não faz nada é pior do que nenhum.
 
-### A voz da Aria (narração gravada)
+### A voz do aparelho
 
-Quem lê em voz alta é a **Aria**, a narradora do jogo — a mesma voz em
-português e em inglês, alegre e jovial. As falas não são geradas na hora:
-foram **gravadas antes**, no ElevenLabs, e moram em `assets/voz/<idioma>/`,
-um mp3 por fala. O jogo só toca arquivo, então continua valendo o que a voz
-do aparelho garantia — nada sai do aparelho, não custa nada para quem joga
-e funciona offline (cada fala entra no cache do service worker na primeira
-vez que toca).
+Quem lê em voz alta é a voz do próprio aparelho (`speechSynthesis`), no
+idioma do jogo (`pt-BR` / `en-US`): nada sai do aparelho, não custa nada e
+funciona offline. O jogo escolhe a melhor voz instalada (a lista
+`PREFERIDAS`, em `src/game/speech.js`), e o adulto pode trocar em
+"Trocar a voz", no cantinho dos adultos, quando o aparelho tem mais de uma.
+Cada fala nova corta a anterior.
 
-- **Como o jogo acha o arquivo:** o nome é a chave do próprio texto
-  (`chaveDaFala`, FNV-1a do texto sem emoji nem HTML). Por isso todas as
-  frases são montadas em `src/game/falas.js`, pelas mesmas funções que o
-  script de gravação usa: o texto pedido é letra por letra o gravado.
-- **O que não tem gravação** — uma frase nova, ainda não gravada — cai na
-  voz do aparelho, como era antes. Nada fica mudo. O `npm run check` avisa
-  quantas falas de cada idioma estão sem gravação.
-- **Para gravar:** `npm run vozes` grava só o que falta e apaga a gravação
-  de textos que mudaram. A chave é `ELEVENLABS_API_KEY`, do ambiente ou de
-  um `.env` na raiz (fora do git). `--simular` só conta falas e caracteres;
-  `--forcar` regrava tudo (para trocar a voz ou o tom); `--idioma pt` e
-  `--limite 5` servem para testar.
-- **O tom:** as comemorações ("… é sua!", "Você venceu a pista…") vão com
-  `[excited]`, o resto com `[cheerfully]`. Em português o texto leva
-  também `[Brazilian Portuguese accent]`: a Aria é americana, e sem a marca
-  ela fala português com sotaque de fora.
-- **Pronúncia:** `PRONUNCIA`, em `scripts/vozes.mjs`, troca palavras **só no
-  texto enviado** ao ElevenLabs — a chave do arquivo continua sendo o texto
-  do jogo. Sem acento, a Aria lia "Uní"; o nome é "Úni", então em português
-  ela recebe "Úni". O `index.json` guarda o texto exato enviado de cada fala
-  (`enviados`): mudou a pronúncia, o tom ou a marca, o `npm run vozes`
-  regrava só as falas afetadas, sem precisar de `--forcar`.
-- **Tocando:** a fala sai pelo contexto de áudio do jogo, e não por um
-  `<audio>` — o contexto já foi liberado pelo primeiro toque, e o iPhone
-  recusa um `<audio>` que comece depois de um `await`. O arquivo vem por
-  `fetch` inteiro, porque o service worker não guarda resposta parcial. A
-  música abaixa enquanto a Aria fala, e cada fala nova corta a anterior.
-- **O cantinho dos adultos** não mostra mais "Trocar a voz" onde há
-  gravação: ali a voz é sempre a da Aria.
+As frases que a voz diz (a ficha, a vitória, "… é sua!") são montadas em
+`src/game/falas.js`, que também tira os emoji e o HTML antes de falar.
+
+Já houve uma narração gravada no ElevenLabs (a "Aria", `assets/voz/` e
+`npm run vozes`). Saiu na v0.56 porque a voz não agradou; está no histórico
+do git, se um dia voltar.
 
 ### Ver de perto e girar
 
@@ -484,7 +460,7 @@ A música também acompanha o que acontece na corrida:
 - **Troca suave:** ao trocar de tema (lobby, livro, pista), o que sai desce
   e o novo sobe em meio segundo, em vez de um corte seco.
 - **Botão 🔇:** cala a música **e** os efeitos — todos os efeitos passam por
-  um volume só em `audio.js`. A narração (a voz da Aria) é outra via e
+  um volume só em `audio.js`. A voz que lê em voz alta é a do aparelho e
   não passa por ele.
 
 **Modo leve.** Medido num Mac, a mesa de som inteira gasta uns 2% da thread
@@ -2064,7 +2040,7 @@ nomes das músicas (Valsa de açúcar → Sugar waltz).
 | Prosa dentro dos dados (`name`, `story`, `tagline`, `fala`…) | `traduzItens()` reescreve os campos **uma vez**, na troca de idioma |
 | Frases da interface (`Game.js`, `ui.js`) | `t('…')` no lugar |
 | Texto já escrito no `index.html` | marcado com `data-t`; `traduzHtml()` troca no DOM |
-| A voz que lê em voz alta | a Aria tem uma gravação por idioma (`assets/voz/pt`, `assets/voz/en`); a voz do aparelho, de reserva, segue o idioma (`pt-BR` / `en-US`) |
+| A voz que lê em voz alta | a voz do aparelho, no idioma do jogo (`pt-BR` / `en-US`) |
 
 Traduzir os dados **mutando as listas** foi o que evitou espalhar `t()` por
 dezenas de lugares que leem `personagem.name`: o resto do jogo continua sem
@@ -2706,8 +2682,8 @@ src/
     audio.js          efeitos sonoros gerados na hora (WebAudio)
     haptics.js        vibra o aparelho ao bater ou pegar power-up (Android só)
     icons.js          troca os emoji do código pelos ícones de assets/icones/
-    speech.js         lê em voz alta (a voz gravada da Aria; a do aparelho de reserva)
-    falas.js          monta tudo o que a narração diz (e a chave de cada fala)
+    speech.js         lê em voz alta, com a voz do aparelho
+    falas.js          monta as frases que a voz diz
     story.js          a história em nove páginas (texto, imagem e o SVG reserva)
     ui.js             ponte com o HUD e com as telas de escolha
   models/
@@ -2726,7 +2702,6 @@ src/
                       arco-íris, lua, estrelas, montanhas, o chão, as placas
                       de distância e a faixa do recorde
 scripts/smoke-test.js monta tudo fora do navegador (npm run check)
-scripts/vozes.mjs     grava a narração no ElevenLabs (npm run vozes)
 scripts/gravar-uni.html  o modelo 3D da Uni galopando, quadro a quadro
 scripts/gravar-uni.js    grava esses quadros no WebP do carregamento
 scripts/anuncio.html     os 22 unicórnios posando atrás do letreiro

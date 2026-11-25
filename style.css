@@ -3598,6 +3598,16 @@ html, body {
   grid-template-columns: repeat(auto-fill, minmax(clamp(120px, 34vw, 170px), 1fr));
   gap: clamp(10px, 3vw, 16px);
 }
+.pinturas-novidades {
+  margin: clamp(12px, 3vw, 18px) 0 0;
+  padding: 10px 14px;
+  border: 2px dashed #e3c8f5;
+  border-radius: 16px;
+  background: #fbf5ff;
+  color: #7a4ec7;
+  font-weight: 700;
+  text-align: center;
+}
 .pintura-tile {
   display: flex;
   flex-direction: column;

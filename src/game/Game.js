@@ -46,7 +46,7 @@ import {
 import { canInstall, needsManualInstall, promptInstall, watchInstall } from './install.js';
 import {
   speak, canSpeak, isOn as speechOn, setOn as setSpeech, stop as stopSpeech,
-  vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes, temVozGravada,
+  vozesDoIdioma, nomeDaVoz, escolherVoz, restaurarVozes,
 } from './speech.js';
 import { withIcons, iconUrl } from './icons.js';
 import { storyPages, STORY_END } from './story.js';
@@ -1570,10 +1570,8 @@ export class Game {
         valor: speechOn() ? t('ligada') : t('desligada'),
       },
       // Trocar a voz só faz sentido com ela ligada e com mais de uma
-      // instalada — em aparelho que só tem uma, não há o que oferecer. E
-      // não aparece onde há narração gravada: ali a voz é sempre a da Aria,
-      // e a do aparelho só cobre uma frase que ainda não foi gravada.
-      canSpeak() && speechOn() && !temVozGravada() && vozesDoIdioma().length > 1 && {
+      // instalada — em aparelho que só tem uma, não há o que oferecer.
+      canSpeak() && speechOn() && vozesDoIdioma().length > 1 && {
         id: 'trocar-voz', icone: '🗣️', nome: t('Trocar a voz'), valor: nomeDaVoz(),
       },
       // O idioma mora aqui, e não no menu: é escolha de quem instala o jogo,
@@ -1941,9 +1939,8 @@ export class Game {
     // Só aparecem com a voz ligada — sem ela o botão não faria nada, e um
     // botão que não faz nada é pior que nenhum.
     //
-    // As falas são montadas em falas.js, onde o script de gravação também as
-    // monta: o texto tem de ser idêntico ao gravado para achar o arquivo da
-    // voz. (É lá também que saem os emoji e o HTML.)
+    // As falas são montadas em falas.js (é lá também que saem os emoji e o
+    // HTML).
     const falaHistoria = montarFalaHistoria(kind, item, oculto);
     const falaPoder = montarFalaPoder(kind, item, oculto, possui);
 
@@ -3862,7 +3859,8 @@ export class Game {
     this.ui.showOverlay({
       title: t('🎨 Pintar'),
       html: `<div class="pintura-modos">${botaoModo('livre', '🖍️ Livre')}${botaoModo('numeros', '🔢 Por números')}</div>`
-        + `<div class="pinturas-grade">${tiles}</div>`,
+        + `<div class="pinturas-grade">${tiles}</div>`
+        + `<p class="pinturas-novidades">${t('✨ Desenhos novos estão sempre chegando. Volte para ver!')}</p>`,
       buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
       back: () => this.showHome(),
     });
