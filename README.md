@@ -2551,15 +2551,16 @@ a mostrar o emoji do sistema em vez de deixar um buraco.
 ## Ícone do app
 
 O logo é o `assets/logo.png` — a cabeça da unicórnia branca com o chifre
-dourado e a crina em rosa, amarelo e azul. Dele saem os ícones em `assets/icons/` (64 para o favicon, 180 para o iOS,
-192 e 512 para instalar, mais uma versão *maskable* com a arte a 78% sobre o
-mesmo degradê, para o recorte do sistema não cortar o chifre). Ele também
-aparece ao lado do nome nas telas de escolha e no cartão *Sobre*.
+dourado e a crina em rosa, amarelo e azul. Ele aparece ao lado do nome nas
+telas de escolha e no cartão *Sobre*.
 
-Para refazer os tamanhos depois de trocar o logo: com `npm start` rodando,
-abra `http://localhost:5173/scripts/gerar-icones.html` — a página redesenha
-tudo num canvas e mostra os arquivos em base64 para salvar em
-`assets/icons/`.
+O ícone do app (o que vai para a tela inicial do aparelho) é outra arte: a
+Uni de rosto grande na frente de um arco-íris, sobre fundo roxo liso
+(`#cb84fc`), pensada para continuar legível a 32 px. Os arquivos ficam em
+`assets/icons/`: 64 para o favicon, 180 para o iOS, 192 e 512 para
+instalar, e uma versão *maskable* com a arte a 78% sobre o mesmo roxo, para
+o recorte redondo do Android não cortar o chifre. Para trocar, reduza a
+arte quadrada para cada tamanho e monte a *maskable* com a mesma folga.
 
 ## Como jogar
 
