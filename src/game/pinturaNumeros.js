@@ -70,7 +70,8 @@ export const GABARITOS = {
     branco: [17, 18, 19, 23, 35, 36],
   },
   'uni-arco-iris': {
-    ceu: [0],
+    // 47 é o fundo aparecendo entre as pernas, acima do arco-íris.
+    ceu: [0, 47],
     rosa: [2, 4, 7, 12, 16, 26, 29, 33, 35, 37],
     vermelho: [48, 50, 53],
     laranja: [9, 23, 34, 44, 52],
@@ -80,7 +81,7 @@ export const GABARITOS = {
     roxo: [22, 24, 32, 39],
     lilas: [6, 25, 31],
     dourado: [1, 5, 43, 46, 49, 51],
-    branco: [10, 14, 17, 19, 21, 28, 36, 41, 42, 45, 47, 56, 57, 59],
+    branco: [10, 14, 17, 19, 21, 28, 36, 41, 42, 45, 56, 57, 59],
   },
   'uni-campo': {
     ceu: [0],
