@@ -5,6 +5,7 @@
 import { sfx } from './audio.js';
 import { t } from './i18n.js';
 import { withIcons } from './icons.js';
+import { criarChuva } from './confete.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -26,8 +27,7 @@ export function createUI() {
   const title = $('#overlay-title');
   const text = $('#overlay-text');
   const buttons = $('#overlay-buttons');
-  const chuva = $('#chuva-confete');
-  let chuvaTimer = 0;
+  const chuva = criarChuva($('#chuva-confete'));
   let botoesProntosEm = 0;   // ver `esperaBotoes`, em showOverlay
   const extra = $('#overlay-extra');
   const backButton = $('#overlay-back');
@@ -284,35 +284,10 @@ export function createUI() {
     // A chuva de confete da comemoração (ver Game.festejar): papelzinho
     // caindo do alto da tela, de ponta a ponta, por `segundos`. Novos
     // pedaços nascem a cada 90 ms; cada um some sozinho quando chega lá
-    // embaixo. `pararConfete` corta a chuva (uma corrida nova começou).
-    chuvaDeConfete: (segundos) => {
-      clearInterval(chuvaTimer);
-      const cores = ['#ff7b9d', '#ffb26b', '#ffe36b', '#8ce99a', '#74c0fc', '#c09cff', '#ffffff'];
-      const fim = performance.now() + segundos * 1000;
-      const solta = (quantos) => {
-        for (let i = 0; i < quantos; i++) {
-          const p = document.createElement('i');
-          const queda = 2.2 + Math.random() * 1.6;
-          p.style.left = `${(Math.random() * 100).toFixed(1)}%`;
-          p.style.background = cores[Math.floor(Math.random() * cores.length)];
-          p.style.setProperty('--balanco', `${Math.round((Math.random() - 0.5) * 120)}px`);
-          p.style.setProperty('--giro', `${Math.round((Math.random() - 0.5) * 1080)}deg`);
-          p.style.animationDuration = `${queda.toFixed(2)}s`;
-          if (Math.random() < 0.35) p.classList.add('fita');
-          chuva.appendChild(p);
-          setTimeout(() => p.remove(), queda * 1000 + 100);
-        }
-      };
-      solta(24);                               // a primeira leva já enche a tela
-      chuvaTimer = setInterval(() => {
-        if (performance.now() > fim) return clearInterval(chuvaTimer);
-        solta(4);
-      }, 90);
-    },
-    pararConfete: () => {
-      clearInterval(chuvaTimer);
-      chuva.textContent = '';
-    },
+    // embaixo (ver confete.js). `pararConfete` corta a chuva (uma corrida
+    // nova começou).
+    chuvaDeConfete: (segundos) => chuva.soltar(segundos),
+    pararConfete: () => chuva.parar(),
 
     // O ✅ de "isso mesmo!", no meio da tela.
     lessonCheck: () => {

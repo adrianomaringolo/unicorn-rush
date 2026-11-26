@@ -181,6 +181,7 @@ export class Game {
     // das páginas já pintadas, guardadas só enquanto o jogo está aberto.
     this.telaPintura = criarTelaPintura(document.getElementById('pintura'));
     this.miniaturas = {};
+    this.guiarPelaVoz();
     this.state = STATE.READY;
     this.handheld = isHandheld();
     this.save = getSave();
@@ -1088,7 +1089,8 @@ export class Game {
         : [{ label: t('▶️ JOGAR'), huge: true, onClick: () => this.playNow() }],
       back: () => this.showHome(),
     });
-    speak(hoje.cumprida ? t('Missão cumprida!') : texto);
+    // O nome da tela primeiro, depois qual é a missão de hoje.
+    speak(`${t('🎯 Missão do dia')}. ${hoje.cumprida ? t('Missão cumprida!') : texto}`);
   }
 
   // Abre um baú guardado: sorteia o prêmio e entrega na hora. Quem mostra
@@ -1189,6 +1191,28 @@ export class Game {
       sfx.win();
       speak(b.nome);
     }
+  }
+
+  // Para quem ainda não lê: todo botão tocado nos menus (e na tela de
+  // pintar) diz o próprio nome — "Pintar", depois "Livre" ou "Por números",
+  // o nome do desenho… Escuta na fase de captura, antes do botão agir:
+  // se a tela que ele abre tiver fala própria (a Missão do dia, o nome do
+  // unicórnio), ela vem logo depois e corta esta.
+  //
+  // O nome sai do `aria-label` (botões só de ícone, as páginas de pintar) ou
+  // da primeira linha do texto visível — os emoji já viraram <img> e não
+  // entram. As bolinhas de cor da pintura e as setas ficam de fora: "1",
+  // "2" e "mais cores" não guiam ninguém. Só fala com a voz ligada.
+  guiarPelaVoz() {
+    const telas = ['overlay', 'pintura'].map((id) => document.getElementById(id));
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest?.('button');
+      if (!b || !telas.some((tela) => tela?.contains(b))) return;
+      if (b.closest('.pintura-cor, .pintura-seta') || b.disabled) return;
+      const rotulo = b.getAttribute('aria-label')
+        || (b.innerText || '').split('\n').map((l) => l.trim()).find(Boolean);
+      if (rotulo) speak(rotulo);
+    }, true);
   }
 
   reset() {
@@ -3879,7 +3903,9 @@ export class Game {
       if (!aberto(d)) {
         sfx.deny();
         this.ui.shakeElement(el);
-        this.ui.toast(t('🔒 Liberte {nome} para pintar este desenho', { nome: CHARACTERS[d.personagem]?.name || '' }));
+        const aviso = t('🔒 Liberte {nome} para pintar este desenho', { nome: CHARACTERS[d.personagem]?.name || '' });
+        this.ui.toast(aviso);
+        speak(aviso);   // quem não lê também precisa saber por que não abriu
         return;
       }
       sfx.tap();

@@ -41,6 +41,21 @@ const PREFERIDAS = {
   ],
 };
 
+// As versões de qualidade de uma voz: no iOS/macOS a "Luciana (Premium)" ou
+// "(Enhanced)"/"(Aprimorada)" baixada nos ajustes é muito melhor que a
+// Luciana compacta que vem instalada; no Edge/Windows as "Natural"/"Neural"
+// são as boas. Ganham bônus de qualquer nome, estando ou não na lista acima.
+const QUALIDADE = [
+  [/premium/, 36],
+  [/enhanced|aprimorad|melhorad|natural|neural/, 30],
+];
+
+// Vozes de brincadeira e robóticas que o macOS/iOS listam em todo idioma
+// (o "Eddy (Portuguese (Brazil))", a "Grandma"…), e o eSpeak do Linux:
+// existem, mas ninguém quer como voz do jogo. Ficam no fim da lista — ainda
+// dá para escolher no cantinho dos adultos.
+const DE_BRINCADEIRA = /\b(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy)\b|espeak/;
+
 // O adulto pode escolher no cantinho dele; a escolha manda sobre a nota.
 let escolhaManual = {};
 let escolhidas = {};
@@ -57,6 +72,9 @@ function nota(v, alvo, familia) {
 
   const posicao = (PREFERIDAS[alvo] || []).findIndex((boa) => nome.includes(boa));
   if (posicao >= 0) p += 40 - posicao * 4;
+  const qualidade = QUALIDADE.find(([re]) => re.test(nome));
+  if (qualidade) p += qualidade[1];
+  if (DE_BRINCADEIRA.test(nome)) p -= 45;
 
   // Desempate para a voz do próprio aparelho: o jogo é para usar offline, e
   // a voz de servidor emudece sem internet.
@@ -131,10 +149,20 @@ export function setOn(value) {
 // Fala um texto curto (o nome de um unicórnio, de uma pista, de um botão).
 // Cada fala nova corta a anterior: a criança toca rápido em vários tiles e
 // não dá para acumular uma fila de vozes.
+// A última frase e quando ela começou. O botão tocado diz o próprio nome
+// (guiarPelaVoz, no Game.js) e muitas vezes a tela que ele abre diz a mesma
+// coisa logo em seguida ("Fases", o nome do unicórnio…): a segunda fala
+// recomeçaria a primeira e a criança ouviria duas vezes.
+let ultima = { texto: '', quando: 0 };
+const REPETIDA_MS = 1500;
+
 export function speak(text) {
   if (!isOn() || !text) return;
   const limpo = semEmoji(text);
   if (!limpo) return;
+  const agora = performance.now();
+  if (limpo === ultima.texto && agora - ultima.quando < REPETIDA_MS) return;
+  ultima = { texto: limpo, quando: agora };
   falarComAparelho(limpo);
 }
 

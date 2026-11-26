@@ -1,6 +1,7 @@
-// Sobe a versão do jogo nos três lugares onde ela aparece, de uma vez:
+// Sobe a versão do jogo nos quatro lugares onde ela aparece, de uma vez:
 //
 //   src/game/version.js   o número que o cartão "Sobre" mostra
+//   index.html            o número no pé da tela de carregamento
 //   package.json          a versão do pacote
 //   sw.js                 o nome do cache offline (é ele que descarta o
 //                         cache antigo no aparelho de quem já jogou)
@@ -32,14 +33,15 @@ function proxima(versao, como) {
 const nova = proxima(atual, pedido);
 
 // Troca em cada arquivo, conferindo que a substituição realmente aconteceu:
-// falhar aqui é melhor do que deixar um dos três para trás.
+// falhar aqui é melhor do que deixar um deles para trás.
 const trocas = [
   ['package.json', `"version": "${atual}"`, `"version": "${nova}"`],
   ['src/game/version.js', `export const VERSION = '${atual}';`, `export const VERSION = '${nova}';`],
   ['sw.js', `const VERSION = 'unicornrush-v${atual}';`, `const VERSION = 'unicornrush-v${nova}';`],
+  ['index.html', `<p class="load-versao">v${atual}</p>`, `<p class="load-versao">v${nova}</p>`],
 ];
 
-// Confere os três antes de escrever qualquer um: se abortasse no meio,
+// Confere todos antes de escrever qualquer um: se abortasse no meio,
 // deixaria um arquivo adiantado e os outros para trás — exatamente o
 // problema que este script existe para evitar.
 const pendentes = [];
@@ -47,7 +49,7 @@ for (const [nome, de, para] of trocas) {
   const texto = readFileSync(arquivo(nome), 'utf8');
   if (!texto.includes(de)) {
     console.error(`❌ ${nome}: não achei ${de}`);
-    console.error('   Os três arquivos precisam estar na mesma versão antes de subir.');
+    console.error('   Os arquivos precisam estar na mesma versão antes de subir.');
     process.exit(1);
   }
   pendentes.push([nome, texto.replace(de, para)]);

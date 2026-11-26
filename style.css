@@ -1770,6 +1770,20 @@ html, body {
   color: var(--purple);
   opacity: .8;
 }
+/* A versão, discreta, no pé da tela: para saber o que está instalado no
+   aparelho quando algo não bate. */
+.load-versao {
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple);
+  opacity: .5;
+}
 
 /* A pista: o sulco da barra, o arco-íris já percorrido e a Uni em cima. */
 .load-pista {
@@ -3456,7 +3470,13 @@ html, body {
 }
 .missao-conta { margin: 0; font-weight: 700; font-size: clamp(13px, 3.6vw, 16px); color: #8a76b0; }
 .missao-sequencia { margin: 0; text-align: center; font-size: clamp(13px, 3.6vw, 16px); color: #8a76b0; line-height: 1.2; }
-.missao-dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(4px, 1.5vw, 8px); width: 100%; }
+/* A sétima casa é o baú, e ela é mais larga que as outras (1,35×): o baú
+   aparece grande sem passar da fileira — antes ele era desenhado a 135%
+   de uma casa comum, transbordava, e a caixa do cartão ganhava rolagem. */
+.missao-dias {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.35fr);
+  align-items: center; gap: clamp(4px, 1.5vw, 8px); width: 100%;
+}
 .missao-dia {
   aspect-ratio: 1; display: grid; place-items: center; border-radius: 14px;
   background: #f6f0ff; border: 2px dashed #d6c3f2;
@@ -3465,8 +3485,7 @@ html, body {
 .missao-dia img { width: 70%; height: 70%; }
 .missao-dia.feita { background: #fff1c4; border: 2px solid #ffd166; }
 .missao-dia.bau { background: none; border: none; }
-.missao-dia.bau { overflow: visible; }
-.missao-dia.bau img.bau { width: 135%; height: 135%; max-width: none; margin: 0 -17.5%; object-fit: contain; }
+.missao-dia.bau img.bau { width: 100%; height: 100%; object-fit: contain; }
 .missao-baus { margin: 0; font-weight: 800; color: var(--pink); text-align: center; animation: bolha-chama 1.2s ease-in-out infinite; }
 
 .bau-premio-nome {
@@ -3536,7 +3555,7 @@ html, body {
   /* Sem z-index: vem antes do #overlay no HTML, então o cartão do resumo
      fica por cima e o papel cai atrás dele, sem tampar os números. */
 }
-#chuva-confete i {
+.chuva-confete i {
   position: absolute;
   top: -24px;
   width: clamp(8px, 2.2vw, 12px);
@@ -3544,7 +3563,7 @@ html, body {
   border-radius: 2px;
   animation: confete-cai linear forwards;
 }
-#chuva-confete i.fita { width: 5px; height: clamp(18px, 4.5vw, 26px); border-radius: 3px; }
+.chuva-confete i.fita { width: 5px; height: clamp(18px, 4.5vw, 26px); border-radius: 3px; }
 @keyframes confete-cai {
   0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
   50%  { transform: translate(var(--balanco), 55vh) rotate(calc(var(--giro) / 2)); }
@@ -3552,7 +3571,7 @@ html, body {
   100% { transform: translate(calc(var(--balanco) * -0.4), 108vh) rotate(var(--giro)); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #chuva-confete { display: none; }
+  .chuva-confete { display: none; }
 }
 
 /* --- Pintar ---------------------------------------------------------------
@@ -3855,21 +3874,18 @@ html, body {
 .pintura-cor { position: relative; padding: 0; }
 /* A cor quase branca: um contorno lilás para não sumir no fundo. */
 .pintura-cor.clarinha { border-color: #e4dcf4; }
-.pintura-cor.completa { opacity: .45; }
-.pintura-cor.completa::after {
-  content: '✓';
+/* A cor que já terminou sai da fileira: só ficam as que ainda faltam. */
+.pintura-cor.completa { display: none; }
+/* Página pronta: a fileira (vazia) dá lugar ao "Escolher outro desenho". */
+.pintura-faixa[hidden], .pintura-outro[hidden] { display: none; }
+.pintura-outro { width: auto; padding-inline: clamp(16px, 5vw, 28px); }
+/* O confete da página pronta cai por cima de tudo da tela de pintar. */
+.pintura-confete {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #34b25a;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 900;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
 }
 .pintura-folha { position: relative; }
 .pintura-pronta {

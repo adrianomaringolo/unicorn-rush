@@ -295,10 +295,25 @@ não faz nada é pior do que nenhum.
 
 Quem lê em voz alta é a voz do próprio aparelho (`speechSynthesis`), no
 idioma do jogo (`pt-BR` / `en-US`): nada sai do aparelho, não custa nada e
-funciona offline. O jogo escolhe a melhor voz instalada (a lista
-`PREFERIDAS`, em `src/game/speech.js`), e o adulto pode trocar em
-"Trocar a voz", no cantinho dos adultos, quando o aparelho tem mais de uma.
-Cada fala nova corta a anterior.
+funciona offline. O jogo escolhe sozinho a melhor voz instalada, numa nota
+em `src/game/speech.js`: idioma certo antes de tudo, depois as vozes da
+lista `PREFERIDAS`, um bônus para as versões de qualidade (Premium,
+Aprimorada/Enhanced, Natural, Neural) e o fim da fila para as vozes de
+brincadeira do Mac (Eddy, Grandma, Rocko…). O adulto pode trocar em
+"Trocar a voz", no cantinho dos adultos, quando o aparelho tem mais de uma
+(a ⭐ marca a que o jogo escolheria). Cada fala nova corta a anterior.
+
+Para a voz ficar bem melhor no iPhone/iPad ou no Mac, vale baixar a versão
+de qualidade da Luciana: Ajustes › Acessibilidade › Conteúdo Falado › Vozes
+› Português (Brasil) › Luciana › **Aprimorada** (ou Premium). O jogo passa a
+usá-la sozinho.
+
+**Todo botão dos menus fala o próprio nome** quando tocado ("Pintar", depois
+"Livre" ou "Por números", o nome do desenho, "Voltar"…), para guiar quem
+ainda não lê — `guiarPelaVoz`, no `Game.js`. Vale para o `#overlay` e a
+tela de pintar (fora as bolinhas de cor e as setas); se a tela aberta tiver
+fala própria, ela corta esta e fala por cima. Um desenho trancado diz por
+que não abriu.
 
 As frases que a voz diz (a ficha, a vitória, "… é sua!") são montadas em
 `src/game/falas.js`, que também tira os emoji e o HTML antes de falar.
@@ -2318,18 +2333,23 @@ para a vista.
   escrito no meio. Só a cor certa pinta; a errada faz o som de "não". As
   áreas da cor escolhida ganham um tom clarinho dela e o número delas vem
   **numa bolinha da cor, maior, com contorno roxo**; os números das outras
-  cores ficam menores e apagados. A cor que termina ganha um ✓ e passa
-  sozinha para a próxima. O número fica do tamanho da área, nunca menor que
+  cores ficam menores e apagados. A cor que termina **sai da fileira** e a
+  escolha passa sozinha para a próxima. O número fica do tamanho da área, nunca menor que
   ~11 px na tela; a área pequena demais fica sem número (o tom clarinho
   mostra onde está) e ganha número quando o desenho é ampliado.
   **Toda área tem cor**, até as brancas: o `branco` do gabarito é um branco
   quase puro, com número. **As áreas miúdas** (o maior círculo de dentro
   menor que 0,65% da largura do desenho, que só se pintaria com uns 3× de
-  zoom) **já abrem pintadas** com a cor certa — `automaticas()`. **15
+  zoom) **pintam-se sozinhas quando a criança termina a cor delas** —
+  `automaticas()` e `completarMiudas()`; uma cor que só tem áreas miúdas já
+  abre pronta. **15
   segundos sem acertar nenhuma área**, aparece uma mãozinha 👆 batendo em
   cima da maior área que ainda falta na cor escolhida (se ela estiver fora
   da vista ampliada, o zoom volta ao desenho inteiro); some no próximo
-  acerto ou na troca de cor. Página completa: "⭐ Pronto!".
+  acerto ou na troca de cor. **Página completa**: chuva de confete (a mesma
+  do fim de fase, em `confete.js`), o "⭐ Pronto! Ficou lindo!" na tela e
+  falado (se a voz estiver ligada), e a fileira de cores, já vazia, dá
+  lugar ao botão **Escolher outro desenho**, que volta para a grade.
 
 **Zoom só no desenho**, nos dois modos: pinça de dois dedos, um dedo
 arrastando quando já está ampliado, rodinha ou duplo clique no computador
@@ -2722,10 +2742,11 @@ para o jogo funcionar sem internet.
 
 ## Versão
 
-A versão aparece no cartão *Sobre*, dentro do jogo — é assim que se sabe o
-que está instalado no aparelho de uma criança quando algo não bate.
+A versão aparece no cartão *Sobre*, dentro do jogo, e no pé da tela de
+carregamento — é assim que se sabe o que está instalado no aparelho de uma
+criança quando algo não bate.
 
-Ela vive em três lugares, e **um script mantém os três em sincronia**:
+Ela vive em quatro lugares, e **um script mantém todos em sincronia**:
 
 ```bash
 npm run bump              # 0.3.0 → 0.3.1   (correção, ajuste pequeno)
@@ -2739,6 +2760,7 @@ npm run bump -- 1.4.2     # exatamente essa
 | `src/game/version.js` | o número que o cartão *Sobre* mostra |
 | `package.json` | a versão do pacote |
 | `sw.js` | o nome do cache offline |
+| `index.html` | o número no pé da tela de carregamento (escrito no HTML para aparecer antes do JavaScript) |
 
 O `sw.js` é o mais importante: **o nome do cache carrega a versão**, e é a
 troca dele que faz o aparelho de quem já jogou descartar os arquivos antigos.

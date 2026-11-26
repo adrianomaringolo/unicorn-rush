@@ -6,7 +6,8 @@
 // olho, as nuvens), para a página terminar inteira pintada.
 //
 // As áreas miúdas, que só dariam para pintar com muito zoom, não pedem
-// toque: já abrem pintadas com a cor do gabarito (ver `automaticas`).
+// toque: pintam-se sozinhas quando a criança termina a cor delas (ver
+// `automaticas` e `completarMiudas`).
 //
 // As áreas são as de `dividirEmAreas`, pelo número (o índice): o mesmo PNG
 // dá sempre as mesmas áreas. Se o desenho mudar, o `npm run check` avisa
@@ -86,18 +87,18 @@ export const GABARITOS = {
   },
   'uni-campo': {
     ceu: [0],
-    cremeClaro: [21, 62, 67, 71, 74],
-    rosa: [20, 24, 42, 43, 45, 54, 59, 63, 72],
-    laranja: [1, 3, 4, 8, 9, 12, 13, 15, 19, 44, 69, 77],
-    amarelo: [6, 10, 16, 17, 22, 23, 25, 26, 36, 37, 41, 53, 65, 76, 79, 81, 85],
-    dourado: [7, 11, 58, 75, 78, 80],
-    verdeClaro: [28, 55, 70],
-    verde: [30, 61, 64, 68, 83, 84, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95],
-    azul: [29, 31, 34, 35, 66, 82],
-    roxo: [14, 33, 46, 48, 49, 51, 57, 60],
-    lilas: [18, 39, 40, 52, 56, 73],
-    vermelho: [47],
-    branco: [2, 5, 27, 32, 38, 50],
+    cremeClaro: [21, 61, 66, 70, 73],
+    rosa: [17, 20, 24, 44, 45, 47, 53, 58, 62, 71, 76],
+    laranja: [1, 3, 4, 8, 9, 12, 13, 15, 19, 46, 68],
+    amarelo: [6, 10, 16, 22, 23, 25, 26, 37, 38, 43, 52, 64, 75, 78, 80, 84],
+    dourado: [7, 11, 57, 74, 77, 79],
+    verdeClaro: [28, 54, 69],
+    verde: [30, 63, 67, 82, 83, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94],
+    azul: [29, 32, 35, 36, 60, 65, 81],
+    roxo: [14, 34, 48, 56, 59],
+    lilas: [18, 41, 42, 51, 55, 72],
+    vermelho: [49],
+    branco: [2, 5, 27, 31, 33, 39, 40, 50],
   },
   'sol-amanhecer': {
     ceu: [0],
@@ -143,18 +144,19 @@ export const GABARITOS = {
     branco: [6, 10, 17, 19],
   },
   'lua-sonhos': {
-    noite: [0],
+    // 60 é o vão entre as patas de trás e a da frente: fundo, não perna.
+    noite: [0, 60],
     amarelo: [1, 2, 3, 46, 47],
-    azulClaro: [10, 11, 15, 17, 26, 27, 29, 37, 62],
-    rosa: [16, 23, 28, 38, 48, 57],
-    cinza: [4, 7, 13, 64, 65, 66],
-    azul: [6, 19, 30, 35, 39, 42, 43, 58],
+    cinza: [4, 6, 13, 64, 65, 66],
+    branco: [5, 9, 21, 22, 67],
+    azul: [7, 19, 30, 35, 39, 42, 43, 58],
     roxo: [8, 20, 24, 31, 32, 49, 53],
-    lilas: [12, 18, 25, 36, 51, 61, 63, 67],
-    lilasClaro: [14, 41, 45, 59, 60],
-    marrom: [34, 40, 44, 52, 55],
+    azulClaro: [10, 11, 14, 17, 26, 27, 29, 37, 62],
+    lilas: [12, 18, 25, 36, 51, 61, 63, 68],
+    lilasClaro: [15, 41, 45, 54, 59],
+    rosa: [16, 23, 28, 38, 48, 57],
     creme: [33, 50, 56],
-    branco: [5, 9, 21, 22, 54],
+    marrom: [34, 40, 44, 52, 55],
   },
   'brasa-vulcao': {
     ceu: [0],
@@ -488,12 +490,27 @@ export function gabarito(id, areas) {
 }
 
 // As áreas miúdas de uma página (o `raio` de centrosDasAreas, `L` a largura
-// do desenho), já com a cor certa: `{ [área]: índice }`, para juntar às
-// cores pintadas.
+// do desenho), com a cor certa de cada uma: `{ [área]: índice }`.
 export function automaticas(g, raio, L) {
   const cores = {};
   for (let a = 0; a < g.alvo.length; a++) if (raio[a] < L * MIUDA) cores[a] = g.alvo[a];
   return cores;
+}
+
+// Pinta (em `cores`) as áreas miúdas das cores que já terminaram: a cor está
+// pronta quando todas as áreas dela que pedem toque estão certas. Uma cor
+// que só tem áreas miúdas fica pronta desde o começo. Devolve as áreas que
+// acabou de pintar (para desenhar e para o desfazer).
+export function completarMiudas(g, miudas, cores) {
+  const falta = new Set();
+  for (let a = 0; a < g.alvo.length; a++) {
+    if (g.alvo[a] >= 0 && miudas[a] === undefined && cores[a] !== g.alvo[a]) falta.add(g.alvo[a]);
+  }
+  const novas = [];
+  for (const [a, c] of Object.entries(miudas)) {
+    if (!falta.has(c) && cores[a] !== c) { cores[a] = c; novas.push(Number(a)); }
+  }
+  return novas;
 }
 
 // Confere um gabarito contra o número de áreas do desenho: cada área tem de

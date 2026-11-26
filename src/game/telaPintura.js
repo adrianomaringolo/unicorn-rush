@@ -9,7 +9,10 @@
 //             número de cada cor, e o número escrito em cada área. Só a cor
 //             certa pinta; as áreas da cor escolhida ficam com um tom claro
 //             dela e o número delas numa bolinha da cor, para saltar aos
-//             olhos. As áreas miúdas já abrem pintadas (`automaticas`).
+//             olhos. As áreas miúdas pintam-se sozinhas quando a cor
+//             delas termina (`completarMiudas`), e a cor pronta sai da
+//             fileira. Página pronta: confete, o "Pronto! Ficou lindo!"
+//             falado e um botão para escolher outro desenho.
 //             Quinze segundos sem acertar uma área, aparece uma mãozinha
 //             apontando para uma das que faltam na cor escolhida.
 //
@@ -19,10 +22,12 @@
 import {
   DESENHO, CORES, BORRACHA, ORDEM_PALETA, dividirEmAreas, areaNoPonto, coresGuardadas, centrosDasAreas,
 } from './pintura.js';
-import { gabarito, automaticas } from './pinturaNumeros.js';
+import { gabarito, automaticas, completarMiudas } from './pinturaNumeros.js';
 import { withIcons, iconUrl } from './icons.js';
 import { t } from './i18n.js';
 import { sfx } from './audio.js';
+import { speak } from './speech.js';
+import { criarChuva } from './confete.js';
 
 // Só o último desenho aberto fica preparado na memória: as áreas de um PNG
 // grande pesam uns 12 MB, e a criança pinta um de cada vez.
@@ -72,10 +77,12 @@ const clarinho = (hex) => rgb(hex).map((c) => Math.round(255 - (255 - c) * 0.45)
 // Cor clara (o número por cima vai escuro) ou escura (vai branco).
 const clara = (hex) => { const [r, g, b] = rgb(hex); return 0.299 * r + 0.587 * g + 0.114 * b > 150; };
 
-// Por números: as cores com que a página abre — as áreas miúdas, já certas,
-// e por cima o que a criança pintou.
+// Por números: as cores com que a página abre — o que a criança pintou e as
+// áreas miúdas das cores que ela já terminou.
 function coresDaPagina(pagina, g, guardado) {
-  return { ...automaticas(g, centros(pagina).raio, pagina.L), ...coresGuardadas(guardado, pagina.areas) };
+  const cores = coresGuardadas(guardado, pagina.areas);
+  completarMiudas(g, automaticas(g, centros(pagina).raio, pagina.L), cores);
+  return cores;
 }
 
 // Pinta a camada de cor (`ImageData`): `corDe(n)` dá o [r, g, b] da área n.
@@ -155,17 +162,22 @@ export function criarTelaPintura(raiz) {
         <div class="pintura-paleta"></div>
         <button class="pintura-seta depois" data-seta="1" aria-label="${t('Mais cores')}" hidden></button>
       </div>
+      <button class="big-button pintura-outro" data-acao="outro" hidden><span class="button-label">${t('Escolher outro desenho')}</span></button>
       <div class="pintura-botoes">
         <button class="big-button secondary" data-acao="desfazer"><span class="button-label">${t('↩️ Desfazer')}</span></button>
         <button class="big-button secondary" data-acao="limpar"><span class="button-label">${t('🗑️ Limpar')}</span></button>
       </div>
-    </div>`);
+    </div>
+    <div class="pintura-confete chuva-confete" aria-hidden="true"></div>`);
   const canvas = raiz.querySelector('.pintura-canvas');
   const ctx = canvas.getContext('2d');
   const espera = raiz.querySelector('.pintura-espera');
   const pronta = raiz.querySelector('.pintura-pronta');
   const nome = raiz.querySelector('.pintura-nome');
   const paleta = raiz.querySelector('.pintura-paleta');
+  const faixa = raiz.querySelector('.pintura-faixa');
+  const outro = raiz.querySelector('.pintura-outro');
+  const chuva = criarChuva(raiz.querySelector('.pintura-confete'));
 
   let pagina = null;
   let camada = null;
@@ -174,7 +186,8 @@ export function criarTelaPintura(raiz) {
   let corAtual = 0;
   let modo = 'livre';
   let gab = null;          // o gabarito, no modo por números
-  let fixas = {};          // por números: as áreas miúdas, que já abrem pintadas
+  let miudas = {};         // por números: as áreas miúdas, que se pintam sozinhas
+  let fixas = {};          // por números: o que a página tem pintado logo de cara
   let tintas = CORES;      // a paleta do modo: hex, na ordem dos botões
   let aoMudar = () => {};
   let aoVoltar = () => {};
@@ -295,12 +308,17 @@ export function criarTelaPintura(raiz) {
     const passo = (col ? paleta.clientHeight : paleta.clientWidth) * 0.75 * Number(s.dataset.seta);
     paleta.scrollBy({ [col ? 'top' : 'left']: passo, behavior: 'smooth' });
   }));
-  // Por números: a cor que já pintou todas as suas áreas ganha um ✓.
+  // Por números: a cor que já pintou todas as suas áreas sai da fileira.
+  // Sem nenhuma faltando, a fileira some e entra o "Escolher outro desenho"
+  // (e volta, se o desfazer tirar uma área).
   const marcarCompletas = () => {
     if (!numeros()) return;
     const falta = new Set();
     gab.alvo.forEach((c, a) => { if (c >= 0 && cores[a] !== c) falta.add(c); });
     paleta.querySelectorAll('.pintura-cor').forEach((b) => b.classList.toggle('completa', !falta.has(Number(b.dataset.cor))));
+    faixa.hidden = !falta.size;
+    outro.hidden = !!falta.size;
+    atualizarSetas();
     return falta;
   };
 
@@ -388,6 +406,8 @@ export function criarTelaPintura(raiz) {
 
   function comemorar() {
     sfx.win();
+    speak(t('⭐ Pronto! Ficou lindo!'));
+    chuva.soltar(4);
     pronta.hidden = false;
     clearTimeout(prontaTimer);
     prontaTimer = setTimeout(() => { pronta.hidden = true; }, 3200);
@@ -396,6 +416,8 @@ export function criarTelaPintura(raiz) {
   paleta.addEventListener('click', (e) => {
     const b = e.target.closest('.pintura-cor');
     if (!b) return;
+    // Por números, a cor que já terminou não volta: não há mais nada dela.
+    if (numeros() && b.classList.contains('completa')) { sfx.deny(); return; }
     sfx.tap();
     escolher(Number(b.dataset.cor));
   });
@@ -514,9 +536,14 @@ export function criarTelaPintura(raiz) {
       const alvo = gab.alvo[n];
       if (alvo < 0 || cores[n] === alvo) return;       // fica branca, ou já está certa
       if (alvo !== corAtual) { sfx.deny(); return; }    // não é esta cor
-      historico.push({ n, antes: cores[n] });
+      const passo = { n, antes: cores[n] };
+      historico.push(passo);
       cores[n] = corAtual;
       pintarArea(camada, pagina, n, rgb(tintas[corAtual]));
+      // A última área da cor: as miúdas dela entram junto (e saem junto no
+      // desfazer).
+      passo.miudas = completarMiudas(gab, miudas, cores);
+      for (const a of passo.miudas) pintarArea(camada, pagina, a, rgb(tintas[cores[a]]));
       sfx.pick();
       armarDica();
       const falta = marcarCompletas();
@@ -540,7 +567,7 @@ export function criarTelaPintura(raiz) {
   raiz.addEventListener('click', (e) => {
     const acao = e.target.closest('[data-acao]')?.dataset.acao;
     if (!acao) return;
-    if (acao === 'voltar') { sfx.tap(); aoVoltar(); return; }
+    if (acao === 'voltar' || acao === 'outro') { sfx.tap(); aoVoltar(); return; }
     if (!pagina) return;
     if (acao === 'desfazer') {
       const passo = historico.pop();
@@ -549,6 +576,7 @@ export function criarTelaPintura(raiz) {
       if (passo.tudo) cores = passo.tudo;
       else if (passo.antes === undefined || passo.antes === BORRACHA && !numeros()) delete cores[passo.n];
       else cores[passo.n] = passo.antes;
+      for (const a of passo.miudas || []) delete cores[a];
       repintar();
       marcarCompletas();
       mostrar();
@@ -585,6 +613,9 @@ export function criarTelaPintura(raiz) {
       gesto = null;
       zerarZoom();
       pronta.hidden = true;
+      chuva.parar();
+      faixa.hidden = false;
+      outro.hidden = true;
       clearTimeout(dicaTimer);
       esconderDica();
       canvas.hidden = true;
@@ -605,7 +636,9 @@ export function criarTelaPintura(raiz) {
       canvas.height = pagina.A;
       canvas.style.aspectRatio = `${pagina.L} / ${pagina.A}`;
       camada = ctx.createImageData(pagina.L, pagina.A);
-      fixas = numeros() ? automaticas(gab, centros(pagina).raio, pagina.L) : {};
+      miudas = numeros() ? automaticas(gab, centros(pagina).raio, pagina.L) : {};
+      fixas = {};
+      if (numeros()) completarMiudas(gab, miudas, fixas);
       cores = numeros() ? coresDaPagina(pagina, gab, guardado) : coresGuardadas(guardado, pagina.areas);
       montarPaleta();
       corAtual = 0;
@@ -624,6 +657,7 @@ export function criarTelaPintura(raiz) {
     fechar() {
       raiz.hidden = true;
       pagina = null;
+      chuva.parar();
       clearTimeout(prontaTimer);
       clearTimeout(dicaTimer);
       esconderDica();

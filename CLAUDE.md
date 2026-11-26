@@ -6,7 +6,7 @@
 *Sobre*, dentro do jogo, e é assim que se sabe o que está instalado no
 aparelho de uma criança quando algo não bate.
 
-Não edite os números à mão — use o script, que mexe nos três lugares de uma
+Não edite os números à mão — use o script, que mexe nos quatro lugares de uma
 vez:
 
 ```bash
@@ -16,21 +16,22 @@ npm run bump -- major     # 0.3.0 → 1.0.0   (mudança grande de como se joga)
 npm run bump -- 1.4.2     # exatamente essa
 ```
 
-Os três lugares que ele mantém em sincronia:
+Os quatro lugares que ele mantém em sincronia:
 
 | Arquivo | Para quê |
 | --- | --- |
 | `src/game/version.js` | o número que o cartão *Sobre* mostra |
 | `package.json` | a versão do pacote |
 | `sw.js` | o nome do cache offline |
+| `index.html` | o número no pé da tela de carregamento |
 
-O `sw.js` é o mais importante dos três: **o nome do cache carrega a versão**,
+O `sw.js` é o mais importante deles: **o nome do cache carrega a versão**,
 e é a troca dele que faz o aparelho de quem já jogou descartar os arquivos
 antigos. Sem subir a versão, quem já abriu o jogo continua com o código
 velho, mesmo depois de um deploy novo — e um arquivo quebrado que entre no
 cache fica preso até a versão mudar.
 
-O script recusa a subir se os três arquivos estiverem em versões diferentes:
+O script recusa a subir se os arquivos estiverem em versões diferentes:
 é melhor falhar do que deixar um deles para trás.
 
 ## Ícones: nunca emoji do aparelho
