@@ -23,6 +23,7 @@
 // um material dividido entre unicórnios acenderia em todos de uma vez.
 import * as THREE from 'three';
 import { trocarAsas, parDeAsas } from './unicorn.js';
+import { linguaDeFogo, faiscas } from './fogo.js';
 
 const mat = (color, opts = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
@@ -187,6 +188,158 @@ function oculos({ lente, aro, formato = 'redondo' }) {
   return g;
 }
 
+// Máscara de fantasia: uma peça em cada olho, como as lentes dos óculos,
+// mas com o buraco no meio — o olho aparece por dentro — e a ponta de fora
+// puxada para cima, de gatinho. A ponte e a fita fazem o resto.
+function mascara(cor, enfeite) {
+  const g = new THREE.Group();
+  const material = mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.25) });
+  const pontas = [];
+  for (const lado of [-1, 1]) {
+    const olho = OLHO(lado);
+    const fora = olho.clone().normalize().add(new THREE.Vector3(0, 0, -0.9)).normalize();
+    const centro = olho.clone().add(new THREE.Vector3(lado * 0.035, 0.005, -0.075));
+    const s = new THREE.Shape();
+    s.moveTo(-0.12, -0.02);
+    s.bezierCurveTo(-0.12, 0.08, -0.02, 0.1, 0.06, 0.08);
+    s.lineTo(0.15, 0.13);                       // a ponta de gatinho
+    s.bezierCurveTo(0.13, 0.04, 0.13, -0.06, 0.04, -0.09);
+    s.bezierCurveTo(-0.04, -0.11, -0.12, -0.09, -0.12, -0.02);
+    const buraco = new THREE.Path();
+    buraco.absellipse(0.005, 0, 0.065, 0.05, 0, Math.PI * 2, false, 0);
+    s.holes.push(buraco);
+    const geo = new THREE.ExtrudeGeometry(s, {
+      depth: 0.018, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1, curveSegments: 8,
+    });
+    geo.translate(0, 0, -0.01);
+    // A ponta de gatinho vai para fora: no lado esquerdo, espelha. E a
+    // máscara inteira um tanto maior que a lente, para não ler como óculos.
+    geo.scale(lado * 1.2, 1.2, 1);
+    const peca = new THREE.Mesh(geo, material);
+    peca.position.copy(centro);
+    peca.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), fora);
+    g.add(peca);
+    if (lado > 0 && enfeite) {
+      const e = estrelaGorda(0.035, enfeite);
+      e.position.set(-0.13, 0.11, 0.025);
+      e.rotation.z = 0.3;
+      peca.add(e);
+    }
+    // A fita: da ponta de fora até atrás da orelha.
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(lado * 0.3, 0.09, -0.2),
+      new THREE.Vector3(lado * 0.31, 0.12, -0.06),
+      new THREE.Vector3(lado * 0.26, 0.14, 0.08),
+    ]), 6, 0.012, 5), material));
+    pontas.push(new THREE.Vector3(lado * 0.16, 0.09, -0.33));
+  }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    pontas[0], new THREE.Vector3(0, 0.12, -0.37), pontas[1],
+  ]), 10, 0.03, 6), material));
+  return g;
+}
+
+// Abóbora de gomos: cinco gomos gordinhos em roda, o cabinho verde em cima
+// e, com `rosto`, a cara de abóbora acesa (olhos de triângulo e a boca de
+// dentinhos) virada para +z.
+function abobora(raio, rosto = false) {
+  const g = new THREE.Group();
+  const laranja = mat(0xff8a1f, { emissive: 0x3a1200 });
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    const gomo = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.62, 10, 8), laranja);
+    gomo.scale.set(0.75, 0.9, 0.75);
+    gomo.position.set(Math.cos(a) * raio * 0.4, 0, Math.sin(a) * raio * 0.4);
+    g.add(gomo);
+  }
+  const miolo = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.7, 10, 8), laranja);
+  miolo.scale.y = 0.85;
+  g.add(miolo);
+  const cabo = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.1, raio * 0.15, raio * 0.4, 6), mat(0x3f8f3a));
+  cabo.position.y = raio * 0.62;
+  cabo.rotation.z = 0.3;
+  g.add(cabo);
+  if (rosto) {
+    const aceso = mat(0xffd84a, { emissive: 0xffb000, emissiveIntensity: 0.9 });
+    for (const lado of [-1, 1]) {
+      const olho = new THREE.Mesh(new THREE.ConeGeometry(raio * 0.17, raio * 0.26, 3), aceso);
+      olho.scale.z = 0.4;
+      olho.position.set(lado * raio * 0.3, raio * 0.15, raio * 0.86);
+      g.add(olho);
+    }
+    const boca = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.36, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), aceso);
+    boca.scale.set(1.1, 0.55, 0.35);
+    boca.position.set(0, -raio * 0.12, raio * 0.86);
+    g.add(boca);
+  }
+  return g;
+}
+
+// Aranhinha fofa: corpo redondo escuro, cabeça, olhões brancos e quatro
+// perninhas de cada lado. De frente para +z, agarrada no que estiver atrás.
+function aranhinha(t = 1) {
+  const g = new THREE.Group();
+  const preto = mat(0x2a2438);
+  const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), preto);
+  corpo.scale.set(1, 1.1, 0.8);
+  corpo.position.y = -0.02;
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 6), preto);
+  cabeca.position.set(0, 0.045, 0.01);
+  g.add(corpo, cabeca);
+  for (const lado of [-1, 1]) {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 5), mat(0xffffff));
+    olho.position.set(lado * 0.014, 0.052, 0.038);
+    const pupila = new THREE.Mesh(new THREE.SphereGeometry(0.007, 5, 4), preto);
+    pupila.position.set(lado * 0.014, 0.052, 0.05);
+    g.add(olho, pupila);
+    for (let i = 0; i < 4; i++) {
+      const a = (-0.7 + i * 0.5);
+      const perna = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(lado * 0.03, a * 0.04, 0),
+        new THREE.Vector3(lado * 0.075, a * 0.06 + 0.025, 0.01),
+        new THREE.Vector3(lado * 0.1, a * 0.09 - 0.01, -0.02),
+      ]), 5, 0.007, 4);
+      g.add(new THREE.Mesh(perna, preto));
+    }
+  }
+  g.scale.setScalar(t);
+  return g;
+}
+
+// Fantasminha: cabeça redonda, a saia ondulada embaixo, olhos pretos e
+// bochechas cor de rosa. De pé em +y, olhando para +z.
+function fantasminha() {
+  const g = new THREE.Group();
+  const branco = mat(0xffffff, { emissive: 0x6a6a8a, emissiveIntensity: 0.35 });
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10), branco);
+  const saiaGeo = new THREE.CylinderGeometry(0.15, 0.17, 0.18, 16, 2, true);
+  const pos = saiaGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    if (pos.getY(i) < -0.08) pos.setY(i, pos.getY(i) + Math.sin(Math.atan2(pos.getZ(i), pos.getX(i)) * 6) * 0.03);
+  }
+  const saia = new THREE.Mesh(saiaGeo, branco);
+  saia.material.side = THREE.DoubleSide;
+  saia.position.y = -0.09;
+  g.add(cabeca, saia);
+  for (const lado of [-1, 1]) {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), mat(0x2a2438));
+    olho.scale.set(0.8, 1.2, 0.5);
+    olho.position.set(lado * 0.05, 0.02, 0.135);
+    const bochecha = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), mat(0xff9cc2));
+    bochecha.scale.z = 0.4;
+    bochecha.position.set(lado * 0.09, -0.03, 0.12);
+    const braco = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), branco);
+    braco.scale.set(1.3, 0.6, 0.7);
+    braco.position.set(lado * 0.17, -0.06, 0);
+    braco.rotation.z = lado * 0.5;
+    g.add(olho, bochecha, braco);
+  }
+  const boca = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.007, 5, 10), mat(0x2a2438));
+  boca.position.set(0, -0.04, 0.145);
+  g.add(boca);
+  return g;
+}
+
 // A cauda pende ao longo de -y no grupo `tail`; +z aponta para trás e um
 // pouco para cima, que é para onde a câmera da corrida olha.
 const RAIZ_DA_CAUDA = -0.1;
@@ -316,121 +469,65 @@ function sapato(L, { cor, sola, cano = 1, solaAlta = 0.035, biqueira = cor }) {
 // mesma direção e trazem `userData.animar(tempo, vento)`, chamado a cada
 // quadro.
 
-// Uma língua de fogo: perfil de gota (redondo na base, pontudo e um pouco
-// torto na ponta) girado em volta do eixo, nascendo com a ponta para +y.
-// A cor corre ao longo dela, por vértice: `cores` vai da base à ponta —
-// amarelo-claro embaixo, laranja, vermelho na ponta —, que é o que faz ler
-// como chama e não como uma gota de uma cor só.
-const _cor = new THREE.Color();
-function linguaDeFogo(comprimento, largura, cores, opacidade = 1) {
-  const pontos = [];
-  const N = 10;
-  for (let i = 0; i <= N; i++) {
-    const h = i / N;
-    // Engorda rápido logo no começo e afina devagar até a ponta.
-    const r = largura * Math.sin(Math.min(Math.PI / 2, h * 4.5)) * (1 - h) ** 1.3;
-    pontos.push(new THREE.Vector2(i === 0 ? 0.001 : Math.max(0.001, r), h * comprimento));
-  }
-  const geo = new THREE.LatheGeometry(pontos, 8);
-  const pos = geo.attributes.position;
-  const cor = new Float32Array(pos.count * 3);
-  const paleta = cores.map((c) => new THREE.Color(c));
-  for (let v = 0; v < pos.count; v++) {
-    const h = pos.getY(v) / comprimento;
-    const x = h * (paleta.length - 1);
-    const k = Math.min(paleta.length - 2, Math.floor(x));
-    _cor.copy(paleta[k]).lerp(paleta[k + 1], x - k);
-    cor.set([_cor.r, _cor.g, _cor.b], v * 3);
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
-  const material = new THREE.MeshBasicMaterial({
-    vertexColors: true, transparent: opacidade < 1, opacity: opacidade, depthWrite: opacidade >= 1,
-  });
-  const m = new THREE.Mesh(geo, material);
-  m.userData.ownGlow = true;
-  return m;
-}
-
-// A cauda de fogo: uma labareda comprida feita de línguas umas dentro das
-// outras — vermelha por fora, laranja, e o miolo quase branco —, que
-// tremem e esticam o tempo todo, com lambidas saindo pelos lados e
-// faíscas voando da ponta. Tudo em material sem sombra (`MeshBasic`): fogo
-// não escurece do lado de lá, ele brilha.
+// A cauda de fogo: uma labareda comprida que desce da garupa e lambe para
+// trás. São línguas de fogo (ver fogo.js) em três planos em volta do eixo
+// do rabo — de trás, de lado ou de cima ela tem volume de chama, e não de
+// folha —, outras três mais curtas entre elas, lambidas pequenas escapando
+// pelos lados ao longo dela, a brasa clara na raiz e faíscas saindo.
+// Era uma fila de gotas empilhadas, e lia como um colar, não como fogo.
 function caudaDeFogo() {
   const g = new THREE.Group();
   const linguas = [];
-  const NOS = 6;
-  // Três camadas, uma dentro da outra: a de fora vermelha e translúcida (o
-  // miolo aparece através dela), a do meio laranja e o miolo claro.
-  const camadas = [
-    { cores: [0xffa02e, 0xff4a1a, 0xc8141e], larg: 1, comp: 1, op: 0.66 },
-    { cores: [0xffe066, 0xffa21f, 0xff5a1f], larg: 0.66, comp: 0.85, op: 0.8 },
-    { cores: [0xfffbe0, 0xfff09a, 0xffc23a], larg: 0.36, comp: 0.66, op: 1 },
-  ];
-  for (let i = 0; i < NOS; i++) {
-    const t = i / (NOS - 1);
-    const no = new THREE.Group();
-    no.position.set(0, -0.04 - t * 1.0, t * t * 0.16);
-    for (const [k, c] of camadas.entries()) {
-      const l = linguaDeFogo(0.66 * c.comp * (1 - t * 0.4), 0.23 * c.larg * (1 - t * 0.55), c.cores, c.op);
-      l.rotation.x = Math.PI;               // ponta para -y, como o rabo
-      l.renderOrder = 2 + k;
-      l.userData.fase = i * 1.3 + k * 0.7;
-      l.userData.base = l.scale.clone();
-      no.add(l);
-      linguas.push(l);
-    }
-    g.add(no);
+  // A língua nasce deitada em +x; aqui ela é virada para descer (-y), como
+  // o rabo, e girada em volta dele até o plano `angulo`. `abre` inclina a
+  // ponta para fora do eixo. Com `angulo` -90° o "para cima" da língua (a
+  // `curva` dela) aponta para trás do unicórnio.
+  const plano = (angulo, lingua, y = 0, abre = 0) => {
+    const eixo = new THREE.Group();
+    eixo.rotation.y = angulo;
+    const suporte = new THREE.Group();
+    suporte.position.y = y;
+    suporte.rotation.z = -Math.PI / 2 + abre;
+    suporte.add(lingua);
+    eixo.add(suporte);
+    g.add(eixo);
+    linguas.push(lingua);
+  };
+  const TRAS = -Math.PI / 2;
+  // As três grandes: a do meio entorta bem para trás, as outras menos.
+  for (let i = 0; i < 3; i++) {
+    plano(TRAS + (i - 1) * (Math.PI / 3),
+      linguaDeFogo(1.18 - Math.abs(i - 1) * 0.12, 0.24, { curva: i === 1 ? 0.2 : 0.1, onda: 0.1, fase: i * 2.2 }));
   }
-  // As lambidas: línguas finas e tortas saindo para os lados e para cima,
-  // como as pontas que escapam de uma fogueira.
-  for (let i = 0; i < 10; i++) {
-    const t = 0.08 + (i / 9) * 0.85;
-    const a = i * 2.4;
-    const l = linguaDeFogo(0.34 * (1 - t * 0.35), 0.075 * (1 - t * 0.3),
-      i % 3 ? [0xffd04a, 0xff6a1f, 0xd81e1e] : [0xfff4b0, 0xffb02e, 0xff5a1f], 0.85);
-    l.rotation.set(Math.PI + 0.5 + Math.sin(a) * 0.2, 0, Math.cos(a) * 0.9);
-    l.position.set(Math.cos(a) * 0.08, -0.06 - t * 0.95, t * t * 0.16 + Math.sin(a) * 0.05);
-    l.userData.fase = i * 2.1;
-    l.userData.base = l.scale.clone();
-    l.userData.lambida = true;
-    l.renderOrder = 5;
-    g.add(l);
-    linguas.push(l);
+  // Três mais curtas entre elas, um pouco abertas.
+  for (let i = 0; i < 3; i++) {
+    plano(TRAS + Math.PI / 6 + i * (Math.PI / 3) - Math.PI / 3,
+      linguaDeFogo(0.78, 0.17, { curva: 0.12, onda: 0.13, fase: i * 1.7 + 4, ritmo: 1.15 }), -0.02, 0.12);
+  }
+  // As lambidas: pequenas, saindo para os lados ao longo da cauda.
+  for (let i = 0; i < 8; i++) {
+    const t = i / 7;
+    plano(i * 2.4, linguaDeFogo(0.46 - t * 0.12, 0.065, { curva: 0.25, onda: 0.18, fase: i * 2.1, ritmo: 1.35 }),
+      -0.12 - t * 0.62, 0.6);
   }
   // A raiz: a brasa clara de onde o fogo nasce.
-  const raiz = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc94a }));
+  const raiz = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd25a }));
   raiz.scale.set(1, 0.8, 1);
   raiz.position.y = -0.03;
   raiz.userData.ownGlow = true;
   g.add(raiz);
-  // As faíscas: sobem da cauda e somem, em ciclo.
-  const faiscas = [];
-  const faiscaGeo = new THREE.OctahedronGeometry(0.035, 0);
-  for (let i = 0; i < 10; i++) {
-    const f = new THREE.Mesh(faiscaGeo, new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffe58a : 0xffa23a }));
-    f.userData = { ownGlow: true, ciclo: i / 10, lado: ((i * 37) % 10) / 10 - 0.5 };
-    g.add(f);
-    faiscas.push(f);
-  }
+  // As faíscas: saem da cauda e somem, em ciclo.
+  const brasas = faiscas(10, 0.035, (u, f) => {
+    f.position.set(
+      f.userData.lado * 0.4 + Math.sin(u * 30 + f.userData.ciclo * 20) * 0.06,
+      -0.2 - u * 1.2,
+      0.12 + u * 0.4,
+    );
+  });
+  g.add(brasas);
   g.userData.animar = (tempo, vento = 0) => {
-    for (const l of linguas) {
-      const f = l.userData.fase;
-      const estica = 1 + Math.sin(tempo * 13 + f) * 0.18 + Math.sin(tempo * 23 + f * 2) * 0.09 + vento * 0.15;
-      const engorda = 1 + Math.sin(tempo * 17 + f * 1.7) * 0.12;
-      l.scale.set(l.userData.base.x * engorda, l.userData.base.y * estica, l.userData.base.z * engorda);
-      if (!l.userData.lambida) l.rotation.z = Math.sin(tempo * 9 + f) * 0.1;
-    }
-    for (const f of faiscas) {
-      const u = (tempo * 0.9 + f.userData.ciclo) % 1;
-      f.position.set(
-        f.userData.lado * 0.4 + Math.sin(tempo * 6 + f.userData.ciclo * 20) * 0.06,
-        -0.2 - u * 1.2,
-        0.12 + u * 0.4,
-      );
-      f.scale.setScalar(Math.max(0.001, (1 - u) * 1.3));
-      f.rotation.set(tempo * 5, tempo * 4, 0);
-    }
+    for (const l of linguas) l.userData.animar(tempo, vento);
+    brasas.userData.animar(tempo);
   };
   return g;
 }
@@ -1431,12 +1528,12 @@ export const ENFEITES = [
   // (`{ style, colors, scale }`), mais `material` e `brilho` quando precisa.
   // A miniatura olha de trás e de cima, que é como a asa se vê na corrida.
   {
-    id: 'asasDeMorcego', vaga: 'asas', emoji: '🦇', name: 'Asas de morcego', preco: 180, vista: [0, 0.8, 1],
+    id: 'asasDeMorcego', vaga: 'asas', emoji: '🦇', name: 'Asas de morcego', preco: 180, halloween: true, vista: [0, 0.8, 1],
     montar: () => ({ asa: { style: 'bat', colors: [0x4a3f66, 0x5c4f7d, 0x3a3150] } }),
   },
   {
     id: 'asasDeBorboleta', vaga: 'asas', emoji: '🦋', name: 'Asas de borboleta', preco: 220, vista: [0, 0.8, 1],
-    montar: () => ({ asa: { style: 'butterfly', colors: [0x8f6bff, 0x4cc9f0, 0xff8fd8], scale: 1.05 } }),
+    montar: () => ({ asa: { style: 'butterfly', colors: [0x8f6bff, 0x4cc9f0, 0xff8fd8], scale: 1.25 } }),
   },
   {
     // Nuvem fofinha: o véu branco, maior que a asa de sempre.
@@ -1487,10 +1584,11 @@ export const ENFEITES = [
     }),
   },
   {
-    // Acesa na própria cor, como labareda.
+    // Labaredas no lugar das penas, tremulando, com faíscas (ver fogo.js).
+    // As cores aqui só pintam a almofadinha do ombro, em brasa.
     id: 'asasDeFogo', vaga: 'asas', emoji: '🔥', name: 'Asas de fogo', preco: 320, vista: [0, 0.8, 1],
     montar: () => ({
-      asa: { style: 'ray', colors: [0xff4d1f, 0xff7a1f, 0xffab1f, 0xffd166, 0xfff0a8], brilho: 0.55, scale: 1.1 },
+      asa: { style: 'fogo', colors: [0xff7a1f, 0xff9a1f, 0xffb02e], brilho: 0.7, scale: 1.1 },
     }),
   },
   {
@@ -1500,6 +1598,117 @@ export const ENFEITES = [
       asa: {
         style: 'feather', colors: [0xffffff, 0xeaf6ff, 0xf5ecff],
         material: { transparent: true, opacity: 0.22, depthWrite: false }, brilho: 0.4,
+      },
+    }),
+  },
+  // --- Halloween ----------------------------------------------------------
+  // `halloween` junta estes numa seção própria na tela dos enfeites (as
+  // asas de morcego, lá em cima, também são da turma).
+  {
+    id: 'chapeuDeBruxa', vaga: 'cabeca', emoji: '🧙', name: 'Chapéu de bruxa', preco: 220, halloween: true,
+    montar() {
+      // Inclinado para o lado, como a cartola: o chifre fica livre. A ponta
+      // comprida dobra no meio e cai para trás, mole.
+      const g = new THREE.Group();
+      g.position.set(-0.15, 0.34, 0.07);
+      g.rotation.set(0.1, 0, 0.5);
+      const roxo = mat(0x3d2a66);
+      const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.022, 18), roxo);
+      const copa = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.135, 0.2, 14), roxo);
+      copa.position.y = 0.11;
+      const dobra = new THREE.Group();
+      dobra.position.y = 0.205;
+      dobra.rotation.set(0.75, 0, 0.2);
+      const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.24, 12), roxo);
+      ponta.position.y = 0.11;
+      dobra.add(ponta);
+      const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.134, 0.045, 14), mat(0xff8a1f));
+      faixa.position.y = 0.04;
+      const fivela = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.011, 4, 4), mat(0xffd166, { emissive: 0x3a2500 }));
+      fivela.rotation.z = Math.PI / 4;
+      fivela.position.set(0, 0.04, 0.135);
+      const estrela = estrelaGorda(0.04, 0xffd166);
+      estrela.position.set(0.02, 0.13, 0.09);
+      estrela.rotation.x = -0.3;
+      g.add(aba, copa, dobra, faixa, fivela, estrela);
+      return { cabeca: g };
+    },
+  },
+  {
+    id: 'mascaraDeFantasia', vaga: 'rosto', emoji: '🎭', name: 'Máscara de fantasia', preco: 160, halloween: true, vista: [0, 0.15, -1],
+    montar: () => ({ cabeca: mascara(0x7b3fd1, 0xffb02e) }),
+  },
+  {
+    id: 'colarDeAboboras', vaga: 'pescoco', emoji: '🎃', name: 'Colar de abóboras', preco: 190, halloween: true, vista: [-0.3, 0.6, -1],
+    montar() {
+      // Um cipó verde em volta do pescoço com abóboras pequenas penduradas,
+      // e a grande na frente, de cara acesa.
+      const g = noPescoco();
+      g.add(anel(0.28, 0.024, 0x2f7a3a, -0.03));
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.5;
+        const ab = abobora(0.075);
+        ab.position.set(Math.cos(a) * 0.32, -0.08, Math.sin(a) * 0.32);
+        g.add(ab);
+      }
+      const grande = abobora(0.15, true);
+      grande.position.copy(FRENTE_DO_PESCOCO);
+      grande.rotation.set(0.35, Math.PI, 0);
+      return { torso: [g, grande] };
+    },
+  },
+  {
+    id: 'aranhinhas', vaga: 'patas', emoji: '🕷️', name: 'Aranhinhas', preco: 140, halloween: true,
+    montar: () => ({
+      perna(L) {
+        // Uma pulseira roxa com uma aranhinha agarrada atrás (que é o lado
+        // que a câmera da corrida vê).
+        const g = new THREE.Group();
+        g.position.y = acimaDoCasco(L) + 0.02;
+        g.add(anel(0.105, 0.022, 0x8c5fe6));
+        const a = aranhinha(1.35);
+        a.position.set(0, 0.01, 0.16);
+        g.add(a);
+        return g;
+      },
+    }),
+  },
+  {
+    id: 'fantasminha', vaga: 'cauda', emoji: '👻', name: 'Fantasminha na cauda', preco: 170, halloween: true, vista: [0.6, 0.3, 1],
+    montar() {
+      // Amarrado na raiz do rabo como o balão, flutuando para cima e para
+      // trás — de pé no mundo (o grupo do rabo vai inclinado em -0,72) e
+      // olhando para trás, para a câmera da corrida.
+      const g = new THREE.Group();
+      g.add(anel(0.17, 0.025, 0x8c5fe6, RAIZ_DA_CAUDA));
+      const no = new THREE.Vector3(0.05, RAIZ_DA_CAUDA, 0.18);
+      const onde = new THREE.Vector3(0.2, 0.5, 0.72);
+      const fio = new THREE.CatmullRomCurve3([no, new THREE.Vector3(0.16, 0.14, 0.48), onde.clone().add(new THREE.Vector3(0, -0.2, 0))]);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(fio, 12, 0.008, 4), mat(0xffb02e)));
+      const f = fantasminha();
+      f.position.copy(onde);
+      f.rotation.x = 0.72;
+      g.add(f);
+      return { cauda: g };
+    },
+  },
+  {
+    // Bala de milho: base amarela, meio laranja e a ponta branca.
+    id: 'chifreDeBala', vaga: 'chifre', emoji: '🍬', name: 'Chifre de bala de milho', preco: 200, halloween: true,
+    montar: () => ({
+      chifre: ({ length, radius }) => {
+        const g = new THREE.Group();
+        const raio = radius * 1.15;
+        const faixas = [[0, 0.42, 0xffc93a], [0.42, 0.76, 0xff7a1a], [0.76, 1, 0xfffaf0]];
+        for (const [de, ate, cor] of faixas) {
+          const faixa = new THREE.Mesh(
+            new THREE.CylinderGeometry(raio * (1 - ate), raio * (1 - de), (ate - de) * length, 16),
+            mat(cor, { emissive: new THREE.Color(cor).multiplyScalar(0.15) }),
+          );
+          faixa.position.y = -length / 2 + ((de + ate) / 2) * length;
+          g.add(faixa);
+        }
+        return g;
       },
     }),
   },

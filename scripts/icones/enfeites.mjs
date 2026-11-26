@@ -4,7 +4,7 @@
 // na tela (o toast de "é seu!", o título da tela de enfeites): sem o ícone
 // aqui, a tela voltava a mostrar o emoji do aparelho.
 import {
-  O, st, brilho, traco, estrela, coracao,
+  O, st, brilho, traco, estrela, coracao, uniao, faisca,
 } from './base.mjs';
 
 // As quatro asas da borboleta, de um lado; o outro é o espelho.
@@ -302,5 +302,76 @@ export const ENFEITES = {
       + `<path d="M64 14 Q34 16 32 54 Q30 78 18 90 Q16 98 26 98 H102 Q112 98 110 90 Q98 78 96 54 Q94 16 64 14 Z" fill="${c.g('ouro', 14, 98)}" ${st()}/>`
       + `<path d="M64 6 V14" stroke="${O}" stroke-width="7" stroke-linecap="round"/>`
       + brilho(46, 44, 5, 14, 15, 0.6),
+  },
+  // --- Halloween ---
+  mage: {
+    emoji: '🧙',
+    // No jogo é o chapéu de bruxa: roxo, a ponta caindo de lado, a faixa
+    // laranja com fivela e uma estrelinha.
+    desenho: (c) => `<ellipse cx="64" cy="102" rx="56" ry="15" fill="${c.g(['#9a7ae0', '#3d2a66'], 87, 117)}" ${st()}/>`
+      + `<path d="M34 100 Q48 64 58 36 Q64 18 80 12 Q98 8 110 22 Q96 18 88 28 Q80 40 88 70 Q92 86 96 100 Q64 108 34 100 Z" fill="${c.g(['#a58ae8', '#4a3380'], 10, 104)}" ${st()}/>`
+      + `<path d="M40 82 Q64 90 91 82 L95 98 Q64 106 35 98 Z" fill="${c.g('laranja', 82, 104)}" ${st(4)}/>`
+      + `<rect x="56" y="84" width="16" height="15" rx="3" fill="none" stroke="${O}" stroke-width="8"/>`
+      + `<rect x="56" y="84" width="16" height="15" rx="3" fill="none" stroke="#ffd166" stroke-width="3.5"/>`
+      + `<polygon points="${estrela(70, 56, 10, 4.5)}" fill="${c.g('ouro', 46, 66)}" ${st(3)}/>`
+      + brilho(52, 52, 4, 12, 20, 0.5),
+  },
+  performing_arts: {
+    emoji: '🎭',
+    // No jogo é a máscara de fantasia: roxa, de gatinho, com os furos dos
+    // olhos e uma estrelinha no canto.
+    desenho: (c) => `<path fill-rule="evenodd" d="M8 46 Q12 32 30 36 Q50 40 64 50 Q78 40 98 36 Q116 32 120 46 Q124 74 104 86 Q86 96 72 82 Q68 78 64 78 Q60 78 56 82 Q42 96 24 86 Q4 74 8 46 Z M30 60 Q40 50 52 60 Q40 70 30 60 Z M76 60 Q88 50 98 60 Q88 70 76 60 Z" fill="${c.g('roxo', 32, 94)}" ${st()}/>`
+      + traco('M8 46 Q2 38 4 28', '#ffb02e', 4)
+      + `<path d="${faisca(108, 30, 12)}" fill="${c.g('ouro', 18, 42)}" ${st(3)}/>`
+      + brilho(26, 48, 8, 3.5, -20, 0.6),
+  },
+  jack_o_lantern: {
+    emoji: '🎃',
+    desenho: (c) => uniao('<ellipse cx="40" cy="74" rx="28" ry="38"/><ellipse cx="88" cy="74" rx="28" ry="38"/><ellipse cx="64" cy="74" rx="30" ry="40"/>', c.g('laranja', 34, 114))
+      + `<path d="M50 40 Q40 74 50 108 M78 40 Q88 74 78 108" fill="none" stroke="${O}" stroke-width="3.5" opacity=".45" stroke-linecap="round"/>`
+      + `<path d="M58 38 Q56 22 64 12 Q74 12 72 20 Q66 28 70 38 Z" fill="${c.g('verde', 12, 40)}" ${st(5)}/>`
+      + `<path d="M34 68 L46 50 L58 70 Z M70 70 L82 50 L94 68 Z" fill="${c.g(['#fff3a6', '#ffb000'], 50, 70)}" ${st(4)}/>`
+      + `<path d="M30 82 Q64 112 98 82 L90 84 L84 92 L76 86 L64 96 L52 86 L44 92 L38 84 Z" fill="${c.g(['#fff3a6', '#ffb000'], 82, 100)}" ${st(4)}/>`
+      + brilho(24, 58, 5, 12, 15, 0.5),
+  },
+  spider: {
+    emoji: '🕷️',
+    // Aranhinha fofa: corpo redondo, olhões e bochechas.
+    desenho: (c) => {
+      const pernas = ['M54 62 Q34 38 16 46', 'M52 72 Q28 62 10 76', 'M52 84 Q30 88 18 106', 'M56 92 Q44 106 40 120'];
+      const lado = pernas.map((d) => traco(d, c.g('escuro', 36, 120), 5)).join('');
+      return lado + `<g transform="translate(128 0) scale(-1 1)">${lado}</g>`
+        + `<ellipse cx="64" cy="84" rx="26" ry="28" fill="${c.g('escuro', 56, 112)}" ${st()}/>`
+        + `<circle cx="64" cy="50" r="20" fill="${c.g('escuro', 30, 70)}" ${st()}/>`
+        + `<circle cx="56" cy="48" r="8" fill="#fff" ${st(3)}/><circle cx="72" cy="48" r="8" fill="#fff" ${st(3)}/>`
+        + `<circle cx="57" cy="49" r="3.5" fill="${O}"/><circle cx="73" cy="49" r="3.5" fill="${O}"/>`
+        + `<ellipse cx="50" cy="60" rx="4" ry="2.5" fill="#ff8fb8"/><ellipse cx="78" cy="60" rx="4" ry="2.5" fill="#ff8fb8"/>`
+        + brilho(52, 76, 4, 10, 20, 0.45);
+    },
+  },
+  ghost: {
+    emoji: '👻',
+    desenho: (c) => `<path d="M28 106 V58 Q28 16 64 16 Q100 16 100 58 V106 Q91 96 82 106 Q73 116 64 106 Q55 96 46 106 Q37 116 28 106 Z" fill="${c.g('branco', 16, 112)}" ${st()}/>`
+      + `<path d="M28 66 Q14 70 12 60 M100 66 Q114 70 116 60" fill="none" stroke="${O}" stroke-width="6" stroke-linecap="round"/>`
+      + `<ellipse cx="50" cy="56" rx="7" ry="10" fill="${O}"/><ellipse cx="78" cy="56" rx="7" ry="10" fill="${O}"/>`
+      + `<circle cx="52" cy="52" r="2.5" fill="#fff"/><circle cx="80" cy="52" r="2.5" fill="#fff"/>`
+      + `<ellipse cx="64" cy="76" rx="6" ry="7" fill="${O}"/>`
+      + `<ellipse cx="40" cy="70" rx="6" ry="3.5" fill="#ff9cc2"/><ellipse cx="88" cy="70" rx="6" ry="3.5" fill="#ff9cc2"/>`
+      + brilho(44, 32, 10, 5, -30, 0.7),
+  },
+  candy: {
+    emoji: '🍬',
+    // No jogo é a bala de milho do chifre: amarela, laranja e branca.
+    desenho: (c) => {
+      const d = 'M64 10 Q72 10 76 20 L108 100 Q112 116 96 116 H32 Q16 116 20 100 L52 20 Q56 10 64 10 Z';
+      const recorte = c.clip(`<path d="${d}"/>`);
+      return `<g clip-path="${recorte}">`
+        + `<rect x="0" y="0" width="128" height="46" fill="${c.g('branco', 8, 46)}"/>`
+        + `<rect x="0" y="46" width="128" height="36" fill="${c.g('laranja', 46, 82)}"/>`
+        + `<rect x="0" y="82" width="128" height="40" fill="${c.g('ouro', 82, 118)}"/></g>`
+        + `<path d="M40 46 H88 M27 82 H101" stroke="${O}" stroke-width="3.5" opacity=".4"/>`
+        + `<path d="${d}" fill="none" ${st()}/>`
+        + brilho(54, 36, 4, 12, 20, 0.6);
+    },
   },
 };

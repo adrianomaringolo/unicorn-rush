@@ -218,14 +218,14 @@ const GRUPOS = [
   {
     id: 'enfeites',
     titulo: '🎀 Enfeites',
-    tagline: 'O que se compra com corações para vestir os unicórnios: um por vaga (cabeça, rosto, pescoço, patas, cauda e chifre). Os de Natal vêm marcados com 🎄.',
+    tagline: 'O que se compra com corações para vestir os unicórnios: um por vaga (cabeça, rosto, pescoço, patas, cauda e chifre). Os de Halloween vêm marcados com 🎃 e os de Natal com 🎄.',
     subgrupos: [
       {
         titulo: 'Sozinhos',
         itens: ENFEITES.map((e) => neutro({
           nome: `${e.emoji} ${e.name}`,
           codigo: e.id,
-          info: e.natal ? `🎄 ${VAGA[e.vaga]} · 💗 ${e.preco}` : `${VAGA[e.vaga]} · 💗 ${e.preco}`,
+          info: `${e.halloween ? '🎃 ' : e.natal ? '🎄 ' : ''}${VAGA[e.vaga]} · 💗 ${e.preco}`,
           criar: () => {
             const peca = montarEnfeiteSozinho(e.id);
             // A guirlanda é uma roda deitada: de lado vira um risco.

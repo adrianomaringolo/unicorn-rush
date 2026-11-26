@@ -7,6 +7,7 @@
 //     └─ 4 pivôs de perna (giram no ombro/quadril)
 import * as THREE from 'three';
 import { CHARACTERS } from './characters.js';
+import { asaDeFogo } from './fogo.js';
 
 const mat = (color, opts = {}) =>
   new THREE.MeshLambertMaterial({ color, flatShading: true, ...opts });
@@ -365,11 +366,10 @@ function makeLobe(length, width) {
 }
 
 const WING_STYLES = {
-  butterfly: {
-    count: 2, shape: makeLobe, arm: 0.12,
-    near: 1.0, far: 0.72, width: 0.48, taper: 0.08,
-    sweepNear: 0.3, sweepFar: 1.25, coverts: 0,
-  },
+  // Borboleta: duas asas desenhadas inteiras, não um leque (ver asaDeBorboleta).
+  butterfly: { borboleta: true, count: 0, coverts: 0, shape: makeLobe },
+  // Fogo: labaredas que tremulam no lugar das penas (ver fogo.js).
+  fogo: { fogo: true, count: 0, coverts: 0, shape: makeRay },
   feather: {
     count: 6, shape: makeFeather, arm: 0.45,
     near: 0.6, far: 1.15, width: 0.25, taper: 0.04,
@@ -391,11 +391,8 @@ const WING_STYLES = {
     near: 0.85, far: 1.4, width: 0.46, taper: 0.08,
     sweepNear: 0.05, sweepFar: 1.0, coverts: 2,
   },
-  bat: {
-    count: 3, shape: makeBat, arm: 0.5,
-    near: 0.85, far: 1.3, width: 0.42, taper: 0.06,
-    sweepNear: 0.1, sweepFar: 0.9, coverts: 1,
-  },
+  // Morcego: não é leque de penas, é uma membrana só (ver asaDeMorcego).
+  bat: { membrana: true, count: 0, coverts: 0, shape: makeBat },
 };
 
 // Pena fina: com 0,05 de espessura e um chanfro grosso, cada pena tinha
@@ -454,6 +451,149 @@ function pontaDaPena(tipo) {
   return null;
 }
 
+// A asa de morcego de verdade: o braço vai do ombro ao pulso, e do pulso
+// saem três dedos compridos, abertos em leque para trás. Uma membrana única
+// fica esticada entre eles e volta ao corpo, e a borda de trás afunda em
+// arco entre uma ponta de dedo e a próxima — é esse recorte que diz
+// "morcego" de qualquer ângulo. Os ossos ficam por cima, num tom mais
+// claro, e uma garrinha sai do pulso para a frente.
+//
+// Era um leque de três membranas de festão, cada uma uma tábua de borda
+// ondulada: de trás (a câmera do jogo) ela lia como três remos empilhados.
+//
+// Tudo no plano do leque (o mesmo das penas): X para fora, +Y para a
+// frente do unicórnio. Devolve as peças que a batida mexe.
+const OSSOS_MORCEGO = {
+  pulso: [0.52, 0.14],
+  dedos: [[1.32, 0.02], [1.12, -0.46], [0.8, -0.78]],
+  corpo: [0.1, -0.5],                 // onde a membrana volta ao corpo
+};
+function asaDeMorcego(fan, wing, mat) {
+  const { pulso, dedos, corpo } = OSSOS_MORCEGO;
+  const [px, py] = pulso;
+  // O arco entre duas pontas afunda na direção do pulso.
+  const arco = (a, b, fundo) => [
+    (a[0] + b[0]) / 2 + (px - (a[0] + b[0]) / 2) * fundo,
+    (a[1] + b[1]) / 2 + (py - (a[1] + b[1]) / 2) * fundo,
+  ];
+  const forma = new THREE.Shape();
+  forma.moveTo(0, 0.05);
+  forma.lineTo(px, py + 0.04);                       // borda da frente: o braço
+  forma.lineTo(dedos[0][0], dedos[0][1] + 0.02);     // e o dedo comprido
+  let anterior = dedos[0];
+  for (const dedo of dedos.slice(1)) {
+    forma.quadraticCurveTo(...arco(anterior, dedo, 0.42), dedo[0], dedo[1]);
+    anterior = dedo;
+  }
+  forma.quadraticCurveTo(...arco(anterior, corpo, 0.3), corpo[0], corpo[1]);
+  forma.quadraticCurveTo(-0.02, -0.2, 0, 0.05);
+  const membrana = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, {
+    depth: 0.014, bevelEnabled: true, bevelSize: 0.008, bevelThickness: 0.006, bevelSegments: 1,
+  }), mat(wing.colors[0]));
+  membrana.castShadow = true;
+
+  // Os ossos: cilindros finos, do ombro ao pulso e do pulso a cada ponta,
+  // no tom da membrana puxado para o claro — no tom de uma das cores da
+  // asa eles sumiam nela.
+  const corOsso = mat(new THREE.Color(wing.colors[0]).lerp(new THREE.Color(0xffffff), 0.3));
+  const osso = (a, b, raio) => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const comp = Math.hypot(dx, dy);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.6, raio, comp, 6), corOsso);
+    m.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.007);
+    m.rotation.z = Math.atan2(dy, dx) - Math.PI / 2;
+    m.castShadow = true;
+    return m;
+  };
+  const asa = new THREE.Group();
+  asa.add(membrana, osso([0, 0.05], pulso, 0.045));
+  for (const dedo of dedos) asa.add(osso(pulso, dedo, 0.03));
+  // Nó do pulso e a garrinha apontando para a frente.
+  const no = new THREE.Mesh(new THREE.SphereGeometry(0.05, 7, 5), corOsso);
+  no.position.set(px, py, 0.007);
+  const garra = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.13, 5), corOsso);
+  garra.position.set(px + 0.02, py + 0.09, 0.007);
+  garra.rotation.z = -0.25;
+  asa.add(no, garra);
+
+  // A batida e o recolher mexem a membrana inteira, como uma pena grande.
+  asa.position.x = 0.1;
+  asa.rotation.z = -0.12;
+  asa.userData.t = 0.6;
+  asa.userData.baseRotation = asa.rotation.z;
+  fan.add(asa);
+  return [asa];
+}
+
+// Asa de borboleta: a de cima (anterior) grande, quase um triângulo de
+// ponta arredondada que sobe para a frente; a de baixo (posterior) um lobo
+// redondo que desce para trás e termina numa caudinha. Cada uma com a
+// borda escura e uma mancha redonda com miolo claro — é o contorno e o
+// "olho" que dizem borboleta, mais que a cor.
+//
+// Eram dois ovais lisos de cada lado, que de trás liam como raquetes.
+//
+// No plano do leque, como as penas: X para fora, +Y para a frente.
+function asaDeBorboleta(fan, wing, mat) {
+  const desenho = (pontos) => {
+    const s = new THREE.Shape();
+    s.moveTo(...pontos[0]);
+    for (let i = 1; i < pontos.length; i += 2) s.quadraticCurveTo(...pontos[i], ...pontos[i + 1]);
+    return s;
+  };
+  // [início, (controle, ponto)…] — curvas quadráticas encadeadas.
+  const ANTERIOR = desenho([
+    [0, 0.04],
+    [0.28, 0.5], [0.78, 0.72],          // borda da frente, subindo
+    [1.22, 0.86], [1.18, 0.4],          // a ponta larga e arredondada
+    [1.14, 0.0], [0.82, -0.1],          // borda de fora, descendo
+    [0.4, -0.1], [0, 0.04],             // de volta à raiz
+  ]);
+  const POSTERIOR = desenho([
+    [0, -0.02],
+    [0.5, 0.02], [0.78, -0.22],         // encosta na de cima
+    [0.92, -0.5], [0.66, -0.66],        // o lobo redondo
+    [0.56, -0.74], [0.5, -0.92],        // a caudinha
+    [0.4, -0.72], [0.26, -0.62],
+    [0.02, -0.46], [0, -0.02],
+  ]);
+  const grossura = { depth: 0.02, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.008, bevelSegments: 1 };
+  const corDe = (i) => new THREE.Color(wing.colors[i % wing.colors.length]);
+
+  const montar = (forma, cor, mancha, raioMancha) => {
+    const grupo = new THREE.Group();
+    const asa = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, grossura), mat(cor));
+    asa.castShadow = true;
+    // A borda: a mesma forma um pouco maior, escura, logo atrás.
+    const borda = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { ...grossura, bevelSize: 0.06 }), mat(cor.clone().multiplyScalar(0.35)));
+    borda.position.z = -0.004;
+    borda.scale.z = 0.8;
+    grupo.add(borda, asa);
+    // A mancha dos dois lados da asa, com o miolo claro.
+    for (const z of [0.036, -0.022]) {
+      const fora = new THREE.Mesh(new THREE.CircleGeometry(raioMancha, 14), mat(corDe(2)));
+      const dentro = new THREE.Mesh(new THREE.CircleGeometry(raioMancha * 0.42, 10), mat(0xffffff));
+      fora.position.set(mancha[0], mancha[1], z);
+      dentro.position.set(mancha[0], mancha[1], z + Math.sign(z) * 0.002);
+      if (z < 0) { fora.rotation.y = Math.PI; dentro.rotation.y = Math.PI; }
+      grupo.add(fora, dentro);
+    }
+    fan.add(grupo);
+    return grupo;
+  };
+  const anterior = montar(ANTERIOR, corDe(0), [0.82, 0.38], 0.15);
+  const posterior = montar(POSTERIOR, corDe(1), [0.52, -0.42], 0.1);
+  posterior.position.z = -0.03;            // a de baixo fica por trás da de cima
+
+  // Batem juntas, a de baixo um pouco atrasada.
+  anterior.position.x = posterior.position.x = 0.08;
+  anterior.userData = { t: 0.5, baseRotation: 0 };
+  posterior.userData = { t: 0.9, baseRotation: -0.1 };
+  posterior.rotation.z = -0.1;
+  return [anterior, posterior];
+}
+
 export function makeWing(side, wing) {
   const style = WING_STYLES[wing.style] || WING_STYLES.feather;
   const pivot = new THREE.Group();
@@ -473,7 +613,11 @@ export function makeWing(side, wing) {
   fan.scale.x = side;                 // espelha a asa do outro lado
   pivot.add(fan);
 
-  const feathers = [];
+  const feathers = style.membrana ? asaDeMorcego(fan, wing, mat)
+    : style.borboleta ? asaDeBorboleta(fan, wing, mat)
+    : style.fogo ? asaDeFogo(fan) : [];
+  // A asa que se mexe sozinha (o fogo tremulando) — chamada a cada quadro.
+  pivot.userData.animar = fan.userData.animar || null;
 
   // Penas grandes, espalhadas do ombro até a ponta da asa.
   for (let i = 0; i < style.count; i++) {
@@ -848,6 +992,30 @@ export function createUnicorn(character = CHARACTERS.uni) {
     head.add(narina);
   }
 
+  // Barbicha (`beard: { color }`), a do Vovô: um tufo que pende do queixo,
+  // embaixo do focinho. Três cones de ponta para baixo — o do meio mais
+  // comprido — com a base chata encostada na face de baixo do focinho e
+  // mais estreita que ela. Enterrada dentro do focinho, a base era mais
+  // larga que ele e vazava pelos lados, como bigode. É o traço que diz
+  // "avô" de longe, e as páginas de pintar dele já o têm.
+  if (character.beard) {
+    const corBarba = mat(character.beard.color);
+    const barba = new THREE.Group();
+    // O focinho (ver geoFocinho) tem a face de baixo em y ≈ -0,18 e meia
+    // largura ≈ 0,095 nesta altura de z.
+    barba.position.set(0, -0.175, -0.34);
+    barba.rotation.x = -0.25;               // a ponta vai um tico para a frente
+    for (const [x, comp, raio, giro] of [[0, 0.44, 0.07, 0], [-0.035, 0.32, 0.05, -0.12], [0.035, 0.32, 0.05, 0.12]]) {
+      const tufo = new THREE.Mesh(new THREE.ConeGeometry(raio, comp, 7), corBarba);
+      tufo.rotation.x = Math.PI;             // ponta para baixo
+      tufo.rotation.z = giro;
+      tufo.position.set(x, -comp / 2, 0);
+      tufo.castShadow = true;
+      barba.add(tufo);
+    }
+    head.add(barba);
+  }
+
   const ears = [];
   for (const side of [-1, 1]) {
     const raioOlho = 0.07 * shape.eye;
@@ -1206,5 +1374,6 @@ export function animateUnicorn(unicorn, time, speed, grounded, flapBoost = false
         - batida * 0.18 * feather.userData.t
         + Math.sin(time * 6 - feather.userData.t * 2) * 0.04;
     }
+    wing.userData.animar?.(time);
   });
 }

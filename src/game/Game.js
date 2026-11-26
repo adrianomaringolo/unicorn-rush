@@ -3030,8 +3030,9 @@ export class Game {
     // Uma seção por parte do corpo (cabeça, rosto, pescoço…), na ordem das
     // VAGAS, e dentro dela do mais barato ao mais caro. Como cada vaga
     // aceita um enfeite só, ver as vagas separadas também explica por que
-    // a coroa tira a cartola: os dois moram na mesma prateleira. Os de Natal
-    // ficam numa seção própria no fim, que é uma coleção de época.
+    // a coroa tira a cartola: os dois moram na mesma prateleira. Os de
+    // Halloween e os de Natal ficam em seções próprias no fim, que são
+    // coleções de época (na ordem do calendário).
     const ordem = (x, y) => x.preco - y.preco;
     const grade = (lista) => `<div class="cast-grid enfeites">${[...lista].sort(ordem).map(cartao).join('')}</div>`;
     const secao = (titulo, lista, extra = '') => (lista.length
@@ -3040,12 +3041,13 @@ export class Game {
       cabeca: t('🎩 Cabeça'), rosto: t('🕶️ Rosto'), pescoco: t('📿 Pescoço'), asas: t('🪶 Asas'),
       patas: t('🧦 Patas'), cauda: t('🎀 Cauda'), chifre: t('🦄 Chifre'),
     };
-    const deSempre = ENFEITES.filter((e) => !e.natal);
+    const deSempre = ENFEITES.filter((e) => !e.natal && !e.halloween);
 
     this.ui.showOverlay({
       picker: true,
       title: t('🎀 Enfeites de {nome}', { nome: this.character.name }),
       html: VAGAS.map((vaga) => secao(PARTES[vaga] || vaga, deSempre.filter((e) => e.vaga === vaga))).join('')
+        + secao(t('🎃 Halloween'), ENFEITES.filter((e) => e.halloween), ' halloween')
         + secao(t('🎄 Natal'), ENFEITES.filter((e) => e.natal), ' natal'),
       scroll,
       buttons: [{ label: t('✅ Pronto'), huge: true, onClick: () => this.showHome() }],

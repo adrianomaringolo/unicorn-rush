@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.58.0';
+const VERSION = 'unicornrush-v0.59.0';
 
 const SHELL = [
   './',
@@ -62,6 +62,7 @@ const SHELL = [
   './src/models/trackPortraits.js',
   './src/models/scenery.js',
   './src/models/unicorn.js',
+  './src/models/fogo.js',
   './src/models/viewer3d.js',
   './src/models/accessories.js',
   './src/models/stickers.js',
@@ -166,6 +167,14 @@ const SHELL = [
   './assets/pintar/cometa-pedido.png',
   './assets/pintar/limao-frutas.png',
   './assets/pintar/limao-pulo.png',
+  './assets/pintar/violeta-flutua.png',
+  './assets/pintar/violeta-bruma.png',
+  './assets/pintar/cristal-caverna.png',
+  './assets/pintar/cristal-lago.png',
+  './assets/pintar/vovo-vilarejo.png',
+  './assets/pintar/vovo-mapa.png',
+  './assets/pintar/sombra-caverna.png',
+  './assets/pintar/sombra-lua.png',
   './assets/icones/tropical_fish.svg',
   './assets/icones/turtle.svg',
   './assets/icones/unicorn.svg',
@@ -180,6 +189,12 @@ const SHELL = [
   './assets/icones/gem_stone.svg',
   './assets/icones/top_hat.svg',
   './assets/icones/bat.svg',
+  './assets/icones/mage.svg',
+  './assets/icones/performing_arts.svg',
+  './assets/icones/jack_o_lantern.svg',
+  './assets/icones/spider.svg',
+  './assets/icones/ghost.svg',
+  './assets/icones/candy.svg',
   './assets/icones/ice.svg',
   './assets/icones/coconut.svg',
   './assets/icones/comet.svg',

@@ -511,6 +511,8 @@ export const CHARACTERS = {
     muzzle: 0xc4c9d4,
     horn: { color: 0xe8ebf2, length: 0.66, radius: 0.115 },
     hair: [0xffffff, 0xe8ebf2, 0xd0d5e0, 0xf7f9ff, 0xc4c9d4],
+    // A barbicha branca de avô, pendendo do queixo.
+    beard: { color: 0xffffff },
     // Asa bem grande: o mais antigo já correu tudo, e tem a envergadura de
     // quem correu mesmo.
     wing: { style: 'feather', colors: [0xffffff, 0xf7f9ff, 0xe8ebf2, 0xd0d5e0, 0xc4c9d4], scale: 1.55 },

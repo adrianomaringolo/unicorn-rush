@@ -50,6 +50,14 @@ export const DESENHOS = [
   { id: 'cometa-pedido', personagem: 'cometa', nome: 'Cometa e o pedido', arquivo: './assets/pintar/cometa-pedido.png' },
   { id: 'limao-frutas', personagem: 'limao', nome: 'Limão no meio das frutas', arquivo: './assets/pintar/limao-frutas.png' },
   { id: 'limao-pulo', personagem: 'limao', nome: 'Limão dando um pulo', arquivo: './assets/pintar/limao-pulo.png' },
+  { id: 'violeta-flutua', personagem: 'violeta', nome: 'Violeta flutuando', arquivo: './assets/pintar/violeta-flutua.png' },
+  { id: 'violeta-bruma', personagem: 'violeta', nome: 'Violeta no bosque da bruma', arquivo: './assets/pintar/violeta-bruma.png' },
+  { id: 'cristal-caverna', personagem: 'cristal', nome: 'Cristal na caverna de cristais', arquivo: './assets/pintar/cristal-caverna.png' },
+  { id: 'cristal-lago', personagem: 'cristal', nome: 'Cristal e o arco-íris no gelo', arquivo: './assets/pintar/cristal-lago.png' },
+  { id: 'vovo-vilarejo', personagem: 'vovo', nome: 'Vovô no vilarejo', arquivo: './assets/pintar/vovo-vilarejo.png' },
+  { id: 'vovo-mapa', personagem: 'vovo', nome: 'Vovô e o mapa', arquivo: './assets/pintar/vovo-mapa.png' },
+  { id: 'sombra-caverna', personagem: 'sombra', nome: 'Sombra na caverna', arquivo: './assets/pintar/sombra-caverna.png' },
+  { id: 'sombra-lua', personagem: 'sombra', nome: 'Sombra e a lua cheia', arquivo: './assets/pintar/sombra-lua.png' },
 ];
 export const DESENHO = Object.fromEntries(DESENHOS.map((d) => [d.id, d]));
 

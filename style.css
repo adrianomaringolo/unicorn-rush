@@ -3370,6 +3370,10 @@ html, body {
   content: ''; flex: 1; height: 3px; border-radius: 3px;
   background: repeating-linear-gradient(90deg, #ff8fc0 0 10px, #c9b3ff 10px 20px);
 }
+.enfeites-secao.halloween { color: #d9560f; }
+.enfeites-secao.halloween::before, .enfeites-secao.halloween::after {
+  background: repeating-linear-gradient(90deg, #ff8a1f 0 10px, #6b3fb0 10px 20px);
+}
 .enfeites-secao.natal { color: #c8203a; }
 .enfeites-secao.natal::before, .enfeites-secao.natal::after {
   background: repeating-linear-gradient(90deg, #e5304a 0 10px, #2f9f4a 10px 20px);
