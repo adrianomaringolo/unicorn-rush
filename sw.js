@@ -5,7 +5,7 @@
 //
 // O nome do cache carrega a versão do jogo: ao subi-la (com `npm run bump`),
 // o cache velho é apagado sozinho no aparelho de quem já jogou.
-const VERSION = 'unicornrush-v0.57.0';
+const VERSION = 'unicornrush-v0.58.0';
 
 const SHELL = [
   './',
@@ -276,6 +276,9 @@ self.addEventListener('fetch', (event) => {
   // não se quer de um farol. Vai direto para a rede — e quando não houver
   // rede, que falhe: perder uma medição é de graça, o jogo não depende dela.
   if (url.pathname.startsWith('/_vercel/')) return;
+  // A ferramenta de corrigir a pintura (só no computador, ver server.js):
+  // lê e grava o arquivo de correções, e cache ali só esconderia o que mudou.
+  if (url.pathname.startsWith('/__correcoes') || url.pathname.startsWith('/corrigir')) return;
 
   event.respondWith(
     caches.match(request).then((cached) => {

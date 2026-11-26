@@ -92,3 +92,19 @@ pronto**. A receita de instalar e montar o gabarito está no README, em
    - vizinhas que deviam ser diferentes e ficaram da mesma cor.
 4. Corrija o gabarito, rode de novo os passos 1 a 3 e só então conte ao
    usuário, dizendo o que a conferência achou e o que foi corrigido.
+
+## Correções marcadas pelo usuário: `pintar/correcoes.json`
+
+O usuário marca a cor certa de áreas em `http://localhost:5173/corrigir`
+(ver README, "Corrigir um gabarito"). Quando ele pedir para aplicar:
+
+1. leia `pintar/correcoes.json`;
+2. confira se `areas` bate com o PNG atual;
+3. um `hex` que não é de nenhuma tinta vira uma tinta nova em `TINTAS`,
+   com nome descritivo. Se ficar igual a olho nu a uma que já existe, use a
+   que existe e diga ao usuário. Depois rode
+   `node scripts/aplicar-correcoes.mjs`, que move as áreas nos `GABARITOS`
+   e tira as páginas aplicadas do json;
+4. siga a conferência de "Desenho novo de pintar" (passos 1 a 3);
+5. conte o que foi aplicado, e o que o script pulou.
+

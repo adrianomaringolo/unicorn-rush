@@ -168,7 +168,7 @@ console.log(`chave mágica: ${countMeshes(createKey())} peças`);
     const png = lerPng(fileURLToPath(new URL(`../${d.arquivo}`, import.meta.url)));
     const areas = dividirEmAreas(png.pixels, png.largura, png.altura).areas;
     erros.push(...conferirGabarito(d.id, areas));
-    if (!erros.length && gabarito(d.id, areas).cores.length > 13) erros.push(`${d.id}: mais de 13 cores no gabarito`);
+    if (!erros.length && gabarito(d.id, areas).cores.length > 15) erros.push(`${d.id}: mais de 15 cores no gabarito`);
   }
   if (erros.length) throw new Error(`pintura por números:\n  ${erros.join('\n  ')}`);
   console.log(`pintura: ${DESENHOS.length} desenho(s), divisão em áreas e gabaritos ok`);

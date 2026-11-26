@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Corrigir pintura · UnicornRush</title>
+  <link rel="icon" href="/assets/icons/icon-64.png" type="image/png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <!-- Ferramenta de quem faz o jogo, não da criança: marca a cor certa de uma
+       área no gabarito de pintar por números. Só funciona com o `npm start`
+       (é o server.js que grava em pintar/correcoes.json); quem passa as
+       correções para o pinturaNumeros.js é o Claude. Ver README, "Corrigir". -->
+  <style>
+    :root {
+      --fundo: #faf6ff; --cartao: #fff; --tinta: #2d2346; --leve: #6f6690;
+      --borda: #e3daf5; --roxo: #7c4dff; --rosa: #ff5d8f;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Fredoka, system-ui, sans-serif; background: var(--fundo); color: var(--tinta); }
+    header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--borda); background: var(--cartao); position: sticky; top: 0; z-index: 2; }
+    h1 { font-size: 1.15rem; margin: 0 8px 0 0; }
+    select, input, button { font: inherit; }
+    select, input[type=text] { padding: 6px 8px; border: 1px solid var(--borda); border-radius: 8px; background: #fff; color: var(--tinta); }
+    label.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--leve); }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px; align-items: start; }
+    @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+    #folha { overflow: auto; max-height: calc(100vh - 100px); border: 1px solid var(--borda); border-radius: 12px; background: #fff; }
+    #folha canvas { display: block; cursor: crosshair; }
+    aside { background: var(--cartao); border: 1px solid var(--borda); border-radius: 12px; padding: 14px; position: sticky; top: 76px; }
+    aside h2 { font-size: 1rem; margin: 0 0 8px; }
+    aside h3 { font-size: .85rem; margin: 14px 0 6px; color: var(--leve); font-weight: 500; }
+    .vazio { color: var(--leve); }
+    .atual { display: flex; gap: 8px; align-items: center; }
+    .amostra { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #0003; flex: none; }
+    .cores { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cor { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px; border: 2px solid var(--borda); border-radius: 999px; background: #fff; cursor: pointer; color: var(--tinta); font-size: .85rem; }
+    .cor .amostra { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .7rem; font-weight: 600; }
+    .cor:hover { border-color: var(--roxo); }
+    .cor.agora { border-color: var(--rosa); }
+    .todas .cor { padding: 2px; }
+    .todas .cor span:last-child { display: none; }
+    .linha { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+    .linha input[type=text] { width: 110px; }
+    .linha input[type=color] { width: 40px; height: 34px; padding: 0; border: 1px solid var(--borda); border-radius: 8px; background: #fff; }
+    #nota { width: 100%; }
+    button.acao { padding: 6px 12px; border-radius: 8px; border: 0; background: var(--roxo); color: #fff; cursor: pointer; }
+    button.acao.sec { background: #ece6fb; color: var(--tinta); }
+    #lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: .85rem; }
+    #lista li { display: flex; gap: 6px; align-items: center; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    #lista li:hover { background: #f3eefe; }
+    #lista li .x { margin-left: auto; border: 0; background: none; cursor: pointer; color: var(--leve); }
+    #aviso { padding: 24px; }
+    #estado { color: var(--leve); font-size: .85rem; min-height: 1.2em; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Corrigir pintura</h1>
+    <select id="desenho"></select>
+    <label class="chk"><input type="checkbox" id="mostrarIds" /> números das áreas</label>
+    <label class="chk">zoom <input type="range" id="zoom" min="1" max="4" step="0.5" value="1" /></label>
+  </header>
+  <main id="principal">
+    <div id="folha"><canvas id="tela"></canvas></div>
+    <aside>
+      <h2 id="titulo" class="vazio">Clique numa área do desenho</h2>
+      <div id="painel" hidden>
+        <div class="atual">hoje: <span class="amostra" id="amostraAtual"></span> <b id="nomeAtual"></b></div>
+        <h3>Cores desta página (o número é o do jogo)</h3>
+        <div class="cores" id="coresPagina"></div>
+        <h3>Outra tinta do jogo</h3>
+        <div class="cores todas" id="coresTodas"></div>
+        <h3>Cor nova (hexadecimal)</h3>
+        <div class="linha">
+          <input type="color" id="seletor" value="#ff8fbf" />
+          <input type="text" id="hex" placeholder="#aabbcc" maxlength="7" />
+          <button class="acao" id="usarHex">Usar</button>
+        </div>
+        <h3>Nota (opcional)</h3>
+        <input type="text" id="nota" placeholder="ex.: é a pata, não o fundo" />
+        <div class="linha"><button class="acao sec" id="desfazer" hidden>Voltar ao gabarito</button></div>
+        <p id="estado"></p>
+      </div>
+      <h3>Correções desta página</h3>
+      <ul id="lista"><li class="vazio">nenhuma</li></ul>
+    </aside>
+  </main>
+  <p id="aviso" hidden>Esta ferramenta só funciona no computador, com <code>npm start</code> rodando (http://localhost:5173/corrigir).</p>
+
+  <script type="module">
+    import { DESENHOS, DESENHO, dividirEmAreas, areaNoPonto, centrosDasAreas } from '/src/game/pintura.js';
+    import { TINTAS, GABARITOS, gabarito } from '/src/game/pinturaNumeros.js';
+
+    const $ = (s) => document.querySelector(s);
+    const ehLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+    if (!ehLocal) { $('#principal').hidden = true; document.querySelector('header').hidden = true; $('#aviso').hidden = false; throw new Error('só local'); }
+
+    const NOME_DA_TINTA = Object.fromEntries(Object.entries(TINTAS).map(([n, h]) => [h.toLowerCase(), n]));
+    const rgb = (hex) => { const v = parseInt(hex.slice(1), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; };
+    const clara = (hex) => { const [r, g, b] = rgb(hex); return 0.299 * r + 0.587 * g + 0.114 * b > 150; };
+
+    const tela = $('#tela');
+    const ctx = tela.getContext('2d');
+    let pagina = null;       // { id, img, L, A, regiao, pixels, areas, centros }
+    let gab = null;          // { cores, nomes, alvo }
+    let todas = {};          // o pintar/correcoes.json inteiro
+    let escolhida = -1;
+
+    const correcoesDaPagina = () => {
+      const c = todas[pagina?.id];
+      return c && c.areas === pagina.areas ? c.correcoes : {};
+    };
+    // A cor de hoje de uma área: a correção, se houver, ou o gabarito.
+    function corDe(n) {
+      const c = correcoesDaPagina()[n];
+      if (c) return { hex: c.hex || TINTAS[c.cor], nome: c.cor || c.hex, corrigida: true };
+      const i = gab?.alvo[n] ?? -1;
+      if (i < 0) return { hex: '#ffffff', nome: '(sem cor)' };
+      return { hex: gab.cores[i], nome: `${i + 1} · ${gab.nomes[i]}` };
+    }
+    const nomeNoGabarito = (n) => { const i = gab?.alvo[n] ?? -1; return i < 0 ? '' : gab.nomes[i]; };
+
+    async function carregar(id) {
+      const img = new Image();
+      img.src = new URL(DESENHO[id].arquivo, `${location.origin}/`).href;   // ./assets/… é relativo à raiz do jogo
+      await img.decode();
+      const L = img.naturalWidth, A = img.naturalHeight;
+      const tmp = document.createElement('canvas'); tmp.width = L; tmp.height = A;
+      const t = tmp.getContext('2d', { willReadFrequently: true });
+      t.fillStyle = '#fff'; t.fillRect(0, 0, L, A); t.drawImage(img, 0, 0);
+      const divisao = dividirEmAreas(t.getImageData(0, 0, L, A).data, L, A);
+      pagina = { id, img, L, A, ...divisao };
+      pagina.centros = centrosDasAreas(pagina);
+      gab = gabarito(id, pagina.areas);
+      tela.width = L; tela.height = A;
+      escolhida = -1;
+      aplicarZoom();
+      desenhar(); painel(); lista();
+    }
+
+    function desenhar() {
+      const { L, A } = pagina;
+      const camada = ctx.createImageData(L, A);
+      const d = camada.data;
+      d.fill(255);
+      const xadrez = [[255, 64, 160], [255, 255, 255]];
+      for (let n = 0; n < pagina.areas; n++) {
+        const [r, g, b] = rgb(corDe(n).hex);
+        for (const j of pagina.pixels[n] || []) {
+          const k = j * 4;
+          if (n === escolhida) {
+            const x = j % L, y = (j - x) / L;
+            const c = xadrez[((x >> 3) + (y >> 3)) & 1];
+            d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2];
+          } else { d[k] = r; d[k + 1] = g; d[k + 2] = b; }
+        }
+      }
+      ctx.putImageData(camada, 0, 0);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(pagina.img, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      const corr = correcoesDaPagina();
+      if ($('#mostrarIds').checked || Object.keys(corr).length) {
+        const { centro } = pagina.centros;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `600 ${Math.round(L / 60)}px Fredoka, sans-serif`;
+        for (let n = 0; n < pagina.areas; n++) {
+          const corrigida = corr[n] !== undefined;
+          if (!$('#mostrarIds').checked && !corrigida) continue;
+          const j = centro[n]; if (j === undefined || j < 0) continue;
+          const x = j % L, y = (j - x) / L;
+          ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(corrigida ? `✎${n}` : n, x, y);
+          ctx.fillStyle = corrigida ? '#d6007a' : '#2d2346'; ctx.fillText(corrigida ? `✎${n}` : n, x, y);
+        }
+      }
+    }
+
+    function botaoCor(hex, rotulo, numero, aoClicar, agora) {
+      const b = document.createElement('button');
+      b.className = 'cor' + (agora ? ' agora' : '');
+      b.title = `${rotulo} ${hex}`;
+      b.innerHTML = `<span class="amostra" style="background:${hex};color:${clara(hex) ? '#2d2346' : '#fff'}">${numero ?? ''}</span><span>${rotulo}</span>`;
+      b.onclick = aoClicar;
+      return b;
+    }
+
+    function painel() {
+      const tem = escolhida >= 0;
+      $('#painel').hidden = !tem;
+      $('#titulo').textContent = tem ? `Área ${escolhida}` : 'Clique numa área do desenho';
+      $('#titulo').classList.toggle('vazio', !tem);
+      if (!tem) return;
+      const atual = corDe(escolhida);
+      $('#amostraAtual').style.background = atual.hex;
+      $('#nomeAtual').textContent = atual.corrigida ? `${atual.nome} (corrigida; gabarito: ${nomeNoGabarito(escolhida) || 'sem cor'})` : atual.nome;
+      $('#desfazer').hidden = !atual.corrigida;
+      $('#nota').value = correcoesDaPagina()[escolhida]?.nota || '';
+      const cp = $('#coresPagina'); cp.innerHTML = '';
+      (gab?.nomes || []).forEach((nome, i) => cp.append(botaoCor(TINTAS[nome], nome, i + 1, () => salvar({ cor: nome }), atual.hex === TINTAS[nome])));
+      const ct = $('#coresTodas'); ct.innerHTML = '';
+      Object.entries(TINTAS).filter(([n]) => !gab?.nomes.includes(n))
+        .forEach(([nome, hex]) => ct.append(botaoCor(hex, nome, null, () => salvar({ cor: nome }), atual.hex === hex)));
+      $('#seletor').value = atual.hex;
+      $('#hex').value = '';
+    }
+
+    function lista() {
+      const ul = $('#lista'); ul.innerHTML = '';
+      const corr = Object.entries(correcoesDaPagina());
+      if (!corr.length) { ul.innerHTML = '<li class="vazio">nenhuma</li>'; return; }
+      for (const [area, c] of corr) {
+        const li = document.createElement('li');
+        const hex = c.hex || TINTAS[c.cor];
+        li.innerHTML = `<span class="amostra" style="background:${hex}"></span> <b>${area}</b> ${c.antes || '?'} → ${c.cor || c.hex}${c.nota ? ` <i>(${c.nota})</i>` : ''}`;
+        const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'apagar a correção';
+        x.onclick = (e) => { e.stopPropagation(); escolhida = Number(area); salvar({}); };
+        li.append(x);
+        li.onclick = () => { escolhida = Number(area); desenhar(); painel(); };
+        ul.append(li);
+      }
+    }
+
+    async function salvar(mudanca) {
+      const corpo = {
+        id: pagina.id, areas: pagina.areas, area: escolhida,
+        antes: nomeNoGabarito(escolhida) || 'sem cor', nota: $('#nota').value.trim(), ...mudanca,
+      };
+      // Um hex igual a uma tinta que já existe vira o nome dela.
+      if (corpo.hex && NOME_DA_TINTA[corpo.hex.toLowerCase()]) { corpo.cor = NOME_DA_TINTA[corpo.hex.toLowerCase()]; delete corpo.hex; }
+      // Voltar à cor do próprio gabarito é o mesmo que não ter correção.
+      if (corpo.cor && corpo.cor === nomeNoGabarito(escolhida)) delete corpo.cor;
+      const r = await fetch('/__correcoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+      if (!r.ok) { $('#estado').textContent = `não gravou (${r.status}) — o npm start está rodando?`; return; }
+      todas = await r.json();
+      desenhar(); painel(); lista();
+      $('#estado').textContent = `gravado em pintar/correcoes.json · ${new Date().toLocaleTimeString()}`;
+    }
+
+    tela.addEventListener('click', (e) => {
+      if (!pagina) return;
+      const r = tela.getBoundingClientRect();
+      const x = Math.floor(((e.clientX - r.left) / r.width) * pagina.L);
+      const y = Math.floor(((e.clientY - r.top) / r.height) * pagina.A);
+      const n = areaNoPonto(pagina, x, y);
+      escolhida = n;
+      desenhar(); painel();
+    });
+
+    function aplicarZoom() {
+      const z = Number($('#zoom').value);
+      tela.style.width = `${Math.round($('#folha').clientWidth * z) - 2}px`;
+    }
+    $('#zoom').oninput = aplicarZoom;
+    window.addEventListener('resize', aplicarZoom);
+    $('#mostrarIds').onchange = () => pagina && desenhar();
+    $('#seletor').oninput = () => { $('#hex').value = $('#seletor').value; };
+    $('#usarHex').onclick = () => {
+      let h = $('#hex').value.trim() || $('#seletor').value;
+      if (!h.startsWith('#')) h = `#${h}`;
+      if (!/^#[0-9a-f]{6}$/i.test(h)) { $('#estado').textContent = 'hex precisa ser #rrggbb'; return; }
+      salvar({ hex: h });
+    };
+    $('#desfazer').onclick = () => salvar({});
+    $('#nota').onchange = () => { const c = correcoesDaPagina()[escolhida]; if (c) salvar(c.hex ? { hex: c.hex } : { cor: c.cor }); };
+
+    // A lista de desenhos (só os que têm gabarito), e o último aberto.
+    const sel = $('#desenho');
+    for (const d of DESENHOS) if (GABARITOS[d.id]) sel.append(new Option(`${d.nome} (${d.id})`, d.id));
+    let ultimo = null;
+    try { ultimo = localStorage.getItem('corrigir:desenho'); } catch {}
+    const pedido = new URLSearchParams(location.search).get('id');
+    sel.value = DESENHO[pedido] ? pedido : (DESENHO[ultimo] ? ultimo : sel.options[0].value);
+    sel.onchange = () => { try { localStorage.setItem('corrigir:desenho', sel.value); } catch {} carregar(sel.value); };
+    try { todas = await (await fetch('/__correcoes')).json(); } catch { todas = {}; }
+    carregar(sel.value);
+  </script>
+</body>
+</html>

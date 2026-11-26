@@ -7,8 +7,8 @@
 //   livre   — as 33 cores e a borracha, qualquer cor em qualquer área;
 //   numeros — a paleta do gabarito da página (pinturaNumeros.js), com o
 //             número de cada cor, e o número escrito em cada área. Só a cor
-//             certa pinta; as áreas da cor escolhida ficam com um tom claro
-//             dela e o número delas numa bolinha da cor, para saltar aos
+//             certa pinta; as áreas da cor escolhida ficam com um
+//             quadriculado cinza e o número delas numa bolinha da cor, para saltar aos
 //             olhos. As áreas miúdas pintam-se sozinhas quando a cor
 //             delas termina (`completarMiudas`), e a cor pronta sai da
 //             fileira. Página pronta: confete, o "Pronto! Ficou lindo!"
@@ -72,8 +72,13 @@ const rgb = (hex) => {
   const v = parseInt(hex.slice(1), 16);
   return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 };
-// O tom claro da cor escolhida, nas áreas que esperam por ela.
-const clarinho = (hex) => rgb(hex).map((c) => Math.round(255 - (255 - c) * 0.45));
+// As áreas que esperam pela cor escolhida ganham um quadriculado cinza: um
+// tom claro da própria cor se confundia com o papel e com as já pintadas, e
+// a criança não achava onde tocar. O xadrez não parece com nada no desenho.
+// A casa tem 1/64 da largura (uns 6 px num celular), para aparecer até nas
+// áreas pequenas.
+const XADREZ = 'xadrez';
+const XADREZ_CORES = [[178, 178, 178], [228, 228, 228]];
 // Cor clara (o número por cima vai escuro) ou escura (vai branco).
 const clara = (hex) => { const [r, g, b] = rgb(hex); return 0.299 * r + 0.587 * g + 0.114 * b > 150; };
 
@@ -90,7 +95,20 @@ function pintarCamada(camada, pagina, corDe) {
   camada.data.fill(255);
   for (let n = 0; n < pagina.areas; n++) {
     const c = corDe(n);
-    if (c) pintarArea(camada, pagina, n, c);
+    if (c === XADREZ) pintarXadrez(camada, pagina, n);
+    else if (c) pintarArea(camada, pagina, n, c);
+  }
+}
+function pintarXadrez(camada, pagina, n) {
+  const d = camada.data;
+  const { L } = pagina;
+  const casa = Math.max(4, Math.round(L / 64));
+  for (const j of pagina.pixels[n] || []) {
+    const x = j % L;
+    const y = (j - x) / L;
+    const [r, g, b] = XADREZ_CORES[(Math.floor(x / casa) + Math.floor(y / casa)) & 1];
+    const k = j * 4;
+    d[k] = r; d[k + 1] = g; d[k + 2] = b; d[k + 3] = 255;
   }
 }
 function pintarArea(camada, pagina, n, [r, g, b]) {
@@ -326,7 +344,7 @@ export function criarTelaPintura(raiz) {
   // escolhida muda junto com ela.
   function repintar() {
     const destaque = numeros()
-      ? ((tom) => (n) => (gab.alvo[n] === corAtual && cores[n] === undefined ? tom : null))(clarinho(tintas[corAtual]))
+      ? (n) => (gab.alvo[n] === corAtual && cores[n] === undefined ? XADREZ : null)
       : null;
     pintarCamada(camada, pagina, (n) => corDaArea(tintas, cores, n, destaque));
   }
@@ -334,7 +352,7 @@ export function criarTelaPintura(raiz) {
   // Os números por cima do desenho, nas áreas que ainda esperam cor. O
   // tamanho sai da área (cabe no maior círculo dentro dela), mas nunca menor
   // que uns 11 px na tela: número que ninguém lê não ajuda. As pequenas
-  // demais para isso ficam sem número até ampliar — o tom claro da cor
+  // demais para isso ficam sem número até ampliar — o quadriculado da cor
   // escolhida mostra onde estão.
   //
   // Os da cor escolhida saltam: maiores, numa bolinha da cor com contorno

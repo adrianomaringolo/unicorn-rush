@@ -20,7 +20,7 @@
 //     página — sinal de brecha no contorno;
 //   - (só para conferir) área automática grande: fina, pinta sozinha, mas
 //     comprida — normal num palito ou na parte branca do olho;
-//   - paleta com mais de 13 cores.
+//   - paleta com mais de 15 cores (as prontas somem da fileira, então ela encolhe).
 // O que só se vê olhando — cor certa no lugar errado, olho sem cor, nuvem
 // verde — fica para a conferência de olho nas imagens.
 import { mkdirSync } from 'node:fs';
@@ -50,7 +50,7 @@ function conferirPagina(id) {
   const g = gabarito(id, p.areas);
   const { centro, raio } = centrosDasAreas(p);
   const auto = automaticas(g, raio, L);
-  if (g.cores.length > 13) avisos.push(`paleta com ${g.cores.length} cores (máximo 13)`);
+  if (g.cores.length > 15) avisos.push(`paleta com ${g.cores.length} cores (máximo 15)`);
 
   // A página pronta: a cor embaixo, o desenho por cima, multiplicando.
   const dono = new Int32Array(L * A).fill(-1);

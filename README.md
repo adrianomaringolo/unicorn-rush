@@ -2328,14 +2328,15 @@ tem setas nas pontas, que só aparecem do lado em que há mais cor escondida,
 e a borda some num degradê. Deitado, vira uma coluna que rola para baixo. A
 cor escolhida (inclusive a que o modo por números escolhe sozinho) rola
 para a vista.
-- **🔢 Por números**: a paleta é a do gabarito da página (de 6 a 13 cores),
+- **🔢 Por números**: a paleta é a do gabarito da página (de 6 a 15 cores),
   cada bolinha com o seu número, e cada área tem o número da cor certa
   escrito no meio. Só a cor certa pinta; a errada faz o som de "não". As
-  áreas da cor escolhida ganham um tom clarinho dela e o número delas vem
+  áreas da cor escolhida ganham **um quadriculado cinza** (um tom claro da
+  cor se confundia com o papel) e o número delas vem
   **numa bolinha da cor, maior, com contorno roxo**; os números das outras
   cores ficam menores e apagados. A cor que termina **sai da fileira** e a
   escolha passa sozinha para a próxima. O número fica do tamanho da área, nunca menor que
-  ~11 px na tela; a área pequena demais fica sem número (o tom clarinho
+  ~11 px na tela; a área pequena demais fica sem número (o quadriculado
   mostra onde está) e ganha número quando o desenho é ampliado.
   **Toda área tem cor**, até as brancas: o `branco` do gabarito é um branco
   quase puro, com número. **As áreas miúdas** (o maior círculo de dentro
@@ -2444,6 +2445,45 @@ frestas (uma na beirada da imagem, outra encostada no chifre).
 
 **Mais tarde:** salvar como imagem e imprimir no cantinho dos adultos; no
 plano grátis e pago, as páginas seguem os personagens.
+
+### Corrigir um gabarito (ferramenta, só no computador)
+
+Com o `npm start` rodando, **http://localhost:5173/corrigir** abre a página
+pintada com o gabarito de hoje. Clique numa área, que fica quadriculada de
+rosa, e escolha a cor certa:
+
+- uma das cores da página, com o mesmo número que aparece no jogo;
+- outra tinta do jogo (`TINTAS`);
+- ou uma cor nova em hexadecimal. Se o hex for igual a uma tinta que já
+  existe, ele vira o nome dela.
+
+Dá para deixar uma nota ("é a pata, não o fundo"). As áreas corrigidas
+aparecem com ✎ e o número; "números das áreas" mostra o número de todas, e o
+zoom ajuda nas pequenas. "Voltar ao gabarito" ou o ✕ da lista desfazem.
+
+Tudo é gravado em **`pintar/correcoes.json`**, pelo `server.js` (rota
+`/__correcoes`, que só aceita pedido do próprio computador):
+
+```json
+{ "lua-sonhos": { "areas": 69, "correcoes": {
+    "54": { "cor": "lilasClaro", "antes": "branco", "nota": "…", "quando": "…" },
+    "12": { "hex": "#aabbcc", "antes": "rosa", "quando": "…" } } } }
+```
+
+`areas` confere o PNG: se o desenho for trocado e a divisão mudar, as
+correções antigas daquela página são descartadas na próxima gravação.
+
+Para aplicar, `node scripts/aplicar-correcoes.mjs [id …]`: move cada área
+para a tinta pedida no bloco da página em `pinturaNumeros.js` (a tinta que
+fica vazia sai, a nova vai para o fim) e tira a página do `correcoes.json`.
+Um hex que não é de nenhuma tinta trava a página: antes, acrescente a tinta
+em `TINTAS`, com nome. Correção marcada sobre uma cor que o gabarito já
+não tem é pulada, com aviso. Depois, a conferência de "Desenho novo de
+pintar".
+
+Na Vercel a página não grava nada e avisa que só funciona no computador. O
+`.vercelignore` nem a publica, e o service worker não guarda nada dela em
+cache.
 
 ## Grátis e pago (proposta, ainda não implementada)
 
