@@ -207,6 +207,15 @@ export function activeProfile() {
   return profiles.list.find((p) => p.id === profiles.activeId) || null;
 }
 
+// O que o cartão de cada perfil mostra no trocador: as fases vencidas e as
+// chaves guardadas. Lê o save do perfil sem carregá-lo como o ativo.
+export function resumoDoPerfil(id) {
+  const s = readFrom(saveKeyFor(id));
+  const fases = Object.values(s.levels || {})
+    .reduce((total, p) => total + Object.keys(p.done || {}).length, 0);
+  return { fases, chaves: s.stats?.keys || 0 };
+}
+
 // Cria um perfil novo (um irmão) e já deixa ele ativo, começando de um save
 // limpo — é gente diferente. Precisa de `location.reload()` logo depois —
 // ver o comentário em `switchProfile`.

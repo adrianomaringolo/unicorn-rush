@@ -58,6 +58,14 @@ export const DESENHOS = [
   { id: 'vovo-mapa', personagem: 'vovo', nome: 'Vovô e o mapa', arquivo: './assets/pintar/vovo-mapa.png' },
   { id: 'sombra-caverna', personagem: 'sombra', nome: 'Sombra na caverna', arquivo: './assets/pintar/sombra-caverna.png' },
   { id: 'sombra-lua', personagem: 'sombra', nome: 'Sombra e a lua cheia', arquivo: './assets/pintar/sombra-lua.png' },
+  { id: 'relampago-tempestade', personagem: 'relampago', nome: 'Relâmpago na tempestade', arquivo: './assets/pintar/relampago-tempestade.png' },
+  { id: 'relampago-nuvem', personagem: 'relampago', nome: 'Relâmpago na nuvem', arquivo: './assets/pintar/relampago-nuvem.png' },
+  { id: 'pipoca-carrossel', personagem: 'pipoca', nome: 'Pipoca e o carrossel', arquivo: './assets/pintar/pipoca-carrossel.png' },
+  { id: 'pipoca-balde', personagem: 'pipoca', nome: 'Pipoca e o balde de pipoca', arquivo: './assets/pintar/pipoca-balde.png' },
+  { id: 'perola-concha', personagem: 'perola', nome: 'Pérola e a concha', arquivo: './assets/pintar/perola-concha.png' },
+  { id: 'perola-chave', personagem: 'perola', nome: 'Pérola e a chave mágica', arquivo: './assets/pintar/perola-chave.png' },
+  { id: 'eco-torre', personagem: 'eco', nome: 'Eco na torre', arquivo: './assets/pintar/eco-torre.png' },
+  { id: 'eco-amigos', personagem: 'eco', nome: 'Eco e o seu eco', arquivo: './assets/pintar/eco-amigos.png' },
 ];
 export const DESENHO = Object.fromEntries(DESENHOS.map((d) => [d.id, d]));
 

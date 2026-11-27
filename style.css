@@ -760,69 +760,130 @@ html, body {
   box-shadow: 0 0 0 3px rgba(255, 93, 143, .25);
 }
 
-/* A grade de perfis, no trocador — redondos, como retratos de verdade,
-   nome embaixo de cada um. Três por linha cabe até no MAX_PROFILES (ver
-   Game.showProfileSwitcher): duas linhas cheias e mais uma com o "+". */
-.perfis-grade {
+/* O trocador de perfis: um cartão por criança, dois por linha no celular
+   e três quando há espaço. O avatar é grande, para ser reconhecido de
+   longe; as fases e as chaves ajudam o irmão que ainda não lê o nome. */
+.perfis-cartoes {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(10px, 3vw, 18px) clamp(6px, 2vw, 12px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 3vw, 16px);
   width: 100%;
+  max-width: 520px;
+  margin: 6px auto 4px;
 }
-.perfil-tile-wrap {
+@media (min-width: 560px) {
+  .perfis-cartoes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.perfil-cartao {
   position: relative;
+  border: 3px solid #f3dcef;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 4px 0 #f3dcef;
+  transition: transform .12s;
+}
+.perfil-cartao:active { transform: translateY(2px); box-shadow: 0 2px 0 #f3dcef; }
+.perfil-cartao.atual {
+  border-color: var(--pink);
+  background: linear-gradient(180deg, #fff0f6, #fff);
+  box-shadow: 0 4px 0 #ffb3cc, 0 0 0 4px rgba(255, 93, 143, .18);
+}
+.perfil-cartao.novo {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+.perfil-cartao-jogar {
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: clamp(14px, 4vw, 20px) 8px clamp(12px, 3.5vw, 16px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-}
-.perfil-tile {
-  width: clamp(64px, 18vw, 84px);
-  height: clamp(64px, 18vw, 84px);
-  border: 3px solid #f3dcef;
-  background: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font: inherit;
+  color: var(--purple);
   cursor: pointer;
   touch-action: manipulation;
 }
-.perfil-tile:active { transform: scale(.95); }
-.perfil-tile.escolhido { border-color: var(--pink); background: #fff0f6; box-shadow: 0 0 0 3px rgba(255, 93, 143, .25); }
-.perfil-tile-avatar { font-size: clamp(28px, 7.5vw, 38px); }
-.perfil-tile-nome {
-  font-size: clamp(11px, 3vw, 13px);
-  font-weight: 600;
-  color: var(--purple);
-  text-align: center;
-  white-space: nowrap;
+.perfil-cartao.novo .perfil-cartao-jogar { height: 100%; justify-content: center; opacity: .75; }
+.perfil-cartao-avatar {
+  width: clamp(72px, 22vw, 96px);
+  height: clamp(72px, 22vw, 96px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #f6e9ff 70%);
+  border: 3px solid #eadcff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(38px, 11vw, 50px);
+}
+.perfil-cartao-avatar img { width: 62%; height: 62%; }
+.perfil-cartao.atual .perfil-cartao-avatar { border-color: #ffc2d8; background: radial-gradient(circle at 35% 30%, #fff, #ffe3ee 70%); }
+.perfil-cartao.novo .perfil-cartao-avatar { background: none; border-style: dashed; }
+.perfil-cartao-nome {
+  font-size: clamp(15px, 4.3vw, 18px);
+  font-weight: 700;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  white-space: nowrap;
 }
-.perfil-tile.novo { border-style: dashed; color: var(--purple); opacity: .7; }
-
-/* O lápis de editar, encavalado no canto do círculo — perto o bastante do
-   avatar para ficar óbvio o que ele edita, sem entrar dentro do botão do
-   retrato (que já tem seu próprio toque: trocar de perfil). */
-.perfil-tile-editar {
+.perfil-cartao-numeros {
+  display: flex;
+  gap: 10px;
+  font-size: clamp(12px, 3.4vw, 14px);
+  font-weight: 700;
+  opacity: .8;
+}
+.perfil-cartao-numeros img { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
+/* O selo pendurado na borda de cima do cartão de quem está jogando. */
+.perfil-cartao-selo {
   position: absolute;
-  top: -4px;
-  right: 2px;
-  width: 26px;
-  height: 26px;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}
+/* O lápis no canto do cartão: alvo de 40px, fora do botão de jogar. */
+.perfil-cartao-editar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 40px;
+  height: 40px;
   border: 2px solid #f3dcef;
   border-radius: 50%;
   background: #fff;
-  font-size: 12px;
+  font-size: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
+  box-shadow: 0 2px 0 #f3dcef;
 }
-.perfil-tile-editar:active { transform: scale(.9); }
+.perfil-cartao-editar img { width: 20px; height: 20px; }
+.perfil-cartao-editar:active { transform: scale(.9); }
+/* Celular deitado: pouca altura. Cartões mais baixos, para caberem as
+   duas linhas sem rolar (ou rolando pouco). */
+@media (max-height: 500px) {
+  .perfis-cartoes { gap: 14px 12px; margin-top: 10px; }
+  .perfil-cartao-jogar { padding: 10px 8px; gap: 3px; }
+  .perfil-cartao-avatar { width: 56px; height: 56px; font-size: 30px; }
+  .perfil-cartao-nome { font-size: 15px; }
+  .perfil-cartao-editar { width: 34px; height: 34px; top: 4px; right: 4px; }
+  .perfil-cartao-editar img { width: 17px; height: 17px; }
+}
 
 
 /* A legenda das grades fica logo abaixo do título, acima do bloco que rola:

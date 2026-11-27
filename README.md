@@ -1528,10 +1528,14 @@ de **depois**, pelo trocador — nunca obrigatório:
   desaparece ao chegar em `MAX_PROFILES` (6) — dá para um tablet inteiro de
   irmãos, sem a grade virar uma lista para rolar.
 
-A grade (**"Quem vai brincar?"**) é redonda, como um retrato de verdade: um
-círculo por perfil, com o nome embaixo — nada de moldura quadrada. O de
-quem está jogando agora vem com o anel rosa; o lápis de editar mora
-encavalado no canto de cada círculo.
+O trocador (**"Quem vai brincar?"**) mostra um **cartão por perfil**, dois
+por linha no celular em pé e três quando há espaço. Cada cartão tem o avatar
+grande num círculo, o nome e as fases vencidas (⭐) e as chaves guardadas
+(🔑) daquele perfil (`resumoDoPerfil`, em storage.js), para o irmão que ainda
+não lê reconhecer o seu. O de quem está jogando agora tem a borda rosa e o
+selo "Jogando agora"; o lápis de editar fica no canto de cada cartão, com
+alvo de 40px e fora do botão de jogar. O "Novo perfil" é um cartão
+tracejado no fim. Com a tela baixa (celular deitado) os cartões encolhem.
 
 Tocar num retrato diferente do atual **troca** de perfil, e isso sim dá um
 **recarregamento de verdade da página** (criar um perfil novo também) — não

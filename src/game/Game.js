@@ -35,7 +35,7 @@ import { sfx } from './audio.js';
 import { haptics } from './haptics.js';
 import {
   getSave, update, resetSave, isTestMode, setTestMode,
-  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, deleteProfile, MAX_PROFILES,
+  listProfiles, activeProfile, createProfile, updateProfile, switchProfile, deleteProfile, MAX_PROFILES, resumoDoPerfil,
 } from './storage.js';
 import * as music from './music.js';
 import {
@@ -2789,21 +2789,33 @@ export class Game {
 
     const perfis = listProfiles();
     const atual = activeProfile();
-    const html = `<div class="perfis-grade">
-      ${perfis.map((p) => `
-        <div class="perfil-tile-wrap">
-          <button class="perfil-tile${p.id === atual?.id ? ' escolhido' : ''}" data-pick="ir:${p.id}">
-            <span class="perfil-tile-avatar">${p.avatar}</span>
+    // Um cartão por criança: o avatar grande, o nome, as fases e as chaves
+    // (é assim que um irmão reconhece o seu sem ler) e o selo de quem está
+    // jogando agora. O lápis fica no canto do cartão, grande o bastante
+    // para o dedo, mas fora do botão de jogar.
+    const cartao = (p) => {
+      const nome = p.name ? escapeHtml(p.name) : t('Amiguinho');
+      const { fases, chaves } = resumoDoPerfil(p.id);
+      const eAtual = p.id === atual?.id;
+      return `
+        <div class="perfil-cartao${eAtual ? ' atual' : ''}">
+          ${eAtual ? `<span class="perfil-cartao-selo">${t('Jogando agora')}</span>` : ''}
+          <button class="perfil-cartao-jogar" data-pick="ir:${p.id}" aria-label="${t('Jogar como {nome}', { nome })}">
+            <span class="perfil-cartao-avatar">${p.avatar}</span>
+            <span class="perfil-cartao-nome">${nome}</span>
+            <span class="perfil-cartao-numeros"><span>⭐ ${fases}</span><span>🔑 ${chaves}</span></span>
           </button>
-          <button class="perfil-tile-editar" data-pick="editar:${p.id}" aria-label="${t('Editar perfil')}">✏️</button>
-          <span class="perfil-tile-nome">${p.name ? escapeHtml(p.name) : t('Amiguinho')}</span>
-        </div>`).join('')}
+          <button class="perfil-cartao-editar" data-pick="editar:${p.id}" aria-label="${t('Editar perfil')}">✏️</button>
+        </div>`;
+    };
+    const html = `<div class="perfis-cartoes">
+      ${perfis.map(cartao).join('')}
       ${perfis.length < MAX_PROFILES ? `
-      <div class="perfil-tile-wrap">
-        <button class="perfil-tile novo" data-pick="novo">
-          <span class="perfil-tile-avatar">➕</span>
+      <div class="perfil-cartao novo">
+        <button class="perfil-cartao-jogar" data-pick="novo" aria-label="${t('Novo perfil')}">
+          <span class="perfil-cartao-avatar">➕</span>
+          <span class="perfil-cartao-nome">${t('Novo perfil')}</span>
         </button>
-        <span class="perfil-tile-nome">${t('Novo perfil')}</span>
       </div>` : ''}
     </div>`;
 
