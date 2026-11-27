@@ -2315,7 +2315,16 @@ assinado, instalado direto no aparelho, já basta para uso na família.
 ## Pintar
 
 Uma área de colorir com os personagens, como em muitos apps infantis. Entra
-pela bolha **🎨 Pintar** do lobby, que abre a grade das páginas; tocar numa
+pela bolha **🎨 Pintar** do lobby, que primeiro pergunta **como pintar**:
+dois cartões grandes, 🖍️ Livre e 🔢 Por números, cada um com a mesma Uni
+pintada do jeito do modo (`amostraDoModo` em `telaPintura.js`) — no Livre,
+toda colorida com cores de brincadeira e uma fileira de bolinhas de cor; no
+Por números, a crina pintada e o corpo e o fundo ainda brancos, com o número
+numa bolinha, e bolinhas numeradas embaixo. Quem não lê entende pela figura,
+e o toque fala o nome e o que se faz ali. **Na área de pintar não toca
+música** (`music.silenciar()`): só os efeitos de pintar e a comemoração da
+página pronta; o tema volta quando a criança sai para o lobby. Escolhido o modo, abre a grade
+das páginas (o ⬅️ dela volta para a escolha); tocar numa
 página abre a tela de pintar, que cobre o jogo inteiro (o desenho precisa de
 todo o espaço para o dedo acertar as áreas).
 

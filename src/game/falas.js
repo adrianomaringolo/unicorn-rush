@@ -64,7 +64,13 @@ export function falaPoder(kind, item, oculto = false, possui = () => false) {
 
 // As frases soltas que o jogo diz, com o nome dentro.
 export const falaVitoria = (pista) => t('Você venceu a pista {pista}!', { pista: pista.name });
-export const falaEhSua = (item) => t('{nome} é sua!', { nome: item.name });
+// "… é sua!" com o gênero certo: a pista vem com a palavra ("A pista Campo
+// é sua!" — "Campo é sua" soava errado), e o unicórnio segue o `menina` da
+// ficha ("Brasa é seu!", "Lua é sua!"). `kind` como no shopOf.
+export const falaEhSua = (item, kind) => {
+  if (kind === 'track') return t('A pista {nome} é sua!', { nome: item.name });
+  return item.menina ? t('{nome} é sua!', { nome: item.name }) : t('{nome} é seu!', { nome: item.name });
+};
 export const falaApresentacao = (c) => `${c.name}. ${c.title || ''}`;
 export const falaLigou = () => t('Pronto, agora eu falo');
 export const falaPagina = (folha) => `${folha.title}. ${folha.text}`;

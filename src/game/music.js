@@ -1345,6 +1345,15 @@ export function cut() {
   stop();
 }
 
+// Silêncio de música numa área inteira (a de pintar): cala o tema que
+// estiver tocando e esquece o que esperava o primeiro toque, senão ele
+// começava no primeiro toque no desenho. Os efeitos (audio.js) continuam.
+// Quem sai dela chama `play` de novo (o lobby faz isso).
+export function silenciar() {
+  pending = null;
+  cut();
+}
+
 // A batida: a música "afunda" por meio segundo — o filtro fecha de uma vez e
 // abre devagar, e o volume cai junto. Só o filtro não bastava: medido, o
 // volume quase não mudava, porque o que pesa é o grave, que o filtro deixa

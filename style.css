@@ -1990,6 +1990,8 @@ html, body {
   top: 46%;
   width: clamp(64px, 19vw, 88px);
   margin-left: calc(clamp(64px, 19vw, 88px) / -2);
+  /* A haste, ao abrir, gira para fora do viewBox: sem isto o SVG a cortava. */
+  overflow: visible;
   animation: portal-cadeado-cai 1s ease-in .45s forwards;
 }
 @keyframes portal-cadeado-cai {
@@ -3614,6 +3616,76 @@ html, body {
 }
 @media (prefers-reduced-motion: reduce) {
   .bolha.pintar .bolha-icone::after, .bolha.pintar .bolha-icone img { animation: none; }
+}
+
+/* A escolha do modo, antes da grade: dois cartões grandes lado a lado
+   (um embaixo do outro em tela estreita deitada não cabe: ficam lado a
+   lado sempre, encolhendo). */
+.pintura-escolha-pergunta {
+  margin: 0 0 clamp(10px, 3vw, 16px);
+  text-align: center;
+  color: var(--purple);
+  font-weight: 800;
+  font-size: clamp(16px, 4.6vw, 21px);
+}
+.pintura-escolha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(10px, 3vw, 18px);
+  max-width: 620px;
+  margin: 0 auto;
+}
+.pintura-escolha-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: clamp(8px, 2.4vw, 14px) clamp(6px, 2vw, 12px) clamp(10px, 2.6vw, 14px);
+  border: 4px solid #f3dcef;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 5px 0 rgba(122, 78, 199, .2);
+  cursor: pointer;
+  font: inherit;
+  color: var(--purple);
+}
+.pintura-escolha-cartao.ultimo { border-color: #d9c2ff; }
+.pintura-escolha-cartao:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(122, 78, 199, .2); }
+.pintura-escolha-foto {
+  width: 100%;
+  aspect-ratio: 1312 / 1196;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fff;
+}
+.pintura-escolha-bolinhas {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pintura-escolha-bolinhas i {
+  display: grid;
+  place-items: center;
+  width: clamp(18px, 5vw, 26px);
+  height: clamp(18px, 5vw, 26px);
+  border: 2px solid rgba(74, 42, 94, .25);
+  border-radius: 50%;
+  font-style: normal;
+  font-weight: 900;
+  font-size: clamp(11px, 3vw, 15px);
+  color: #3a1f4d;
+}
+.pintura-escolha-nome {
+  font-weight: 800;
+  font-size: clamp(17px, 5vw, 23px);
+}
+.pintura-escolha-nome img { width: 1.2em; height: 1.2em; vertical-align: -0.2em; }
+.pintura-escolha-dica {
+  color: #7a6a8c;
+  font-weight: 700;
+  font-size: clamp(12px, 3.4vw, 15px);
+  line-height: 1.25;
 }
 
 .pinturas-grade {

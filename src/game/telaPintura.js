@@ -155,6 +155,72 @@ export async function miniatura(id, guardado, modo = 'livre', largura = 260) {
   return pequena.toDataURL('image/png');
 }
 
+// As amostras dos dois modos, para a escolha antes da grade: o mesmo
+// desenho da Uni, cada um do jeito do seu modo, para a criança que ainda
+// não lê entender pela figura.
+//   livre   — pintada com cores trocadas, de brincadeira (a crina azul, o
+//             corpo rosa): qualquer cor vale;
+//   numeros — a crina e o chifre já pintados com as cores certas; o fundo,
+//             o corpo e as asas ainda brancos, com o número da cor numa
+//             bolinha grande, como na tela de pintar.
+// Os números são bem maiores que os do jogo: a figura aparece pequena, e
+// eles precisam ser lidos de longe.
+const AMOSTRA = 'uni';
+const CORES_LIVRES = {
+  ceu: '#fff2b8', cremeClaro: '#ffb8dc', rosa: '#7fd3ff', laranja: '#7be0a6',
+  amarelo: '#c9a2ff', verde: '#ff9f6e', azul: '#ffe066', roxo: '#ff6f9c',
+  dourado: '#9fe8ff', lilas: '#8be38f', branco: '#ffffff',
+};
+// Por números, as cores que ainda faltam na amostra.
+const AMOSTRA_FALTAM = ['ceu', 'cremeClaro', 'branco'];
+export async function amostraDoModo(modo, largura = 320) {
+  const pagina = await preparar(AMOSTRA);
+  const g = gabarito(AMOSTRA, pagina.areas);
+  if (!g) return null;
+  const { L, A, img } = pagina;
+  const grande = document.createElement('canvas');
+  grande.width = L;
+  grande.height = A;
+  const ctx = grande.getContext('2d');
+  const camada = ctx.createImageData(L, A);
+  const falta = (i) => AMOSTRA_FALTAM.includes(g.nomes[i]);
+  pintarCamada(camada, pagina, (n) => {
+    const i = g.alvo[n];
+    if (i < 0) return null;
+    if (modo === 'numeros') return falta(i) ? null : rgb(g.cores[i]);
+    return rgb(CORES_LIVRES[g.nomes[i]] || g.cores[i]);
+  });
+  compor(ctx, camada, img);
+  if (modo === 'numeros') {
+    const { centro, raio } = centros(pagina);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let a = 0; a < pagina.areas; a++) {
+      const i = g.alvo[a];
+      // Só nas áreas grandes: a bolinha tem de caber dentro.
+      if (i < 0 || !falta(i) || raio[a] < L * 0.035) continue;
+      const r = Math.min(raio[a] * 0.9, L * 0.075);
+      const x = centro[a] % L;
+      const y = Math.floor(centro[a] / L);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.lineWidth = r * 0.16;
+      ctx.strokeStyle = '#7a4ec7';
+      ctx.stroke();
+      ctx.font = `900 ${(r * (i >= 9 ? 1.05 : 1.3)).toFixed(0)}px system-ui, sans-serif`;
+      ctx.fillStyle = '#5b3a8c';
+      ctx.fillText(String(i + 1), x, y + r * 0.06);
+    }
+  }
+  const pequena = document.createElement('canvas');
+  pequena.width = largura;
+  pequena.height = Math.round((largura * A) / L);
+  pequena.getContext('2d').drawImage(grande, 0, 0, pequena.width, pequena.height);
+  return { foto: pequena.toDataURL('image/png'), cores: g.cores };
+}
+
 // Quantas áreas de um gabarito ainda faltam (0 = página pronta).
 export function faltando(alvo, cores) {
   let n = 0;

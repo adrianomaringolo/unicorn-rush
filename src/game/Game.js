@@ -53,7 +53,7 @@ import { storyPages, STORY_END } from './story.js';
 import { IDIOMAS, idioma, idiomaInfo, idiomaSugerido, setIdioma, t } from './i18n.js';
 import { lessonsFor } from './tutorial.js';
 import { DESENHOS, DESENHO } from './pintura.js';
-import { criarTelaPintura, miniatura } from './telaPintura.js';
+import { criarTelaPintura, miniatura, amostraDoModo } from './telaPintura.js';
 import { VERSION } from './version.js';
 import { hasUpdate, applyUpdate, onUpdate, updateVersion } from './update.js';
 
@@ -1421,7 +1421,7 @@ export class Game {
       if (qual === 'powers') return this.showPowerShop();
       if (qual === 'enfeites') return this.showEnfeites();
       if (qual === 'album') return this.showAlbum();
-      if (qual === 'pintar') return this.showPinturas();
+      if (qual === 'pintar') return this.showPinturaModos();
       if (qual === 'missao') return this.showMissao();
       if (qual === 'about') return this.showAbout();
       if (qual === 'update') return this.applyUpdate();
@@ -2242,7 +2242,7 @@ export class Game {
     const fechouOElenco = faltavaAlguem && this.storyEndUnlocked;
 
     this.revealUnlock(kind, item, () => {
-      this.ui.toast(`${item.emoji} ${t('{nome} é sua!', { nome: item.name })}`);
+      this.ui.toast(`${item.emoji} ${falaEhSua(item, kind)}`);
       if (!fechouOElenco) return loja.voltar();
       this.aposLivro = () => this.revealEco();
       return this.showStory(this.storyBook.length - STORY_END.length);
@@ -2320,7 +2320,7 @@ export class Game {
     // fanfarra quando o retrato aparece.
     const chave = setTimeout(() => sfx.key(), 800);      // o cadeado cede
     const fanfarra = setTimeout(() => sfx.win(), 1450);   // o retrato aparece
-    const fala = setTimeout(() => speak(falaEhSua(item)), 2100);
+    const fala = setTimeout(() => speak(falaEhSua(item, kind)), 2100);
 
     // Sai sozinho, ou no primeiro toque de quem já viu (e vai ver de novo a
     // cada compra — impaciência aqui é justa).
@@ -3860,12 +3860,72 @@ export class Game {
   // que procurar, mas não o que é.
   // ---- Pintar (ver pintura.js e telaPintura.js) -------------------------
 
+  // Antes da grade, a escolha do modo: dois cartões grandes, cada um com a
+  // mesma Uni pintada do jeito do modo (ver amostraDoModo) e uma fileira de
+  // bolinhas como a paleta dele — de cores soltas no livre, numeradas no por
+  // números. Quem ainda não lê entende pela figura, e o toque fala o nome e
+  // o que se faz ali (guiarPelaVoz lê o aria-label).
+  showPinturaModos() {
+    music.silenciar();   // pintar é sossegado: só os efeitos e a comemoração
+    this.fecharViewer();
+    this.telaPintura.fechar();
+    this.state = STATE.READY;
+    this.screen = 'pinturaModos';
+    this.ui.showPause(false);
+
+    const modo = this.save.pinturaModo === 'numeros' ? 'numeros' : 'livre';
+    const amostra = DESENHO.uni.arquivo;
+    const bolinhas = (qual) => (qual === 'numeros'
+      ? ['#c9ecff', '#fff8e6', '#ff8fbf', '#ff9a3c'].map((c, i) => `<i style="background:${c}">${i + 1}</i>`)
+      : ['#ff5a5f', '#ff9a3c', '#fff07a', '#4fc46c', '#4f8ff0', '#a46cf0'].map((c) => `<i style="background:${c}"></i>`)).join('');
+    const cartao = (qual, nome, falado, dica) => `<button class="pintura-escolha-cartao${qual === modo ? ' ultimo' : ''}" data-pick="modo:${qual}" aria-label="${t(falado)}">`
+      + `<img class="pintura-escolha-foto" data-amostra="${qual}" src="${this.miniaturas[`amostra:${qual}`] || amostra}" alt="" />`
+      + `<span class="pintura-escolha-bolinhas ${qual}" aria-hidden="true">${bolinhas(qual)}</span>`
+      + `<span class="pintura-escolha-nome">${t(nome)}</span>`
+      + `<span class="pintura-escolha-dica">${t(dica)}</span></button>`;
+
+    this.ui.showOverlay({
+      title: t('🎨 Pintar'),
+      html: `<p class="pintura-escolha-pergunta">${t('Como você quer pintar?')}</p>`
+        + '<div class="pintura-escolha">'
+        + cartao('livre', '🖍️ Livre', 'Livre: pinte com as cores que você quiser.', 'Pinte com as cores que você quiser.')
+        + cartao('numeros', '🔢 Por números', 'Por números: cada número é uma cor. Siga os números!', 'Cada número é uma cor. Siga os números!')
+        + '</div>',
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
+      back: () => this.showHome(),
+    });
+    this.ui.bindExtra((id) => {
+      if (!id.startsWith('modo:')) return;
+      sfx.tap();
+      update((save) => { save.pinturaModo = id.slice(5); });
+      this.save = getSave();
+      this.showPinturas();
+    });
+    this.gerarAmostras();
+  }
+
+  // As duas figuras da escolha do modo, feitas uma vez por sessão.
+  async gerarAmostras() {
+    for (const qual of ['livre', 'numeros']) {
+      const nome = `amostra:${qual}`;
+      if (!this.miniaturas[nome]) {
+        try {
+          this.miniaturas[nome] = (await amostraDoModo(qual))?.foto;
+        } catch { continue; }
+      }
+      if (this.screen !== 'pinturaModos') return;
+      const img = document.querySelector(`#overlay-extra [data-amostra="${qual}"]`);
+      if (img && this.miniaturas[nome]) img.src = this.miniaturas[nome];
+    }
+  }
+
   // A grade das páginas de colorir. Em cima, os dois modos: pintura livre
   // e por números (cada um é uma folha separada do mesmo desenho). As já
   // pintadas aparecem com as cores (a miniatura sai do desenho pintado, uma
   // de cada vez, depois que a grade já está na tela); as ligadas a um
   // unicórnio que a criança ainda não tem ficam com cadeado.
   showPinturas() {
+    music.silenciar();   // pintar é sossegado: só os efeitos e a comemoração
     this.fecharViewer();
     this.telaPintura.fechar();
     this.state = STATE.READY;
@@ -3887,8 +3947,8 @@ export class Game {
       html: `<div class="pintura-modos">${botaoModo('livre', '🖍️ Livre')}${botaoModo('numeros', '🔢 Por números')}</div>`
         + `<div class="pinturas-grade">${tiles}</div>`
         + `<p class="pinturas-novidades">${t('✨ Desenhos novos estão sempre chegando. Volte para ver!')}</p>`,
-      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showHome() }],
-      back: () => this.showHome(),
+      buttons: [{ label: t('⬅️ Voltar'), onClick: () => this.showPinturaModos() }],
+      back: () => this.showPinturaModos(),
     });
     this.ui.bindExtra((id, el) => {
       if (id.startsWith('modo:')) {
@@ -3940,6 +4000,7 @@ export class Game {
   // no meio (ou o jogo fechar) não perde nada. Livre e por números guardam
   // em lugares diferentes.
   abrirPintura(id, modo = 'livre') {
+    music.silenciar();
     const chave = modo === 'numeros' ? 'pinturasNumeros' : 'pinturas';
     this.screen = 'pintura';
     this.ui.hideOverlay();

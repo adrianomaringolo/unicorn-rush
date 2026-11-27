@@ -431,6 +431,11 @@ export const EN = {
   'Mais cores': 'More colors',
   '🖍️ Livre': '🖍️ Free',
   '🔢 Por números': '🔢 By numbers',
+  'Como você quer pintar?': 'How do you want to paint?',
+  'Livre: pinte com as cores que você quiser.': 'Free: paint with any colors you like.',
+  'Por números: cada número é uma cor. Siga os números!': 'By numbers: each number is a color. Follow the numbers!',
+  'Pinte com as cores que você quiser.': 'Paint with any colors you like.',
+  'Cada número é uma cor. Siga os números!': 'Each number is a color. Follow the numbers!',
   '⭐ Pronto! Ficou lindo!': '⭐ Done! It looks lovely!',
   'chaves': 'keys',
   'tempo': 'time',
@@ -482,6 +487,8 @@ export const EN = {
   'Ninguém sabe quem é. Dizem que alguém espera na torre da neblina, e que só aparece no dia em que o último amigo sair de trás da porta dele.':
     'Nobody knows who he is. They say somebody is waiting in the tower in the fog, and that he only appears on the day the last friend steps out from behind his door.',
   '{nome} é sua!': '{nome} is yours!',
+  '{nome} é seu!': '{nome} is yours!',
+  'A pista {nome} é sua!': 'The {nome} track is yours!',
   '{nome} veio correr com você!': '{nome} came to run with you!',
 
   // --- O livro --------------------------------------------------------------
